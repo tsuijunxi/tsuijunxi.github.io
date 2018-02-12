@@ -100,7 +100,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/01.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/02.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/03.png">
-<meta property="og:updated_time" content="2018-02-11T06:07:16.564Z">
+<meta property="og:updated_time" content="2018-02-12T10:15:39.086Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JSPatch的dealloc忧伤">
 <meta name="twitter:description" content="前言JSPatch作为一个轻量级的热修复方案曾经解决了很多App的热修复痛点，甚至一度风靡，大有席卷热修复领域之势，然而因为触犯了苹果爸爸的龙颜而被封杀，导致很多企业投鼠忌器，不敢再冒天下之大不韪去明修栈道暗度陈仓。虽说JSPatch的结局令人惋惜，但是作为一个iOS开发工程师，里面仍然有很多精髓思想值得我们学习。今天主要是想分析一下JSPatch的dealloc的问题。 何为dealloc忧伤？">
@@ -360,7 +360,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,218
+                  3,204
                 </span>
               
 
@@ -470,9 +470,9 @@
 <p>解决方案首先想到在这里用一个while循环，直接暴力处理dealloc的继承链，但是如果中间有一个dealloc方法被hook成JS代码块，那么就还得处理JS代码块的执行，显然这个处理方式工作量很巨大，而且考虑因素很多。</p>
 <p>如果能保存dealloc的执行层级，那么就可以避免死循环了，但是看函数的参数也不大可能具备这个条件:<code>static void JPForwardInvocation(__unsafe_unretained id assignSlf, SEL selector, NSInvocation *invocation)</code>。</p>
 <p>最后就只能依托于<code>assignSlf</code>了，如果能在这个对象本身上面做点文章就好了<br>绞尽脑汁，想到了加1行代码：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 每次获取到父类时，就利用runtime把assignSlf的类设置为instSuperClass</span></span><br><span class="line">    object_setClass(assignSlf, instSuperClass);</span><br><span class="line"></span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instSuperClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>如上面的代码块所示：每次获取到父类时，就利用runtime把assignSlf的类设置为其父类instSuperClass，这样就打破了死循环的条件，之所以可以这么做，是考虑到assignSlf即将被释放了<br>验证下结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPBaseViewController JS dealloc</span><br></pre></td></tr></table></figure></p>
+<p>如上面的代码块所示：每次获取到父类时，就利用runtime把assignSlf的类设置为其父类instSuperClass，这样就打破了死循环的条件。<br>验证下结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPBaseViewController JS dealloc</span><br></pre></td></tr></table></figure></p>
 <p>确实都被调用到了。</p>
-<p>可能会有人怀疑说，这样修改对象的类，会不会存在crash的风险呢？风险肯定有，比如以下代码会直接crash：</p>
+<p>可能会有人怀疑说，这样修改对象的类，会不会存在crash的风险呢？普通情况下，风险肯定有，比如以下代码会直接crash：</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)crashTest&#123;</span><br><span class="line">    JPViewController* JPVC = [[JPViewController alloc]init];</span><br><span class="line">    Class instClass = object_getClass(JPVC);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line">    object_setClass(JPVC, instSuperClass);</span><br><span class="line">    [JPVC test];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0   CoreFoundation                      0x0000000109b901ab __exceptionPreprocess + 171</span><br><span class="line">1   libobjc.A.dylib                     0x0000000109225f41 objc_exception_throw + 48</span><br><span class="line">2   CoreFoundation                      0x0000000109c10a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">3   UIKit                               0x000000010ad54761 -[UIResponder doesNotRecognizeSelector:] + 295</span><br><span class="line">4   CoreFoundation                      0x0000000109b130a8 ___forwarding___ + 1432</span><br><span class="line">5   CoreFoundation                      0x0000000109b12a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
 <p>在上述代码中，test方法是<code>JPViewController</code>特有的，其父类并没有这个方法，所以会crash</p>
@@ -520,7 +520,7 @@
   <p><span>本文标题:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/">JSPatch的dealloc忧伤</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年01月21日 - 21:01</p>
-  <p><span>最后更新:</span>2018年02月11日 - 14:02</p>
+  <p><span>最后更新:</span>2018年02月12日 - 18:02</p>
   <p><span>原始链接:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/" title="JSPatch的dealloc忧伤">https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/"  aria-label="复制成功！"></i></span>
   </p>
@@ -669,7 +669,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -759,7 +759,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">28.2k</span>
+    <span title="Site words total count">33.1k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
