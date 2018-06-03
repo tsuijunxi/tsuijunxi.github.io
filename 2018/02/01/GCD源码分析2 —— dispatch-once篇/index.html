@@ -89,18 +89,18 @@
 
 
 
-<meta name="description" content="前言这篇文章主要跟大家分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (i">
+<meta name="description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
 <meta name="keywords" content="GCD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="GCD源码分析2 —— dispatch_once篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言这篇文章主要跟大家分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (i">
+<meta property="og:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-02-06T15:22:41.926Z">
+<meta property="og:updated_time" content="2018-05-30T14:26:07.909Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GCD源码分析2 —— dispatch_once篇">
-<meta name="twitter:description" content="前言这篇文章主要跟大家分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (i">
+<meta name="twitter:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
 
 
 
@@ -356,7 +356,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  920
+                  917
                 </span>
               
 
@@ -393,7 +393,7 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章主要跟大家分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。</p>
 <h2 id="dispatch-once分析"><a href="#dispatch-once分析" class="headerlink" title="dispatch_once分析"></a>dispatch_once分析</h2><p>在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)sharedInstance &#123;</span><br><span class="line">    <span class="keyword">static</span> XXObject *_instance;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> _predicate;</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;_predicate, ^&#123;</span><br><span class="line">        _instance = [[XXObject alloc] init];</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> _instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>这段代码中涉及到两个关键词，一个是<code>dispatch_once_t</code>，一个是<code>dispatch_once</code>，下面我们逐个分析</p>
 <h3 id="dispatch-once-t"><a href="#dispatch-once-t" class="headerlink" title="dispatch_once_t"></a>dispatch_once_t</h3><p>在once.h中找到其定义如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">typedef long dispatch_once_t;</span><br></pre></td></tr></table></figure></p>
@@ -449,7 +449,7 @@
   <p><span>本文标题:</span><a href="/2018/02/01/GCD源码分析2 —— dispatch-once篇/">GCD源码分析2 —— dispatch_once篇</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年02月01日 - 21:02</p>
-  <p><span>最后更新:</span>2018年02月06日 - 23:02</p>
+  <p><span>最后更新:</span>2018年05月30日 - 22:05</p>
   <p><span>原始链接:</span><a href="/2018/02/01/GCD源码分析2 —— dispatch-once篇/" title="GCD源码分析2 —— dispatch_once篇">https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/"  aria-label="复制成功！"></i></span>
   </p>
@@ -596,7 +596,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -607,7 +607,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-count">2</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -618,7 +618,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -686,7 +686,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">33.1k</span>
+    <span title="Site words total count">40.6k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
