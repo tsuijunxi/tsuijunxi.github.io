@@ -89,19 +89,19 @@
 
 
 
-<meta name="description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：Runloop知识树深入理解RunLoop 然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。有时候会想，如果凭着自己的学习和理解去实现一个简（">
+<meta name="description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
 <meta name="keywords" content="iOS Runloop IO多路复用">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何去实现一个轻量级的Runloop（1）">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：Runloop知识树深入理解RunLoop 然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。有时候会想，如果凭着自己的学习和理解去实现一个简（">
+<meta property="og:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg">
-<meta property="og:updated_time" content="2018-06-15T12:59:06.861Z">
+<meta property="og:updated_time" content="2018-06-19T16:29:10.974Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何去实现一个轻量级的Runloop（1）">
-<meta name="twitter:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：Runloop知识树深入理解RunLoop 然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。有时候会想，如果凭着自己的学习和理解去实现一个简（">
+<meta name="twitter:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg">
 
 
@@ -368,7 +368,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,217
+                  3,310
                 </span>
               
 
@@ -405,8 +405,16 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：<br><a href="https://segmentfault.com/a/1190000004938638" target="_blank" rel="noopener">Runloop知识树</a><br><a href="https://blog.ibireme.com/2015/05/18/runloop/" target="_blank" rel="noopener">深入理解RunLoop</a></p>
-<p>然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。有时候会想，如果凭着自己的学习和理解去实现一个简（山）易（寨）版的Runloop，自己又该怎么做呢？</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：</p>
+<blockquote>
+<ul>
+<li><a href="https://segmentfault.com/a/1190000004938638" target="_blank" rel="noopener">Runloop知识树</a></li>
+<li><a href="https://blog.ibireme.com/2015/05/18/runloop/" target="_blank" rel="noopener">深入理解RunLoop</a></li>
+</ul>
+</blockquote>
+<p>然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。</p>
+<p>Runloop就是事件驱动的一个大循环，事件驱动在很多语言中都有实现，伪代码如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> * argv[])</span> </span>&#123;</span><br><span class="line">     <span class="comment">//程序一直运行状态</span></span><br><span class="line">     <span class="keyword">while</span> (AppIsRunning) &#123;</span><br><span class="line">          <span class="comment">//睡眠状态，等待唤醒事件</span></span><br><span class="line">          id whoWakesMe = SleepForWakingUp();</span><br><span class="line">          <span class="comment">//得到唤醒事件</span></span><br><span class="line">          id event = GetEvent(whoWakesMe);</span><br><span class="line">          <span class="comment">//开始处理事件</span></span><br><span class="line">          HandleEvent(event);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>有时候会想，如果凭着自己的学习和理解去实现一个简（山）易（寨）版的Runloop，自己又该怎么做呢？</p>
 <blockquote>
 <ul>
 <li>本着对Runloop是个圈的理解，首先应该写个死循环；</li>
@@ -418,7 +426,7 @@
 </blockquote>
 <p>收集资料的过程中，无意中发现了一位大神写的<a href="https://github.com/wuyunfeng/LightWeightRunLoop-A-Reactor-Style-NSRunLoop" target="_blank" rel="noopener">LightWeightRunLoop-A-Reactor-Style-NSRunLoop</a>，真是踏破铁鞋无觅处，仔细拜读之后，发现和自己的构思还整体比较吻合，这里借花献佛，借源码分析一下如何去实现一个轻量级的Runloop，这里首先感谢一下作者 <strong>wuyunfeng</strong>。</p>
 <h2 id="整体框架"><a href="#整体框架" class="headerlink" title="整体框架"></a>整体框架</h2><p><code>LightWeightRunLoop</code>主要实现了和Runloop相关的一些API，例如：PerformSelector、Timer、URLConnection、LWStream和LWPort等，但是本文的目的不是为了怎么去使用这些API，而是去理解这些API的内部实现，从而加深对Runloop的理解。</p>
-<p>借用下作者的图<br><img src="/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg" width="65%"></p>
+<p>借用下作者的图<br><img src="/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg" width="75%"></p>
 <h2 id="LWRunloop"><a href="#LWRunloop" class="headerlink" title="LWRunloop"></a>LWRunloop</h2><h3 id="线程如果获取LWRunLoop对象"><a href="#线程如果获取LWRunLoop对象" class="headerlink" title="线程如果获取LWRunLoop对象"></a>线程如果获取LWRunLoop对象</h3><p>每一个线程（除了主线程），都可以拥有一个<code>LWRunLoop</code>对象，可以通过以下方式获取：在运行的线程中调用<code>[LWRunLoop currentLWRunLoop]</code><br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSThread</span> *_lwRunLoopThread = [[<span class="built_in">NSThread</span> alloc] initWithTarget:<span class="keyword">self</span> selector:<span class="keyword">@selector</span>(lightWeightRunloopThreadEntryPoint:) object:<span class="literal">nil</span>];</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)lightWeightRunloopThreadEntryPoint:(<span class="keyword">id</span>)data</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">@autoreleasepool</span> &#123;</span><br><span class="line">        [[LWRunLoop currentLWRunLoop] run];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h3 id="currentLWRunLoop内部实现"><a href="#currentLWRunLoop内部实现" class="headerlink" title="currentLWRunLoop内部实现"></a>currentLWRunLoop内部实现</h3><p>看一下<code>currentLWRunLoop</code>的内部实现<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)currentLWRunLoop</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> result = pthread_once(&amp; mTLSKeyOnceToken, initTLSKey);</span><br><span class="line">    LWRunLoop *instance = (__bridge LWRunLoop *)pthread_getspecific(mTLSKey);</span><br><span class="line">    <span class="keyword">if</span> (instance == <span class="literal">nil</span>) &#123;</span><br><span class="line">        instance = [[[<span class="keyword">self</span> <span class="keyword">class</span>] alloc] init];</span><br><span class="line">        [[<span class="built_in">NSThread</span> currentThread] setLooper:instance];</span><br><span class="line">        pthread_setspecific(mTLSKey, (__bridge <span class="keyword">const</span> <span class="keyword">void</span> *)(instance));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>通过源码可以发现，线程的LWRunloop对象被存储为线程私有数据（TSD)，通过<code>pthread_setspecific</code>和<code>pthread_getspecific</code>进行存取。继续看下LWRunloop的初始化函数，只是简单地初始化了一个类型为<code>LWMessageQueue</code>的消息队列。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</span><br><span class="line">        _queue = [LWMessageQueue defaultInstance];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -510,7 +518,7 @@
   <p><span>本文标题:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/">如何去实现一个轻量级的Runloop（1）</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年06月09日 - 16:06</p>
-  <p><span>最后更新:</span>2018年06月15日 - 20:06</p>
+  <p><span>最后更新:</span>2018年06月20日 - 00:06</p>
   <p><span>原始链接:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/" title="如何去实现一个轻量级的Runloop（1）">https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/"  aria-label="复制成功！"></i></span>
   </p>
@@ -568,6 +576,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/15/如何实现一个简单的RunLoop（2）/" rel="prev" title="如何去实现一个轻量级的Runloop（2）">
+                如何去实现一个轻量级的Runloop（2） <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -655,7 +667,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -666,7 +678,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">2</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -677,7 +689,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">10</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -745,7 +757,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">43.9k</span>
+    <span title="Site words total count">47.1k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
