@@ -100,7 +100,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/01.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/02.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/03.png">
-<meta property="og:updated_time" content="2018-05-30T15:29:40.103Z">
+<meta property="og:updated_time" content="2018-09-11T15:06:14.220Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JSPatch的dealloc忧伤">
 <meta name="twitter:description" content="前言JSPatch作为一个轻量级的热修复方案曾经解决了很多App的热修复痛点，甚至一度风靡，大有席卷热修复领域之势，然而因为触犯了苹果爸爸的龙颜而被封杀，导致很多企业投鼠忌器，不敢再冒天下之大不韪去明修栈道暗度陈仓。虽说JSPatch的结局令人惋惜，但是作为一个iOS开发工程师，里面仍然有很多精髓思想值得我们学习。今天主要是想分析一下JSPatch的dealloc的问题。 何为dealloc忧伤？">
@@ -471,7 +471,7 @@
 </ul>
 </blockquote>
 <h3 id="3、如果同时hook父类和子类的dealloc方法，会发生什么呢？"><a href="#3、如果同时hook父类和子类的dealloc方法，会发生什么呢？" class="headerlink" title="3、如果同时hook父类和子类的dealloc方法，会发生什么呢？"></a>3、如果同时hook父类和子类的dealloc方法，会发生什么呢？</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPBaseViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPBaseViewController OC dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">JPViewController</span> : <span class="title">JPBaseViewController</span></span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPViewController OC dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'JPBaseViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPBaseViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">defineClass(<span class="string">'JPBaseViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPBaseViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'JPBaseViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPBaseViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">defineClass(<span class="string">'JPViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 <p>结果还是发生了crash，原因是堆栈溢出…<br><img src="/2018/01/21/JSPatch的dealloc忧伤/03.png" width="65%"></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <p>如上图，一直不停地执行<code>JPViewController JS dealloc</code></p>
@@ -530,7 +530,7 @@
   <p><span>本文标题:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/">JSPatch的dealloc忧伤</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年01月21日 - 21:01</p>
-  <p><span>最后更新:</span>2018年05月30日 - 23:05</p>
+  <p><span>最后更新:</span>2018年09月11日 - 23:09</p>
   <p><span>原始链接:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/" title="JSPatch的dealloc忧伤">https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/"  aria-label="复制成功！"></i></span>
   </p>
@@ -681,7 +681,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -692,7 +692,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -703,7 +703,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -771,7 +771,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">47.1k</span>
+    <span title="Site words total count">61.5k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
