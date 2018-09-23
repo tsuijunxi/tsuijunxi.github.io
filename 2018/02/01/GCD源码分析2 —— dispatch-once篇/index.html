@@ -97,7 +97,7 @@
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-05-30T14:26:07.909Z">
+<meta property="og:updated_time" content="2018-09-23T16:53:15.548Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GCD源码分析2 —— dispatch_once篇">
 <meta name="twitter:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
@@ -366,7 +366,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  917
+                  1,510
                 </span>
               
 
@@ -382,7 +382,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  4
+                  6
                 </span>
               
             </div>
@@ -428,6 +428,23 @@
 </li>
 </ul>
 </blockquote>
+<h2 id="dispatch-once死锁（更新模块）"><a href="#dispatch-once死锁（更新模块）" class="headerlink" title="dispatch_once死锁（更新模块）"></a>dispatch_once死锁（更新模块）</h2><p>上面说了这么多，是不是说使用<code>dispatch_once</code>写单例就可以高枕无忧了呢？<br>实际上并非如此，不正当地使用<code>dispatch_once</code>可能会造成死锁：</p>
+<blockquote>
+<ul>
+<li><p>死锁方式1：<br>1、某线程T1()调用单例A，且为应用生命周期内首次调用，需要使用dispatch_once(&amp;token, block())初始化单例。<br>2、上述block()中的某个函数调用了dispatch_sync_safe，同步在T2线程执行代码<br>3、T2线程正在执行的某个函数需要调用到单例A，将会再次调用dispatch_once。<br>4、这样T1线程在等block执行完毕，它在等待T2线程执行完毕，而T2线程在等待T1线程的dispatch_once执行完毕，造成了相互等待，故而死锁</p>
+</li>
+<li><p>死锁方式2：<br>1、某线程T1()调用单例A，且为应用生命周期内首次调用，需要使用dispatch_once(&amp;token, block())初始化单例；<br>2、block中可能掉用到了B流程，B流程又调用了C流程，C流程可能调用到了单例A，将会再次调用dispatch_once；<br>3、这样又造成了相互等待。</p>
+</li>
+</ul>
+</blockquote>
+<p>所以在使用写单例时要注意：</p>
+<ul>
+<li>1、初始化要尽量简单，不要太复杂；</li>
+<li>2、尽量能保持自给自足，减少对别的模块或者类的依赖；</li>
+<li>3、单例尽量考虑使用场景，不要随意实现单例，否则这些单例一旦初始化就会一直占着资源不能释放，造成大量的资源浪费。</li>
+</ul>
+<h2 id="dispatch-once省力姿势（更新模块）"><a href="#dispatch-once省力姿势（更新模块）" class="headerlink" title="dispatch_once省力姿势（更新模块）"></a>dispatch_once省力姿势（更新模块）</h2><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#ifdef __has_feature(objc_arc) </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_m static id _instanceType = nil;\</span></span><br><span class="line">+(<span class="keyword">instancetype</span>)sharedInstance\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [[<span class="keyword">self</span> alloc]init];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">+ (<span class="keyword">instancetype</span>)allocWithZone:(<span class="keyword">struct</span> _NSZone *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [<span class="keyword">super</span> allocWithZone:zone];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#else </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_m static id _instanceType = nil;\</span></span><br><span class="line">+(<span class="keyword">instancetype</span>)sharedInstance\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [[<span class="keyword">self</span> alloc]init];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">+ (<span class="keyword">instancetype</span>)allocWithZone:(<span class="keyword">struct</span> _NSZone *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [<span class="keyword">super</span> allocWithZone:zone];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">oneway</span> <span class="keyword">void</span>)release\</span><br><span class="line">&#123;\</span><br><span class="line">\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">instancetype</span>)<span class="keyword">retain</span>\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">instancetype</span>)autorelease\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">- (<span class="built_in">NSUInteger</span>)retainCount\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#endif</span></span><br></pre></td></tr></table></figure>
+<p>然后在要实现的单例.h文件中添加singleton_h，.m文件中添加singleton_m即可</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>dispatch_once</code>的分析是最简单的，这也意味着后续系列的的分析将逐渐变得复杂，等待猛烈的暴风雨吧！</p>
 
       
@@ -459,7 +476,7 @@
   <p><span>本文标题:</span><a href="/2018/02/01/GCD源码分析2 —— dispatch-once篇/">GCD源码分析2 —— dispatch_once篇</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年02月01日 - 21:02</p>
-  <p><span>最后更新:</span>2018年05月30日 - 22:05</p>
+  <p><span>最后更新:</span>2018年09月24日 - 00:09</p>
   <p><span>原始链接:</span><a href="/2018/02/01/GCD源码分析2 —— dispatch-once篇/" title="GCD源码分析2 —— dispatch_once篇">https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/"  aria-label="复制成功！"></i></span>
   </p>
@@ -608,7 +625,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -619,7 +636,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -630,7 +647,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -663,7 +680,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-once分析"><span class="nav-number">2.</span> <span class="nav-text">dispatch_once分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-once-t"><span class="nav-number">2.1.</span> <span class="nav-text">dispatch_once_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-once"><span class="nav-number">2.2.</span> <span class="nav-text">dispatch_once</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-once分析"><span class="nav-number">2.</span> <span class="nav-text">dispatch_once分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-once-t"><span class="nav-number">2.1.</span> <span class="nav-text">dispatch_once_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-once"><span class="nav-number">2.2.</span> <span class="nav-text">dispatch_once</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-once死锁（更新模块）"><span class="nav-number">3.</span> <span class="nav-text">dispatch_once死锁（更新模块）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-once省力姿势（更新模块）"><span class="nav-number">4.</span> <span class="nav-text">dispatch_once省力姿势（更新模块）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -698,7 +715,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">61.5k</span>
+    <span title="Site words total count">67.1k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
