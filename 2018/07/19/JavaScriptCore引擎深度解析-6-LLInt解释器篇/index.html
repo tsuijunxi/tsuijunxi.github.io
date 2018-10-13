@@ -78,7 +78,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="JavaScriptCore," />
 
 
 
@@ -90,15 +90,16 @@
 
 
 <meta name="description" content="前言运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者是">
+<meta name="keywords" content="JavaScriptCore">
 <meta property="og:type" content="article">
-<meta property="og:title" content="JavaScriptCore引擎深度解析[6][LLInt解释器篇]">
+<meta property="og:title" content="JavaScriptCore引擎深度解析6——LLInt解释器篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-6-LLInt解释器篇/index.html">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="前言运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者是">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-10-12T16:27:17.632Z">
+<meta property="og:updated_time" content="2018-10-13T12:21:49.182Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="JavaScriptCore引擎深度解析[6][LLInt解释器篇]">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析6——LLInt解释器篇">
 <meta name="twitter:description" content="前言运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者是">
 
 
@@ -135,7 +136,7 @@
 
 
 
-  <title>JavaScriptCore引擎深度解析[6][LLInt解释器篇] | 凌云的博客</title>
+  <title>JavaScriptCore引擎深度解析6——LLInt解释器篇 | 凌云的博客</title>
   
 
 
@@ -289,7 +290,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析[6][LLInt解释器篇]</h1>
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析6——LLInt解释器篇</h1>
         
 
         <div class="post-meta">
@@ -312,6 +313,28 @@
           </span>
 
           
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
 
           
             
@@ -333,7 +356,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  175
+                  992
                 </span>
               
 
@@ -349,7 +372,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  1
+                  5
                 </span>
               
             </div>
@@ -371,6 +394,12 @@
 
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者是递归，循环等条件会通过OSR切换成JIT进行解释执行（根据具体触发条件会进入不同的JIT进行动态解释）来加快速度。</p>
+<p>// CLoopRegister来模拟真正的CPU寄存器，它定义了如下策略：<br>// 1、如何将小于intptr_t的整形打包进假寄存器；<br>// 2、隐藏了大端和小端的区别</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">UnlinkedInstruction</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    UnlinkedInstruction() &#123; u.operand = <span class="number">0</span>; &#125;</span><br><span class="line">    UnlinkedInstruction(OpcodeID opcode) &#123; u.opcode = opcode; &#125;</span><br><span class="line">    UnlinkedInstruction(<span class="keyword">int</span> operand) &#123; u.operand = operand; &#125;</span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        OpcodeID opcode;</span><br><span class="line">        <span class="keyword">int32_t</span> operand;</span><br><span class="line">        <span class="keyword">unsigned</span> index;</span><br><span class="line">    &#125; u;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="ProgramExecutable"><a href="#ProgramExecutable" class="headerlink" title="ProgramExecutable"></a>ProgramExecutable</h2><p><code>ProgramExecutable</code>可以理解为当前所执行脚本的大总管，从其名字上可以看出来是代表一个可执行程序</p>
+<p>先初始化全局属性</p>
+<p>处理的结果都会记录在 callFrame 里。主要是通过 JSGlobalObject 这个对象的 addFunction 和 addVar 方法记录 Parser 出那些在全局空间的那些 let，const 和 class 的全局属性，或者 var，let 和 const 的全局变量</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始化全局属性</span></span><br><span class="line">JSObject* ProgramExecutable::initializeGlobalProperties(VM&amp; vm, CallFrame* callFrame, JSScope* scope)</span><br><span class="line">&#123;</span><br><span class="line">    RELEASE_ASSERT(scope);</span><br><span class="line">    JSGlobalObject* globalObject = scope-&gt;globalObject();</span><br><span class="line">    RELEASE_ASSERT(globalObject);</span><br><span class="line">    ASSERT(&amp;globalObject-&gt;vm() == &amp;vm);</span><br><span class="line"></span><br><span class="line">    JSObject* exception = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// UnlinkedCodeBlock存储的是编译后的ByteCode</span></span><br><span class="line">    UnlinkedProgramCodeBlock* unlinkedCodeBlock = globalObject-&gt;createProgramCodeBlock(callFrame, <span class="keyword">this</span>, &amp;exception);</span><br><span class="line">    <span class="keyword">if</span> (exception)</span><br><span class="line">        <span class="keyword">return</span> exception;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 全局词典环境</span></span><br><span class="line">    JSGlobalLexicalEnvironment* globalLexicalEnvironment = globalObject-&gt;globalLexicalEnvironment();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 声明的变量</span></span><br><span class="line">    <span class="keyword">const</span> VariableEnvironment&amp; variableDeclarations = unlinkedCodeBlock-&gt;variableDeclarations();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 词法声明</span></span><br><span class="line">    <span class="keyword">const</span> VariableEnvironment&amp; lexicalDeclarations = unlinkedCodeBlock-&gt;lexicalDeclarations();</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="comment">// The ES6 spec says that no vars/global properties/let/const can be duplicated in the global scope.</span></span><br><span class="line">    <span class="comment">// This carried out section 15.1.8 of the ES6 spec: http://www.ecma-international.org/ecma-262/6.0/index.html#sec-globaldeclarationinstantiation</span></span><br><span class="line">    &#123;</span><br><span class="line">        ExecState* exec = globalObject-&gt;globalExec();</span><br><span class="line">        <span class="comment">// Check for intersection of "var" and "let"/"const"/"class"</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; entry : lexicalDeclarations) &#123;</span><br><span class="line">            <span class="keyword">if</span> (variableDeclarations.contains(entry.key))</span><br><span class="line">                <span class="keyword">return</span> createSyntaxError(exec, makeString(<span class="string">"Can't create duplicate variable: '"</span>, String(entry.key.get()), <span class="string">"'"</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Check if any new "let"/"const"/"class" will shadow any pre-existing global property names, or "var"/"let"/"const" variables.</span></span><br><span class="line">        <span class="comment">// It's an error to introduce a shadow.</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; entry : lexicalDeclarations) &#123;</span><br><span class="line">            <span class="keyword">if</span> (globalObject-&gt;hasProperty(exec, entry.key.get()))</span><br><span class="line">                <span class="keyword">return</span> createSyntaxError(exec, makeString(<span class="string">"Can't create duplicate variable that shadows a global property: '"</span>, String(entry.key.get()), <span class="string">"'"</span>));</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (globalLexicalEnvironment-&gt;hasProperty(exec, entry.key.get())) &#123;</span><br><span class="line">                <span class="keyword">if</span> (UNLIKELY(entry.value.isConst() &amp;&amp; !vm.globalConstRedeclarationShouldThrow() &amp;&amp; !isStrictMode())) &#123;</span><br><span class="line">                    <span class="comment">// We only allow "const" duplicate declarations under this setting.</span></span><br><span class="line">                    <span class="comment">// For example, we don't "let" variables to be overridden by "const" variables.</span></span><br><span class="line">                    <span class="keyword">if</span> (globalLexicalEnvironment-&gt;isConstVariable(entry.key.get()))</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> createSyntaxError(exec, makeString(<span class="string">"Can't create duplicate variable: '"</span>, String(entry.key.get()), <span class="string">"'"</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Check if any new "var"s will shadow any previous "let"/"const"/"class" names.</span></span><br><span class="line">        <span class="comment">// It's an error to introduce a shadow.</span></span><br><span class="line">        <span class="keyword">if</span> (!globalLexicalEnvironment-&gt;isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; entry : variableDeclarations) &#123;</span><br><span class="line">                <span class="keyword">if</span> (globalLexicalEnvironment-&gt;hasProperty(exec, entry.key.get()))</span><br><span class="line">                    <span class="keyword">return</span> createSyntaxError(exec, makeString(<span class="string">"Can't create duplicate variable: '"</span>, String(entry.key.get()), <span class="string">"'"</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    m_unlinkedProgramCodeBlock.<span class="built_in">set</span>(vm, <span class="keyword">this</span>, unlinkedCodeBlock);</span><br><span class="line"></span><br><span class="line">    <span class="function">BatchedTransitionOptimizer <span class="title">optimizer</span><span class="params">(vm, globalObject)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历当前unlinkedCodeBlock中的方法</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>, numberOfFunctions = unlinkedCodeBlock-&gt;numberOfFunctionDecls(); i &lt; numberOfFunctions; ++i) &#123;</span><br><span class="line">        UnlinkedFunctionExecutable* unlinkedFunctionExecutable = unlinkedCodeBlock-&gt;functionDecl(i);</span><br><span class="line">        ASSERT(!unlinkedFunctionExecutable-&gt;name().isEmpty());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 将该方法添加到全局对象中</span></span><br><span class="line">        globalObject-&gt;addFunction(callFrame, unlinkedFunctionExecutable-&gt;name());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 如果虚拟机收集运行信息或者有控制流</span></span><br><span class="line">        <span class="keyword">if</span> (vm.typeProfiler() || vm.controlFlowProfiler()) &#123;</span><br><span class="line">            vm.functionHasExecutedCache()-&gt;insertUnexecutedRange(sourceID(), </span><br><span class="line">                unlinkedFunctionExecutable-&gt;typeProfilingStartOffset(), </span><br><span class="line">                unlinkedFunctionExecutable-&gt;typeProfilingEndOffset());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历当前unlinkedCodeBlock中声明的变量</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; entry : variableDeclarations) &#123;</span><br><span class="line">        ASSERT(entry.value.isVar());</span><br><span class="line">        globalObject-&gt;addVar(callFrame, Identifier::fromUid(&amp;vm, entry.key.get()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 词法声明处理</span></span><br><span class="line">    &#123;</span><br><span class="line">        JSGlobalLexicalEnvironment* globalLexicalEnvironment = jsCast&lt;JSGlobalLexicalEnvironment*&gt;(globalObject-&gt;globalScope());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 获取全局符号表</span></span><br><span class="line">        SymbolTable* symbolTable = globalLexicalEnvironment-&gt;symbolTable();</span><br><span class="line">        <span class="function">ConcurrentJITLocker <span class="title">locker</span><span class="params">(symbolTable-&gt;m_lock)</span></span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; entry : lexicalDeclarations) &#123;</span><br><span class="line">            <span class="keyword">if</span> (UNLIKELY(entry.value.isConst() &amp;&amp; !vm.globalConstRedeclarationShouldThrow() &amp;&amp; !isStrictMode())) &#123;</span><br><span class="line">                <span class="keyword">if</span> (symbolTable-&gt;contains(locker, entry.key.get()))</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ScopeOffset offset = symbolTable-&gt;takeNextScopeOffset(locker);</span><br><span class="line">            SymbolTableEntry newEntry(VarOffset(offset), entry.value.isConst() ? ReadOnly : 0);</span><br><span class="line">            newEntry.prepareToWatch();</span><br><span class="line">            symbolTable-&gt;add(locker, entry.key.get(), newEntry);</span><br><span class="line">            </span><br><span class="line">            ScopeOffset offsetForAssert = globalLexicalEnvironment-&gt;addVariables(<span class="number">1</span>, jsTDZValue());</span><br><span class="line">            RELEASE_ASSERT(offsetForAssert == offset);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -392,6 +421,34 @@
     
       <div>
         
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-6-LLInt解释器篇/">JavaScriptCore引擎深度解析6——LLInt解释器篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月19日 - 00:07</p>
+  <p><span>最后更新:</span>2018年10月13日 - 20:10</p>
+  <p><span>原始链接:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-6-LLInt解释器篇/" title="JavaScriptCore引擎深度解析6——LLInt解释器篇">https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-6-LLInt解释器篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-6-LLInt解释器篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
 
       <div>
     
@@ -405,6 +462,12 @@
     
 
     <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
+          
+        </div>
       
 
       
@@ -567,7 +630,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ProgramExecutable"><span class="nav-number">2.</span> <span class="nav-text">ProgramExecutable</span></a></li></ol></div>
             
 
           </div>
@@ -602,7 +665,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">73.7k</span>
+    <span title="Site words total count">72.8k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
