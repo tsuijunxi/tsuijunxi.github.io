@@ -100,7 +100,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/01.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/02.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/03.png">
-<meta property="og:updated_time" content="2018-09-27T15:25:05.106Z">
+<meta property="og:updated_time" content="2018-10-17T15:38:10.404Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JSPatch的dealloc忧伤">
 <meta name="twitter:description" content="前言JSPatch作为一个轻量级的热修复方案曾经解决了很多App的热修复痛点，甚至一度风靡，大有席卷热修复领域之势，然而因为触犯了苹果爸爸的龙颜而被封杀，导致很多企业投鼠忌器，不敢再冒天下之大不韪去明修栈道暗度陈仓。虽说JSPatch的结局令人惋惜，但是作为一个iOS开发工程师，里面仍然有很多精髓思想值得我们学习。今天主要是想分析一下JSPatch的dealloc的问题。 何为dealloc忧伤？">
@@ -360,7 +360,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,201
+                  3,323
                 </span>
               
 
@@ -376,7 +376,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  14
+                  15
                 </span>
               
             </div>
@@ -447,7 +447,7 @@
 <li>清除对象的SideTable的weak_table，即弱引用表</li>
 </ul>
 </blockquote>
-<p>要想避免调用OC的dealloc，我们可以有这样一个思路：<strong>调用完JS的dealloc方法后，跳过OC对象的dealloc方法，直接调用父类的dealloc方法，但是在ARC中，我们无法写<code>[super dealloc]</code>的代码。不过别担心，我们有runtime</strong></p>
+<p><strong>既然这里OC的dealloc逻辑已经被JS的dealloc逻辑所覆盖，那么OC的dealloc逻辑就应该被扔掉，之前因为我们不太了解OC的dealloc内幕，总觉得编译器在里面做了很多不为人知的神奇工作，所以束手无策，但是我们现在已经了解到，对象的清理核心在<code>objc_destructInstance</code>里面，即使OC的dealloc不会被调用，也不会绝对影响到OC对象的清理，我们可以采取某种手段绕过去这个OC的dealloc这个障碍：调用完JS的dealloc方法后，跳过OC对象的dealloc方法，直接调用父类的dealloc方法。虽然在ARC中，受制于编译器，无法写<code>[super dealloc]</code>这样的代码，但是我们还有runtime</strong></p>
 <p>打开文件<code>JSPatch.mm</code>，修改<code>JPForwardInvocation</code>函数的最后几行：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// 修改前</span></span><br><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"ORIGdealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 修改后</span></span><br><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instSuperClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>修改完毕后，用以下代码验证一下结果：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// OC </span></span><br><span class="line">-(<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"oc dealloc"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JS</span></span><br><span class="line">dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"js dealloc"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -519,7 +519,7 @@
   <p><span>本文标题:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/">JSPatch的dealloc忧伤</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年01月21日 - 21:01</p>
-  <p><span>最后更新:</span>2018年09月27日 - 23:09</p>
+  <p><span>最后更新:</span>2018年10月17日 - 23:10</p>
   <p><span>原始链接:</span><a href="/2018/01/21/JSPatch的dealloc忧伤/" title="JSPatch的dealloc忧伤">https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/21/JSPatch的dealloc忧伤/"  aria-label="复制成功！"></i></span>
   </p>
@@ -667,7 +667,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">20</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -689,7 +689,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -757,7 +757,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">71.8k</span>
+    <span title="Site words total count">75.1k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
