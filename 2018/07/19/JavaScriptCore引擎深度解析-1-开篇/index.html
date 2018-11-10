@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -361,7 +360,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2,131
+                  2,112
                 </span>
               
 
@@ -447,10 +446,28 @@
 <p>任何时候，函数, eval代码块，以及全局代码(global code)都可能会由<code>LLInt</code>, <code>Baseline JIT</code>和<code>DFG</code>三者同时运行。一个极端的例子是递归函数，因为有多个stack frames，就可能一个运行在<code>LLInt</code>下，另一个运行在<code>Baseline JIT</code>里，其它的可能正运行在<code>DFG</code>里。更为极端的情况是当从新优化在执行过程被触发时，就会出现一个stack frame正在执行本来旧的DFG编译，而另一个则正执行新的DFG编译。为此三者计划成维护雷同的执行语义(execution semantics), 它们的混合应用也是为了带来显著的效能提升。</p>
 <h2 id="工作流程图"><a href="#工作流程图" class="headerlink" title="工作流程图"></a>工作流程图</h2><p><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/01.png" width="85%"></p>
 <h2 id="执行的基础环境"><a href="#执行的基础环境" class="headerlink" title="执行的基础环境"></a>执行的基础环境</h2><p>JSC解析生成的代码放到一个虚拟机上来执行(广义上讲JSC主身就是一个虚拟机)。JSC使用的是一个基于寄存器的虚拟机(register-based VM)，另一种实现方式是基于栈的虚拟机(stack-based VM)。两者的差异可以简单的理解为指令集传递参数的方式，是使用寄存器，还是使用栈。<br>相对于基于栈的虚拟机,因为不需要频繁的压、出栈，以及对三元操作的支持，register-based VM的效率更高，但可移植性相对弱一些。</p>
-<p>所谓的三元操作符，其中add就是一个三元操作,add dst, src1, src2，功能是将src1与src2相加，将结果保存在dst中。dst, src1,src2都是寄存器。<br>参考<a href="https://webkit.org/specs/squirrelfish-bytecode.html" target="_blank" rel="noopener">JSC字节码规格</a>，给出两个示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">new_array</span><br><span class="line">Format: new_array dst(r) firstArg(r) argCount(n)</span><br><span class="line"></span><br><span class="line">Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add</span><br><span class="line">Format: add dst(r) src1(r) src2(r)</span><br><span class="line"></span><br><span class="line">Adds register src1 and register src2, and puts the result in register dst. (JS add may be string concatenation or numeric add, depending on the types of the operands.)</span><br></pre></td></tr></table></figure>
-<p>而基于栈的虚拟机的生成的字节码如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return</span><br></pre></td></tr></table></figure></p>
-<p>可以体会下这两种方式的不同</p>
+<p>所谓的三元操作符，其中add就是一个三元操作,add dst, src1, src2，功能是将src1与src2相加，将结果保存在dst中。dst, src1,src2都是寄存器。<br>参考<a href="https://webkit.org/specs/squirrelfish-bytecode.html" target="_blank" rel="noopener">JSC字节码规格</a>，给出两个示例：</p>
+<pre><code>new_array
+Format: new_array dst(r) firstArg(r) argCount(n)
+
+Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.
+</code></pre><pre><code>add
+Format: add dst(r) src1(r) src2(r)
+
+Adds register src1 and register src2, and puts the result in register dst. (JS add may be string concatenation or numeric add, depending on the types of the operands.)
+</code></pre><p>而基于栈的虚拟机的生成的字节码如下:</p>
+<pre><code>0:  iconst_1  
+1:  istore_0  
+2:  iconst_2  
+3:  istore_1  
+4:  iload_0  
+5:  iload_1  
+6:  iadd  
+7:  iconst_5  
+8:  imul  
+9:  istore_2  
+10: return
+</code></pre><p>可以体会下这两种方式的不同</p>
 <h2 id="从JS-Script到Byte-Code"><a href="#从JS-Script到Byte-Code" class="headerlink" title="从JS Script到Byte Code"></a>从JS Script到Byte Code</h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/02.png" width="100%"><br>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/03.png" width="100%"><br>而Lexer则是在Parser过程中调用的，如下图:<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/04.png" width="75%"></p>
 <p>更具体的细节会在随后会在对应的篇章中进行分析</p>
 <h2 id="更新中…"><a href="#更新中…" class="headerlink" title="更新中…"></a>更新中…</h2>
@@ -718,7 +735,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -949,6 +966,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>

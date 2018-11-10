@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -363,7 +362,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2,082
+                  2,017
                 </span>
               
 
@@ -408,29 +407,91 @@
 
 <p>大概看了几款阅读软件，分别是掌阅，微信读书，百度阅读，书旗小说，基本上都没有针对这个做适配，不知道是不是iPhoneX的市场小导致。不过目前看来，<code>Home-Indicator</code>的适配还是很有必要的，接下来以QQ阅读为例来分析下适配过程：</p>
 <h2 id="白天模式初步适配"><a href="#白天模式初步适配" class="headerlink" title="白天模式初步适配"></a>白天模式初步适配</h2><p>好吧，根据官方的指示，开始适配<br>先看一下<code>UIViewController</code>的头文件，iOS 11 增加了<code>UIViewController</code>的一个 <code>UIHomeIndicatorAutoHidden</code>分类来控制home键的自动隐藏</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">UIViewController</span> (<span class="title">UIHomeIndicatorAutoHidden</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Override to return a child view controller or nil. If non-nil, that view controller's home indicator auto-hiding will be used. If nil, self is used. Whenever the return value changes, -setNeedsHomeIndicatorAutoHiddenUpdate should be called.</span></span><br><span class="line">- (<span class="keyword">nullable</span> <span class="built_in">UIViewController</span> *)childViewControllerForHomeIndicatorAutoHidden API_AVAILABLE(ios(<span class="number">11.0</span>)) API_UNAVAILABLE(watchos, tvos);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Controls the application's preferred home indicator auto-hiding when this view controller is shown.</span></span><br><span class="line">- (<span class="built_in">BOOL</span>)prefersHomeIndicatorAutoHidden API_AVAILABLE(ios(<span class="number">11.0</span>)) API_UNAVAILABLE(watchos, tvos);</span><br><span class="line"></span><br><span class="line"><span class="comment">// This should be called whenever the return values for the view controller's home indicator auto-hiding have changed.</span></span><br><span class="line">- (<span class="keyword">void</span>)setNeedsUpdateOfHomeIndicatorAutoHidden API_AVAILABLE(ios(<span class="number">11.0</span>)) API_UNAVAILABLE(watchos, tvos);</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<pre><code class="objc">@interface UIViewController (UIHomeIndicatorAutoHidden)
+
+// Override to return a child view controller or nil. If non-nil, that view controller&#39;s home indicator auto-hiding will be used. If nil, self is used. Whenever the return value changes, -setNeedsHomeIndicatorAutoHiddenUpdate should be called.
+- (nullable UIViewController *)childViewControllerForHomeIndicatorAutoHidden API_AVAILABLE(ios(11.0)) API_UNAVAILABLE(watchos, tvos);
+
+// Controls the application&#39;s preferred home indicator auto-hiding when this view controller is shown.
+- (BOOL)prefersHomeIndicatorAutoHidden API_AVAILABLE(ios(11.0)) API_UNAVAILABLE(watchos, tvos);
+
+// This should be called whenever the return values for the view controller&#39;s home indicator auto-hiding have changed.
+- (void)setNeedsUpdateOfHomeIndicatorAutoHidden API_AVAILABLE(ios(11.0)) API_UNAVAILABLE(watchos, tvos);
+
+@end
+</code></pre>
 <p>实际上可以发现HomeIndicator的控制和状态栏的控制很相似，那么按照上述API开始适配：</p>
 <blockquote>
 <ul>
 <li>1、在需要隐藏的VC里面覆盖函数prefersHomeIndicatorAutoHidden</li>
 </ul>
 </blockquote>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)prefersHomeIndicatorAutoHidden&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="objc">- (BOOL)prefersHomeIndicatorAutoHidden{
+    return YES;
+}
+</code></pre>
 <blockquote>
 <ul>
 <li>2、在合适的地方调用<code>setNeedsUpdateOfHomeIndicatorAutoHidden</code></li>
 </ul>
 </blockquote>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (@available(iOS <span class="number">11.0</span>, *)) &#123;</span><br><span class="line">    [<span class="keyword">self</span> setNeedsUpdateOfHomeIndicatorAutoHidden];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="objc">if (@available(iOS 11.0, *)) {
+    [self setNeedsUpdateOfHomeIndicatorAutoHidden];
+}
+</code></pre>
 <p>够了吗？貌似上述方法还不够，没有生效，原因是：<br><strong>重写控制器的此方法的这种情况只适用于此控制器没有父控制器的情形，而绝大部分的应用都是以<code>UITabBarController</code>或<code>UINavigationController</code>作为window的根控制器,<code>UIViewController</code>来展示内容，这时还需要重写根控制器的<code>childViewControllerForHomeIndicatorAutoHidden</code>方法</strong><br>。<br><strong>这里需要注意的是：这里的根控制器并不一定就是<code>UINavigationController</code>或者<code>UITabBarController</code>，可能是接入第三方的，也有可能是自定义的，例如QQ阅读的根控制器<code>XXXViewController</code>就是自定义的</strong></p>
-<p>以下是对根控制器<code>XXXViewController</code>的<code>childViewControllerForHomeIndicatorAutoHidden</code>的重写<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">UIViewController</span>*)childViewControllerForHomeIndicatorAutoHidden</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">id</span>&lt;<span class="built_in">UIApplicationDelegate</span>&gt; * appDelegate = <span class="built_in">UIApplication</span> sharedApplication].delegate</span><br><span class="line">    <span class="built_in">UIViewController</span> *topViewController = appDelegate.viewController.topViewController;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// XXXViewController是我们想控制Home-Indicator的VC</span></span><br><span class="line">    <span class="keyword">if</span> ([topViewController isKindOfClass:[XXXViewController <span class="keyword">class</span>]])</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> topViewController;</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>以下是对根控制器<code>XXXViewController</code>的<code>childViewControllerForHomeIndicatorAutoHidden</code>的重写</p>
+<pre><code class="objc">- (UIViewController*)childViewControllerForHomeIndicatorAutoHidden
+{
+    id&lt;UIApplicationDelegate&gt; * appDelegate = UIApplication sharedApplication].delegate
+    UIViewController *topViewController = appDelegate.viewController.topViewController;
+
+    // XXXViewController是我们想控制Home-Indicator的VC
+    if ([topViewController isKindOfClass:[XXXViewController class]])
+    {
+        return topViewController;
+    }
+
+    return nil;
+}
+</code></pre>
 <p>经过上述适配步骤之后，白天模式下进入阅读页，<code>Home-Indicator</code>将会显示，如果页面无点击操作，大概1s左右，<code>Home-Indicator</code>将会自动隐藏。但是阅读页一旦发生点击操作，<code>Home-Indicator</code>还是会再次显示，不过很快又会自动消失。</p>
 <p>如果适配到此就结束了，这篇文章确实没有写的必要了，然而适配QQ阅读<code>Home-Indicator</code>遇到的坑才真正开始…</p>
 <h2 id="阅读页切换夜间模式"><a href="#阅读页切换夜间模式" class="headerlink" title="阅读页切换夜间模式"></a>阅读页切换夜间模式</h2><p>在我的理解来看，正常的夜间模式，应该是专门的一套皮肤来做，省心省力，如果您的项目工程就是这样实现的，那么也基本上不会遇到我碰到的坑。但是有的项目工程可能由于历史原因，并没有这么做，而是采取了其它方式：<strong> 在当前的Window的上面加一个不能响应事件的Window，并对其rootVC的view的透明度进行设置，故而造成一定的夜间视觉感</strong> ，这种方式可能工作量小一些，但是却可能引发各种各样的问题，比如之前影响到页面的跳转，又比如这次它就影响到了<code>Home-Indicator</code>的适配。</p>
-<p>这种夜间模式的实现如下：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)enableNightMode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIWindow</span> *window = [[<span class="built_in">UIWindow</span> alloc] initWithFrame:<span class="built_in">CGRectMake</span>(<span class="number">0</span>,<span class="number">0</span>,kScreenWidth, kScreenHeight)];</span><br><span class="line">    window.userInteractionEnabled = <span class="literal">NO</span>;</span><br><span class="line">    window.backgroundColor = [<span class="built_in">UIColor</span> clearColor];</span><br><span class="line">    window.windowLevel = XXXLevelGlobalNightMode;</span><br><span class="line">    XXXNightModeMaskViewController *vc = [[XXXNightModeMaskViewController alloc] init];</span><br><span class="line">    vc.view.backgroundColor = [[<span class="built_in">UIColor</span> blackColor] colorWithAlphaComponent:<span class="number">0.35</span>];</span><br><span class="line">    window.rootViewController = vc;</span><br><span class="line">    [window makeKeyAndVisible];</span><br><span class="line">    <span class="keyword">self</span>.nightModeWindow = window;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这种夜间模式的实现如下：</p>
+<pre><code class="objc">- (void)enableNightMode
+{
+    UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0,0,kScreenWidth, kScreenHeight)];
+    window.userInteractionEnabled = NO;
+    window.backgroundColor = [UIColor clearColor];
+    window.windowLevel = XXXLevelGlobalNightMode;
+    XXXNightModeMaskViewController *vc = [[XXXNightModeMaskViewController alloc] init];
+    vc.view.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.35];
+    window.rootViewController = vc;
+    [window makeKeyAndVisible];
+    self.nightModeWindow = window;
+}
+</code></pre>
 <p>正是由于上面覆盖了一个window，导致每次在阅读页切换夜间模式的时候调用方法<code>childViewControllerForHomeIndicatorAutoHidden</code>时，每次都调到了<code>XXXNightModeMaskViewController</code>中，而不是前文提到的正常Window的根控制器中，这样我们之前设置的代码就无法被调用，进而导致控制失效。</p>
 <p><strong> 解决方案就是重写<code>XXXNightModeMaskViewController</code>的<code>childViewControllerForHomeIndicatorAutoHidden</code>方法</strong></p>
-<p>以下是对XXXNightModeMaskViewController的方法<code>childViewControllerForHomeIndicatorAutoHidden</code>的重写<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">UIViewController</span>*)childViewControllerForHomeIndicatorAutoHidden</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 找到正常的window</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 找到topViewController</span></span><br><span class="line">    <span class="built_in">UIViewController</span> *topViewController = window.rootViewController.topViewController;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 把想控制的VC放到这里进行判断，当然也可以放到一个白名单集合里</span></span><br><span class="line">    <span class="keyword">if</span> ([topViewController isKindOfClass:[XXXViewController <span class="keyword">class</span>]])</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> topViewController;</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>以下是对XXXNightModeMaskViewController的方法<code>childViewControllerForHomeIndicatorAutoHidden</code>的重写</p>
+<pre><code class="objc">- (UIViewController*)childViewControllerForHomeIndicatorAutoHidden
+{
+    // 找到正常的window
+    ...
+
+    // 找到topViewController
+    UIViewController *topViewController = window.rootViewController.topViewController;
+
+    // 把想控制的VC放到这里进行判断，当然也可以放到一个白名单集合里
+    if ([topViewController isKindOfClass:[XXXViewController class]])
+    {
+        return topViewController;
+    }
+
+    return nil;
+}
+</code></pre>
 <h2 id="夜间模式下进入阅读页"><a href="#夜间模式下进入阅读页" class="headerlink" title="夜间模式下进入阅读页"></a>夜间模式下进入阅读页</h2><p>问题解决完了吗？还没有，因为在夜间模式下，从阅读页外面（比如书架）直接进入阅读页，<code>Home-Indicator</code>还是无法消失。</p>
 <blockquote>
 <ul>
@@ -438,9 +499,12 @@
 </li>
 <li><p>2、再看下白天模式下从书架直接进入阅读页的堆栈：<br><img src="/2018/01/28/iPhoneX适配之Home-Indicator/06.png" width="65%"><br>目测<code>[UINavigationController pushViewController:animated:]</code>也可以触发<code>childViewControllerForHomeIndicatorAutoHidden</code>。</p>
 </li>
-<li><p>3、在夜间模式下，<code>[UINavigationController pushViewController:animated:]</code>也会被调用，然而却无法触发根控制器中<code>childViewControllerForHomeIndicatorAutoHidden</code>方法的调用，导致再次失效，猜想可能和keyWindow有关系，但是很遗憾，未能找到原因（希望有高手指点），不过这并不意味着找不到解决方案：在我们想控制的<code>XXXViewController</code>中，重新触发一下夜间模式就可以了</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)viewDidLoad</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">super</span> viewDidLoad];</span><br><span class="line">    <span class="keyword">if</span>(IS_IPHONEX &amp;&amp; !_isDayMode)&#123;</span><br><span class="line">        [ThemeMgr enableNightMode];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<li><p>3、在夜间模式下，<code>[UINavigationController pushViewController:animated:]</code>也会被调用，然而却无法触发根控制器中<code>childViewControllerForHomeIndicatorAutoHidden</code>方法的调用，导致再次失效，猜想可能和keyWindow有关系，但是很遗憾，未能找到原因（希望有高手指点），不过这并不意味着找不到解决方案：在我们想控制的<code>XXXViewController</code>中，重新触发一下夜间模式就可以了<br>```objc</p>
 </li>
+</ul>
+<ul>
+<li>(void)viewDidLoad<br>{<br>  [super viewDidLoad];<br>  if(IS_IPHONEX &amp;&amp; !_isDayMode){<pre><code>  [ThemeMgr enableNightMode];
+</code></pre>  }<br>}<br>```</li>
 </ul>
 </blockquote>
 <h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><p>来看下适配后的效果图</p>
@@ -720,7 +784,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -951,6 +1015,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>

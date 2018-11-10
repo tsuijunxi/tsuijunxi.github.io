@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -356,7 +355,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,305
+                  4,668
                 </span>
               
 
@@ -372,7 +371,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  26
+                  22
                 </span>
               
             </div>
@@ -395,11 +394,60 @@
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本来想着两篇就差不多能分析完字节码的生成，结果最后发现篇幅过长了，于是重新拆分为上、中、下了，本篇是字节码生成的最后一篇<br>注：如果有些地方感觉解释的不清楚，请看代码中的注释</p>
 <h2 id="ExpressionNode"><a href="#ExpressionNode" class="headerlink" title="ExpressionNode"></a>ExpressionNode</h2><p>接着中篇，继续对<code>ExpressionNode</code>的一些子类进行字节码的细节分析，相比较<code>StatementNode</code>，<code>ExpressionNode</code>会看多较多的细节指令。</p>
-<h3 id="ConstantNode"><a href="#ConstantNode" class="headerlink" title="ConstantNode"></a>ConstantNode</h3><p>常量节点的字节码生成直接调用了<code>emitLoad</code>方法，尝试去加载该常量<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* ConstantNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (dst == generator.ignoredResult()) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> generator.emitLoad(dst, jsValue(generator));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这里<code>emitLoad</code>没有传第3个参数，因为方法的默认参数是SourceCodeRepresentation::Other<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">SourceCodeRepresentation</span> &#123;</span>Other,Integer,Double&#125;;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitLoad(RegisterID* dst, JSValue v, SourceCodeRepresentation sourceCodeRepresentation)</span><br><span class="line">&#123;</span><br><span class="line">    RegisterID* constantID = addConstantValue(v, sourceCodeRepresentation);</span><br><span class="line">    <span class="keyword">if</span> (dst) <span class="keyword">return</span> emitMove(dst, constantID);</span><br><span class="line">    <span class="keyword">return</span> constantID;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>而<code>emitLoad</code>先调用<code>addConstantValue</code>添加常量，再调<code>emitMove</code>将返回值移动到dst寄存器中<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::addConstantValue(JSValue v, SourceCodeRepresentation sourceCodeRepresentation)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!v) <span class="keyword">return</span> addConstantEmptyValue();</span><br><span class="line">    <span class="comment">// 当前的偏移</span></span><br><span class="line">    <span class="keyword">int</span> index = m_nextConstantOffset;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    EncodedJSValueWithRepresentation valueMapKey &#123; JSValue::encode(v), sourceCodeRepresentation &#125;;</span><br><span class="line">    JSValueMap::AddResult result = m_jsValueMap.add(valueMapKey, m_nextConstantOffset);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result.isNewEntry)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果是首次加入的项，将其加入m_constantPoolRegisters</span></span><br><span class="line">        m_constantPoolRegisters.append(FirstConstantRegisterIndex + m_nextConstantOffset);</span><br><span class="line">        <span class="comment">// 增加偏移</span></span><br><span class="line">        ++m_nextConstantOffset;</span><br><span class="line">        <span class="comment">// </span></span><br><span class="line">        m_codeBlock-&gt;addConstant(v, sourceCodeRepresentation);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果不是首次加入，则返回其索引</span></span><br><span class="line">        index = result.iterator-&gt;value;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;m_constantPoolRegisters[index];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p><code>emitMove</code>实现的代码非常简单明了：<code>op_mov dst src</code><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitMove(RegisterID* dst, RegisterID* src)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(op_mov);</span><br><span class="line">    instructions().append(dst-&gt;index());</span><br><span class="line">    instructions().append(src-&gt;index());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ConstantNode"><a href="#ConstantNode" class="headerlink" title="ConstantNode"></a>ConstantNode</h3><p>常量节点的字节码生成直接调用了<code>emitLoad</code>方法，尝试去加载该常量</p>
+<pre><code class="c++">RegisterID* ConstantNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    if (dst == generator.ignoredResult()) return 0;
+    return generator.emitLoad(dst, jsValue(generator));
+}
+</code></pre>
+<p>这里<code>emitLoad</code>没有传第3个参数，因为方法的默认参数是SourceCodeRepresentation::Other</p>
+<pre><code class="c++">enum class SourceCodeRepresentation {Other,Integer,Double};
+</code></pre>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitLoad(RegisterID* dst, JSValue v, SourceCodeRepresentation sourceCodeRepresentation)
+{
+    RegisterID* constantID = addConstantValue(v, sourceCodeRepresentation);
+    if (dst) return emitMove(dst, constantID);
+    return constantID;
+}
+</code></pre>
+<p>而<code>emitLoad</code>先调用<code>addConstantValue</code>添加常量，再调<code>emitMove</code>将返回值移动到dst寄存器中</p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::addConstantValue(JSValue v, SourceCodeRepresentation sourceCodeRepresentation)
+{
+    if (!v) return addConstantEmptyValue();
+    // 当前的偏移
+    int index = m_nextConstantOffset;
+    ...
+
+    EncodedJSValueWithRepresentation valueMapKey { JSValue::encode(v), sourceCodeRepresentation };
+    JSValueMap::AddResult result = m_jsValueMap.add(valueMapKey, m_nextConstantOffset);
+
+    if (result.isNewEntry)
+    {
+        // 如果是首次加入的项，将其加入m_constantPoolRegisters
+        m_constantPoolRegisters.append(FirstConstantRegisterIndex + m_nextConstantOffset);
+        // 增加偏移
+        ++m_nextConstantOffset;
+        // 
+        m_codeBlock-&gt;addConstant(v, sourceCodeRepresentation);
+    } 
+    else
+    {
+        // 如果不是首次加入，则返回其索引
+        index = result.iterator-&gt;value;
+    }
+    return &amp;m_constantPoolRegisters[index];
+}
+</code></pre>
+<p><code>emitMove</code>实现的代码非常简单明了：<code>op_mov dst src</code></p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitMove(RegisterID* dst, RegisterID* src)
+{
+    emitOpcode(op_mov);
+    instructions().append(dst-&gt;index());
+    instructions().append(src-&gt;index());
+    return dst;
+}
+</code></pre>
 <p>这里解释下<code>FirstConstantRegisterIndex</code>:<br>static const int FirstConstantRegisterIndex = 0x40000000;<br>Register numbers used in bytecode operations have different meaning according to their ranges:</p>
 <blockquote>
 <ul>
@@ -419,32 +467,216 @@
 <li>箭头函数不绑定this，它会捕获其所在（即定义的位置）上下文的this值，作为自己的this值;</li>
 </ul>
 </blockquote>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* ThisNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    generator.ensureThis();</span><br><span class="line">    <span class="keyword">if</span> (dst == generator.ignoredResult()) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    RegisterID* result = generator.moveToDestinationIfNeeded(dst, generator.thisRegister());</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::ensureThis()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 需要注意下如果箭头函数中使用了super，需要在箭头函数的上下文中加载this</span></span><br><span class="line">    <span class="keyword">if</span> (constructorKind() == ConstructorKind::Derived &amp;&amp; needsToUpdateArrowFunctionContext() &amp;&amp; isSuperCallUsedInInnerArrowFunction())</span><br><span class="line">        emitLoadThisFromArrowFunctionLexicalEnvironment();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Temporal Dead Zone 检查</span></span><br><span class="line">    <span class="keyword">if</span> (constructorKind() == ConstructorKind::Derived || isDerivedConstructorContext())</span><br><span class="line">        emitTDZCheck(thisRegister());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> thisRegister();<span class="comment">// m_thisRegister</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c++">RegisterID* ThisNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    generator.ensureThis();
+    if (dst == generator.ignoredResult()) return 0;
+    RegisterID* result = generator.moveToDestinationIfNeeded(dst, generator.thisRegister());
+    return result;
+}
+</code></pre>
+<pre><code class="c++">RegisterID* BytecodeGenerator::ensureThis()
+{
+    // 需要注意下如果箭头函数中使用了super，需要在箭头函数的上下文中加载this
+    if (constructorKind() == ConstructorKind::Derived &amp;&amp; needsToUpdateArrowFunctionContext() &amp;&amp; isSuperCallUsedInInnerArrowFunction())
+        emitLoadThisFromArrowFunctionLexicalEnvironment();
+
+    // Temporal Dead Zone 检查
+    if (constructorKind() == ConstructorKind::Derived || isDerivedConstructorContext())
+        emitTDZCheck(thisRegister());
+
+    return thisRegister();// m_thisRegister
+}
+</code></pre>
 <p>这里解释两个东东：</p>
 <blockquote>
 <ul>
 <li>由于箭头函数不会绑定<code>this</code>，所以需要为某些箭头函数加载this和super，尤其是构造函数。<br>如下面代码所示：在构造函数中调用eval之前，我们需要加载this，因为super虽然代表了父类A的构造函数，但是返回的是子类B的实例，即<code>super</code>内部的<code>this</code>指的是B，因此<code>super()</code>在这里相当于   <code>A.prototype.constructor.call(this)</code>，所以需要提前加载<code>this</code></li>
 </ul>
 </blockquote>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> A = <span class="class"><span class="keyword">class</span> <span class="title">A</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span> () &#123; <span class="keyword">this</span>.id = <span class="string">'A'</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> B = <span class="class"><span class="keyword">class</span> <span class="title">B</span> <span class="title">extend</span> <span class="title">A</span> </span>&#123;</span><br><span class="line">   <span class="keyword">constructor</span> () &#123;</span><br><span class="line">      <span class="keyword">var</span> arrow = <span class="function"><span class="params">()</span> =&gt;</span> <span class="keyword">super</span>();</span><br><span class="line">      arrow();</span><br><span class="line">      <span class="built_in">eval</span>(<span class="string">"this.id = 'B'"</span>);</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="js"> var A = class A {
+   constructor () { this.id = &#39;A&#39;; }
+ }
+
+ var B = class B extend A {
+    constructor () {
+       var arrow = () =&gt; super();
+       arrow();
+       eval(&quot;this.id = &#39;B&#39;&quot;);
+    }
+ }
+</code></pre>
 <blockquote>
 <ul>
 <li><code>Temporal Dead Zone</code> : ES6明确规定，如果区块中存在let和const命令，这个区块对这些命令声明的变量，从一开始就形成了封闭作用域。凡是在声明之前就使用这些变量，就会报错。总之，在代码块内，使用let命令声明变量之前，该变量都是不可用的。这在语法上，称为“暂时性死区”（temporal dead zone，简称 TDZ）。这里在使用this之前，也需要检查下this代表的对象是否处于TDZ状态</li>
 </ul>
 </blockquote>
-<p><code>moveToDestinationIfNeeded</code>方法也很直白，不作解释<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Moves src to dst if dst is not null and is different from src, otherwise just returns src.</span></span><br><span class="line"><span class="function">RegisterID* <span class="title">moveToDestinationIfNeeded</span><span class="params">(RegisterID* dst, RegisterID* src)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> dst == ignoredResult() ? <span class="number">0</span> : (dst &amp;&amp; dst != src) ? emitMove(dst, src) : src;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>moveToDestinationIfNeeded</code>方法也很直白，不作解释</p>
+<pre><code class="c++">// Moves src to dst if dst is not null and is different from src, otherwise just returns src.
+RegisterID* moveToDestinationIfNeeded(RegisterID* dst, RegisterID* src)
+{
+    return dst == ignoredResult() ? 0 : (dst &amp;&amp; dst != src) ? emitMove(dst, src) : src;
+}
+</code></pre>
 <h3 id="SuperNode"><a href="#SuperNode" class="headerlink" title="SuperNode"></a>SuperNode</h3><p>来看看关键字super的字节码如何生成的。super关键字只能在class内部使用，外部直接调用就会出错，因为根本不知道父类的构造函数是那个。它们只是语法糖而已，JavaScript仍然是基于原型的继承，super本质上就是借用构造函数的一种表现形式:<br>子类必须在constructor方法中调用super方法，否则新建实例时会报错。这是因为子类没有自己的this对象，而是继承父类的this对象，然后对其进行加工。如果不调用super方法，子类就得不到this对象。<code>SuperNode</code>首先要搞清楚super指向谁</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* SuperNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    RegisterID* result = emitSuperBaseForCallee(generator);</span><br><span class="line">    <span class="keyword">return</span> generator.moveToDestinationIfNeeded(generator.finalDestination(dst), result);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> RegisterID* <span class="title">emitSuperBaseForCallee</span><span class="params">(BytecodeGenerator&amp; generator)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; homeObject = emitHomeObjectForCallee(generator);</span><br><span class="line">    <span class="keyword">return</span> generator.emitGetById(generator.newTemporary(), homeObject.get(), generator.propertyNames().underscoreProto);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>重点在<code>emitHomeObjectForCallee</code>中：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> RegisterID* <span class="title">emitHomeObjectForCallee</span><span class="params">(BytecodeGenerator&amp; generator)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 如果是在子类上下文或者子类的构造函数上下文中，那么从子类的构造函数中加载HomeObject</span></span><br><span class="line">    <span class="comment">// 实际上这个时候super是当做函数使用的：super()</span></span><br><span class="line">    <span class="comment">// super虽然代表了父类A的构造函数，但是返回的是子类B的实例，即super内部的this指的是B，</span></span><br><span class="line">    <span class="comment">// 因此super()在这里相当于A.prototype.constructor.call(this)</span></span><br><span class="line">    <span class="keyword">if</span> (generator.isDerivedClassContext() || generator.isDerivedConstructorContext()) &#123;</span><br><span class="line">        RegisterID* derivedConstructor = generator.emitLoadDerivedConstructorFromArrowFunctionLexicalEnvironment();</span><br><span class="line">        <span class="keyword">return</span> generator.emitGetById(generator.newTemporary(), derivedConstructor, generator.propertyNames().homeObjectPrivateName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 否则从调用栈中去获取，这个时候super是当做对象使用的，在普通方法中指向父类的原型对象</span></span><br><span class="line">    <span class="comment">// super.xxx() 相当于 A.prototype.xxx()</span></span><br><span class="line">    RegisterID callee;</span><br><span class="line">    callee.setIndex(dd::Callee);</span><br><span class="line">    <span class="keyword">return</span> generator.emitGetById(generator.newTemporary(), &amp;callee, generator.propertyNames().homeObjectPrivateName);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="BinaryOpNode"><a href="#BinaryOpNode" class="headerlink" title="BinaryOpNode"></a>BinaryOpNode</h3><p>先看下<code>BinaryOpNode</code>的定义，二元操作包含左表达式，右表达式和操作符，形式如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">m_expr1 m_opcodeID m_expr2</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BinaryOpNode</span> :</span> <span class="keyword">public</span> ExpressionNode &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function">RegisterID* <span class="title">emitStrcat</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* destination, RegisterID* lhs = <span class="number">0</span>, ReadModifyResolveNode* emitExpressionInfoForMe = <span class="number">0</span>)</span></span>;</span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function">RegisterID* <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span>:</span><br><span class="line">        ExpressionNode* m_expr1;</span><br><span class="line">        ExpressionNode* m_expr2;</span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        OpcodeID m_opcodeID;</span><br><span class="line">    <span class="keyword">protected</span>:</span><br><span class="line">        <span class="keyword">bool</span> m_rightHasAssignments;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BinaryOpNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    OpcodeID opcodeID = <span class="keyword">this</span>-&gt;opcodeID();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果操作符是+号，并且左表达式的结果是字符串，那么毫无疑问应该做拼接处理</span></span><br><span class="line">    <span class="keyword">if</span> (opcodeID == op_add &amp;&amp; m_expr1-&gt;isAdd() &amp;&amp; m_expr1-&gt;resultDescriptor().definitelyIsString()) &#123;</span><br><span class="line">        generator.emitExpressionInfo(position(), position(), position());</span><br><span class="line">        <span class="keyword">return</span> emitStrcat(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果操作符是!=，且左右两个表达式至少有一个为null，那么就是使用指令op_neq_null</span></span><br><span class="line">    <span class="comment">// 判断是否为空</span></span><br><span class="line">    <span class="keyword">if</span> (opcodeID == op_neq) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (m_expr1-&gt;isNull() || m_expr2-&gt;isNull()) &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; src = generator.tempDestination(dst);</span><br><span class="line">            generator.emitNode(src.get(), m_expr1-&gt;isNull() ? m_expr2 : m_expr1);</span><br><span class="line">            <span class="keyword">return</span> generator.emitUnaryOp(op_neq_null, generator.finalDestination(dst, src.get()), src.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ExpressionNode* left = m_expr1;</span><br><span class="line">    ExpressionNode* right = m_expr2;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是!=或者!==，并且左表达式是一个字符串，交换左右表达式</span></span><br><span class="line">    <span class="keyword">if</span> (opcodeID == op_neq || opcodeID == op_nstricteq) &#123;</span><br><span class="line">        <span class="keyword">if</span> (left-&gt;isString()) <span class="built_in">std</span>::swap(left, right);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成左边表达式的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; src1 = generator.emitNodeForLeftHandSide(left, m_rightHasAssignments, right-&gt;isPure(generator));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成右表达式字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; src2 = generator.emitNode(right);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 二元运算字节码生成</span></span><br><span class="line">    RegisterID* result = generator.emitBinaryOp(opcodeID, generator.finalDestination(dst, src1.get()), src1.get(), src2.get(), OperandTypes(left-&gt;resultDescriptor(), right-&gt;resultDescriptor()));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (opcodeID == op_urshift &amp;&amp; dst != generator.ignoredResult())</span><br><span class="line">        <span class="keyword">return</span> generator.emitUnaryOp(op_unsigned, result, result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>二元运算字节码的指令就很直接了：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitBinaryOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src1, RegisterID* src2, OperandTypes types)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(opcodeID);</span><br><span class="line">    instructions().append(dst-&gt;index());</span><br><span class="line">    instructions().append(src1-&gt;index());</span><br><span class="line">    instructions().append(src2-&gt;index());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (opcodeID == op_bitor || </span><br><span class="line">        opcodeID == op_bitand || </span><br><span class="line">        opcodeID == op_bitxor ||</span><br><span class="line">        opcodeID == op_add || </span><br><span class="line">        opcodeID == op_mul || </span><br><span class="line">        opcodeID == op_sub || </span><br><span class="line">        opcodeID == op_div)</span><br><span class="line">        instructions().append(types.toInt());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其中有些字节码指令的长度为5：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123; "name" : "op_bitand", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_bitxor", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_bitor", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_add", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_mul", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_div", "length" : 5 &#125;,</span><br><span class="line">&#123; "name" : "op_sub", "length" : 5 &#125;,</span><br></pre></td></tr></table></figure></p>
-<p>这些长度为5的指令需要额外增加一个<code>OperandTypes</code>类型，它主要表示操作数的类型，比如是否是整形、布尔值或者字符串<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeInt32 = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeMaybeNumber = <span class="number">0x04</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeMaybeString = <span class="number">0x08</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeMaybeNull   = <span class="number">0x10</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeMaybeBool   = <span class="number">0x20</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> Type TypeMaybeOther  = <span class="number">0x40</span>;</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
-<p>一元运算符的指令只需要一个操作符和两个操作数：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitUnaryOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(opcodeID);</span><br><span class="line">    instructions().append(dst-&gt;index());</span><br><span class="line">    instructions().append(src-&gt;index());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="EqualNode"><a href="#EqualNode" class="headerlink" title="EqualNode"></a>EqualNode</h3><p><code>EqualNode</code>是<code>BinaryOpNode</code>的一个子类，这二者的字节码生成的思路基本是相同的<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* EqualNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (m_expr1-&gt;isNull() || m_expr2-&gt;isNull()) &#123;</span><br><span class="line">        RefPtr&lt;RegisterID&gt; src = generator.tempDestination(dst);</span><br><span class="line">        generator.emitNode(src.get(), m_expr1-&gt;isNull() ? m_expr2 : m_expr1);</span><br><span class="line">        <span class="keyword">return</span> generator.emitUnaryOp(op_eq_null, generator.finalDestination(dst, src.get()), src.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ExpressionNode* left = m_expr1;</span><br><span class="line">    ExpressionNode* right = m_expr2;</span><br><span class="line">    <span class="keyword">if</span> (left-&gt;isString()) <span class="built_in">std</span>::swap(left, right);</span><br><span class="line"></span><br><span class="line">    RefPtr&lt;RegisterID&gt; src1 = generator.emitNodeForLeftHandSide(left, m_rightHasAssignments, m_expr2-&gt;isPure(generator));</span><br><span class="line">    RefPtr&lt;RegisterID&gt; src2 = generator.emitNode(right);</span><br><span class="line">    <span class="keyword">return</span> generator.emitEqualityOp(op_eq, generator.finalDestination(dst, src1.get()), src1.get(), src2.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<pre><code class="c++">RegisterID* SuperNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    RegisterID* result = emitSuperBaseForCallee(generator);
+    return generator.moveToDestinationIfNeeded(generator.finalDestination(dst), result);
+}
+
+static RegisterID* emitSuperBaseForCallee(BytecodeGenerator&amp; generator)
+{
+    RefPtr&lt;RegisterID&gt; homeObject = emitHomeObjectForCallee(generator);
+    return generator.emitGetById(generator.newTemporary(), homeObject.get(), generator.propertyNames().underscoreProto);
+}
+</code></pre>
+<p>重点在<code>emitHomeObjectForCallee</code>中：</p>
+<pre><code class="c++">static RegisterID* emitHomeObjectForCallee(BytecodeGenerator&amp; generator)
+{
+    // 如果是在子类上下文或者子类的构造函数上下文中，那么从子类的构造函数中加载HomeObject
+    // 实际上这个时候super是当做函数使用的：super()
+    // super虽然代表了父类A的构造函数，但是返回的是子类B的实例，即super内部的this指的是B，
+    // 因此super()在这里相当于A.prototype.constructor.call(this)
+    if (generator.isDerivedClassContext() || generator.isDerivedConstructorContext()) {
+        RegisterID* derivedConstructor = generator.emitLoadDerivedConstructorFromArrowFunctionLexicalEnvironment();
+        return generator.emitGetById(generator.newTemporary(), derivedConstructor, generator.propertyNames().homeObjectPrivateName);
+    }
+
+    // 否则从调用栈中去获取，这个时候super是当做对象使用的，在普通方法中指向父类的原型对象
+    // super.xxx() 相当于 A.prototype.xxx()
+    RegisterID callee;
+    callee.setIndex(dd::Callee);
+    return generator.emitGetById(generator.newTemporary(), &amp;callee, generator.propertyNames().homeObjectPrivateName);
+}
+</code></pre>
+<h3 id="BinaryOpNode"><a href="#BinaryOpNode" class="headerlink" title="BinaryOpNode"></a>BinaryOpNode</h3><p>先看下<code>BinaryOpNode</code>的定义，二元操作包含左表达式，右表达式和操作符，形式如下：</p>
+<pre><code class="c">m_expr1 m_opcodeID m_expr2
+</code></pre>
+<pre><code class="c++">class BinaryOpNode : public ExpressionNode {
+    public:
+        RegisterID* emitStrcat(BytecodeGenerator&amp; generator, RegisterID* destination, RegisterID* lhs = 0, ReadModifyResolveNode* emitExpressionInfoForMe = 0);
+    private:
+        RegisterID* emitBytecode(BytecodeGenerator&amp;, RegisterID* = 0) override;
+
+    protected:
+        ExpressionNode* m_expr1;
+        ExpressionNode* m_expr2;
+    private:
+        OpcodeID m_opcodeID;
+    protected:
+        bool m_rightHasAssignments;
+    };
+</code></pre>
+<pre><code class="c++">RegisterID* BinaryOpNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    OpcodeID opcodeID = this-&gt;opcodeID();
+
+    // 如果操作符是+号，并且左表达式的结果是字符串，那么毫无疑问应该做拼接处理
+    if (opcodeID == op_add &amp;&amp; m_expr1-&gt;isAdd() &amp;&amp; m_expr1-&gt;resultDescriptor().definitelyIsString()) {
+        generator.emitExpressionInfo(position(), position(), position());
+        return emitStrcat(generator, dst);
+    }
+
+    // 如果操作符是!=，且左右两个表达式至少有一个为null，那么就是使用指令op_neq_null
+    // 判断是否为空
+    if (opcodeID == op_neq) 
+    {
+        if (m_expr1-&gt;isNull() || m_expr2-&gt;isNull()) {
+            RefPtr&lt;RegisterID&gt; src = generator.tempDestination(dst);
+            generator.emitNode(src.get(), m_expr1-&gt;isNull() ? m_expr2 : m_expr1);
+            return generator.emitUnaryOp(op_neq_null, generator.finalDestination(dst, src.get()), src.get());
+        }
+    }
+
+    ExpressionNode* left = m_expr1;
+    ExpressionNode* right = m_expr2;
+
+    // 如果是!=或者!==，并且左表达式是一个字符串，交换左右表达式
+    if (opcodeID == op_neq || opcodeID == op_nstricteq) {
+        if (left-&gt;isString()) std::swap(left, right);
+    }
+
+    // 生成左边表达式的字节码
+    RefPtr&lt;RegisterID&gt; src1 = generator.emitNodeForLeftHandSide(left, m_rightHasAssignments, right-&gt;isPure(generator));
+
+    // 生成右表达式字节码
+    RefPtr&lt;RegisterID&gt; src2 = generator.emitNode(right);
+
+    ...
+    // 二元运算字节码生成
+    RegisterID* result = generator.emitBinaryOp(opcodeID, generator.finalDestination(dst, src1.get()), src1.get(), src2.get(), OperandTypes(left-&gt;resultDescriptor(), right-&gt;resultDescriptor()));
+
+    if (opcodeID == op_urshift &amp;&amp; dst != generator.ignoredResult())
+        return generator.emitUnaryOp(op_unsigned, result, result);
+    return result;
+}
+</code></pre>
+<p>二元运算字节码的指令就很直接了：</p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitBinaryOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src1, RegisterID* src2, OperandTypes types)
+{
+    emitOpcode(opcodeID);
+    instructions().append(dst-&gt;index());
+    instructions().append(src1-&gt;index());
+    instructions().append(src2-&gt;index());
+
+    if (opcodeID == op_bitor || 
+        opcodeID == op_bitand || 
+        opcodeID == op_bitxor ||
+        opcodeID == op_add || 
+        opcodeID == op_mul || 
+        opcodeID == op_sub || 
+        opcodeID == op_div)
+        instructions().append(types.toInt());
+
+    return dst;
+}
+</code></pre>
+<p>其中有些字节码指令的长度为5：</p>
+<pre><code class="json">{ &quot;name&quot; : &quot;op_bitand&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_bitxor&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_bitor&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_add&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_mul&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_div&quot;, &quot;length&quot; : 5 },
+{ &quot;name&quot; : &quot;op_sub&quot;, &quot;length&quot; : 5 },
+</code></pre>
+<p>这些长度为5的指令需要额外增加一个<code>OperandTypes</code>类型，它主要表示操作数的类型，比如是否是整形、布尔值或者字符串</p>
+<pre><code class="c">static const Type TypeInt32 = 1;
+static const Type TypeMaybeNumber = 0x04;
+static const Type TypeMaybeString = 0x08;
+static const Type TypeMaybeNull   = 0x10;
+static const Type TypeMaybeBool   = 0x20;
+static const Type TypeMaybeOther  = 0x40;
+...
+</code></pre>
+<p>一元运算符的指令只需要一个操作符和两个操作数：</p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitUnaryOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src)
+{
+    emitOpcode(opcodeID);
+    instructions().append(dst-&gt;index());
+    instructions().append(src-&gt;index());
+    return dst;
+}
+</code></pre>
+<h3 id="EqualNode"><a href="#EqualNode" class="headerlink" title="EqualNode"></a>EqualNode</h3><p><code>EqualNode</code>是<code>BinaryOpNode</code>的一个子类，这二者的字节码生成的思路基本是相同的</p>
+<pre><code class="c++">RegisterID* EqualNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    if (m_expr1-&gt;isNull() || m_expr2-&gt;isNull()) {
+        RefPtr&lt;RegisterID&gt; src = generator.tempDestination(dst);
+        generator.emitNode(src.get(), m_expr1-&gt;isNull() ? m_expr2 : m_expr1);
+        return generator.emitUnaryOp(op_eq_null, generator.finalDestination(dst, src.get()), src.get());
+    }
+
+    ExpressionNode* left = m_expr1;
+    ExpressionNode* right = m_expr2;
+    if (left-&gt;isString()) std::swap(left, right);
+
+    RefPtr&lt;RegisterID&gt; src1 = generator.emitNodeForLeftHandSide(left, m_rightHasAssignments, m_expr2-&gt;isPure(generator));
+    RefPtr&lt;RegisterID&gt; src2 = generator.emitNode(right);
+    return generator.emitEqualityOp(op_eq, generator.finalDestination(dst, src1.get()), src1.get(), src2.get());
+}
+</code></pre>
 <p>这里面的关键方法在<code>emitEqualityOp</code>，它负责两种等号判断：</p>
 <blockquote>
 <ul>
@@ -452,32 +684,456 @@
 <li>判断值是否相等</li>
 </ul>
 </blockquote>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitEqualityOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src1, RegisterID* src2)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (m_lastOpcodeID == op_typeof) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 类型的比较</span></span><br><span class="line">        <span class="keyword">int</span> dstIndex;</span><br><span class="line">        <span class="keyword">int</span> srcIndex;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 取出instructions的倒数第一条指令中的两个操作数，并分别赋值给srcIndex和dstIndex</span></span><br><span class="line">        retrieveLastUnaryOp(dstIndex, srcIndex);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (src1-&gt;index() == dstIndex</span><br><span class="line">            &amp;&amp; src1-&gt;isTemporary()</span><br><span class="line">            &amp;&amp; m_codeBlock-&gt;isConstantRegisterIndex(src2-&gt;index())</span><br><span class="line">            &amp;&amp; m_codeBlock-&gt;constantRegister(src2-&gt;index()).get().isString()) </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">const</span> String&amp; value = asString(m_codeBlock-&gt;constantRegister(src2-&gt;index()).get())-&gt;tryGetValue();</span><br><span class="line">            <span class="comment">// 既然是类型都比较，当然需要各种专用指令了</span></span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"undefined"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_undefined);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"boolean"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_boolean);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"number"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_number);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"string"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_string);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"object"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_object_or_null);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="string">"function"</span>) &#123;</span><br><span class="line">                rewindUnaryOp();</span><br><span class="line">                emitOpcode(op_is_function);</span><br><span class="line">                instructions().append(dst-&gt;index());</span><br><span class="line">                instructions().append(srcIndex);</span><br><span class="line">                <span class="keyword">return</span> dst;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 普通情况下的等号比较指令</span></span><br><span class="line">    emitOpcode(opcodeID);</span><br><span class="line">    instructions().append(dst-&gt;index());</span><br><span class="line">    instructions().append(src1-&gt;index());</span><br><span class="line">    instructions().append(src2-&gt;index());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>retrieveLastUnaryOp</code>取出<code>instructions</code>的倒数第一条指令中的两个操作数，并分别赋值给srcIndex和dstIndex<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> BytecodeGenerator::retrieveLastUnaryOp(<span class="keyword">int</span>&amp; dstIndex, <span class="keyword">int</span>&amp; srcIndex)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">size_t</span> size = instructions().size();</span><br><span class="line">    dstIndex = instructions().at(size - <span class="number">2</span>).u.operand;</span><br><span class="line">    srcIndex = instructions().at(size - <span class="number">1</span>).u.operand;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="DotAccessorNode"><a href="#DotAccessorNode" class="headerlink" title="DotAccessorNode"></a>DotAccessorNode</h3><p>JavaScript中，对于方法或属性的调用，都是通过点操作符来实现的<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DotAccessorNode</span> :</span> <span class="keyword">public</span> ExpressionNode, <span class="keyword">public</span> ThrowableExpressionData </span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        DotAccessorNode(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode* base, <span class="keyword">const</span> Identifier&amp;);</span><br><span class="line"></span><br><span class="line">        <span class="function">ExpressionNode* <span class="title">base</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_base; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function">RegisterID* <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">isLocation</span><span class="params">()</span> <span class="keyword">const</span> override </span>&#123; <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">isDotAccessorNode</span><span class="params">()</span> <span class="keyword">const</span> override </span>&#123; <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_base;</span><br><span class="line">        <span class="keyword">const</span> Identifier&amp; m_ident;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* DotAccessorNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 判定点操作是否在调用父类的方法</span></span><br><span class="line">    <span class="keyword">bool</span> baseIsSuper = m_base-&gt;isSuperNode();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是父类方法，调用emitSuperBaseForCallee准备好super，否则生成m_base的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; base = baseIsSuper ? emitSuperBaseForCallee(generator) : generator.emitNode(m_base);</span><br><span class="line"></span><br><span class="line">    generator.emitExpressionInfo(divot(), divotStart(), divotEnd());</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    RegisterID* finalDest = generator.finalDestination(dst);</span><br><span class="line">    RegisterID* ret;</span><br><span class="line">    <span class="keyword">if</span> (baseIsSuper) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果是父类方法，emitGetById需要传4个参数，并且在调用之前确定好this指向的对象</span></span><br><span class="line">        <span class="comment">// 主要是因为JavaScript中的super是语法糖而已，需要在调用前准备好this</span></span><br><span class="line">        RefPtr&lt;RegisterID&gt; thisValue = generator.ensureThis();</span><br><span class="line">        ret = generator.emitGetById(finalDest, base.get(), thisValue.get(), m_ident);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        ret = generator.emitGetById(finalDest, base.get(), m_ident);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>来看下其字节码的细节：注意其中有一条指令：<code>op_get_by_id_with_this</code>，点操作的本质实际上就是加载一个属性或者一个方法名，还有一点需要主要，就是首次加载的时候，该属性或者方法可能还不存在，所以需要调用<code>addConstant</code>做一个添加动作<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">RegisterID* BytecodeGenerator::emitGetById(RegisterID* dst, RegisterID* base, RegisterID* thisVal, <span class="keyword">const</span> Identifier&amp; property)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(op_get_by_id_with_this);</span><br><span class="line">    instructions().append(kill(dst));</span><br><span class="line">    instructions().append(base-&gt;index());</span><br><span class="line">    instructions().append(thisVal-&gt;index());</span><br><span class="line">    instructions().append(addConstant(property));</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="BracketAccessorNode"><a href="#BracketAccessorNode" class="headerlink" title="BracketAccessorNode"></a>BracketAccessorNode</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BracketAccessorNode</span> :</span> <span class="keyword">public</span> ExpressionNode, <span class="keyword">public</span> ThrowableExpressionData &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        BracketAccessorNode(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode* base, ExpressionNode* subscript, <span class="keyword">bool</span> subscriptHasAssignments);</span><br><span class="line"></span><br><span class="line">        <span class="function">ExpressionNode* <span class="title">base</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_base; &#125;</span><br><span class="line">        <span class="function">ExpressionNode* <span class="title">subscript</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_subscript; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">subscriptHasAssignments</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_subscriptHasAssignments; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function">RegisterID* <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">isLocation</span><span class="params">()</span> <span class="keyword">const</span> override </span>&#123; <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">isBracketAccessorNode</span><span class="params">()</span> <span class="keyword">const</span> override </span>&#123; <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_base;</span><br><span class="line">        ExpressionNode* m_subscript;</span><br><span class="line">        <span class="keyword">bool</span> m_subscriptHasAssignments;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-<p><code>Bracket</code>指的是中括号[]，这里的<code>BracketAccessorNode</code>是指<code>A[B]</code>形式的表达式，对号入座，<code>m_base</code>就是A，<code>m_subscript</code>就是B<br>在JavaScript中，对于对象，可以这样使用中括号:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> obj= &#123;&#125;;  </span><br><span class="line"><span class="comment">// 为obj添加一个属性name，name是合法的标识符，即也可以通过obj.name方式来定义  </span></span><br><span class="line">obj[<span class="string">'name'</span>] = <span class="string">'jack'</span>;   </span><br><span class="line"><span class="comment">//为obj添加一个属性2a，2a不是合法的标识符（不能以数字开头），不能通过obj.2a来定义  </span></span><br><span class="line">obj[<span class="string">'2a'</span>] = <span class="string">'test'</span>;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BracketAccessorNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 如果obj恰好是指向当前对象的原型，那么就是一个superNode</span></span><br><span class="line">    <span class="keyword">if</span> (m_base-&gt;isSuperNode()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 按照之前的惯例，毫无疑问需要把this和super准备好</span></span><br><span class="line">        RefPtr&lt;RegisterID&gt; finalDest = generator.finalDestination(dst);</span><br><span class="line">        RefPtr&lt;RegisterID&gt; thisValue = generator.ensureThis();</span><br><span class="line">        RefPtr&lt;RegisterID&gt; superBase = emitSuperBaseForCallee(generator);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (isNonIndexStringElement(*m_subscript)) &#123;</span><br><span class="line">            <span class="comment">// subscript是不可索引的字符串，利用Identifier来当作key</span></span><br><span class="line">            <span class="keyword">const</span> Identifier&amp; id = <span class="keyword">static_cast</span>&lt;StringNode*&gt;(m_subscript)-&gt;value();</span><br><span class="line">            generator.emitGetById(finalDest.get(), superBase.get(), thisValue.get(), id);</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span>  </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 否则生成m_subscript的字节码，并将结果放到寄存器中，充当key</span></span><br><span class="line">            RefPtr&lt;RegisterID&gt; subscript = generator.emitNode(m_subscript);</span><br><span class="line">            generator.emitGetByVal(finalDest.get(), superBase.get(), thisValue.get(), subscript.get());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        generator.emitExpressionInfo(divot(), divotStart(), divotEnd());</span><br><span class="line">        <span class="keyword">return</span> finalDest.get();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 和上面的代码很相似，不同的地方是superBase和base</span></span><br><span class="line">    RegisterID* ret;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; finalDest = generator.finalDestination(dst);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isNonIndexStringElement(*m_subscript)) &#123;</span><br><span class="line">        RefPtr&lt;RegisterID&gt; base = generator.emitNode(m_base);</span><br><span class="line">        ret = generator.emitGetById(finalDest.get(), base.get(), <span class="keyword">static_cast</span>&lt;StringNode*&gt;(m_subscript)-&gt;value());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        RefPtr&lt;RegisterID&gt; base = generator.emitNodeForLeftHandSide(m_base, m_subscriptHasAssignments, m_subscript-&gt;isPure(generator));</span><br><span class="line">        RegisterID* property = generator.emitNode(m_subscript);</span><br><span class="line">        ret = generator.emitGetByVal(finalDest.get(), base.get(), property);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    generator.emitExpressionInfo(divot(), divotStart(), divotEnd());</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>BracketAccessorNode</code>有些情况下和<code>DotAccessorNode</code>是非常类似的，毕竟二者有时可以混用，最后的指令都对应到了<code>op_get_by_id_with_this</code>来加载一个属性或者方法，但是<code>BracketAccessorNode</code>有的情况下可能就是根据下角标来获取，比如数组：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> mycars=<span class="keyword">new</span> <span class="built_in">Array</span>()</span><br><span class="line">mycars[<span class="number">0</span>]=<span class="string">"Saab"</span></span><br><span class="line">mycars[<span class="number">1</span>]=<span class="string">"Volvo"</span></span><br><span class="line">mycars[<span class="number">2</span>]=<span class="string">"BMW"</span></span><br></pre></td></tr></table></figure></p>
-<p>这种情况下就没有id了，只有val，所以最后对应到的指令是<code>op_get_by_val_with_this</code><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitGetByVal(RegisterID* dst, RegisterID* base, RegisterID* thisValue, RegisterID* property)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(op_get_by_val_with_this);</span><br><span class="line">    instructions().append(kill(dst));</span><br><span class="line">    instructions().append(base-&gt;index());</span><br><span class="line">    instructions().append(thisValue-&gt;index());</span><br><span class="line">    instructions().append(property-&gt;index());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitEqualityOp(OpcodeID opcodeID, RegisterID* dst, RegisterID* src1, RegisterID* src2)
+{
+    if (m_lastOpcodeID == op_typeof) 
+    {
+        // 类型的比较
+        int dstIndex;
+        int srcIndex;
+
+        // 取出instructions的倒数第一条指令中的两个操作数，并分别赋值给srcIndex和dstIndex
+        retrieveLastUnaryOp(dstIndex, srcIndex);
+
+        if (src1-&gt;index() == dstIndex
+            &amp;&amp; src1-&gt;isTemporary()
+            &amp;&amp; m_codeBlock-&gt;isConstantRegisterIndex(src2-&gt;index())
+            &amp;&amp; m_codeBlock-&gt;constantRegister(src2-&gt;index()).get().isString()) 
+        {
+            const String&amp; value = asString(m_codeBlock-&gt;constantRegister(src2-&gt;index()).get())-&gt;tryGetValue();
+            // 既然是类型都比较，当然需要各种专用指令了
+            if (value == &quot;undefined&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_undefined);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+            if (value == &quot;boolean&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_boolean);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+            if (value == &quot;number&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_number);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+            if (value == &quot;string&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_string);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+            if (value == &quot;object&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_object_or_null);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+            if (value == &quot;function&quot;) {
+                rewindUnaryOp();
+                emitOpcode(op_is_function);
+                instructions().append(dst-&gt;index());
+                instructions().append(srcIndex);
+                return dst;
+            }
+        }
+    }
+
+    // 普通情况下的等号比较指令
+    emitOpcode(opcodeID);
+    instructions().append(dst-&gt;index());
+    instructions().append(src1-&gt;index());
+    instructions().append(src2-&gt;index());
+    return dst;
+}
+</code></pre>
+<p><code>retrieveLastUnaryOp</code>取出<code>instructions</code>的倒数第一条指令中的两个操作数，并分别赋值给srcIndex和dstIndex</p>
+<pre><code class="c++">void BytecodeGenerator::retrieveLastUnaryOp(int&amp; dstIndex, int&amp; srcIndex)
+{
+    size_t size = instructions().size();
+    dstIndex = instructions().at(size - 2).u.operand;
+    srcIndex = instructions().at(size - 1).u.operand;
+}
+</code></pre>
+<h3 id="DotAccessorNode"><a href="#DotAccessorNode" class="headerlink" title="DotAccessorNode"></a>DotAccessorNode</h3><p>JavaScript中，对于方法或属性的调用，都是通过点操作符来实现的</p>
+<pre><code class="c++">class DotAccessorNode : public ExpressionNode, public ThrowableExpressionData 
+{
+    public:
+        DotAccessorNode(const JSTokenLocation&amp;, ExpressionNode* base, const Identifier&amp;);
+
+        ExpressionNode* base() const { return m_base; }
+
+    private:
+        RegisterID* emitBytecode(BytecodeGenerator&amp;, RegisterID* = 0) override;
+
+        bool isLocation() const override { return true; }
+        bool isDotAccessorNode() const override { return true; }
+
+        ExpressionNode* m_base;
+        const Identifier&amp; m_ident;
+    };
+</code></pre>
+<pre><code class="c++">RegisterID* DotAccessorNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    // 判定点操作是否在调用父类的方法
+    bool baseIsSuper = m_base-&gt;isSuperNode();
+
+    // 如果是父类方法，调用emitSuperBaseForCallee准备好super，否则生成m_base的字节码
+    RefPtr&lt;RegisterID&gt; base = baseIsSuper ? emitSuperBaseForCallee(generator) : generator.emitNode(m_base);
+
+    generator.emitExpressionInfo(divot(), divotStart(), divotEnd());
+
+
+    RegisterID* finalDest = generator.finalDestination(dst);
+    RegisterID* ret;
+    if (baseIsSuper) 
+    {
+        // 如果是父类方法，emitGetById需要传4个参数，并且在调用之前确定好this指向的对象
+        // 主要是因为JavaScript中的super是语法糖而已，需要在调用前准备好this
+        RefPtr&lt;RegisterID&gt; thisValue = generator.ensureThis();
+        ret = generator.emitGetById(finalDest, base.get(), thisValue.get(), m_ident);
+    }
+    else
+    {
+        ret = generator.emitGetById(finalDest, base.get(), m_ident);
+    }
+
+    return ret;
+}
+</code></pre>
+<p>来看下其字节码的细节：注意其中有一条指令：<code>op_get_by_id_with_this</code>，点操作的本质实际上就是加载一个属性或者一个方法名，还有一点需要主要，就是首次加载的时候，该属性或者方法可能还不存在，所以需要调用<code>addConstant</code>做一个添加动作</p>
+<pre><code class="c++">
+RegisterID* BytecodeGenerator::emitGetById(RegisterID* dst, RegisterID* base, RegisterID* thisVal, const Identifier&amp; property)
+{
+    emitOpcode(op_get_by_id_with_this);
+    instructions().append(kill(dst));
+    instructions().append(base-&gt;index());
+    instructions().append(thisVal-&gt;index());
+    instructions().append(addConstant(property));
+    return dst;
+}
+</code></pre>
+<h3 id="BracketAccessorNode"><a href="#BracketAccessorNode" class="headerlink" title="BracketAccessorNode"></a>BracketAccessorNode</h3><pre><code class="c++">class BracketAccessorNode : public ExpressionNode, public ThrowableExpressionData {
+    public:
+        BracketAccessorNode(const JSTokenLocation&amp;, ExpressionNode* base, ExpressionNode* subscript, bool subscriptHasAssignments);
+
+        ExpressionNode* base() const { return m_base; }
+        ExpressionNode* subscript() const { return m_subscript; }
+
+        bool subscriptHasAssignments() const { return m_subscriptHasAssignments; }
+
+    private:
+        RegisterID* emitBytecode(BytecodeGenerator&amp;, RegisterID* = 0) override;
+
+        bool isLocation() const override { return true; }
+        bool isBracketAccessorNode() const override { return true; }
+
+        ExpressionNode* m_base;
+        ExpressionNode* m_subscript;
+        bool m_subscriptHasAssignments;
+    };
+</code></pre>
+<p><code>Bracket</code>指的是中括号[]，这里的<code>BracketAccessorNode</code>是指<code>A[B]</code>形式的表达式，对号入座，<code>m_base</code>就是A，<code>m_subscript</code>就是B<br>在JavaScript中，对于对象，可以这样使用中括号:</p>
+<pre><code class="js">var obj= {};  
+// 为obj添加一个属性name，name是合法的标识符，即也可以通过obj.name方式来定义  
+obj[&#39;name&#39;] = &#39;jack&#39;;   
+//为obj添加一个属性2a，2a不是合法的标识符（不能以数字开头），不能通过obj.2a来定义  
+obj[&#39;2a&#39;] = &#39;test&#39;;
+</code></pre>
+<pre><code class="c++">RegisterID* BracketAccessorNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    // 如果obj恰好是指向当前对象的原型，那么就是一个superNode
+    if (m_base-&gt;isSuperNode()) 
+    {
+        // 按照之前的惯例，毫无疑问需要把this和super准备好
+        RefPtr&lt;RegisterID&gt; finalDest = generator.finalDestination(dst);
+        RefPtr&lt;RegisterID&gt; thisValue = generator.ensureThis();
+        RefPtr&lt;RegisterID&gt; superBase = emitSuperBaseForCallee(generator);
+
+        if (isNonIndexStringElement(*m_subscript)) {
+            // subscript是不可索引的字符串，利用Identifier来当作key
+            const Identifier&amp; id = static_cast&lt;StringNode*&gt;(m_subscript)-&gt;value();
+            generator.emitGetById(finalDest.get(), superBase.get(), thisValue.get(), id);
+        } 
+        else  
+        {
+            // 否则生成m_subscript的字节码，并将结果放到寄存器中，充当key
+            RefPtr&lt;RegisterID&gt; subscript = generator.emitNode(m_subscript);
+            generator.emitGetByVal(finalDest.get(), superBase.get(), thisValue.get(), subscript.get());
+        }
+
+        generator.emitExpressionInfo(divot(), divotStart(), divotEnd());
+        return finalDest.get();
+    }
+
+    // 和上面的代码很相似，不同的地方是superBase和base
+    RegisterID* ret;
+    RefPtr&lt;RegisterID&gt; finalDest = generator.finalDestination(dst);
+
+    if (isNonIndexStringElement(*m_subscript)) {
+        RefPtr&lt;RegisterID&gt; base = generator.emitNode(m_base);
+        ret = generator.emitGetById(finalDest.get(), base.get(), static_cast&lt;StringNode*&gt;(m_subscript)-&gt;value());
+    } else {
+        RefPtr&lt;RegisterID&gt; base = generator.emitNodeForLeftHandSide(m_base, m_subscriptHasAssignments, m_subscript-&gt;isPure(generator));
+        RegisterID* property = generator.emitNode(m_subscript);
+        ret = generator.emitGetByVal(finalDest.get(), base.get(), property);
+    }
+
+    generator.emitExpressionInfo(divot(), divotStart(), divotEnd());
+    return ret;
+}
+</code></pre>
+<p><code>BracketAccessorNode</code>有些情况下和<code>DotAccessorNode</code>是非常类似的，毕竟二者有时可以混用，最后的指令都对应到了<code>op_get_by_id_with_this</code>来加载一个属性或者方法，但是<code>BracketAccessorNode</code>有的情况下可能就是根据下角标来获取，比如数组：</p>
+<pre><code class="js">var mycars=new Array()
+mycars[0]=&quot;Saab&quot;
+mycars[1]=&quot;Volvo&quot;
+mycars[2]=&quot;BMW&quot;
+</code></pre>
+<p>这种情况下就没有id了，只有val，所以最后对应到的指令是<code>op_get_by_val_with_this</code></p>
+<pre><code class="c++">RegisterID* BytecodeGenerator::emitGetByVal(RegisterID* dst, RegisterID* base, RegisterID* thisValue, RegisterID* property)
+{
+    emitOpcode(op_get_by_val_with_this);
+    instructions().append(kill(dst));
+    instructions().append(base-&gt;index());
+    instructions().append(thisValue-&gt;index());
+    instructions().append(property-&gt;index());
+    return dst;
+}
+</code></pre>
 <h3 id="ClassExprNode"><a href="#ClassExprNode" class="headerlink" title="ClassExprNode"></a>ClassExprNode</h3><p>JavaScript中类表达式节点比较复杂</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ClassExprNode</span> <span class="title">final</span> :</span> <span class="keyword">public</span> ExpressionNode, <span class="keyword">public</span> VariableEnvironmentNode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        ClassExprNode(<span class="keyword">const</span> JSTokenLocation&amp;, <span class="keyword">const</span> Identifier&amp;, <span class="keyword">const</span> SourceCode&amp; classSource,</span><br><span class="line">            VariableEnvironment&amp; classEnvironment, ExpressionNode* constructorExpresssion,</span><br><span class="line">            ExpressionNode* parentClass, PropertyListNode* instanceMethods, PropertyListNode* staticMethods);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function">RegisterID* <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        SourceCode m_classSource;   <span class="comment">// 源码code             </span></span><br><span class="line">        <span class="keyword">const</span> Identifier&amp; m_name;   <span class="comment">// 类名 </span></span><br><span class="line">        <span class="keyword">const</span> Identifier* m_ecmaName;<span class="comment">// ECMA类名称</span></span><br><span class="line">        ExpressionNode* m_constructorExpression;<span class="comment">// 构造函数节点</span></span><br><span class="line">        ExpressionNode* m_classHeritage;        <span class="comment">// 类的继承表达式</span></span><br><span class="line">        PropertyListNode* m_instanceMethods;    <span class="comment">// 实例方法链表</span></span><br><span class="line">        PropertyListNode* m_staticMethods;      <span class="comment">// 类方法链表</span></span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* ClassExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!m_name.isNull())</span><br><span class="line">        generator.pushLexicalScope(<span class="keyword">this</span>, BytecodeGenerator::TDZCheckOptimization::Optimize, BytecodeGenerator::NestedScopeType::IsNested);</span><br><span class="line"></span><br><span class="line">    RefPtr&lt;RegisterID&gt; superclass;</span><br><span class="line">    <span class="keyword">if</span> (m_classHeritage) &#123;</span><br><span class="line">        <span class="comment">// 生成类的继承表达式的字节码</span></span><br><span class="line">        superclass = generator.newTemporary();</span><br><span class="line">        generator.emitNode(superclass.get(), m_classHeritage);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    RefPtr&lt;RegisterID&gt; constructor;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// <span class="doctag">FIXME:</span> Make the prototype non-configurable &amp; non-writable.</span></span><br><span class="line">    <span class="keyword">if</span> (m_constructorExpression) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 设置元类信息</span></span><br><span class="line">        FunctionMetadataNode* metadata = <span class="keyword">static_cast</span>&lt;FuncExprNode*&gt;(m_constructorExpression)-&gt;metadata();</span><br><span class="line">        metadata-&gt;setEcmaName(ecmaName());</span><br><span class="line">        metadata-&gt;setClassSource(m_classSource);</span><br><span class="line">        <span class="comment">// 生成构造函数的字节码</span></span><br><span class="line">        constructor = generator.emitNode(dst, m_constructorExpression);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果没有提供构造函数，则生成默认构造函数的字节码</span></span><br><span class="line">        constructor = generator.emitNewDefaultConstructor(generator.finalDestination(dst),</span><br><span class="line">            m_classHeritage ? ConstructorKind::Derived : ConstructorKind::Base,</span><br><span class="line">            m_name, ecmaName(), m_classSource);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取VM中的属性CommonIdentifiers，实际上就是虚拟机中的标识符</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; propertyNames = generator.propertyNames();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成 new一个对象的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; prototype = generator.emitNewObject(generator.newTemporary());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (superclass)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果继承自父类</span></span><br><span class="line">        RefPtr&lt;RegisterID&gt; protoParent = generator.newTemporary();</span><br><span class="line">        generator.emitLoad(protoParent.get(), jsNull());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果父类还没有定义，生成一个跳转到父类的未定义标签处的字节码</span></span><br><span class="line">        RefPtr&lt;RegisterID&gt; tempRegister = generator.newTemporary();</span><br><span class="line">        RefPtr&lt;Label&gt; superclassIsUndefinedLabel = generator.newLabel();</span><br><span class="line">        generator.emitJumpIfTrue(generator.emitIsUndefined(tempRegister.get(), superclass.get()), superclassIsUndefinedLabel.get());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果父类是空，生成一个跳转到父类为空的标签处的字节码</span></span><br><span class="line">        RefPtr&lt;Label&gt; superclassIsNullLabel = generator.newLabel();</span><br><span class="line">        generator.emitJumpIfTrue(generator.emitUnaryOp(op_eq_null, tempRegister.get(), superclass.get()), superclassIsNullLabel.get());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果父类是一个对象，也要生成进行一个标签的跳转的字节码</span></span><br><span class="line">        RefPtr&lt;Label&gt; superclassIsObjectLabel = generator.newLabel();</span><br><span class="line">        generator.emitJumpIfTrue(generator.emitIsObject(tempRegister.get(), superclass.get()), superclassIsObjectLabel.get());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 标签回填</span></span><br><span class="line">        generator.emitLabel(superclassIsUndefinedLabel.get());</span><br><span class="line">        generator.emitLabel(superclassIsObjectLabel.get());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取父类的原型</span></span><br><span class="line">        generator.emitGetById(protoParent.get(), superclass.get(), generator.propertyNames().prototype);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果父类的原型是一个对象或者为空，也需要生成进行一个标签的跳转的字节码</span></span><br><span class="line">        RefPtr&lt;Label&gt; protoParentIsObjectOrNullLabel = generator.newLabel();</span><br><span class="line">        generator.emitJumpIfTrue(generator.emitUnaryOp(op_is_object_or_null, tempRegister.get(), protoParent.get()), protoParentIsObjectOrNullLabel.get());</span><br><span class="line">        generator.emitJumpIfTrue(generator.emitUnaryOp(op_is_function, tempRegister.get(), protoParent.get()), protoParentIsObjectOrNullLabel.get());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 标签回填</span></span><br><span class="line">        generator.emitLabel(protoParentIsObjectOrNullLabel.get());</span><br><span class="line"></span><br><span class="line">        generator.emitDirectPutById(constructor.get(), generator.propertyNames().underscoreProto, superclass.get(), PropertyNode::Unknown);</span><br><span class="line">        generator.emitLabel(superclassIsNullLabel.get());</span><br><span class="line">        generator.emitDirectPutById(prototype.get(), generator.propertyNames().underscoreProto, protoParent.get(), PropertyNode::Unknown);</span><br><span class="line"></span><br><span class="line">        emitPutHomeObject(generator, constructor.get(), prototype.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成定义构造函数的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; constructorNameRegister = generator.emitLoad(generator.newTemporary(), propertyNames.constructor);</span><br><span class="line">    generator.emitCallDefineProperty(prototype.get(), constructorNameRegister.get(), constructor.get(), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>,</span><br><span class="line">        BytecodeGenerator::PropertyConfigurable | BytecodeGenerator::PropertyWritable, m_position);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成定义原型的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; prototypeNameRegister = generator.emitLoad(generator.newTemporary(), propertyNames.prototype);</span><br><span class="line">    generator.emitCallDefineProperty(constructor.get(), prototypeNameRegister.get(), prototype.get(), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>, <span class="number">0</span>, m_position);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成静态方法的字节码</span></span><br><span class="line">    <span class="keyword">if</span> (m_staticMethods)</span><br><span class="line">        generator.emitNode(constructor.get(), m_staticMethods);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成实例方法的字节码</span></span><br><span class="line">    <span class="keyword">if</span> (m_instanceMethods)</span><br><span class="line">        generator.emitNode(prototype.get(), m_instanceMethods);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!m_name.isNull()) </span><br><span class="line">    &#123;</span><br><span class="line">        Variable classNameVar = generator.variable(m_name);</span><br><span class="line">        RefPtr&lt;RegisterID&gt; scope = generator.emitResolveScope(<span class="literal">nullptr</span>, classNameVar);</span><br><span class="line">        generator.emitPutToScope(scope.get(), classNameVar, constructor.get(), ThrowIfNotFound, InitializationMode::Initialization);</span><br><span class="line">        generator.popLexicalScope(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回构造函数生成的对象</span></span><br><span class="line">    <span class="keyword">return</span> generator.moveToDestinationIfNeeded(dst, constructor.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c++">class ClassExprNode final : public ExpressionNode, public VariableEnvironmentNode
+{
+    public:
+        ClassExprNode(const JSTokenLocation&amp;, const Identifier&amp;, const SourceCode&amp; classSource,
+            VariableEnvironment&amp; classEnvironment, ExpressionNode* constructorExpresssion,
+            ExpressionNode* parentClass, PropertyListNode* instanceMethods, PropertyListNode* staticMethods);
+
+    private:
+        RegisterID* emitBytecode(BytecodeGenerator&amp;, RegisterID* = 0) override;
+
+        SourceCode m_classSource;   // 源码code             
+        const Identifier&amp; m_name;   // 类名 
+        const Identifier* m_ecmaName;// ECMA类名称
+        ExpressionNode* m_constructorExpression;// 构造函数节点
+        ExpressionNode* m_classHeritage;        // 类的继承表达式
+        PropertyListNode* m_instanceMethods;    // 实例方法链表
+        PropertyListNode* m_staticMethods;      // 类方法链表
+    };
+</code></pre>
+<pre><code class="c++">RegisterID* ClassExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    if (!m_name.isNull())
+        generator.pushLexicalScope(this, BytecodeGenerator::TDZCheckOptimization::Optimize, BytecodeGenerator::NestedScopeType::IsNested);
+
+    RefPtr&lt;RegisterID&gt; superclass;
+    if (m_classHeritage) {
+        // 生成类的继承表达式的字节码
+        superclass = generator.newTemporary();
+        generator.emitNode(superclass.get(), m_classHeritage);
+    }
+
+    RefPtr&lt;RegisterID&gt; constructor;
+
+    // FIXME: Make the prototype non-configurable &amp; non-writable.
+    if (m_constructorExpression) 
+    {
+        // 设置元类信息
+        FunctionMetadataNode* metadata = static_cast&lt;FuncExprNode*&gt;(m_constructorExpression)-&gt;metadata();
+        metadata-&gt;setEcmaName(ecmaName());
+        metadata-&gt;setClassSource(m_classSource);
+        // 生成构造函数的字节码
+        constructor = generator.emitNode(dst, m_constructorExpression);
+    } 
+    else 
+    {
+        // 如果没有提供构造函数，则生成默认构造函数的字节码
+        constructor = generator.emitNewDefaultConstructor(generator.finalDestination(dst),
+            m_classHeritage ? ConstructorKind::Derived : ConstructorKind::Base,
+            m_name, ecmaName(), m_classSource);
+    }
+
+    // 获取VM中的属性CommonIdentifiers，实际上就是虚拟机中的标识符
+    const auto&amp; propertyNames = generator.propertyNames();
+
+    // 生成 new一个对象的字节码
+    RefPtr&lt;RegisterID&gt; prototype = generator.emitNewObject(generator.newTemporary());
+
+    if (superclass)
+    {
+        // 如果继承自父类
+        RefPtr&lt;RegisterID&gt; protoParent = generator.newTemporary();
+        generator.emitLoad(protoParent.get(), jsNull());
+
+        // 如果父类还没有定义，生成一个跳转到父类的未定义标签处的字节码
+        RefPtr&lt;RegisterID&gt; tempRegister = generator.newTemporary();
+        RefPtr&lt;Label&gt; superclassIsUndefinedLabel = generator.newLabel();
+        generator.emitJumpIfTrue(generator.emitIsUndefined(tempRegister.get(), superclass.get()), superclassIsUndefinedLabel.get());
+
+        // 如果父类是空，生成一个跳转到父类为空的标签处的字节码
+        RefPtr&lt;Label&gt; superclassIsNullLabel = generator.newLabel();
+        generator.emitJumpIfTrue(generator.emitUnaryOp(op_eq_null, tempRegister.get(), superclass.get()), superclassIsNullLabel.get());
+
+        // 如果父类是一个对象，也要生成进行一个标签的跳转的字节码
+        RefPtr&lt;Label&gt; superclassIsObjectLabel = generator.newLabel();
+        generator.emitJumpIfTrue(generator.emitIsObject(tempRegister.get(), superclass.get()), superclassIsObjectLabel.get());
+
+        // 标签回填
+        generator.emitLabel(superclassIsUndefinedLabel.get());
+        generator.emitLabel(superclassIsObjectLabel.get());
+
+        // 获取父类的原型
+        generator.emitGetById(protoParent.get(), superclass.get(), generator.propertyNames().prototype);
+
+        // 如果父类的原型是一个对象或者为空，也需要生成进行一个标签的跳转的字节码
+        RefPtr&lt;Label&gt; protoParentIsObjectOrNullLabel = generator.newLabel();
+        generator.emitJumpIfTrue(generator.emitUnaryOp(op_is_object_or_null, tempRegister.get(), protoParent.get()), protoParentIsObjectOrNullLabel.get());
+        generator.emitJumpIfTrue(generator.emitUnaryOp(op_is_function, tempRegister.get(), protoParent.get()), protoParentIsObjectOrNullLabel.get());
+
+        // 标签回填
+        generator.emitLabel(protoParentIsObjectOrNullLabel.get());
+
+        generator.emitDirectPutById(constructor.get(), generator.propertyNames().underscoreProto, superclass.get(), PropertyNode::Unknown);
+        generator.emitLabel(superclassIsNullLabel.get());
+        generator.emitDirectPutById(prototype.get(), generator.propertyNames().underscoreProto, protoParent.get(), PropertyNode::Unknown);
+
+        emitPutHomeObject(generator, constructor.get(), prototype.get());
+    }
+
+    // 生成定义构造函数的字节码
+    RefPtr&lt;RegisterID&gt; constructorNameRegister = generator.emitLoad(generator.newTemporary(), propertyNames.constructor);
+    generator.emitCallDefineProperty(prototype.get(), constructorNameRegister.get(), constructor.get(), nullptr, nullptr,
+        BytecodeGenerator::PropertyConfigurable | BytecodeGenerator::PropertyWritable, m_position);
+
+    // 生成定义原型的字节码
+    RefPtr&lt;RegisterID&gt; prototypeNameRegister = generator.emitLoad(generator.newTemporary(), propertyNames.prototype);
+    generator.emitCallDefineProperty(constructor.get(), prototypeNameRegister.get(), prototype.get(), nullptr, nullptr, 0, m_position);
+
+    // 生成静态方法的字节码
+    if (m_staticMethods)
+        generator.emitNode(constructor.get(), m_staticMethods);
+
+    // 生成实例方法的字节码
+    if (m_instanceMethods)
+        generator.emitNode(prototype.get(), m_instanceMethods);
+
+    if (!m_name.isNull()) 
+    {
+        Variable classNameVar = generator.variable(m_name);
+        RefPtr&lt;RegisterID&gt; scope = generator.emitResolveScope(nullptr, classNameVar);
+        generator.emitPutToScope(scope.get(), classNameVar, constructor.get(), ThrowIfNotFound, InitializationMode::Initialization);
+        generator.popLexicalScope(this);
+    }
+
+    // 返回构造函数生成的对象
+    return generator.moveToDestinationIfNeeded(dst, constructor.get());
+}
+</code></pre>
 <p>ES5最经典的继承方法是用组合继承的方式，原型链继承方法，借用函数继承属性；<br>ES6也是基于这样的方式，但是封装了更优雅简洁的api，让Javascript越来越强大，修改了一些属性指向，规范了继承的操作，区分开了继承实现和实例构造</p>
 <p>注意上面的两行代码</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">generator.emitCallDefineProperty(prototype.get(), constructorNameRegister.get(), constructor.get(), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>,</span><br><span class="line">    BytecodeGenerator::PropertyConfigurable | BytecodeGenerator::PropertyWritable, m_position);</span><br><span class="line"></span><br><span class="line">generator.emitCallDefineProperty(constructor.get(), prototypeNameRegister.get(), prototype.get(), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>, <span class="number">0</span>, m_position);</span><br></pre></td></tr></table></figure>
-<p>它们实现了JavaScript中典型的组合继承：（Sub继承自Base）<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Sub.prototype = <span class="keyword">new</span> Base();</span><br><span class="line">Sub.prototype.constructor = Sub;</span><br></pre></td></tr></table></figure></p>
+<pre><code class="c++">generator.emitCallDefineProperty(prototype.get(), constructorNameRegister.get(), constructor.get(), nullptr, nullptr,
+    BytecodeGenerator::PropertyConfigurable | BytecodeGenerator::PropertyWritable, m_position);
+
+generator.emitCallDefineProperty(constructor.get(), prototypeNameRegister.get(), prototype.get(), nullptr, nullptr, 0, m_position);
+</code></pre>
+<p>它们实现了JavaScript中典型的组合继承：（Sub继承自Base）</p>
+<pre><code class="js">Sub.prototype = new Base();
+Sub.prototype.constructor = Sub;
+</code></pre>
 <p>在ES6中实现了子类继承父类属性，在构造实例的时候会直接拿到子类的属性，不需要查找到原型属性上面去，ES6新的静态方法和静态属性（只能在构造函数上访问）也是通过这样类的直接继承来实现，至于普通复用方法还是放到原型链上，道理和实现和ES5是一样的。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 生成静态方法的字节码，注意第一个参数是constructor</span></span><br><span class="line"><span class="keyword">if</span> (m_staticMethods)</span><br><span class="line">    generator.emitNode(constructor.get(), m_staticMethods);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 生成实例方法的字节码，注意第一个参数是prototype</span></span><br><span class="line"><span class="keyword">if</span> (m_instanceMethods)</span><br><span class="line">    generator.emitNode(prototype.get(), m_instanceMethods);</span><br></pre></td></tr></table></figure>
-<h3 id="BaseFuncExprNode"><a href="#BaseFuncExprNode" class="headerlink" title="BaseFuncExprNode"></a>BaseFuncExprNode</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseFuncExprNode</span> :</span> <span class="keyword">public</span> ExpressionNode &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function">FunctionMetadataNode* <span class="title">metadata</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> m_metadata; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span>:</span><br><span class="line">        BaseFuncExprNode(<span class="keyword">const</span> JSTokenLocation&amp;, <span class="keyword">const</span> Identifier&amp;, FunctionMetadataNode*, <span class="keyword">const</span> SourceCode&amp;, FunctionMode);</span><br><span class="line"></span><br><span class="line">        FunctionMetadataNode* m_metadata;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c++">// 生成静态方法的字节码，注意第一个参数是constructor
+if (m_staticMethods)
+    generator.emitNode(constructor.get(), m_staticMethods);
+
+// 生成实例方法的字节码，注意第一个参数是prototype
+if (m_instanceMethods)
+    generator.emitNode(prototype.get(), m_instanceMethods);
+</code></pre>
+<h3 id="BaseFuncExprNode"><a href="#BaseFuncExprNode" class="headerlink" title="BaseFuncExprNode"></a>BaseFuncExprNode</h3><pre><code class="c++">class BaseFuncExprNode : public ExpressionNode {
+    public:
+        FunctionMetadataNode* metadata() { return m_metadata; }
+
+    protected:
+        BaseFuncExprNode(const JSTokenLocation&amp;, const Identifier&amp;, FunctionMetadataNode*, const SourceCode&amp;, FunctionMode);
+
+        FunctionMetadataNode* m_metadata;
+    };
+</code></pre>
 <p><code>BaseFuncExprNode</code>有3个子类：<code>FuncExprNode</code>、<code>ArrowFuncExprNode</code>和<code>MethodDefinitionNode</code>，这3个子类的<code>emitBytecode</code>代码最终都会调用到<code>emitNewFunctionExpressionCommon</code></p>
-<h4 id="FuncExprNode"><a href="#FuncExprNode" class="headerlink" title="FuncExprNode"></a>FuncExprNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* FuncExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//finalDestination: Returns the place to write the final output of an operation.</span></span><br><span class="line">    <span class="keyword">return</span> generator.emitNewFunctionExpression(generator.finalDestination(dst), <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">RegisterID* BytecodeGenerator::emitNewFunctionExpression(RegisterID* dst, FuncExprNode* func)</span><br><span class="line">&#123;</span><br><span class="line">    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="FuncExprNode"><a href="#FuncExprNode" class="headerlink" title="FuncExprNode"></a>FuncExprNode</h4><pre><code class="c++">RegisterID* FuncExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    //finalDestination: Returns the place to write the final output of an operation.
+    return generator.emitNewFunctionExpression(generator.finalDestination(dst), this);
+}
+
+RegisterID* BytecodeGenerator::emitNewFunctionExpression(RegisterID* dst, FuncExprNode* func)
+{
+    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());
+    return dst;
+}
+</code></pre>
 <p><code>ArrowFuncExprNode</code>和<code>MethodDefinitionNode</code>的代码最终都会调用到<code>emitNewFunctionExpressionCommon</code>，不再做详细分析</p>
-<h4 id="ArrowFuncExprNode"><a href="#ArrowFuncExprNode" class="headerlink" title="ArrowFuncExprNode"></a>ArrowFuncExprNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* ArrowFuncExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> generator.emitNewArrowFunctionExpression(generator.finalDestination(dst), <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">RegisterID* BytecodeGenerator::emitNewArrowFunctionExpression(RegisterID* dst, ArrowFuncExprNode* func)</span><br><span class="line">&#123;</span><br><span class="line">    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="MethodDefinitionNode"><a href="#MethodDefinitionNode" class="headerlink" title="MethodDefinitionNode"></a>MethodDefinitionNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* MethodDefinitionNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> generator.emitNewMethodDefinition(generator.finalDestination(dst), <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">RegisterID* BytecodeGenerator::emitNewMethodDefinition(RegisterID* dst, MethodDefinitionNode* func)</span><br><span class="line">&#123;</span><br><span class="line">    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>核心在这里：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> BytecodeGenerator::emitNewFunctionExpressionCommon(RegisterID* dst, FunctionMetadataNode* function)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 利用FunctionMetadataNode生成一个方法，存放到m_codeBlock的方法容器m_functionExprs中，并返回其索引值</span></span><br><span class="line">    <span class="keyword">unsigned</span> index = m_codeBlock-&gt;addFunctionExpr(makeFunction(function));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 默认值</span></span><br><span class="line">    OpcodeID opcodeID = op_new_func_exp;</span><br><span class="line">    <span class="keyword">switch</span> (function-&gt;parseMode()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 闭包</span></span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::GeneratorWrapperFunctionMode: &#123;</span><br><span class="line">            opcodeID = op_new_generator_func_exp;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 箭头函数</span></span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::ArrowFunctionMode: &#123;</span><br><span class="line">            opcodeID = op_new_arrow_func_exp;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>: &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// op_new_func_exp/op_new_generator_func_exp/op_new_arrow_func_exp的指令长度为4</span></span><br><span class="line">    emitOpcode(opcodeID);</span><br><span class="line">    instructions().append(dst-&gt;index());</span><br><span class="line">    instructions().append(scopeRegister()-&gt;index());</span><br><span class="line">    instructions().append(index);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="ArrowFuncExprNode"><a href="#ArrowFuncExprNode" class="headerlink" title="ArrowFuncExprNode"></a>ArrowFuncExprNode</h4><pre><code class="c++">RegisterID* ArrowFuncExprNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    return generator.emitNewArrowFunctionExpression(generator.finalDestination(dst), this);
+}
+
+RegisterID* BytecodeGenerator::emitNewArrowFunctionExpression(RegisterID* dst, ArrowFuncExprNode* func)
+{
+    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());
+    return dst;
+}
+</code></pre>
+<h4 id="MethodDefinitionNode"><a href="#MethodDefinitionNode" class="headerlink" title="MethodDefinitionNode"></a>MethodDefinitionNode</h4><pre><code class="c++">RegisterID* MethodDefinitionNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)
+{
+    return generator.emitNewMethodDefinition(generator.finalDestination(dst), this);
+}
+
+RegisterID* BytecodeGenerator::emitNewMethodDefinition(RegisterID* dst, MethodDefinitionNode* func)
+{
+    emitNewFunctionExpressionCommon(dst, func-&gt;metadata());
+    return dst;
+}
+</code></pre>
+<p>核心在这里：</p>
+<pre><code class="c++">void BytecodeGenerator::emitNewFunctionExpressionCommon(RegisterID* dst, FunctionMetadataNode* function)
+{
+    // 利用FunctionMetadataNode生成一个方法，存放到m_codeBlock的方法容器m_functionExprs中，并返回其索引值
+    unsigned index = m_codeBlock-&gt;addFunctionExpr(makeFunction(function));
+
+    // 默认值
+    OpcodeID opcodeID = op_new_func_exp;
+    switch (function-&gt;parseMode()) 
+    {
+        // 闭包
+        case SourceParseMode::GeneratorWrapperFunctionMode: {
+            opcodeID = op_new_generator_func_exp;
+            break;
+        }
+        // 箭头函数
+        case SourceParseMode::ArrowFunctionMode: {
+            opcodeID = op_new_arrow_func_exp;
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+
+    // op_new_func_exp/op_new_generator_func_exp/op_new_arrow_func_exp的指令长度为4
+    emitOpcode(opcodeID);
+    instructions().append(dst-&gt;index());
+    instructions().append(scopeRegister()-&gt;index());
+    instructions().append(index);
+}
+</code></pre>
 <p>逻辑也很简单，主要用到了几条指令：<code>op_new_func_exp</code>，<code>op_new_generator_func_exp</code>和<code>op_new_arrow_func_exp</code></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>字节码生成篇系列是截止到目前，分析下来比较吃力的一个系列了，其中遇到的一些困难主要是代码量大，并且需要同时对ES5、ES6以及C++同时都有一定的深入了解，由于个人能力有限，难免会出现分析不到位或者错误的地方，希望不要吝啬赐教，以便后续能逐步完善。</p>
 
@@ -741,7 +1397,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -972,6 +1628,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>

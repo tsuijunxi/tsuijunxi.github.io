@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -356,7 +355,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,882
+                  4,022
                 </span>
               
 
@@ -372,7 +371,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  25
+                  20
                 </span>
               
             </div>
@@ -398,13 +397,26 @@
 <blockquote>
 <ul>
 <li><p>1、kqueue() 生成一个内核事件队列，返回该队列的文件描述符。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span>     <span class="title">kqueue</span><span class="params">(<span class="keyword">void</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">int     kqueue(void);
+</code></pre>
 </li>
 <li><p>2、kevent() 提供向内核注册/反注册事件和返回就绪事件或错误事件。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span>     <span class="title">kevent</span><span class="params">(<span class="keyword">int</span> kq, </span></span></span><br><span class="line"><span class="function"><span class="params">           <span class="keyword">const</span> struct kevent *changelist, <span class="keyword">int</span> nchanges,</span></span></span><br><span class="line"><span class="function"><span class="params">           struct kevent *eventlist, <span class="keyword">int</span> nevents,</span></span></span><br><span class="line"><span class="function"><span class="params">           <span class="keyword">const</span> struct timespec *timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">int     kevent(int kq, 
+         const struct kevent *changelist, int nchanges,
+         struct kevent *eventlist, int nevents,
+         const struct timespec *timeout);
+</code></pre>
 </li>
 <li><p>3、struct kevent 就是kevent()操作的最基本的事件结构。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> &#123;</span> </span><br><span class="line">     <span class="keyword">uintptr_t</span> ident;        <span class="comment">/* 事件 ID */</span> </span><br><span class="line">     <span class="keyword">short</span>     filter;       <span class="comment">/* 事件过滤器 */</span> </span><br><span class="line">     u_short   flags;        <span class="comment">/* 行为标识 */</span> </span><br><span class="line">     u_int     fflags;       <span class="comment">/* 过滤器标识值 */</span> </span><br><span class="line">     <span class="keyword">intptr_t</span>  data;         <span class="comment">/* 过滤器数据 */</span> </span><br><span class="line">     <span class="keyword">void</span>      *udata;       <span class="comment">/* 应用透传数据 */</span> </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">struct kevent { 
+   uintptr_t ident;        /* 事件 ID */ 
+   short     filter;       /* 事件过滤器 */ 
+   u_short   flags;        /* 行为标识 */ 
+   u_int     fflags;       /* 过滤器标识值 */ 
+   intptr_t  data;         /* 过滤器数据 */ 
+   void      *udata;       /* 应用透传数据 */ 
+};
+</code></pre>
 </li>
 </ul>
 </blockquote>
@@ -412,47 +424,461 @@
 <blockquote>
 <ul>
 <li>1、ident 事件的 id，一般设置为文件描述符。</li>
-<li><p>2、filter 可以将 kqueue filter 看作事件。内核检测 ident 上注册的 filter 的状态，状态发生了变化，就通知应用程序。kqueue 定义了较多的 filter：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_READ         (-1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_WRITE        (-2)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_AIO          (-3)    <span class="comment">/* attached to aio requests */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_VNODE        (-4)    <span class="comment">/* attached to vnodes */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_PROC         (-5)    <span class="comment">/* attached to struct proc */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_SIGNAL       (-6)    <span class="comment">/* attached to struct proc */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_TIMER        (-7)    <span class="comment">/* timers */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_MACHPORT     (-8)    <span class="comment">/* Mach portsets */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_FS           (-9)    <span class="comment">/* Filesystem events */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EVFILT_USER         (-10)   <span class="comment">/* User events */</span></span></span><br></pre></td></tr></table></figure>
+<li>2、filter 可以将 kqueue filter 看作事件。内核检测 ident 上注册的 filter 的状态，状态发生了变化，就通知应用程序。kqueue 定义了较多的 filter：<pre><code class="c">#define EVFILT_READ         (-1)
+#define EVFILT_WRITE        (-2)
+#define EVFILT_AIO          (-3)    /* attached to aio requests */
+#define EVFILT_VNODE        (-4)    /* attached to vnodes */
+#define EVFILT_PROC         (-5)    /* attached to struct proc */
+#define EVFILT_SIGNAL       (-6)    /* attached to struct proc */
+#define EVFILT_TIMER        (-7)    /* timers */
+#define EVFILT_MACHPORT     (-8)    /* Mach portsets */
+#define EVFILT_FS           (-9)    /* Filesystem events */
+#define EVFILT_USER         (-10)   /* User events */
+</code></pre>
 </li>
-<li><p>3、行为标志flags：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_ADD              0x0001      <span class="comment">/* add event to kq (implies enable) */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_DELETE           0x0002      <span class="comment">/* delete event from kq */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_ENABLE           0x0004      <span class="comment">/* enable event */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EV_DISABLE          0x0008      <span class="comment">/* disable event (not reported) */</span></span></span><br></pre></td></tr></table></figure>
+<li>3、行为标志flags：<pre><code class="c">#define EV_ADD              0x0001      /* add event to kq (implies enable) */
+#define EV_DELETE           0x0002      /* delete event from kq */
+#define EV_ENABLE           0x0004      /* enable event */
+#define EV_DISABLE          0x0008      /* disable event (not reported) */
+</code></pre>
 </li>
 </ul>
 </blockquote>
-<h2 id="事件类型"><a href="#事件类型" class="headerlink" title="事件类型"></a>事件类型</h2><p>在source.h中可以发现<code>dispatch_source</code>可以支持以下事件类型：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_SOURCE_TYPE_DATA_ADD：      自定义事件</span><br><span class="line">DISPATCH_SOURCE_TYPE_DATA_OR：       自定义事件</span><br><span class="line">DISPATCH_SOURCE_TYPE_MACH_SEND：     Mach端口发送事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_MACH_RECV：     Mach端口接收事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_PROC：          进程相关的事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_READ：          读文件事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_WRITE：         写文件事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_VNODE：         文件属性更改事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_SIGNAL：        接收信号事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_TIMER：         定时器事件。</span><br><span class="line">DISPATCH_SOURCE_TYPE_MEMORYPRESSURE：内存压力事件。</span><br></pre></td></tr></table></figure></p>
-<h2 id="使用步骤"><a href="#使用步骤" class="headerlink" title="使用步骤"></a>使用步骤</h2><p>由于<code>dispatch_source</code>的使用场合较少，所以很有必要对<code>dispatch_source</code>的使用进行介绍：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1、创建dispatch源，这里使用加法来合并dispatch源数据，最后一个参数是指定dispatch队列</span></span><br><span class="line"><span class="keyword">dispatch_source_t</span> source = dispatch_source_create(dispatch_source_type, handler, mask, dispatch_queue);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、设置响应dispatch源事件的block，在dispatch源指定的队列上运行</span></span><br><span class="line">dispatch_source_set_event_handler(source, ^&#123; </span><br><span class="line">　　<span class="comment">//可以通过dispatch_source_get_data(source)来得到dispatch源数据</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、dispatch源创建后处于suspend状态，所以需要启动dispatch源</span></span><br><span class="line">dispatch_resume(source);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、合并dispatch源数据</span></span><br><span class="line">dispatch_source_merge_data(source, value);</span><br></pre></td></tr></table></figure></p>
-<h3 id="定时器"><a href="#定时器" class="headerlink" title="定时器"></a>定时器</h3><p>在使用定时器时，NSTimer是首先被想到的，但是由于NSTimer会受RunLoop影响，当RunLoop处理的任务很多时，就会导致NSTimer的精度降低，所以在一些对定时器精度要求很高的情况下，我们会考虑CADisplaylink，但是实际上也可以考虑使用GCD定时器。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dispatch_queue_t</span> queue = dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"><span class="built_in">dispatch_queue_t</span> timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, <span class="number">0</span>, <span class="number">0</span>, queue);</span><br><span class="line"></span><br><span class="line">dispatch_source_set_timer(<span class="keyword">self</span>.timer, dispatch_time(DISPATCH_TIME_NOW, <span class="number">3.0</span> * <span class="built_in">NSEC_PER_SEC</span>), <span class="number">2.0</span> * <span class="built_in">NSEC_PER_SEC</span>, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//设置回调</span></span><br><span class="line">dispatch_source_set_event_handler(timer, ^&#123;</span><br><span class="line">    <span class="comment">// 处理逻辑</span></span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">//启动timer</span></span><br><span class="line">dispatch_resume(<span class="keyword">self</span>.timer);</span><br></pre></td></tr></table></figure></p>
-<h3 id="监视文件"><a href="#监视文件" class="headerlink" title="监视文件"></a>监视文件</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">dispatch_source_t fileMonitor(<span class="keyword">const</span> <span class="keyword">char</span>* filename) </span><br><span class="line">&#123; </span><br><span class="line">    <span class="keyword">int</span> fd = open(filename, O_EVTONLY); </span><br><span class="line">    <span class="keyword">if</span> (fd == <span class="number">-1</span>) <span class="keyword">return</span> <span class="literal">NULL</span>; </span><br><span class="line"></span><br><span class="line">    <span class="built_in">dispatch_queue_t</span> queue = dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>); </span><br><span class="line">    dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, fd, DISPATCH_VNODE_RENAME, queue); </span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 保存原文件名</span></span><br><span class="line">    <span class="keyword">int</span> length = strlen(filename); </span><br><span class="line">    <span class="keyword">char</span>* newString = (<span class="keyword">char</span>*)malloc(length + <span class="number">1</span>); </span><br><span class="line">    newString = strcpy(newString, filename); </span><br><span class="line">    dispatch_set_context(source, newString); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置事件发生的回调</span></span><br><span class="line">    dispatch_source_set_event_handler(source, ^&#123; </span><br><span class="line">        <span class="comment">// 获取原文件名</span></span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">char</span>*  oldFilename = (<span class="keyword">char</span>*)dispatch_get_context(source); </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 文件名变化逻辑处理</span></span><br><span class="line">        ... </span><br><span class="line">    &#125;); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置取消回调 </span></span><br><span class="line">    dispatch_source_set_cancel_handler(source, ^&#123; </span><br><span class="line">        <span class="keyword">char</span>* fileStr = (<span class="keyword">char</span>*)dispatch_get_context(source); </span><br><span class="line">        free(fileStr); </span><br><span class="line">        close(fd); </span><br><span class="line">    &#125;); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 启动</span></span><br><span class="line">    dispatch_resume(source); </span><br><span class="line"></span><br><span class="line">   <span class="keyword">return</span> source; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="常用API源码分析"><a href="#常用API源码分析" class="headerlink" title="常用API源码分析"></a>常用API源码分析</h2><h3 id="dispatch-source-s"><a href="#dispatch-source-s" class="headerlink" title="dispatch_source_s"></a>dispatch_source_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_source_s, dispatch_source_vtable_s);</span><br><span class="line">    DISPATCH_QUEUE_HEADER;</span><br><span class="line">    <span class="comment">// Instruments always copies DISPATCH_QUEUE_MIN_LABEL_SIZE, which is 64,</span></span><br><span class="line">    <span class="comment">// so the remainder of the structure must be big enough</span></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">char</span> _ds_pad[DISPATCH_QUEUE_MIN_LABEL_SIZE];</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">            <span class="keyword">char</span> dq_label[<span class="number">8</span>];</span><br><span class="line">            <span class="keyword">dispatch_kevent_t</span> ds_dkev;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">dispatch_source_handler_function_t</span> ds_handler_func;</span><br><span class="line">            <span class="keyword">void</span> *ds_handler_ctxt;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">void</span> *ds_cancel_handler;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> ds_is_level:<span class="number">1</span>,</span><br><span class="line">            ds_is_adder:<span class="number">1</span>,</span><br><span class="line">            ds_is_installed:<span class="number">1</span>,</span><br><span class="line">            ds_needs_rearm:<span class="number">1</span>,</span><br><span class="line">            ds_is_armed:<span class="number">1</span>,</span><br><span class="line">            ds_is_legacy:<span class="number">1</span>,</span><br><span class="line">            ds_cancel_is_block:<span class="number">1</span>,</span><br><span class="line">            ds_handler_is_block:<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> ds_atomic_flags;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_data;</span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_pending_data;</span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_pending_data_mask;</span><br><span class="line">            </span><br><span class="line">            TAILQ_ENTRY(dispatch_source_s) ds_list;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_ident_hack;</span><br><span class="line">            </span><br><span class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_timer_source_s</span> <span class="title">ds_timer</span>;</span></span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>如果大家对<code>dispatch_queue_s</code>的定义还有印象的话，那么可以发现<code>dispatch_source_s</code>的定义就是<code>dispatch_queue_s</code>的覆盖版：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_queue_s, dispatch_queue_vtable_s);</span><br><span class="line">    DISPATCH_QUEUE_HEADER;</span><br><span class="line">    <span class="keyword">char</span> dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE];   <span class="comment">// must be last</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h2 id="事件类型"><a href="#事件类型" class="headerlink" title="事件类型"></a>事件类型</h2><p>在source.h中可以发现<code>dispatch_source</code>可以支持以下事件类型：</p>
+<pre><code class="c">DISPATCH_SOURCE_TYPE_DATA_ADD：      自定义事件
+DISPATCH_SOURCE_TYPE_DATA_OR：       自定义事件
+DISPATCH_SOURCE_TYPE_MACH_SEND：     Mach端口发送事件。
+DISPATCH_SOURCE_TYPE_MACH_RECV：     Mach端口接收事件。
+DISPATCH_SOURCE_TYPE_PROC：          进程相关的事件。
+DISPATCH_SOURCE_TYPE_READ：          读文件事件。
+DISPATCH_SOURCE_TYPE_WRITE：         写文件事件。
+DISPATCH_SOURCE_TYPE_VNODE：         文件属性更改事件。
+DISPATCH_SOURCE_TYPE_SIGNAL：        接收信号事件。
+DISPATCH_SOURCE_TYPE_TIMER：         定时器事件。
+DISPATCH_SOURCE_TYPE_MEMORYPRESSURE：内存压力事件。
+</code></pre>
+<h2 id="使用步骤"><a href="#使用步骤" class="headerlink" title="使用步骤"></a>使用步骤</h2><p>由于<code>dispatch_source</code>的使用场合较少，所以很有必要对<code>dispatch_source</code>的使用进行介绍：</p>
+<pre><code class="c">// 1、创建dispatch源，这里使用加法来合并dispatch源数据，最后一个参数是指定dispatch队列
+dispatch_source_t source = dispatch_source_create(dispatch_source_type, handler, mask, dispatch_queue);
+
+// 2、设置响应dispatch源事件的block，在dispatch源指定的队列上运行
+dispatch_source_set_event_handler(source, ^{ 
+　　//可以通过dispatch_source_get_data(source)来得到dispatch源数据
+});
+
+// 3、dispatch源创建后处于suspend状态，所以需要启动dispatch源
+dispatch_resume(source);
+
+// 4、合并dispatch源数据
+dispatch_source_merge_data(source, value);
+</code></pre>
+<h3 id="定时器"><a href="#定时器" class="headerlink" title="定时器"></a>定时器</h3><p>在使用定时器时，NSTimer是首先被想到的，但是由于NSTimer会受RunLoop影响，当RunLoop处理的任务很多时，就会导致NSTimer的精度降低，所以在一些对定时器精度要求很高的情况下，我们会考虑CADisplaylink，但是实际上也可以考虑使用GCD定时器。</p>
+<pre><code class="objc">dispatch_queue_t queue = dispatch_get_global_queue(0, 0);
+dispatch_queue_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+
+dispatch_source_set_timer(self.timer, dispatch_time(DISPATCH_TIME_NOW, 3.0 * NSEC_PER_SEC), 2.0 * NSEC_PER_SEC, 0);
+
+//设置回调
+dispatch_source_set_event_handler(timer, ^{
+    // 处理逻辑
+});
+//启动timer
+dispatch_resume(self.timer);
+</code></pre>
+<h3 id="监视文件"><a href="#监视文件" class="headerlink" title="监视文件"></a>监视文件</h3><pre><code class="objc">dispatch_source_t fileMonitor(const char* filename) 
+{ 
+    int fd = open(filename, O_EVTONLY); 
+    if (fd == -1) return NULL; 
+
+    dispatch_queue_t queue = dispatch_get_global_queue(0, 0); 
+    dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, fd, DISPATCH_VNODE_RENAME, queue); 
+
+    // 保存原文件名
+    int length = strlen(filename); 
+    char* newString = (char*)malloc(length + 1); 
+    newString = strcpy(newString, filename); 
+    dispatch_set_context(source, newString); 
+
+    // 设置事件发生的回调
+    dispatch_source_set_event_handler(source, ^{ 
+        // 获取原文件名
+        const char*  oldFilename = (char*)dispatch_get_context(source); 
+
+        // 文件名变化逻辑处理
+        ... 
+    }); 
+
+    // 设置取消回调 
+    dispatch_source_set_cancel_handler(source, ^{ 
+        char* fileStr = (char*)dispatch_get_context(source); 
+        free(fileStr); 
+        close(fd); 
+    }); 
+
+    // 启动
+    dispatch_resume(source); 
+
+   return source; 
+}
+</code></pre>
+<h2 id="常用API源码分析"><a href="#常用API源码分析" class="headerlink" title="常用API源码分析"></a>常用API源码分析</h2><h3 id="dispatch-source-s"><a href="#dispatch-source-s" class="headerlink" title="dispatch_source_s"></a>dispatch_source_s</h3><pre><code class="c">struct dispatch_source_s {
+    DISPATCH_STRUCT_HEADER(dispatch_source_s, dispatch_source_vtable_s);
+    DISPATCH_QUEUE_HEADER;
+    // Instruments always copies DISPATCH_QUEUE_MIN_LABEL_SIZE, which is 64,
+    // so the remainder of the structure must be big enough
+    union {
+        char _ds_pad[DISPATCH_QUEUE_MIN_LABEL_SIZE];
+        struct {
+            char dq_label[8];
+            dispatch_kevent_t ds_dkev;
+
+            dispatch_source_handler_function_t ds_handler_func;
+            void *ds_handler_ctxt;
+
+            void *ds_cancel_handler;
+
+            unsigned int ds_is_level:1,
+            ds_is_adder:1,
+            ds_is_installed:1,
+            ds_needs_rearm:1,
+            ds_is_armed:1,
+            ds_is_legacy:1,
+            ds_cancel_is_block:1,
+            ds_handler_is_block:1;
+
+            unsigned int ds_atomic_flags;
+
+            unsigned long ds_data;
+            unsigned long ds_pending_data;
+            unsigned long ds_pending_data_mask;
+
+            TAILQ_ENTRY(dispatch_source_s) ds_list;
+
+            unsigned long ds_ident_hack;
+
+            struct dispatch_timer_source_s ds_timer;
+        };
+    };
+};
+</code></pre>
+<p>如果大家对<code>dispatch_queue_s</code>的定义还有印象的话，那么可以发现<code>dispatch_source_s</code>的定义就是<code>dispatch_queue_s</code>的覆盖版：</p>
+<pre><code class="c">struct dispatch_queue_s {
+    DISPATCH_STRUCT_HEADER(dispatch_queue_s, dispatch_queue_vtable_s);
+    DISPATCH_QUEUE_HEADER;
+    char dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE];   // must be last
+};
+</code></pre>
 <p>由于<code>dispatch_source_s</code>的第三项是一个联合体，其中的<code>char _ds_pad[DISPATCH_QUEUE_MIN_LABEL_SIZE];</code>和<code>dispatch_queue_s</code>中的<code>char dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE];</code>就是基本上一回事，所以这样就可以利用<code>dispatch_queue_s</code>的函数对<code>dispatch_source_s</code>进行初始化，之后再针对不同的字段进行覆盖。</p>
-<h3 id="dispatch-source-create"><a href="#dispatch-source-create" class="headerlink" title="dispatch_source_create"></a>dispatch_source_create</h3><p>按照惯例，还是先从创建说起：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">dispatch_source_t</span> </span><br><span class="line">dispatch_source_create(<span class="keyword">dispatch_source_type_t</span> type,</span><br><span class="line">    <span class="keyword">uintptr_t</span> handle,</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> mask,</span><br><span class="line">    <span class="keyword">dispatch_queue_t</span> q)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 注意这里和kevent扯上关系了</span></span><br><span class="line">    <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> *<span class="title">proto_kev</span> = &amp;<span class="title">type</span>-&gt;<span class="title">ke</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">dispatch_source_t</span> ds = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">dispatch_kevent_t</span> dk = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 基本校验</span></span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 申请dispatch_source_t内存空间</span></span><br><span class="line">    ds = <span class="built_in">calloc</span>(<span class="number">1u</span>l, <span class="keyword">sizeof</span>(struct dispatch_source_s));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 申请dispatch_kevent_s内存空间</span></span><br><span class="line">    dk = <span class="built_in">calloc</span>(<span class="number">1u</span>l, <span class="keyword">sizeof</span>(struct dispatch_kevent_s));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置dispatch_kevent_s字段</span></span><br><span class="line">    dk-&gt;dk_kevent = *proto_kev;</span><br><span class="line">    dk-&gt;dk_kevent.ident = handle;</span><br><span class="line">    dk-&gt;dk_kevent.flags |= EV_ADD|EV_ENABLE;</span><br><span class="line">    dk-&gt;dk_kevent.fflags |= (<span class="keyword">uint32_t</span>)mask;</span><br><span class="line">    dk-&gt;dk_kevent.udata = dk;</span><br><span class="line">    TAILQ_INIT(&amp;dk-&gt;dk_sources);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用队列方法_dispatch_queue_init初始化ds</span></span><br><span class="line">    _dispatch_queue_init((<span class="keyword">dispatch_queue_t</span>)ds);</span><br><span class="line">    strlcpy(ds-&gt;dq_label, <span class="string">"source"</span>, <span class="keyword">sizeof</span>(ds-&gt;dq_label));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置dispatch_source_t特有字段，对上述的_ds_pad的空间进行覆盖</span></span><br><span class="line">    ds-&gt;do_vtable = &amp;_dispatch_source_kevent_vtable;<span class="comment">//设置针对source的source_kevent_vtable</span></span><br><span class="line">    ds-&gt;do_ref_cnt++; <span class="comment">// 引用计数</span></span><br><span class="line">    ds-&gt;do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_INTERVAL;<span class="comment">//处于暂停状态，需要手动开启。</span></span><br><span class="line">    ds-&gt;do_targetq = q;<span class="comment">// 表示事件触发的回调在该队列执行</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Dispatch Source</span></span><br><span class="line">    ds-&gt;ds_ident_hack = dk-&gt;dk_kevent.ident;</span><br><span class="line">    ds-&gt;ds_dkev = dk;</span><br><span class="line">    ds-&gt;ds_pending_data_mask = dk-&gt;dk_kevent.fflags;</span><br><span class="line">    <span class="keyword">if</span> ((EV_DISPATCH|EV_ONESHOT) &amp; proto_kev-&gt;flags) &#123;</span><br><span class="line">        <span class="keyword">if</span> (proto_kev-&gt;filter != EVFILT_MACHPORT) &#123;</span><br><span class="line">            ds-&gt;ds_is_level = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        ds-&gt;ds_needs_rearm = <span class="literal">true</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!(EV_CLEAR &amp; proto_kev-&gt;flags)) &#123;</span><br><span class="line">        <span class="comment">// we cheat and use EV_CLEAR to mean a "flag thingy"</span></span><br><span class="line">        ds-&gt;ds_is_adder = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If its a timer source, it needs to be re-armed</span></span><br><span class="line">    <span class="keyword">if</span> (type-&gt;ke.filter == DISPATCH_EVFILT_TIMER) &#123;</span><br><span class="line">        ds-&gt;ds_needs_rearm = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Some sources require special processing</span></span><br><span class="line">    <span class="keyword">if</span> (type == DISPATCH_SOURCE_TYPE_MACH_SEND) &#123;</span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">dispatch_once_t</span> pred;</span><br><span class="line">        dispatch_once_f(&amp;pred, <span class="literal">NULL</span>, _dispatch_mach_notify_source_init);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (type == DISPATCH_SOURCE_TYPE_TIMER) &#123;</span><br><span class="line">        ds-&gt;ds_timer.flags = mask;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_retain(ds-&gt;do_targetq);</span><br><span class="line">    <span class="keyword">return</span> ds;</span><br><span class="line">    </span><br><span class="line">out_bad:</span><br><span class="line">    <span class="built_in">free</span>(ds);</span><br><span class="line">    <span class="built_in">free</span>(dk);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="dispatch-source-create"><a href="#dispatch-source-create" class="headerlink" title="dispatch_source_create"></a>dispatch_source_create</h3><p>按照惯例，还是先从创建说起：</p>
+<pre><code class="c">dispatch_source_t 
+dispatch_source_create(dispatch_source_type_t type,
+    uintptr_t handle,
+    unsigned long mask,
+    dispatch_queue_t q)
+{
+    // 注意这里和kevent扯上关系了
+    const struct kevent *proto_kev = &amp;type-&gt;ke;
+
+    dispatch_source_t ds = NULL;
+    dispatch_kevent_t dk = NULL;
+
+    // 基本校验
+    ...
+
+    // 申请dispatch_source_t内存空间
+    ds = calloc(1ul, sizeof(struct dispatch_source_s));
+
+    // 申请dispatch_kevent_s内存空间
+    dk = calloc(1ul, sizeof(struct dispatch_kevent_s));
+
+    // 设置dispatch_kevent_s字段
+    dk-&gt;dk_kevent = *proto_kev;
+    dk-&gt;dk_kevent.ident = handle;
+    dk-&gt;dk_kevent.flags |= EV_ADD|EV_ENABLE;
+    dk-&gt;dk_kevent.fflags |= (uint32_t)mask;
+    dk-&gt;dk_kevent.udata = dk;
+    TAILQ_INIT(&amp;dk-&gt;dk_sources);
+
+    // 调用队列方法_dispatch_queue_init初始化ds
+    _dispatch_queue_init((dispatch_queue_t)ds);
+    strlcpy(ds-&gt;dq_label, &quot;source&quot;, sizeof(ds-&gt;dq_label));
+
+    // 设置dispatch_source_t特有字段，对上述的_ds_pad的空间进行覆盖
+    ds-&gt;do_vtable = &amp;_dispatch_source_kevent_vtable;//设置针对source的source_kevent_vtable
+    ds-&gt;do_ref_cnt++; // 引用计数
+    ds-&gt;do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_INTERVAL;//处于暂停状态，需要手动开启。
+    ds-&gt;do_targetq = q;// 表示事件触发的回调在该队列执行
+
+    // Dispatch Source
+    ds-&gt;ds_ident_hack = dk-&gt;dk_kevent.ident;
+    ds-&gt;ds_dkev = dk;
+    ds-&gt;ds_pending_data_mask = dk-&gt;dk_kevent.fflags;
+    if ((EV_DISPATCH|EV_ONESHOT) &amp; proto_kev-&gt;flags) {
+        if (proto_kev-&gt;filter != EVFILT_MACHPORT) {
+            ds-&gt;ds_is_level = true;
+        }
+        ds-&gt;ds_needs_rearm = true;
+    } else if (!(EV_CLEAR &amp; proto_kev-&gt;flags)) {
+        // we cheat and use EV_CLEAR to mean a &quot;flag thingy&quot;
+        ds-&gt;ds_is_adder = true;
+    }
+
+    // If its a timer source, it needs to be re-armed
+    if (type-&gt;ke.filter == DISPATCH_EVFILT_TIMER) {
+        ds-&gt;ds_needs_rearm = true;
+    }
+
+    // Some sources require special processing
+    if (type == DISPATCH_SOURCE_TYPE_MACH_SEND) {
+        static dispatch_once_t pred;
+        dispatch_once_f(&amp;pred, NULL, _dispatch_mach_notify_source_init);
+    } else if (type == DISPATCH_SOURCE_TYPE_TIMER) {
+        ds-&gt;ds_timer.flags = mask;
+    }
+
+    _dispatch_retain(ds-&gt;do_targetq);
+    return ds;
+
+out_bad:
+    free(ds);
+    free(dk);
+    return NULL;
+}
+</code></pre>
 <blockquote>
 <ul>
-<li><p>1、dispatch_source_type_s<br><code>dispatch_source_type_s</code>有两个字段，一个kevent，另一个是mask</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_type_s</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">ke</span>;</span></span><br><span class="line">    <span class="keyword">uint64_t</span> mask;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 以_dispatch_source_type_timer为例：</span></span><br><span class="line"><span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_type_s</span> _<span class="title">dispatch_source_type_timer</span> = &#123;</span></span><br><span class="line">    .ke = &#123;</span><br><span class="line">        .filter = DISPATCH_EVFILT_TIMER,</span><br><span class="line">    &#125;,</span><br><span class="line">    .mask = DISPATCH_TIMER_INTERVAL|DISPATCH_TIMER_ONESHOT|DISPATCH_TIMER_ABSOLUTE|DISPATCH_TIMER_WALL_CLOCK,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2、do_vtable</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_vtable_s</span> _<span class="title">dispatch_source_kevent_vtable</span> = &#123;</span></span><br><span class="line">    .do_type = DISPATCH_SOURCE_KEVENT_TYPE,</span><br><span class="line">    .do_kind = <span class="string">"kevent-source"</span>,</span><br><span class="line">    .do_invoke = _dispatch_source_invoke,</span><br><span class="line">    .do_dispose = _dispatch_source_dispose,</span><br><span class="line">    .do_probe = _dispatch_source_probe,</span><br><span class="line">    .do_debug = _dispatch_source_kevent_debug,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-</li>
+<li>1、dispatch_source_type_s<br><code>dispatch_source_type_s</code>有两个字段，一个kevent，另一个是mask<br>```c<br>struct dispatch_source_type_s {<br>  struct kevent ke;<br>  uint64_t mask;<br>};</li>
 </ul>
 </blockquote>
-<h3 id="dispatch-source-set-event-handler"><a href="#dispatch-source-set-event-handler" class="headerlink" title="dispatch_source_set_event_handler"></a>dispatch_source_set_event_handler</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_source_set_event_handler</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds, <span class="keyword">dispatch_block_t</span> handler)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    handler = _dispatch_Block_copy(handler);</span><br><span class="line">    dispatch_barrier_async_f((<span class="keyword">dispatch_queue_t</span>)ds,</span><br><span class="line">        handler, _dispatch_source_set_event_handler2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>先对handler进行了copy，然后调用了<code>dispatch_barrier_async_f</code>，这个方法和queue篇中的<code>dispatch_async_f</code>极其相似：<strong>把block设置到续体上，然后压入目标队列</strong>，同时可以发现，<code>dispatch_barrier_async_f</code>方法中直接把ds当成队列使用了，这也无可厚非，它们极其相似的定义就决定了这是可行的。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_barrier_async_f</span><span class="params">(<span class="keyword">dispatch_queue_t</span> dq, <span class="keyword">void</span> *context, <span class="keyword">dispatch_function_t</span> func)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">dispatch_continuation_t</span> dc = fastpath(_dispatch_continuation_alloc_cacheonly());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!dc) <span class="keyword">return</span> _dispatch_barrier_async_f_slow(dq, context, func);</span><br><span class="line"></span><br><span class="line">    dc-&gt;do_vtable = (<span class="keyword">void</span> *)(DISPATCH_OBJ_ASYNC_BIT | DISPATCH_OBJ_BARRIER_BIT);</span><br><span class="line">    dc-&gt;dc_func = func;</span><br><span class="line">    dc-&gt;dc_ctxt = context;</span><br><span class="line"></span><br><span class="line">    _dispatch_queue_push(dq, dc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>再来关注下<code>_dispatch_source_set_event_handler2</code><br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> _dispatch_source_set_event_handler2(<span class="keyword">void</span> *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Block_layout</span> *<span class="title">bl</span> = <span class="title">context</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">dispatch_source_t</span> ds = (<span class="keyword">dispatch_source_t</span>)_dispatch_queue_get_current();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_handler_is_block &amp;&amp; ds-&gt;ds_handler_ctxt) &#123;</span><br><span class="line">        Block_release(ds-&gt;ds_handler_ctxt);</span><br><span class="line">    &#125;</span><br><span class="line">    ds-&gt;ds_handler_func = bl ? (<span class="keyword">void</span> *)bl-&gt;invoke : <span class="literal">NULL</span>;</span><br><span class="line">    ds-&gt;ds_handler_ctxt = bl;</span><br><span class="line">    ds-&gt;ds_handler_is_block = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>// 以_dispatch_source_type_timer为例：<br>const struct dispatch_source_type_s _dispatch_source_type_timer = {<br>    .ke = {<br>        .filter = DISPATCH_EVFILT_TIMER,<br>    },<br>    .mask = DISPATCH_TIMER_INTERVAL|DISPATCH_TIMER_ONESHOT|DISPATCH_TIMER_ABSOLUTE|DISPATCH_TIMER_WALL_CLOCK,<br>};</p>
+<pre><code>&gt;* 2、do_vtable
+```c
+const struct dispatch_source_vtable_s _dispatch_source_kevent_vtable = {
+    .do_type = DISPATCH_SOURCE_KEVENT_TYPE,
+    .do_kind = &quot;kevent-source&quot;,
+    .do_invoke = _dispatch_source_invoke,
+    .do_dispose = _dispatch_source_dispose,
+    .do_probe = _dispatch_source_probe,
+    .do_debug = _dispatch_source_kevent_debug,
+};
+</code></pre><h3 id="dispatch-source-set-event-handler"><a href="#dispatch-source-set-event-handler" class="headerlink" title="dispatch_source_set_event_handler"></a>dispatch_source_set_event_handler</h3><pre><code class="c">void dispatch_source_set_event_handler(dispatch_source_t ds, dispatch_block_t handler)
+{
+    handler = _dispatch_Block_copy(handler);
+    dispatch_barrier_async_f((dispatch_queue_t)ds,
+        handler, _dispatch_source_set_event_handler2);
+}
+</code></pre>
+<p>先对handler进行了copy，然后调用了<code>dispatch_barrier_async_f</code>，这个方法和queue篇中的<code>dispatch_async_f</code>极其相似：<strong>把block设置到续体上，然后压入目标队列</strong>，同时可以发现，<code>dispatch_barrier_async_f</code>方法中直接把ds当成队列使用了，这也无可厚非，它们极其相似的定义就决定了这是可行的。</p>
+<pre><code class="c">void dispatch_barrier_async_f(dispatch_queue_t dq, void *context, dispatch_function_t func)
+{
+    dispatch_continuation_t dc = fastpath(_dispatch_continuation_alloc_cacheonly());
+
+    if (!dc) return _dispatch_barrier_async_f_slow(dq, context, func);
+
+    dc-&gt;do_vtable = (void *)(DISPATCH_OBJ_ASYNC_BIT | DISPATCH_OBJ_BARRIER_BIT);
+    dc-&gt;dc_func = func;
+    dc-&gt;dc_ctxt = context;
+
+    _dispatch_queue_push(dq, dc);
+}
+</code></pre>
+<p>再来关注下<code>_dispatch_source_set_event_handler2</code></p>
+<pre><code class="c">static void _dispatch_source_set_event_handler2(void *context)
+{
+    struct Block_layout *bl = context;
+
+    dispatch_source_t ds = (dispatch_source_t)_dispatch_queue_get_current();
+
+    if (ds-&gt;ds_handler_is_block &amp;&amp; ds-&gt;ds_handler_ctxt) {
+        Block_release(ds-&gt;ds_handler_ctxt);
+    }
+    ds-&gt;ds_handler_func = bl ? (void *)bl-&gt;invoke : NULL;
+    ds-&gt;ds_handler_ctxt = bl;
+    ds-&gt;ds_handler_is_block = true;
+}
+</code></pre>
 <p>这个方法主要是保存一下上下文，回头使用。</p>
-<h3 id="dispatch-source-set-cancel-handler"><a href="#dispatch-source-set-cancel-handler" class="headerlink" title="dispatch_source_set_cancel_handler"></a>dispatch_source_set_cancel_handler</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_source_set_cancel_handler</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">dispatch_block_t</span> handler)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    handler = _dispatch_Block_copy(handler);</span><br><span class="line">    dispatch_barrier_async_f((<span class="keyword">dispatch_queue_t</span>)ds,</span><br><span class="line">                             handler, _dispatch_source_set_cancel_handler2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>设置cancel回调，可以看到source是支持cancel的。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> _dispatch_source_set_cancel_handler2(<span class="keyword">void</span> *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">dispatch_source_t</span> ds = (<span class="keyword">dispatch_source_t</span>)_dispatch_queue_get_current();</span><br><span class="line">    dispatch_assert(ds-&gt;do_vtable == &amp;_dispatch_source_kevent_vtable);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_cancel_is_block &amp;&amp; ds-&gt;ds_cancel_handler) &#123;</span><br><span class="line">        Block_release(ds-&gt;ds_cancel_handler);</span><br><span class="line">    &#125;</span><br><span class="line">    ds-&gt;ds_cancel_handler = context;</span><br><span class="line">    ds-&gt;ds_cancel_is_block = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="dispatch-source-cancel"><a href="#dispatch-source-cancel" class="headerlink" title="dispatch_source_cancel"></a>dispatch_source_cancel</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_source_cancel</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    _dispatch_retain(ds);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置取消标志</span></span><br><span class="line">    dispatch_atomic_or(&amp;ds-&gt;ds_atomic_flags, DSF_CANCELED);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 唤醒source，执行取消操作，解除source注册，最后进行资源释放</span></span><br><span class="line">    _dispatch_wakeup(ds);</span><br><span class="line"></span><br><span class="line">    _dispatch_release(ds);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="dispatch-source-get-xxx"><a href="#dispatch-source-get-xxx" class="headerlink" title="dispatch_source_get_xxx"></a>dispatch_source_get_xxx</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">dispatch_source_get_mask</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ds-&gt;ds_pending_data_mask;<span class="comment">// mask</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">uintptr_t</span> dispatch_source_get_handle(<span class="keyword">dispatch_source_t</span> ds)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">int</span>)ds-&gt;ds_ident_hack;<span class="comment">// 回调函数地址存储在ds_ident_hack字段中</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">dispatch_source_get_data</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ds-&gt;ds_data;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="dispatch-source-set-cancel-handler"><a href="#dispatch-source-set-cancel-handler" class="headerlink" title="dispatch_source_set_cancel_handler"></a>dispatch_source_set_cancel_handler</h3><pre><code class="c">void dispatch_source_set_cancel_handler(dispatch_source_t ds,
+    dispatch_block_t handler)
+{
+    handler = _dispatch_Block_copy(handler);
+    dispatch_barrier_async_f((dispatch_queue_t)ds,
+                             handler, _dispatch_source_set_cancel_handler2);
+}
+</code></pre>
+<p>设置cancel回调，可以看到source是支持cancel的。</p>
+<pre><code class="c">static void _dispatch_source_set_cancel_handler2(void *context)
+{
+    dispatch_source_t ds = (dispatch_source_t)_dispatch_queue_get_current();
+    dispatch_assert(ds-&gt;do_vtable == &amp;_dispatch_source_kevent_vtable);
+
+    if (ds-&gt;ds_cancel_is_block &amp;&amp; ds-&gt;ds_cancel_handler) {
+        Block_release(ds-&gt;ds_cancel_handler);
+    }
+    ds-&gt;ds_cancel_handler = context;
+    ds-&gt;ds_cancel_is_block = true;
+}
+</code></pre>
+<h3 id="dispatch-source-cancel"><a href="#dispatch-source-cancel" class="headerlink" title="dispatch_source_cancel"></a>dispatch_source_cancel</h3><pre><code class="c">void dispatch_source_cancel(dispatch_source_t ds)
+{
+    _dispatch_retain(ds);
+
+    // 设置取消标志
+    dispatch_atomic_or(&amp;ds-&gt;ds_atomic_flags, DSF_CANCELED);
+
+    // 唤醒source，执行取消操作，解除source注册，最后进行资源释放
+    _dispatch_wakeup(ds);
+
+    _dispatch_release(ds);
+}
+</code></pre>
+<h3 id="dispatch-source-get-xxx"><a href="#dispatch-source-get-xxx" class="headerlink" title="dispatch_source_get_xxx"></a>dispatch_source_get_xxx</h3><pre><code class="c">unsigned long dispatch_source_get_mask(dispatch_source_t ds)
+{
+    return ds-&gt;ds_pending_data_mask;// mask
+}
+
+uintptr_t dispatch_source_get_handle(dispatch_source_t ds)
+{
+    return (int)ds-&gt;ds_ident_hack;// 回调函数地址存储在ds_ident_hack字段中
+}
+
+unsigned long dispatch_source_get_data(dispatch_source_t ds)
+{
+    return ds-&gt;ds_data;
+}
+</code></pre>
 <h3 id="dispatch-source-merge-data"><a href="#dispatch-source-merge-data" class="headerlink" title="dispatch_source_merge_data"></a>dispatch_source_merge_data</h3><p>Merges data into a dispatch source of type DISPATCH_SOURCE_TYPE_DATA_ADD or DISPATCH_SOURCE_TYPE_DATA_OR and submits its event handler block to its target queue</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_source_merge_data</span><span class="params">(<span class="keyword">dispatch_source_t</span> ds, <span class="keyword">unsigned</span> <span class="keyword">long</span> val)</span></span></span><br><span class="line"><span class="function"></span>&#123;   </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">kev</span> = &#123;</span></span><br><span class="line">        .fflags = (typeof(kev.fflags))val,</span><br><span class="line">        .data = val,</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    _dispatch_source_merge_kevent(ds, &amp;kev);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_source_merge_kevent(<span class="keyword">dispatch_source_t</span> ds, <span class="keyword">const</span> struct kevent *ke)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">fake</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果source已经被取消或者引用计数为0，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 发生错误之后的清理工作</span></span><br><span class="line">    <span class="keyword">if</span> (ke-&gt;flags &amp; EV_ERROR) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ke-&gt;filter == EVFILT_PROC &amp;&amp; ke-&gt;data == ESRCH) &#123;</span><br><span class="line">            fake = *ke;</span><br><span class="line">            fake.flags &amp;= ~EV_ERROR;</span><br><span class="line">            fake.fflags = NOTE_EXIT;</span><br><span class="line">            fake.data = <span class="number">0</span>;</span><br><span class="line">            ke = &amp;fake;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// log the unexpected error</span></span><br><span class="line">            dispatch_assume_zero(ke-&gt;data);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_is_level) &#123;</span><br><span class="line">        <span class="comment">// EV_EOF</span></span><br><span class="line">        dispatch_assert(ke-&gt;data &gt;= <span class="number">0l</span>);</span><br><span class="line">        ds-&gt;ds_pending_data = ~ke-&gt;data;</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (ds-&gt;ds_is_adder) &#123;</span><br><span class="line">        dispatch_atomic_add(&amp;ds-&gt;ds_pending_data, ke-&gt;data);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        dispatch_atomic_or(&amp;ds-&gt;ds_pending_data, ke-&gt;fflags &amp; ds-&gt;ds_pending_data_mask);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// EV_DISPATCH and EV_ONESHOT sources 仅仅触发一次</span></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_needs_rearm) &#123;</span><br><span class="line">        ds-&gt;ds_is_armed = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 唤醒source</span></span><br><span class="line">    _dispatch_wakeup(ds);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="dispatch-resume"><a href="#dispatch-resume" class="headerlink" title="dispatch_resume"></a>dispatch_resume</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dispatch_resume</span><span class="params">(<span class="keyword">dispatch_object_t</span> dou)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (slowpath(dou._do-&gt;do_ref_cnt == DISPATCH_OBJECT_GLOBAL_REFCNT)) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">switch</span> (dispatch_atomic_sub(&amp;dou._do-&gt;do_suspend_cnt, DISPATCH_OBJECT_SUSPEND_INTERVAL) + DISPATCH_OBJECT_SUSPEND_INTERVAL) &#123;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_OBJECT_SUSPEND_INTERVAL:</span><br><span class="line">        _dispatch_wakeup(dou._do);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        DISPATCH_CLIENT_CRASH(<span class="string">"Over-resume of an object"</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void dispatch_source_merge_data(dispatch_source_t ds, unsigned long val)
+{   
+    struct kevent kev = {
+        .fflags = (typeof(kev.fflags))val,
+        .data = val,
+    };
+
+    _dispatch_source_merge_kevent(ds, &amp;kev);
+}
+</code></pre>
+<pre><code class="c">void _dispatch_source_merge_kevent(dispatch_source_t ds, const struct kevent *ke)
+{
+    struct kevent fake;
+
+    // 如果source已经被取消或者引用计数为0，直接返回
+    if ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == 0)) {
+        return;
+    }
+
+    // 发生错误之后的清理工作
+    if (ke-&gt;flags &amp; EV_ERROR) {
+        if (ke-&gt;filter == EVFILT_PROC &amp;&amp; ke-&gt;data == ESRCH) {
+            fake = *ke;
+            fake.flags &amp;= ~EV_ERROR;
+            fake.fflags = NOTE_EXIT;
+            fake.data = 0;
+            ke = &amp;fake;
+        } else {
+            // log the unexpected error
+            dispatch_assume_zero(ke-&gt;data);
+            return;
+        }
+    }
+
+    if (ds-&gt;ds_is_level) {
+        // EV_EOF
+        dispatch_assert(ke-&gt;data &gt;= 0l);
+        ds-&gt;ds_pending_data = ~ke-&gt;data;
+    } 
+    else if (ds-&gt;ds_is_adder) {
+        dispatch_atomic_add(&amp;ds-&gt;ds_pending_data, ke-&gt;data);
+    } 
+    else {
+        dispatch_atomic_or(&amp;ds-&gt;ds_pending_data, ke-&gt;fflags &amp; ds-&gt;ds_pending_data_mask);
+    }
+
+    // EV_DISPATCH and EV_ONESHOT sources 仅仅触发一次
+    if (ds-&gt;ds_needs_rearm) {
+        ds-&gt;ds_is_armed = false;
+    }
+
+    // 唤醒source
+    _dispatch_wakeup(ds);
+}
+</code></pre>
+<h3 id="dispatch-resume"><a href="#dispatch-resume" class="headerlink" title="dispatch_resume"></a>dispatch_resume</h3><pre><code class="c">void dispatch_resume(dispatch_object_t dou)
+{
+    if (slowpath(dou._do-&gt;do_ref_cnt == DISPATCH_OBJECT_GLOBAL_REFCNT)) {
+        return;
+    }
+    switch (dispatch_atomic_sub(&amp;dou._do-&gt;do_suspend_cnt, DISPATCH_OBJECT_SUSPEND_INTERVAL) + DISPATCH_OBJECT_SUSPEND_INTERVAL) {
+    case DISPATCH_OBJECT_SUSPEND_INTERVAL:
+        _dispatch_wakeup(dou._do);
+        break;
+    case 0:
+        DISPATCH_CLIENT_CRASH(&quot;Over-resume of an object&quot;);
+        break;
+    default:
+        break;
+    }
+}
+</code></pre>
 <p>由前面的创建过程可以知晓，一般情况下，创建一个source，其<code>do_suspend_cnt</code>都是<code>DISPATCH_OBJECT_SUSPEND_INTERVAL</code>，表示暂停状态，需要调用<code>dispatch_resume</code>手动启动。<br>很明显，上面的switch分支应该走<code>DISPATCH_OBJECT_SUSPEND_INTERVAL</code>，从而调用<code>_dispatch_wakeup</code>。</p>
 <p><code>_dispatch_wakeup</code>在queue篇中也有分析到，它主要和<code>do_invoke</code>有关，而source中的<code>do_invoke</code>指向了<code>_dispatch_source_invoke</code>，这个方法会执行所有的source actions，每一个action都会保证在合适的队列上执行，如果当前的队列与action不对应，那么正确的队列将会返回，然后该action将会在返回的正确队列上执行，本文的<strong>核心重点</strong>就是这个了。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">dispatch_queue_t</span> _dispatch_source_invoke(<span class="keyword">dispatch_source_t</span> ds)</span><br><span class="line">&#123;    </span><br><span class="line">    <span class="comment">// 获取当前线程所在的队列</span></span><br><span class="line">    <span class="keyword">dispatch_queue_t</span> dq = _dispatch_queue_get_current();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果source还没有安装，则调用_dispatch_kevent_merge进行安装到管理队列上</span></span><br><span class="line">    <span class="keyword">if</span> (!ds-&gt;ds_is_installed) &#123;</span><br><span class="line">        <span class="comment">// The source needs to be installed on the manager queue.</span></span><br><span class="line">        <span class="keyword">if</span> (dq != &amp;_dispatch_mgr_q) &#123;</span><br><span class="line">            <span class="keyword">return</span> &amp;_dispatch_mgr_q;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        _dispatch_kevent_merge(ds);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="comment">// source已经被取消，需要从管理队列中卸载掉，卸载完成后，取消回调需要发送到目标队列</span></span><br><span class="line">        <span class="comment">// 可以看到，如果source的ds_dkev不为空，就需要管理队列，否则目标队列就可以了</span></span><br><span class="line">        <span class="keyword">if</span> (ds-&gt;ds_dkev) &#123;</span><br><span class="line">            <span class="keyword">if</span> (dq != &amp;_dispatch_mgr_q) &#123;</span><br><span class="line">                <span class="keyword">return</span> &amp;_dispatch_mgr_q;</span><br><span class="line">            &#125;</span><br><span class="line">            _dispatch_kevent_release(ds);</span><br><span class="line">            <span class="keyword">return</span> ds-&gt;do_targetq;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (ds-&gt;ds_cancel_handler) &#123;</span><br><span class="line">            <span class="keyword">if</span> (dq != ds-&gt;do_targetq) &#123;</span><br><span class="line">                <span class="keyword">return</span> ds-&gt;do_targetq;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;   </span><br><span class="line">        <span class="comment">// cancel回调</span></span><br><span class="line">        _dispatch_source_cancel_callout(ds);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (ds-&gt;ds_pending_data) &#123;</span><br><span class="line">        <span class="comment">// source有未决的数据，需要通过在目标队列上通过回调传送</span></span><br><span class="line">        <span class="keyword">if</span> (dq != ds-&gt;do_targetq) &#123;</span><br><span class="line">            <span class="keyword">return</span> ds-&gt;do_targetq;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// </span></span><br><span class="line">        _dispatch_source_latch_and_call(ds);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 有些source需要进行rearmed，必须切到管理队列上</span></span><br><span class="line">        <span class="keyword">if</span> (ds-&gt;ds_needs_rearm) &#123;</span><br><span class="line">            <span class="keyword">return</span> &amp;_dispatch_mgr_q;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (ds-&gt;ds_needs_rearm &amp;&amp; !ds-&gt;ds_is_armed) &#123;</span><br><span class="line">        <span class="comment">// 在管理队列上进行rearmed</span></span><br><span class="line">        <span class="keyword">if</span> (dq != &amp;_dispatch_mgr_q) &#123;</span><br><span class="line">            <span class="keyword">return</span> &amp;_dispatch_mgr_q;</span><br><span class="line">        &#125;</span><br><span class="line">        _dispatch_kevent_resume(ds-&gt;ds_dkev, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">        ds-&gt;ds_is_armed = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">dispatch_queue_t _dispatch_source_invoke(dispatch_source_t ds)
+{    
+    // 获取当前线程所在的队列
+    dispatch_queue_t dq = _dispatch_queue_get_current();
+
+    // 如果source还没有安装，则调用_dispatch_kevent_merge进行安装到管理队列上
+    if (!ds-&gt;ds_is_installed) {
+        // The source needs to be installed on the manager queue.
+        if (dq != &amp;_dispatch_mgr_q) {
+            return &amp;_dispatch_mgr_q;
+        }
+
+        _dispatch_kevent_merge(ds);
+    } 
+    else if ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == 0)) {
+        // source已经被取消，需要从管理队列中卸载掉，卸载完成后，取消回调需要发送到目标队列
+        // 可以看到，如果source的ds_dkev不为空，就需要管理队列，否则目标队列就可以了
+        if (ds-&gt;ds_dkev) {
+            if (dq != &amp;_dispatch_mgr_q) {
+                return &amp;_dispatch_mgr_q;
+            }
+            _dispatch_kevent_release(ds);
+            return ds-&gt;do_targetq;
+        } 
+        else if (ds-&gt;ds_cancel_handler) {
+            if (dq != ds-&gt;do_targetq) {
+                return ds-&gt;do_targetq;
+            }
+        }   
+        // cancel回调
+        _dispatch_source_cancel_callout(ds);
+    } 
+    else if (ds-&gt;ds_pending_data) {
+        // source有未决的数据，需要通过在目标队列上通过回调传送
+        if (dq != ds-&gt;do_targetq) {
+            return ds-&gt;do_targetq;
+        }
+        // 
+        _dispatch_source_latch_and_call(ds);
+
+        // 有些source需要进行rearmed，必须切到管理队列上
+        if (ds-&gt;ds_needs_rearm) {
+            return &amp;_dispatch_mgr_q;
+        }
+    } 
+    else if (ds-&gt;ds_needs_rearm &amp;&amp; !ds-&gt;ds_is_armed) {
+        // 在管理队列上进行rearmed
+        if (dq != &amp;_dispatch_mgr_q) {
+            return &amp;_dispatch_mgr_q;
+        }
+        _dispatch_kevent_resume(ds-&gt;ds_dkev, 0, 0);
+        ds-&gt;ds_is_armed = true;
+    }
+
+    return NULL;
+}
+</code></pre>
 <p>该函数中多次提到了管理队列<code>_dispatch_mgr_q</code>，有些情况必须切到管理队列上执行，比如：</p>
 <ul>
 <li>ds_is_installed为假；</li>
@@ -464,45 +890,472 @@
 <li>Find existing kevents, and merge any new flags if necessary</li>
 </ul>
 </blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_kevent_merge(<span class="keyword">dispatch_source_t</span> ds)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">dispatch_once_t</span> pred;</span><br><span class="line">    <span class="keyword">dispatch_kevent_t</span> dk;</span><br><span class="line">    typeof(dk-&gt;dk_kevent.fflags) new_flags;</span><br><span class="line">    <span class="keyword">bool</span> do_resume = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_is_installed) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ds-&gt;ds_is_installed = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化_dispatch_source_init_tail_queue_array</span></span><br><span class="line">    dispatch_once_f(&amp;pred, <span class="literal">NULL</span>, _dispatch_source_init_tail_queue_array</span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 寻找是否有相同的事件(dispatch kevent)被观察</span></span><br><span class="line">    dk = _dispatch_kevent_find(ds-&gt;ds_dkev-&gt;dk_kevent.ident, ds-&gt;ds_dkev-&gt;dk_kevent.filter);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (dk) &#123;</span><br><span class="line">        <span class="comment">// 如果存在有相同的事件，则需要检查是否有新的flags需要更新，从这里可以看出，kevent</span></span><br><span class="line">        <span class="comment">// 并不依赖于source，而是独立存在的。</span></span><br><span class="line">        new_flags = ~dk-&gt;dk_kevent.fflags &amp; ds-&gt;ds_dkev-&gt;dk_kevent.fflags;</span><br><span class="line">        dk-&gt;dk_kevent.fflags |= ds-&gt;ds_dkev-&gt;dk_kevent.fflags;</span><br><span class="line">        <span class="built_in">free</span>(ds-&gt;ds_dkev);</span><br><span class="line">        ds-&gt;ds_dkev = dk;</span><br><span class="line">        do_resume = new_flags;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 如果不存在，则直接将dk插入到事件队列中</span></span><br><span class="line">        dk = ds-&gt;ds_dkev;</span><br><span class="line">        _dispatch_kevent_insert(dk);</span><br><span class="line">        new_flags = dk-&gt;dk_kevent.fflags;</span><br><span class="line">        do_resume = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将source的ds_list插入到kevent的source队列中</span></span><br><span class="line">    TAILQ_INSERT_TAIL(&amp;dk-&gt;dk_sources, ds, ds_list);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果flags有更新，则需要重新注册kevent事件</span></span><br><span class="line">    <span class="keyword">if</span> (do_resume) &#123;</span><br><span class="line">        dk-&gt;dk_kevent.flags |= EV_ADD;</span><br><span class="line">        _dispatch_kevent_resume(ds-&gt;ds_dkev, new_flags, <span class="number">0</span>);</span><br><span class="line">        ds-&gt;ds_is_armed = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void _dispatch_kevent_merge(dispatch_source_t ds)
+{
+    static dispatch_once_t pred;
+    dispatch_kevent_t dk;
+    typeof(dk-&gt;dk_kevent.fflags) new_flags;
+    bool do_resume = false;
+
+    if (ds-&gt;ds_is_installed) {
+        return;
+    }
+    ds-&gt;ds_is_installed = true;
+
+    // 初始化_dispatch_source_init_tail_queue_array
+    dispatch_once_f(&amp;pred, NULL, _dispatch_source_init_tail_queue_array
+        );
+
+    // 寻找是否有相同的事件(dispatch kevent)被观察
+    dk = _dispatch_kevent_find(ds-&gt;ds_dkev-&gt;dk_kevent.ident, ds-&gt;ds_dkev-&gt;dk_kevent.filter);
+
+    if (dk) {
+        // 如果存在有相同的事件，则需要检查是否有新的flags需要更新，从这里可以看出，kevent
+        // 并不依赖于source，而是独立存在的。
+        new_flags = ~dk-&gt;dk_kevent.fflags &amp; ds-&gt;ds_dkev-&gt;dk_kevent.fflags;
+        dk-&gt;dk_kevent.fflags |= ds-&gt;ds_dkev-&gt;dk_kevent.fflags;
+        free(ds-&gt;ds_dkev);
+        ds-&gt;ds_dkev = dk;
+        do_resume = new_flags;
+    }
+    else {
+        // 如果不存在，则直接将dk插入到事件队列中
+        dk = ds-&gt;ds_dkev;
+        _dispatch_kevent_insert(dk);
+        new_flags = dk-&gt;dk_kevent.fflags;
+        do_resume = true;
+    }
+
+    // 将source的ds_list插入到kevent的source队列中
+    TAILQ_INSERT_TAIL(&amp;dk-&gt;dk_sources, ds, ds_list);
+
+    // 如果flags有更新，则需要重新注册kevent事件
+    if (do_resume) {
+        dk-&gt;dk_kevent.flags |= EV_ADD;
+        _dispatch_kevent_resume(ds-&gt;ds_dkev, new_flags, 0);
+        ds-&gt;ds_is_armed = true;
+    }
+}
+</code></pre>
 <blockquote>
 <ul>
 <li>1、_dispatch_source_init_tail_queue_array</li>
 </ul>
 </blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_source_init_tail_queue_array(<span class="keyword">void</span> *context __attribute__((unused)))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; DSL_HASH_SIZE; i++) &#123;</span><br><span class="line">        TAILQ_INIT(&amp;_dispatch_sources[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[DSL_HASH(DISPATCH_TIMER_INDEX_WALL)], &amp;_dispatch_kevent_timer[DISPATCH_TIMER_INDEX_WALL], dk_list);</span><br><span class="line">    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[DSL_HASH(DISPATCH_TIMER_INDEX_MACH)], &amp;_dispatch_kevent_timer[DISPATCH_TIMER_INDEX_MACH], dk_list);</span><br><span class="line">    </span><br><span class="line">    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[<span class="number">0</span>], &amp;_dispatch_kevent_data_or, dk_list);</span><br><span class="line">    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[<span class="number">0</span>], &amp;_dispatch_kevent_data_add, dk_list);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">#define DSL_HASH_SIZE 256u  </span><br><span class="line">#define DSL_HASH(x) ((x) &amp; (DSL_HASH_SIZE - 1))</span><br><span class="line">static TAILQ_HEAD(, dispatch_kevent_s) _dispatch_sources[DSL_HASH_SIZE];</span><br><span class="line"></span><br><span class="line">#define DISPATCH_TIMER_INDEX_WALL 0</span><br><span class="line">#define DISPATCH_TIMER_INDEX_MACH 1</span><br><span class="line">static struct dispatch_kevent_s _dispatch_kevent_timer[] = &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        .dk_kevent = &#123;</span><br><span class="line">            .ident = DISPATCH_TIMER_INDEX_WALL,</span><br><span class="line">            .filter = DISPATCH_EVFILT_TIMER,</span><br><span class="line">            .udata = &amp;_dispatch_kevent_timer[0],</span><br><span class="line">        &#125;,</span><br><span class="line">        .dk_sources = TAILQ_HEAD_INITIALIZER(_dispatch_kevent_timer[0].dk_sources),</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dk_kevent = &#123;</span><br><span class="line">            .ident = DISPATCH_TIMER_INDEX_MACH,</span><br><span class="line">            .filter = DISPATCH_EVFILT_TIMER,</span><br><span class="line">            .udata = &amp;_dispatch_kevent_timer[1],</span><br><span class="line">        &#125;,</span><br><span class="line">        .dk_sources = TAILQ_HEAD_INITIALIZER(_dispatch_kevent_timer[1].dk_sources),</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<blockquote>
+<pre><code class="c">static void
+_dispatch_source_init_tail_queue_array(void *context __attribute__((unused)))
+{
+    unsigned int i;
+    for (i = 0; i &lt; DSL_HASH_SIZE; i++) {
+        TAILQ_INIT(&amp;_dispatch_sources[i]);
+    }
+
+    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[DSL_HASH(DISPATCH_TIMER_INDEX_WALL)], &amp;_dispatch_kevent_timer[DISPATCH_TIMER_INDEX_WALL], dk_list);
+    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[DSL_HASH(DISPATCH_TIMER_INDEX_MACH)], &amp;_dispatch_kevent_timer[DISPATCH_TIMER_INDEX_MACH], dk_list);
+
+    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[0], &amp;_dispatch_kevent_data_or, dk_list);
+    TAILQ_INSERT_TAIL(&amp;_dispatch_sources[0], &amp;_dispatch_kevent_data_add, dk_list);
+}
+</code></pre>
+<pre><code>#define DSL_HASH_SIZE 256u  
+#define DSL_HASH(x) ((x) &amp; (DSL_HASH_SIZE - 1))
+static TAILQ_HEAD(, dispatch_kevent_s) _dispatch_sources[DSL_HASH_SIZE];
+
+#define DISPATCH_TIMER_INDEX_WALL 0
+#define DISPATCH_TIMER_INDEX_MACH 1
+static struct dispatch_kevent_s _dispatch_kevent_timer[] = {
+    {
+        .dk_kevent = {
+            .ident = DISPATCH_TIMER_INDEX_WALL,
+            .filter = DISPATCH_EVFILT_TIMER,
+            .udata = &amp;_dispatch_kevent_timer[0],
+        },
+        .dk_sources = TAILQ_HEAD_INITIALIZER(_dispatch_kevent_timer[0].dk_sources),
+    },
+    {
+        .dk_kevent = {
+            .ident = DISPATCH_TIMER_INDEX_MACH,
+            .filter = DISPATCH_EVFILT_TIMER,
+            .udata = &amp;_dispatch_kevent_timer[1],
+        },
+        .dk_sources = TAILQ_HEAD_INITIALIZER(_dispatch_kevent_timer[1].dk_sources),
+    },
+};
+</code></pre><blockquote>
 <ul>
 <li>2、_dispatch_kevent_find</li>
 </ul>
 </blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">dispatch_kevent_t</span> _dispatch_kevent_find(<span class="keyword">uintptr_t</span> ident, <span class="keyword">short</span> filter)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">uintptr_t</span> hash = DSL_HASH(filter == EVFILT_MACHPORT ? MACH_PORT_INDEX(ident) : ident);</span><br><span class="line">    <span class="keyword">dispatch_kevent_t</span> dki;</span><br><span class="line"></span><br><span class="line">    TAILQ_FOREACH(dki, &amp;_dispatch_sources[hash], dk_list) &#123;</span><br><span class="line">        <span class="comment">// ident和filter都相同才算同一个</span></span><br><span class="line">        <span class="keyword">if</span> (dki-&gt;dk_kevent.ident == ident &amp;&amp; dki-&gt;dk_kevent.filter == filter) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dki;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static dispatch_kevent_t _dispatch_kevent_find(uintptr_t ident, short filter)
+{
+    uintptr_t hash = DSL_HASH(filter == EVFILT_MACHPORT ? MACH_PORT_INDEX(ident) : ident);
+    dispatch_kevent_t dki;
+
+    TAILQ_FOREACH(dki, &amp;_dispatch_sources[hash], dk_list) {
+        // ident和filter都相同才算同一个
+        if (dki-&gt;dk_kevent.ident == ident &amp;&amp; dki-&gt;dk_kevent.filter == filter) {
+            break;
+        }
+    }
+    return dki;
+}
+</code></pre>
 <blockquote>
 <ul>
 <li>3、_dispatch_kevent_resume</li>
 </ul>
 </blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_kevent_resume(<span class="keyword">dispatch_kevent_t</span> dk, <span class="keyword">uint32_t</span> new_flags, <span class="keyword">uint32_t</span> del_flags)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">switch</span> (dk-&gt;dk_kevent.filter) &#123;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_EVFILT_TIMER:</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_EVFILT_CUSTOM_ADD:</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_EVFILT_CUSTOM_OR:</span><br><span class="line">        <span class="comment">// these types not registered with kevent</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> EVFILT_MACHPORT:</span><br><span class="line">        _dispatch_kevent_machport_resume(dk, new_flags, del_flags);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> EVFILT_PROC:</span><br><span class="line">        <span class="keyword">if</span> (dk-&gt;dk_kevent.flags &amp; EV_ONESHOT) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fall through</span></span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        _dispatch_update_kq(&amp;dk-&gt;dk_kevent);</span><br><span class="line">        <span class="keyword">if</span> (dk-&gt;dk_kevent.flags &amp; EV_DISPATCH) &#123;</span><br><span class="line">            dk-&gt;dk_kevent.flags &amp;= ~EV_ADD;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void _dispatch_kevent_resume(dispatch_kevent_t dk, uint32_t new_flags, uint32_t del_flags)
+{
+    switch (dk-&gt;dk_kevent.filter) {
+    case DISPATCH_EVFILT_TIMER:
+    case DISPATCH_EVFILT_CUSTOM_ADD:
+    case DISPATCH_EVFILT_CUSTOM_OR:
+        // these types not registered with kevent
+        return;
+    case EVFILT_MACHPORT:
+        _dispatch_kevent_machport_resume(dk, new_flags, del_flags);
+        break;
+    case EVFILT_PROC:
+        if (dk-&gt;dk_kevent.flags &amp; EV_ONESHOT) {
+            return;
+        }
+        // fall through
+    default:
+        _dispatch_update_kq(&amp;dk-&gt;dk_kevent);
+        if (dk-&gt;dk_kevent.flags &amp; EV_DISPATCH) {
+            dk-&gt;dk_kevent.flags &amp;= ~EV_ADD;
+        }
+        break;
+    }
+}
+</code></pre>
 <h4 id="dispatch-source-cancel-callout"><a href="#dispatch-source-cancel-callout" class="headerlink" title="_dispatch_source_cancel_callout"></a>_dispatch_source_cancel_callout</h4><p>主要执行一些清理工作</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">_dispatch_source_cancel_callout(<span class="keyword">dispatch_source_t</span> ds)</span><br><span class="line">&#123;</span><br><span class="line">    ds-&gt;ds_pending_data_mask = <span class="number">0</span>;</span><br><span class="line">    ds-&gt;ds_pending_data = <span class="number">0</span>;</span><br><span class="line">    ds-&gt;ds_data = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __BLOCKS__</span></span><br><span class="line">    <span class="comment">// block的释放和相关清理</span></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_handler_is_block) &#123;</span><br><span class="line">        Block_release(ds-&gt;ds_handler_ctxt);</span><br><span class="line">        ds-&gt;ds_handler_is_block = <span class="literal">false</span>;</span><br><span class="line">        ds-&gt;ds_handler_func = <span class="literal">NULL</span>;</span><br><span class="line">        ds-&gt;ds_handler_ctxt = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果ds-&gt;ds_cancel_handler为空，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (!ds-&gt;ds_cancel_handler) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_cancel_is_block) &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __BLOCKS__</span></span><br><span class="line">        <span class="comment">// 如果回调是block</span></span><br><span class="line">        <span class="keyword">dispatch_block_t</span> b = ds-&gt;ds_cancel_handler;</span><br><span class="line">        <span class="keyword">if</span> (ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) &#123;</span><br><span class="line">            <span class="comment">// 执行取消回调</span></span><br><span class="line">            b();</span><br><span class="line">        &#125;</span><br><span class="line">        Block_release(ds-&gt;ds_cancel_handler);</span><br><span class="line">        ds-&gt;ds_cancel_is_block = <span class="literal">false</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 如果回调是函数</span></span><br><span class="line">        <span class="keyword">dispatch_function_t</span> f = ds-&gt;ds_cancel_handler;</span><br><span class="line">        <span class="keyword">if</span> (ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) &#123;</span><br><span class="line">            f(ds-&gt;do_ctxt);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 执行完后，设置ds_cancel_handler为空</span></span><br><span class="line">    ds-&gt;ds_cancel_handler = <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="dispatch-source-latch-and-call"><a href="#dispatch-source-latch-and-call" class="headerlink" title="_dispatch_source_latch_and_call"></a>_dispatch_source_latch_and_call</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_source_latch_and_call(<span class="keyword">dispatch_source_t</span> ds)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> prev;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    prev = dispatch_atomic_xchg(&amp;ds-&gt;ds_pending_data, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (ds-&gt;ds_is_level) &#123;</span><br><span class="line">        ds-&gt;ds_data = ~prev;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ds-&gt;ds_data = prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (dispatch_assume(prev)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ds-&gt;ds_handler_func) &#123;</span><br><span class="line">            ds-&gt;ds_handler_func(ds-&gt;ds_handler_ctxt, ds);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void
+_dispatch_source_cancel_callout(dispatch_source_t ds)
+{
+    ds-&gt;ds_pending_data_mask = 0;
+    ds-&gt;ds_pending_data = 0;
+    ds-&gt;ds_data = 0;
+
+#ifdef __BLOCKS__
+    // block的释放和相关清理
+    if (ds-&gt;ds_handler_is_block) {
+        Block_release(ds-&gt;ds_handler_ctxt);
+        ds-&gt;ds_handler_is_block = false;
+        ds-&gt;ds_handler_func = NULL;
+        ds-&gt;ds_handler_ctxt = NULL;
+    }
+#endif
+
+    // 如果ds-&gt;ds_cancel_handler为空，直接返回
+    if (!ds-&gt;ds_cancel_handler) {
+        return;
+    }
+
+    if (ds-&gt;ds_cancel_is_block) {
+#ifdef __BLOCKS__
+        // 如果回调是block
+        dispatch_block_t b = ds-&gt;ds_cancel_handler;
+        if (ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) {
+            // 执行取消回调
+            b();
+        }
+        Block_release(ds-&gt;ds_cancel_handler);
+        ds-&gt;ds_cancel_is_block = false;
+#endif
+    } 
+    else {
+        // 如果回调是函数
+        dispatch_function_t f = ds-&gt;ds_cancel_handler;
+        if (ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) {
+            f(ds-&gt;do_ctxt);
+        }
+    }
+
+    // 执行完后，设置ds_cancel_handler为空
+    ds-&gt;ds_cancel_handler = NULL;
+}
+</code></pre>
+<h4 id="dispatch-source-latch-and-call"><a href="#dispatch-source-latch-and-call" class="headerlink" title="_dispatch_source_latch_and_call"></a>_dispatch_source_latch_and_call</h4><pre><code class="c">void _dispatch_source_latch_and_call(dispatch_source_t ds)
+{
+    unsigned long prev;
+
+    if ((ds-&gt;ds_atomic_flags &amp; DSF_CANCELED) || (ds-&gt;do_xref_cnt == 0)) {
+        return;
+    }
+    prev = dispatch_atomic_xchg(&amp;ds-&gt;ds_pending_data, 0);
+    if (ds-&gt;ds_is_level) {
+        ds-&gt;ds_data = ~prev;
+    } else {
+        ds-&gt;ds_data = prev;
+    }
+    if (dispatch_assume(prev)) {
+        if (ds-&gt;ds_handler_func) {
+            ds-&gt;ds_handler_func(ds-&gt;ds_handler_ctxt, ds);
+        }
+    }
+}
+</code></pre>
 <h3 id="管理队列"><a href="#管理队列" class="headerlink" title="管理队列"></a>管理队列</h3><p>关于<code>_dispatch_mgr_q</code>，我们在queue篇中提到过，但是一直没有看到它的使用场合，它和source的关系很紧密，这里重点分析一下：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> _<span class="title">dispatch_mgr_q</span> = &#123;</span></span><br><span class="line">    .do_vtable = &amp;_dispatch_queue_mgr_vtable,</span><br><span class="line">    .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">    .do_targetq = &amp;_dispatch_root_queues[DISPATCH_ROOT_QUEUE_COUNT - <span class="number">1</span>],</span><br><span class="line"></span><br><span class="line">    .dq_label = <span class="string">"com.apple.libdispatch-manager"</span>,</span><br><span class="line">    .dq_width = <span class="number">1</span>,</span><br><span class="line">    .dq_serialnum = <span class="number">2</span>,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">struct dispatch_queue_s _dispatch_mgr_q = {
+    .do_vtable = &amp;_dispatch_queue_mgr_vtable,
+    .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,
+    .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,
+    .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,
+    .do_targetq = &amp;_dispatch_root_queues[DISPATCH_ROOT_QUEUE_COUNT - 1],
+
+    .dq_label = &quot;com.apple.libdispatch-manager&quot;,
+    .dq_width = 1,
+    .dq_serialnum = 2,
+};
+</code></pre>
 <p>看看管理队列的函数指针do_vtable的指向：<code>_dispatch_queue_mgr_vtable</code></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_vtable_s</span> _<span class="title">dispatch_queue_mgr_vtable</span> = &#123;</span></span><br><span class="line">    .do_type = DISPATCH_QUEUE_MGR_TYPE,</span><br><span class="line">    .do_kind = <span class="string">"mgr-queue"</span>,</span><br><span class="line">    .do_invoke = _dispatch_mgr_invoke,</span><br><span class="line">    .do_debug = dispatch_queue_debug,</span><br><span class="line">    .do_probe = _dispatch_mgr_wakeup,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">static const struct dispatch_queue_vtable_s _dispatch_queue_mgr_vtable = {
+    .do_type = DISPATCH_QUEUE_MGR_TYPE,
+    .do_kind = &quot;mgr-queue&quot;,
+    .do_invoke = _dispatch_mgr_invoke,
+    .do_debug = dispatch_queue_debug,
+    .do_probe = _dispatch_mgr_wakeup,
+};
+</code></pre>
 <p>毫无疑问，这里面<strong>最重要的就是do_invoke和do_probe了，同时这也是我们探寻source底层的入口了</strong><br>接下来就需要一些IO多路复用的知识了：</p>
 <ul>
 <li>同步阻塞、异步阻塞、同步非阻塞等</li>
 <li>select、epoll、kqueue等</li>
 </ul>
-<h4 id="dispatch-mgr-wakeup"><a href="#dispatch-mgr-wakeup" class="headerlink" title="_dispatch_mgr_wakeup"></a>_dispatch_mgr_wakeup</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">bool</span> _dispatch_mgr_wakeup(<span class="keyword">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">kev</span> = &#123;</span></span><br><span class="line">        .ident = <span class="number">1</span>,</span><br><span class="line">        .filter = EVFILT_USER,</span><br><span class="line">#ifdef EV_TRIGGER</span><br><span class="line">        .flags = EV_TRIGGER,</span><br><span class="line">#endif</span><br><span class="line">#ifdef NOTE_TRIGGER</span><br><span class="line">        .fflags = NOTE_TRIGGER,</span><br><span class="line">#endif</span><br><span class="line">    &#125;;</span><br><span class="line">    _dispatch_update_kq(&amp;kev);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">_dispatch_update_kq(<span class="keyword">const</span> struct kevent *kev)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">kev_copy</span> = *<span class="title">kev</span>;</span></span><br><span class="line">    kev_copy.flags |= EV_RECEIPT;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从kqueue中删除kevent</span></span><br><span class="line">    <span class="keyword">if</span> (kev_copy.flags &amp; EV_DELETE) &#123;</span><br><span class="line">        <span class="keyword">switch</span> (kev_copy.filter) &#123;</span><br><span class="line">        <span class="keyword">case</span> EVFILT_READ:</span><br><span class="line">            <span class="comment">// 清除标记</span></span><br><span class="line">            <span class="keyword">if</span> (FD_ISSET((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_rfds)) &#123;</span><br><span class="line">                FD_CLR((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_rfds);</span><br><span class="line">                _dispatch_rfd_ptrs[kev_copy.ident] = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="keyword">case</span> EVFILT_WRITE:</span><br><span class="line">            <span class="comment">// 清除标记</span></span><br><span class="line">            <span class="keyword">if</span> (FD_ISSET((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_wfds)) &#123;</span><br><span class="line">                FD_CLR((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_wfds);</span><br><span class="line">                _dispatch_wfd_ptrs[kev_copy.ident] = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 监视kev_copy中的事件，如果列表里有任何就绪的fd，则把该事件对应的结构体放进</span></span><br><span class="line">    <span class="comment">// 第4个参数kev_copy列表里面。该方法调用后会阻塞，直到有事件就绪。</span></span><br><span class="line">    <span class="keyword">int</span> rval = kevent(_dispatch_get_kq(), &amp;kev_copy, <span class="number">1</span>, &amp;kev_copy, <span class="number">1</span>, <span class="literal">NULL</span>);</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (kev_copy.data) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">case</span> EBADF:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="comment">// 如果是因为kevent正在读数据或者写数据，导致上面的注册失败，那么需要设置_dispatch_select_workaround为true，然后回头调用select</span></span><br><span class="line">        <span class="keyword">switch</span> (kev_copy.filter) &#123;</span><br><span class="line">        <span class="keyword">case</span> EVFILT_READ:</span><br><span class="line">            _dispatch_select_workaround = <span class="literal">true</span>;</span><br><span class="line">            FD_SET((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_rfds);</span><br><span class="line">            _dispatch_rfd_ptrs[kev_copy.ident] = kev_copy.udata;<span class="comment">//读到的数据</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> EVFILT_WRITE:</span><br><span class="line">            _dispatch_select_workaround = <span class="literal">true</span>;</span><br><span class="line">            FD_SET((<span class="keyword">int</span>)kev_copy.ident, &amp;_dispatch_wfds);</span><br><span class="line">            _dispatch_wfd_ptrs[kev_copy.ident] = kev_copy.udata;<span class="comment">//写入的数据</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            _dispatch_source_drain_kevent(&amp;kev_copy); </span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="dispatch-mgr-wakeup"><a href="#dispatch-mgr-wakeup" class="headerlink" title="_dispatch_mgr_wakeup"></a>_dispatch_mgr_wakeup</h4><pre><code class="c">static bool _dispatch_mgr_wakeup(dispatch_queue_t dq)
+{
+    static const struct kevent kev = {
+        .ident = 1,
+        .filter = EVFILT_USER,
+#ifdef EV_TRIGGER
+        .flags = EV_TRIGGER,
+#endif
+#ifdef NOTE_TRIGGER
+        .fflags = NOTE_TRIGGER,
+#endif
+    };
+    _dispatch_update_kq(&amp;kev);
+
+    return false;
+}
+</code></pre>
+<pre><code class="c">void
+_dispatch_update_kq(const struct kevent *kev)
+{
+    struct kevent kev_copy = *kev;
+    kev_copy.flags |= EV_RECEIPT;
+
+    // 从kqueue中删除kevent
+    if (kev_copy.flags &amp; EV_DELETE) {
+        switch (kev_copy.filter) {
+        case EVFILT_READ:
+            // 清除标记
+            if (FD_ISSET((int)kev_copy.ident, &amp;_dispatch_rfds)) {
+                FD_CLR((int)kev_copy.ident, &amp;_dispatch_rfds);
+                _dispatch_rfd_ptrs[kev_copy.ident] = 0;
+                return;
+            }
+        case EVFILT_WRITE:
+            // 清除标记
+            if (FD_ISSET((int)kev_copy.ident, &amp;_dispatch_wfds)) {
+                FD_CLR((int)kev_copy.ident, &amp;_dispatch_wfds);
+                _dispatch_wfd_ptrs[kev_copy.ident] = 0;
+                return;
+            }
+        default:
+            break;
+        }
+    }
+
+    // 监视kev_copy中的事件，如果列表里有任何就绪的fd，则把该事件对应的结构体放进
+    // 第4个参数kev_copy列表里面。该方法调用后会阻塞，直到有事件就绪。
+    int rval = kevent(_dispatch_get_kq(), &amp;kev_copy, 1, &amp;kev_copy, 1, NULL);
+
+
+    switch (kev_copy.data) {
+    case 0:
+        return;
+    case EBADF:
+        break;
+    default:
+        // 如果是因为kevent正在读数据或者写数据，导致上面的注册失败，那么需要设置_dispatch_select_workaround为true，然后回头调用select
+        switch (kev_copy.filter) {
+        case EVFILT_READ:
+            _dispatch_select_workaround = true;
+            FD_SET((int)kev_copy.ident, &amp;_dispatch_rfds);
+            _dispatch_rfd_ptrs[kev_copy.ident] = kev_copy.udata;//读到的数据
+            break;
+        case EVFILT_WRITE:
+            _dispatch_select_workaround = true;
+            FD_SET((int)kev_copy.ident, &amp;_dispatch_wfds);
+            _dispatch_wfd_ptrs[kev_copy.ident] = kev_copy.udata;//写入的数据
+            break;
+        default:
+            _dispatch_source_drain_kevent(&amp;kev_copy); 
+            break;
+        }
+        break;
+    }
+}
+</code></pre>
 <p>除了<code>EVFILT_READ</code>和<code>EVFILT_WRITE</code>两种类型外，其它的事件类型都调用<code>_dispatch_source_drain_kevent</code></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_source_drain_kevent(struct kevent *ke)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">dispatch_once_t</span> pred;</span><br><span class="line">    <span class="keyword">dispatch_kevent_t</span> dk = ke-&gt;udata;</span><br><span class="line">    <span class="keyword">dispatch_source_t</span> dsi;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// machport事件类型的处理</span></span><br><span class="line">    <span class="keyword">if</span> (ke-&gt;filter == EVFILT_MACHPORT) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_drain_mach_messages(ke);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// flags设置</span></span><br><span class="line">    <span class="keyword">if</span> (ke-&gt;flags &amp; EV_ONESHOT) &#123;</span><br><span class="line">        dk-&gt;dk_kevent.flags |= EV_ONESHOT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历dk-&gt;dk_sources，对里面的每一个source，执行_dispatch_source_merge_kevent</span></span><br><span class="line">    <span class="comment">// 表示事件已经就绪</span></span><br><span class="line">    TAILQ_FORACH(dsi, &amp;dk-&gt;dk_sources, ds_list) &#123;</span><br><span class="line">        _dispatch_source_merge_kevent(dsi, ke);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="dispatch-mgr-invoke"><a href="#dispatch-mgr-invoke" class="headerlink" title="_dispatch_mgr_invoke"></a>_dispatch_mgr_invoke</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">dispatch_queue_t</span> _dispatch_mgr_invoke(<span class="keyword">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">timespec</span> <span class="title">timeout_immediately</span> = &#123;</span> <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timespec</span> <span class="title">timeout</span>;</span></span><br><span class="line">    <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">timespec</span> *<span class="title">timeoutp</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">sel_timeout</span>, *<span class="title">sel_timeoutp</span>;</span></span><br><span class="line">    fd_set tmp_rfds, tmp_wfds;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> <span class="title">kev</span>[1];</span></span><br><span class="line">    <span class="keyword">int</span> k_cnt, k_err, i, r;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置线程私有数据TSD</span></span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, dq);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 无限循环</span></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        _dispatch_run_timers();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// looking for the first unsuspended timer which has its target</span></span><br><span class="line">        <span class="comment">// time set. Given timers are kept in order, if we hit an timer that's</span></span><br><span class="line">        <span class="comment">// unset there's no point in continuing down the list</span></span><br><span class="line">        timeoutp = _dispatch_get_next_timer_fire(&amp;timeout);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 参考_dispatch_update_kq中描述的原因，是一种特殊的处理</span></span><br><span class="line">        <span class="keyword">if</span> (_dispatch_select_workaround) &#123;</span><br><span class="line">            FD_COPY(&amp;_dispatch_rfds, &amp;tmp_rfds);</span><br><span class="line">            FD_COPY(&amp;_dispatch_wfds, &amp;tmp_wfds);</span><br><span class="line">            <span class="keyword">if</span> (timeoutp) &#123;</span><br><span class="line">                sel_timeout.tv_sec = timeoutp-&gt;tv_sec;</span><br><span class="line">                sel_timeout.tv_usec = (typeof(sel_timeout.tv_usec))(timeoutp-&gt;tv_nsec / <span class="number">1000u</span>);</span><br><span class="line">                sel_timeoutp = &amp;sel_timeout;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                sel_timeoutp = <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 这里调用跨平台的多路复用select</span></span><br><span class="line">            r = select(FD_SETSIZE, &amp;tmp_rfds, &amp;tmp_wfds, <span class="literal">NULL</span>, sel_timeoutp);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 错误处理</span></span><br><span class="line">            <span class="keyword">if</span> (r == <span class="number">-1</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (errno != EBADF) &#123;</span><br><span class="line">                    dispatch_assume_zero(errno);</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; FD_SETSIZE; i++) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (i == _dispatch_kq) &#123;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (!FD_ISSET(i, &amp;_dispatch_rfds) &amp;&amp; !FD_ISSET(i, &amp;_dispatch_wfds)) &#123;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    r = dup(i);</span><br><span class="line">                    <span class="keyword">if</span> (r != <span class="number">-1</span>) &#123;</span><br><span class="line">                        close(r);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        FD_CLR(i, &amp;_dispatch_rfds);</span><br><span class="line">                        FD_CLR(i, &amp;_dispatch_wfds);</span><br><span class="line">                        _dispatch_rfd_ptrs[i] = <span class="number">0</span>;</span><br><span class="line">                        _dispatch_wfd_ptrs[i] = <span class="number">0</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 有事件就绪</span></span><br><span class="line">            <span class="keyword">if</span> (r &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; FD_SETSIZE; i++) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (i == _dispatch_kq) &#123;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (FD_ISSET(i, &amp;tmp_rfds)) &#123;</span><br><span class="line">                        FD_CLR(i, &amp;_dispatch_rfds); <span class="comment">// emulate EV_DISABLE</span></span><br><span class="line">                        EV_SET(&amp;kev[<span class="number">0</span>], i, EVFILT_READ, EV_ADD|EV_ENABLE|EV_DISPATCH, <span class="number">0</span>, <span class="number">1</span>, _dispatch_rfd_ptrs[i]);</span><br><span class="line">                        _dispatch_rfd_ptrs[i] = <span class="number">0</span>;</span><br><span class="line">                        _dispatch_mgr_thread2(kev, <span class="number">1</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (FD_ISSET(i, &amp;tmp_wfds)) &#123;</span><br><span class="line">                        FD_CLR(i, &amp;_dispatch_wfds); <span class="comment">// emulate EV_DISABLE</span></span><br><span class="line">                        EV_SET(&amp;kev[<span class="number">0</span>], i, EVFILT_WRITE, EV_ADD|EV_ENABLE|EV_DISPATCH, <span class="number">0</span>, <span class="number">1</span>, _dispatch_wfd_ptrs[i]);</span><br><span class="line">                        _dispatch_wfd_ptrs[i] = <span class="number">0</span>;</span><br><span class="line">                        _dispatch_mgr_thread2(kev, <span class="number">1</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            timeoutp = &amp;timeout_immediately;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 正常的路径</span></span><br><span class="line">        k_cnt = kevent(_dispatch_kq, <span class="literal">NULL</span>, <span class="number">0</span>, kev, <span class="keyword">sizeof</span>(kev) / <span class="keyword">sizeof</span>(kev[<span class="number">0</span>]), timeoutp);</span><br><span class="line">        k_err = errno;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (k_cnt) &#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">-1</span>:</span><br><span class="line">            <span class="keyword">if</span> (k_err == EBADF) &#123;</span><br><span class="line">                DISPATCH_CLIENT_CRASH(<span class="string">"Do not close random Unix descriptors"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            dispatch_assume_zero(k_err);</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            _dispatch_mgr_thread2(kev, (<span class="keyword">size_t</span>)k_cnt);</span><br><span class="line">            <span class="comment">// fall through</span></span><br><span class="line">        <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">            _dispatch_force_cache_cleanup();</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>不管是特殊处理的路径，还是正常的路径，二者均调用到了<code>_dispatch_mgr_thread2</code>：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> _dispatch_mgr_thread2(struct kevent *kev, <span class="keyword">size_t</span> cnt)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">size_t</span> i;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; cnt; i++) &#123;</span><br><span class="line">        <span class="comment">// EVFILT_USER未被source使用</span></span><br><span class="line">        <span class="keyword">if</span> (kev[i].filter == EVFILT_USER) &#123;</span><br><span class="line">            _dispatch_queue_serial_drain_till_empty(&amp;_dispatch_mgr_q);</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            _dispatch_source_drain_kevent(&amp;kev[i]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_queue_serial_drain_till_empty(<span class="keyword">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    _dispatch_queue_drain(dq);</span><br><span class="line">    _dispatch_force_cache_cleanup();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="c">void _dispatch_source_drain_kevent(struct kevent *ke)
+{
+    static dispatch_once_t pred;
+    dispatch_kevent_t dk = ke-&gt;udata;
+    dispatch_source_t dsi;
+
+    // machport事件类型的处理
+    if (ke-&gt;filter == EVFILT_MACHPORT) {
+        return _dispatch_drain_mach_messages(ke);
+    }
+
+    // flags设置
+    if (ke-&gt;flags &amp; EV_ONESHOT) {
+        dk-&gt;dk_kevent.flags |= EV_ONESHOT;
+    }
+
+    // 遍历dk-&gt;dk_sources，对里面的每一个source，执行_dispatch_source_merge_kevent
+    // 表示事件已经就绪
+    TAILQ_FORACH(dsi, &amp;dk-&gt;dk_sources, ds_list) {
+        _dispatch_source_merge_kevent(dsi, ke);
+    }
+}
+</code></pre>
+<h4 id="dispatch-mgr-invoke"><a href="#dispatch-mgr-invoke" class="headerlink" title="_dispatch_mgr_invoke"></a>_dispatch_mgr_invoke</h4><pre><code class="c">static dispatch_queue_t _dispatch_mgr_invoke(dispatch_queue_t dq)
+{
+    static const struct timespec timeout_immediately = { 0, 0 };
+    struct timespec timeout;
+    const struct timespec *timeoutp;
+    struct timeval sel_timeout, *sel_timeoutp;
+    fd_set tmp_rfds, tmp_wfds;
+    struct kevent kev[1];
+    int k_cnt, k_err, i, r;
+
+    // 设置线程私有数据TSD
+    _dispatch_thread_setspecific(dispatch_queue_key, dq);
+
+    // 无限循环
+    for (;;) {
+        _dispatch_run_timers();
+
+        // looking for the first unsuspended timer which has its target
+        // time set. Given timers are kept in order, if we hit an timer that&#39;s
+        // unset there&#39;s no point in continuing down the list
+        timeoutp = _dispatch_get_next_timer_fire(&amp;timeout);
+
+        // 参考_dispatch_update_kq中描述的原因，是一种特殊的处理
+        if (_dispatch_select_workaround) {
+            FD_COPY(&amp;_dispatch_rfds, &amp;tmp_rfds);
+            FD_COPY(&amp;_dispatch_wfds, &amp;tmp_wfds);
+            if (timeoutp) {
+                sel_timeout.tv_sec = timeoutp-&gt;tv_sec;
+                sel_timeout.tv_usec = (typeof(sel_timeout.tv_usec))(timeoutp-&gt;tv_nsec / 1000u);
+                sel_timeoutp = &amp;sel_timeout;
+            } else {
+                sel_timeoutp = NULL;
+            }
+
+            // 这里调用跨平台的多路复用select
+            r = select(FD_SETSIZE, &amp;tmp_rfds, &amp;tmp_wfds, NULL, sel_timeoutp);
+
+            // 错误处理
+            if (r == -1) {
+                if (errno != EBADF) {
+                    dispatch_assume_zero(errno);
+                    continue;
+                }
+                for (i = 0; i &lt; FD_SETSIZE; i++) {
+                    if (i == _dispatch_kq) {
+                        continue;
+                    }
+                    if (!FD_ISSET(i, &amp;_dispatch_rfds) &amp;&amp; !FD_ISSET(i, &amp;_dispatch_wfds)) {
+                        continue;
+                    }
+                    r = dup(i);
+                    if (r != -1) {
+                        close(r);
+                    } else {
+                        FD_CLR(i, &amp;_dispatch_rfds);
+                        FD_CLR(i, &amp;_dispatch_wfds);
+                        _dispatch_rfd_ptrs[i] = 0;
+                        _dispatch_wfd_ptrs[i] = 0;
+                    }
+                }
+                continue;
+            }
+
+            // 有事件就绪
+            if (r &gt; 0) {
+                for (i = 0; i &lt; FD_SETSIZE; i++) {
+                    if (i == _dispatch_kq) {
+                        continue;
+                    }
+                    if (FD_ISSET(i, &amp;tmp_rfds)) {
+                        FD_CLR(i, &amp;_dispatch_rfds); // emulate EV_DISABLE
+                        EV_SET(&amp;kev[0], i, EVFILT_READ, EV_ADD|EV_ENABLE|EV_DISPATCH, 0, 1, _dispatch_rfd_ptrs[i]);
+                        _dispatch_rfd_ptrs[i] = 0;
+                        _dispatch_mgr_thread2(kev, 1);
+                    }
+                    if (FD_ISSET(i, &amp;tmp_wfds)) {
+                        FD_CLR(i, &amp;_dispatch_wfds); // emulate EV_DISABLE
+                        EV_SET(&amp;kev[0], i, EVFILT_WRITE, EV_ADD|EV_ENABLE|EV_DISPATCH, 0, 1, _dispatch_wfd_ptrs[i]);
+                        _dispatch_wfd_ptrs[i] = 0;
+                        _dispatch_mgr_thread2(kev, 1);
+                    }
+                }
+            }
+
+            timeoutp = &amp;timeout_immediately;
+        }
+
+        // 正常的路径
+        k_cnt = kevent(_dispatch_kq, NULL, 0, kev, sizeof(kev) / sizeof(kev[0]), timeoutp);
+        k_err = errno;
+
+        switch (k_cnt) {
+        case -1:
+            if (k_err == EBADF) {
+                DISPATCH_CLIENT_CRASH(&quot;Do not close random Unix descriptors&quot;);
+            }
+            dispatch_assume_zero(k_err);
+            continue;
+        default:
+            _dispatch_mgr_thread2(kev, (size_t)k_cnt);
+            // fall through
+        case 0:
+            _dispatch_force_cache_cleanup();
+            continue;
+        }
+    }
+
+    return NULL;
+}
+</code></pre>
+<p>不管是特殊处理的路径，还是正常的路径，二者均调用到了<code>_dispatch_mgr_thread2</code>：</p>
+<pre><code class="c">static void _dispatch_mgr_thread2(struct kevent *kev, size_t cnt)
+{
+    size_t i;
+
+    for (i = 0; i &lt; cnt; i++) {
+        // EVFILT_USER未被source使用
+        if (kev[i].filter == EVFILT_USER) {
+            _dispatch_queue_serial_drain_till_empty(&amp;_dispatch_mgr_q);
+        } 
+        else {
+            _dispatch_source_drain_kevent(&amp;kev[i]);
+        }
+    }
+}
+</code></pre>
+<pre><code class="c">void _dispatch_queue_serial_drain_till_empty(dispatch_queue_t dq)
+{
+    _dispatch_queue_drain(dq);
+    _dispatch_force_cache_cleanup();
+}
+</code></pre>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本篇的篇幅较长，也比较复杂，而且source本身相对于GCD中的其它API也是最陌生的。本文中涉及到的最多的就是IO多路复用和管理队列，抓住这两个重点，就不难理解dispatch_source的底层原理了。</p>
 
       
@@ -769,7 +1622,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -1000,6 +1853,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>

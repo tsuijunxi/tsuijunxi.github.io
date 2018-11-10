@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -367,7 +366,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,309
+                  4,918
                 </span>
               
 
@@ -383,7 +382,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  24
+                  21
                 </span>
               
             </div>
@@ -418,7 +417,56 @@
 </ul>
 </blockquote>
 <h2 id="iOS消息转发机制的Hook原理"><a href="#iOS消息转发机制的Hook原理" class="headerlink" title="iOS消息转发机制的Hook原理"></a>iOS消息转发机制的Hook原理</h2><p>根据上面的消息转发机制：当调用一个OC对象的方法时，会沿着继承链层层往上寻找，直到寻找到NSObject，如果还没有寻找到，说明这个方法不存在，但是并不会马上抛出异常，而是会经过多层转发，层层调用对象的<code>-resolveInstanceMethod:</code>, <code>-forwardingTargetForSelector:</code>, <code>-methodSignatureForSelector:</code>, <code>-forwardInvocation:</code> 等方法。其中最后 <code>-forwardInvocation:</code> 是会有一个 NSInvocation 对象，这个 NSInvocation 对象保存了这个方法调用的所有信息，包括 Selector 名，参数和返回值类型，最重要的是有所有参数值，可以从这个 NSInvocation 对象里拿到调用的所有参数值。<br><strong>如果我们想实现一个库，来动态修改某些方法的实现，那么就可以利用hook<code>forwardInvocation</code>来实现：自定义一个自己的forwardInvocation处理函数，把要修改的方法的调用统统都通过转发到这个处理函数里面，然后就可以动态控制这些方法的下一步的具体走向了</strong>。</p>
-<h3 id="（1）JSPatch的Hook原理"><a href="#（1）JSPatch的Hook原理" class="headerlink" title="（1）JSPatch的Hook原理"></a>（1）JSPatch的Hook原理</h3><p>先来看下JSPatch是如何来实现的，在JSPatch.mm文件中可以看到overrideMethod的定义<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> overrideMethod(Class cls, <span class="built_in">NSString</span> *selectorName, JSValue *function, <span class="built_in">BOOL</span> isClassMethod, <span class="keyword">const</span> <span class="keyword">char</span> *typeDescription)</span><br><span class="line">&#123;</span><br><span class="line">    SEL selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!typeDescription) &#123;</span><br><span class="line">        Method method = class_getInstanceMethod(cls, selector);</span><br><span class="line">        typeDescription = (<span class="keyword">char</span> *)method_getTypeEncoding(method);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    IMP originalImp = class_respondsToSelector(cls, selector) ? class_getMethodImplementation(cls, selector) : <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    IMP msgForwardIMP = _objc_msgForward;</span><br><span class="line">    <span class="meta">#if !defined(__arm64__)</span></span><br><span class="line">        <span class="keyword">if</span> (typeDescription[<span class="number">0</span>] == <span class="string">'&#123;'</span>) &#123;</span><br><span class="line">            <span class="built_in">NSMethodSignature</span> *methodSignature = [<span class="built_in">NSMethodSignature</span> signatureWithObjCTypes:typeDescription];</span><br><span class="line">            <span class="keyword">if</span> ([methodSignature.debugDescription rangeOfString:<span class="string">@"is special struct return? YES"</span>].location != <span class="built_in">NSNotFound</span>) &#123;</span><br><span class="line">                msgForwardIMP = (IMP)_objc_msgForward_stret;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="meta">#endif</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#pragma clang diagnostic push</span></span><br><span class="line"><span class="meta">#pragma clang diagnostic ignored <span class="meta-string">"-Wundeclared-selector"</span></span></span><br><span class="line">    <span class="keyword">if</span> (class_getMethodImplementation(cls, <span class="keyword">@selector</span>(forwardInvocation:)) != (IMP)JPForwardInvocation) &#123;</span><br><span class="line">        IMP originalForwardImp = class_replaceMethod(cls, <span class="keyword">@selector</span>(forwardInvocation:), (IMP)JPForwardInvocation, <span class="string">"v@:@"</span>);</span><br><span class="line">        <span class="keyword">if</span> (originalForwardImp) &#123;</span><br><span class="line">            class_addMethod(cls, <span class="keyword">@selector</span>(ORIGforwardInvocation:), originalForwardImp, <span class="string">"v@:@"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#pragma clang diagnostic pop</span></span><br><span class="line">    [cls jp_fixMethodSignature];</span><br><span class="line">    <span class="keyword">if</span> (class_respondsToSelector(cls, selector)) &#123;</span><br><span class="line">        <span class="built_in">NSString</span> *originalSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"ORIG%@"</span>, selectorName];</span><br><span class="line">        SEL originalSelector = <span class="built_in">NSSelectorFromString</span>(originalSelectorName);</span><br><span class="line">        <span class="keyword">if</span>(!class_respondsToSelector(cls, originalSelector)) &#123;</span><br><span class="line">            class_addMethod(cls, originalSelector, originalImp, typeDescription);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *JPSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"_JP%@"</span>, selectorName];</span><br><span class="line">    </span><br><span class="line">    _initJPOverideMethods(cls);</span><br><span class="line">    _JSOverideMethods[cls][JPSelectorName] = function;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Replace the original secltor at last, preventing threading issus when</span></span><br><span class="line">    <span class="comment">// the selector get called during the execution of `overrideMethod`</span></span><br><span class="line">    class_replaceMethod(cls, selector, msgForwardIMP, typeDescription);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="（1）JSPatch的Hook原理"><a href="#（1）JSPatch的Hook原理" class="headerlink" title="（1）JSPatch的Hook原理"></a>（1）JSPatch的Hook原理</h3><p>先来看下JSPatch是如何来实现的，在JSPatch.mm文件中可以看到overrideMethod的定义</p>
+<pre><code class="objc">static void overrideMethod(Class cls, NSString *selectorName, JSValue *function, BOOL isClassMethod, const char *typeDescription)
+{
+    SEL selector = NSSelectorFromString(selectorName);
+
+    if (!typeDescription) {
+        Method method = class_getInstanceMethod(cls, selector);
+        typeDescription = (char *)method_getTypeEncoding(method);
+    }
+
+    IMP originalImp = class_respondsToSelector(cls, selector) ? class_getMethodImplementation(cls, selector) : NULL;
+
+    IMP msgForwardIMP = _objc_msgForward;
+    #if !defined(__arm64__)
+        if (typeDescription[0] == &#39;{&#39;) {
+            NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:typeDescription];
+            if ([methodSignature.debugDescription rangeOfString:@&quot;is special struct return? YES&quot;].location != NSNotFound) {
+                msgForwardIMP = (IMP)_objc_msgForward_stret;
+            }
+        }
+    #endif
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored &quot;-Wundeclared-selector&quot;
+    if (class_getMethodImplementation(cls, @selector(forwardInvocation:)) != (IMP)JPForwardInvocation) {
+        IMP originalForwardImp = class_replaceMethod(cls, @selector(forwardInvocation:), (IMP)JPForwardInvocation, &quot;v@:@&quot;);
+        if (originalForwardImp) {
+            class_addMethod(cls, @selector(ORIGforwardInvocation:), originalForwardImp, &quot;v@:@&quot;);
+        }
+    }
+#pragma clang diagnostic pop
+    [cls jp_fixMethodSignature];
+    if (class_respondsToSelector(cls, selector)) {
+        NSString *originalSelectorName = [NSString stringWithFormat:@&quot;ORIG%@&quot;, selectorName];
+        SEL originalSelector = NSSelectorFromString(originalSelectorName);
+        if(!class_respondsToSelector(cls, originalSelector)) {
+            class_addMethod(cls, originalSelector, originalImp, typeDescription);
+        }
+    }
+
+    NSString *JPSelectorName = [NSString stringWithFormat:@&quot;_JP%@&quot;, selectorName];
+
+    _initJPOverideMethods(cls);
+    _JSOverideMethods[cls][JPSelectorName] = function;
+
+    // Replace the original secltor at last, preventing threading issus when
+    // the selector get called during the execution of `overrideMethod`
+    class_replaceMethod(cls, selector, msgForwardIMP, typeDescription);
+}
+</code></pre>
 <p>JSPatch的Hook过程如下：</p>
 <blockquote>
 <ul>
@@ -429,8 +477,73 @@
 <li>3、将替换的方法JS代码块以<code>_JSOverideMethods[cls][JPSelectorName] = function</code>的形式保存下来</li>
 </ul>
 </blockquote>
-<p>接下来再看下<code>JPForwardInvocation</code>的处理过程<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> JPForwardInvocation(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span> assignSlf, SEL selector, <span class="built_in">NSInvocation</span> *invocation)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">BOOL</span> deallocFlag = <span class="literal">NO</span>;</span><br><span class="line">    <span class="keyword">id</span> slf = assignSlf;</span><br><span class="line">    <span class="built_in">NSMethodSignature</span> *methodSignature = [invocation methodSignature];</span><br><span class="line">    <span class="built_in">NSInteger</span> numberOfArguments = [methodSignature numberOfArguments];</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *selectorName = <span class="built_in">NSStringFromSelector</span>(invocation.selector);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *JPSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"_JP%@"</span>, selectorName];</span><br><span class="line">    JSValue *jsFunc = getJSFunctionInObjectHierachy(slf, JPSelectorName);</span><br><span class="line">    <span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);        </span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;    </span><br><span class="line">    <span class="comment">// 参数解析（在此不贴代码了）</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 执行JS代码片段，并进行返回值解析(贴一个最简单的JS代码块的执行，实际上很复杂)</span></span><br><span class="line">    <span class="meta">#define JP_FWD_RET_CALL_JS \</span></span><br><span class="line">            JSValue *jsval; \</span><br><span class="line">            [_JSMethodForwardCallLock lock];   \</span><br><span class="line">            jsval = [jsFunc callWithArguments:params]; \</span><br><span class="line">            [_JSMethodForwardCallLock unlock]; \</span><br><span class="line">            <span class="keyword">while</span> (![jsval isNull] &amp;&amp; ![jsval isUndefined] &amp;&amp; [jsval hasProperty:<span class="string">@"__isPerformInOC"</span>]) &#123; \</span><br><span class="line">                <span class="built_in">NSArray</span> *args = <span class="literal">nil</span>;  \</span><br><span class="line">                JSValue *cb = jsval[<span class="string">@"cb"</span>]; \</span><br><span class="line">                <span class="keyword">if</span> ([jsval hasProperty:<span class="string">@"sel"</span>]) &#123;   \</span><br><span class="line">                    <span class="keyword">id</span> callRet = callSelector(![jsval[<span class="string">@"clsName"</span>] isUndefined] ? [jsval[<span class="string">@"clsName"</span>] toString] : <span class="literal">nil</span>, [jsval[<span class="string">@"sel"</span>] toString], jsval[<span class="string">@"args"</span>], ![jsval[<span class="string">@"obj"</span>] isUndefined] ? jsval[<span class="string">@"obj"</span>] : <span class="literal">nil</span>, <span class="literal">NO</span>);  \</span><br><span class="line">                    args = @[[_context[<span class="string">@"_formatOCToJS"</span>] callWithArguments:callRet ? @[callRet] : _formatOCToJSList(@[_nilObj])]];  \</span><br><span class="line">                &#125;   \</span><br><span class="line">                [_JSMethodForwardCallLock lock];    \</span><br><span class="line">                jsval = [cb callWithArguments:args];  \</span><br><span class="line">                [_JSMethodForwardCallLock unlock];  \</span><br><span class="line">            &#125;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
-<p>JSPatch的原有转发逻辑<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> JPExecuteORIGForwardInvocation(<span class="keyword">id</span> slf, SEL selector, <span class="built_in">NSInvocation</span> *invocation)</span><br><span class="line">&#123;</span><br><span class="line"><span class="meta">#pragma clang diagnostic push</span></span><br><span class="line"><span class="meta">#pragma clang diagnostic ignored <span class="meta-string">"-Wundeclared-selector"</span></span></span><br><span class="line">    SEL origForwardSelector = <span class="keyword">@selector</span>(ORIGforwardInvocation:);</span><br><span class="line"><span class="meta">#pragma clang diagnostic pop</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ([slf respondsToSelector:origForwardSelector]) &#123;</span><br><span class="line">        <span class="built_in">NSMethodSignature</span> *methodSignature = [slf methodSignatureForSelector:origForwardSelector];</span><br><span class="line">        <span class="keyword">if</span> (!methodSignature) &#123;</span><br><span class="line">            _exceptionBlock([<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"unrecognized selector -ORIGforwardInvocation: for instance %@"</span>, slf]);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">NSInvocation</span> *forwardInv= [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:methodSignature];</span><br><span class="line">        [forwardInv setTarget:slf];</span><br><span class="line">        [forwardInv setSelector:origForwardSelector];</span><br><span class="line">        [forwardInv setArgument:&amp;invocation atIndex:<span class="number">2</span>];</span><br><span class="line">        [forwardInv invoke];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        Class superCls = [[slf <span class="keyword">class</span>] superclass];</span><br><span class="line">        Method superForwardMethod = class_getInstanceMethod(superCls, <span class="keyword">@selector</span>(forwardInvocation:));</span><br><span class="line">        <span class="keyword">void</span> (*superForwardIMP)(<span class="keyword">id</span>, SEL, <span class="built_in">NSInvocation</span> *);</span><br><span class="line">        superForwardIMP = (<span class="keyword">void</span> (*)(<span class="keyword">id</span>, SEL, <span class="built_in">NSInvocation</span> *))method_getImplementation(superForwardMethod);</span><br><span class="line">        superForwardIMP(slf, <span class="keyword">@selector</span>(forwardInvocation:), invocation);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接下来再看下<code>JPForwardInvocation</code>的处理过程</p>
+<pre><code class="objc">static void JPForwardInvocation(__unsafe_unretained id assignSlf, SEL selector, NSInvocation *invocation)
+{
+    BOOL deallocFlag = NO;
+    id slf = assignSlf;
+    NSMethodSignature *methodSignature = [invocation methodSignature];
+    NSInteger numberOfArguments = [methodSignature numberOfArguments];
+
+    NSString *selectorName = NSStringFromSelector(invocation.selector);
+
+    NSString *JPSelectorName = [NSString stringWithFormat:@&quot;_JP%@&quot;, selectorName];
+    JSValue *jsFunc = getJSFunctionInObjectHierachy(slf, JPSelectorName);
+    if (!jsFunc) {
+        IMP invocationIMP = class_getMethodImplementation([slf class], invocation.selector);        
+        JPExecuteORIGForwardInvocation(slf, selector, invocation);
+        return;
+    }    
+    // 参数解析（在此不贴代码了）
+    ...
+
+    // 执行JS代码片段，并进行返回值解析(贴一个最简单的JS代码块的执行，实际上很复杂)
+    #define JP_FWD_RET_CALL_JS \
+            JSValue *jsval; \
+            [_JSMethodForwardCallLock lock];   \
+            jsval = [jsFunc callWithArguments:params]; \
+            [_JSMethodForwardCallLock unlock]; \
+            while (![jsval isNull] &amp;&amp; ![jsval isUndefined] &amp;&amp; [jsval hasProperty:@&quot;__isPerformInOC&quot;]) { \
+                NSArray *args = nil;  \
+                JSValue *cb = jsval[@&quot;cb&quot;]; \
+                if ([jsval hasProperty:@&quot;sel&quot;]) {   \
+                    id callRet = callSelector(![jsval[@&quot;clsName&quot;] isUndefined] ? [jsval[@&quot;clsName&quot;] toString] : nil, [jsval[@&quot;sel&quot;] toString], jsval[@&quot;args&quot;], ![jsval[@&quot;obj&quot;] isUndefined] ? jsval[@&quot;obj&quot;] : nil, NO);  \
+                    args = @[[_context[@&quot;_formatOCToJS&quot;] callWithArguments:callRet ? @[callRet] : _formatOCToJSList(@[_nilObj])]];  \
+                }   \
+                [_JSMethodForwardCallLock lock];    \
+                jsval = [cb callWithArguments:args];  \
+                [_JSMethodForwardCallLock unlock];  \
+            }
+    ...
+</code></pre>
+<p>JSPatch的原有转发逻辑</p>
+<pre><code class="objc">static void JPExecuteORIGForwardInvocation(id slf, SEL selector, NSInvocation *invocation)
+{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored &quot;-Wundeclared-selector&quot;
+    SEL origForwardSelector = @selector(ORIGforwardInvocation:);
+#pragma clang diagnostic pop
+
+    if ([slf respondsToSelector:origForwardSelector]) {
+        NSMethodSignature *methodSignature = [slf methodSignatureForSelector:origForwardSelector];
+        if (!methodSignature) {
+            _exceptionBlock([NSString stringWithFormat:@&quot;unrecognized selector -ORIGforwardInvocation: for instance %@&quot;, slf]);
+            return;
+        }
+        NSInvocation *forwardInv= [NSInvocation invocationWithMethodSignature:methodSignature];
+        [forwardInv setTarget:slf];
+        [forwardInv setSelector:origForwardSelector];
+        [forwardInv setArgument:&amp;invocation atIndex:2];
+        [forwardInv invoke];
+    } else {
+        Class superCls = [[slf class] superclass];
+        Method superForwardMethod = class_getInstanceMethod(superCls, @selector(forwardInvocation:));
+        void (*superForwardIMP)(id, SEL, NSInvocation *);
+        superForwardIMP = (void (*)(id, SEL, NSInvocation *))method_getImplementation(superForwardMethod);
+        superForwardIMP(slf, @selector(forwardInvocation:), invocation);
+    }
+}
+</code></pre>
 <p>JSPatch hook的函数执行逻辑：</p>
 <blockquote>
 <ul>
@@ -443,16 +556,132 @@
 <p>用一张图表示下方法被JSPatch hook之后的状态<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/10.png" width="65%" height="65%"></p>
 <h3 id="（2）Aspects的Hook原理"><a href="#（2）Aspects的Hook原理" class="headerlink" title="（2）Aspects的Hook原理"></a>（2）Aspects的Hook原理</h3><p>Aspects不光支持Hook类，还支持Hook对象，提供更小粒度的支持。对于对象的hook，<br>对于对象实例而言，Aspects并没有直接swizzling对象的<code>forwardInvocation</code> 方法，而是动态生成一个当前对象的子类，并将当前对象与子类关联，然后替换子类的 <code>forwardInvocation</code>方法，它的原理有些类似于KVO：将当前对象变成一个subclass 的实例，同时对于外部使用者而言，又能把它继续当成原对象在使用，而且所有的swizzling 操作都发生在子类，这样做的好处是你不需要去更改对象本身的类。但是Aspects的对象hook不在今天的讨论范围之内</p>
 <p>我们主要讨论Aspects的类Hook<br>Aspects对于类的Hook与JSPatch的原理大同小异，核心代码如下：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">id</span> aspect_add(<span class="keyword">id</span> <span class="keyword">self</span>, SEL selector, AspectOptions options, <span class="keyword">id</span> block, <span class="built_in">NSError</span> **error) &#123;</span><br><span class="line">    __block AspectIdentifier *identifier = <span class="literal">nil</span>;</span><br><span class="line">    aspect_performLocked(^&#123;</span><br><span class="line">        <span class="keyword">if</span> (aspect_isSelectorAllowedAndTrack(<span class="keyword">self</span>, selector, options, error)) &#123;</span><br><span class="line">            <span class="comment">// 给要Hook的类准备一个对应的AspectsContainer</span></span><br><span class="line">            AspectsContainer *aspectContainer = aspect_getContainerForObject(<span class="keyword">self</span>, selector);</span><br><span class="line">            <span class="comment">// 给要Hook的方法生成一个AspectIdentifier</span></span><br><span class="line">            identifier = [AspectIdentifier identifierWithSelector:selector object:<span class="keyword">self</span> options:options block:block error:error];</span><br><span class="line">            <span class="keyword">if</span> (identifier) &#123;</span><br><span class="line">                <span class="comment">// 将AspectIdentifier添加到AspectsContainer容器中</span></span><br><span class="line">                [aspectContainer addAspect:identifier withOptions:options];</span><br><span class="line">                <span class="comment">// Hook的核心方法，下面会展开</span></span><br><span class="line">                aspect_prepareClassAndHookSelector(<span class="keyword">self</span>, selector, error);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> identifier;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> aspect_prepareClassAndHookSelector(<span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSError</span> **error) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(selector);</span><br><span class="line">    <span class="comment">// 完成类的forwardInvocation的Hook，对于每个要Hook的类，应该只走一次。具体实现参考aspect_swizzleForwardInvocation</span></span><br><span class="line">    Class klass = aspect_hookClass(<span class="keyword">self</span>, error);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 根据selector找到对应的Method</span></span><br><span class="line">    Method targetMethod = class_getInstanceMethod(klass, selector);</span><br><span class="line">    <span class="comment">// 找到方法的IMP</span></span><br><span class="line">    IMP targetMethodIMP = method_getImplementation(targetMethod);</span><br><span class="line">    <span class="keyword">if</span> (!aspect_isMsgForwardIMP(targetMethodIMP)) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">char</span> *typeEncoding = method_getTypeEncoding(targetMethod);</span><br><span class="line">        SEL aliasSelector = aspect_aliasForSelector(selector);</span><br><span class="line">        <span class="keyword">if</span> (![klass instancesRespondToSelector:aliasSelector]) &#123;</span><br><span class="line">            <span class="comment">// 将SEL(aliasSelector)指向IMP(selector)</span></span><br><span class="line">            __unused <span class="built_in">BOOL</span> addedAlias = class_addMethod(klass, aliasSelector, method_getImplementation(targetMethod), typeEncoding);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将SEL(selector)指向IMP(forwardInvocation)</span></span><br><span class="line">        class_replaceMethod(klass, selector, aspect_getMsgForwardIMP(<span class="keyword">self</span>, selector), typeEncoding);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> aspect_swizzleForwardInvocation(Class klass) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(klass);</span><br><span class="line">    <span class="comment">// 如果没有method，replace实际上会像是class_addMethod一样</span></span><br><span class="line">    IMP originalImplementation = class_replaceMethod(klass, <span class="keyword">@selector</span>(forwardInvocation:), (IMP)__ASPECTS_ARE_BEING_CALLED__, <span class="string">"v@:@"</span>);</span><br><span class="line">    <span class="keyword">if</span> (originalImplementation) &#123;</span><br><span class="line">        <span class="comment">// 添加AspectsForwardInvocationSelectorName的方法，IMP为原生 forwardInvocation:</span></span><br><span class="line">        class_addMethod(klass, <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName), originalImplementation, <span class="string">"v@:@"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __ASPECTS_ARE_BEING_CALLED__(__<span class="keyword">unsafe_unretained</span> <span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSInvocation</span> *invocation) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(<span class="keyword">self</span>);</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(invocation);</span><br><span class="line">    SEL originalSelector = invocation.selector;</span><br><span class="line">    SEL aliasSelector = aspect_aliasForSelector(invocation.selector);</span><br><span class="line">    invocation.selector = aliasSelector;</span><br><span class="line">    AspectsContainer *objectContainer = objc_getAssociatedObject(<span class="keyword">self</span>, aliasSelector);</span><br><span class="line">    AspectsContainer *classContainer = aspect_getContainerForClass(object_getClass(<span class="keyword">self</span>), aliasSelector);</span><br><span class="line">    AspectInfo *info = [[AspectInfo alloc] initWithInstance:<span class="keyword">self</span> invocation:invocation];</span><br><span class="line">    <span class="built_in">NSArray</span> *aspectsToRemove = <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Before hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.beforeAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.beforeAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instead hooks.</span></span><br><span class="line">    <span class="built_in">BOOL</span> respondsToAlias = <span class="literal">YES</span>;</span><br><span class="line">    <span class="keyword">if</span> (objectContainer.insteadAspects.count || classContainer.insteadAspects.count) &#123;</span><br><span class="line">        aspect_invoke(classContainer.insteadAspects, info);</span><br><span class="line">        aspect_invoke(objectContainer.insteadAspects, info);</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        Class klass = object_getClass(invocation.target);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> ((respondsToAlias = [klass instancesRespondToSelector:aliasSelector])) &#123;</span><br><span class="line">                [invocation invoke];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">while</span> (!respondsToAlias &amp;&amp; (klass = class_getSuperclass(klass)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// After hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.afterAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.afterAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有找到对应的hooks，调用原有的转发（通常抛出异常）</span></span><br><span class="line">    <span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">        invocation.selector = originalSelector;</span><br><span class="line">        SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:originalForwardInvocationSEL]) &#123;</span><br><span class="line">            ((<span class="keyword">void</span>( *)(<span class="keyword">id</span>, SEL, <span class="built_in">NSInvocation</span> *))objc_msgSend)(<span class="keyword">self</span>, originalForwardInvocationSEL, invocation);</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Remove any hooks that are queued for deregistration.</span></span><br><span class="line">    [aspectsToRemove makeObjectsPerformSelector:<span class="keyword">@selector</span>(remove)];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="objc">static id aspect_add(id self, SEL selector, AspectOptions options, id block, NSError **error) {
+    __block AspectIdentifier *identifier = nil;
+    aspect_performLocked(^{
+        if (aspect_isSelectorAllowedAndTrack(self, selector, options, error)) {
+            // 给要Hook的类准备一个对应的AspectsContainer
+            AspectsContainer *aspectContainer = aspect_getContainerForObject(self, selector);
+            // 给要Hook的方法生成一个AspectIdentifier
+            identifier = [AspectIdentifier identifierWithSelector:selector object:self options:options block:block error:error];
+            if (identifier) {
+                // 将AspectIdentifier添加到AspectsContainer容器中
+                [aspectContainer addAspect:identifier withOptions:options];
+                // Hook的核心方法，下面会展开
+                aspect_prepareClassAndHookSelector(self, selector, error);
+            }
+        }
+    });
+    return identifier;
+}
+</code></pre>
+<pre><code class="objc">static void aspect_prepareClassAndHookSelector(NSObject *self, SEL selector, NSError **error) {
+    NSCParameterAssert(selector);
+    // 完成类的forwardInvocation的Hook，对于每个要Hook的类，应该只走一次。具体实现参考aspect_swizzleForwardInvocation
+    Class klass = aspect_hookClass(self, error);
+
+    // 根据selector找到对应的Method
+    Method targetMethod = class_getInstanceMethod(klass, selector);
+    // 找到方法的IMP
+    IMP targetMethodIMP = method_getImplementation(targetMethod);
+    if (!aspect_isMsgForwardIMP(targetMethodIMP)) {
+        const char *typeEncoding = method_getTypeEncoding(targetMethod);
+        SEL aliasSelector = aspect_aliasForSelector(selector);
+        if (![klass instancesRespondToSelector:aliasSelector]) {
+            // 将SEL(aliasSelector)指向IMP(selector)
+            __unused BOOL addedAlias = class_addMethod(klass, aliasSelector, method_getImplementation(targetMethod), typeEncoding);
+        }
+
+        // 将SEL(selector)指向IMP(forwardInvocation)
+        class_replaceMethod(klass, selector, aspect_getMsgForwardIMP(self, selector), typeEncoding);
+    }
+}
+</code></pre>
+<pre><code class="objc">static void aspect_swizzleForwardInvocation(Class klass) {
+    NSCParameterAssert(klass);
+    // 如果没有method，replace实际上会像是class_addMethod一样
+    IMP originalImplementation = class_replaceMethod(klass, @selector(forwardInvocation:), (IMP)__ASPECTS_ARE_BEING_CALLED__, &quot;v@:@&quot;);
+    if (originalImplementation) {
+        // 添加AspectsForwardInvocationSelectorName的方法，IMP为原生 forwardInvocation:
+        class_addMethod(klass, NSSelectorFromString(AspectsForwardInvocationSelectorName), originalImplementation, &quot;v@:@&quot;);
+    }
+}
+</code></pre>
+<pre><code class="objc">static void __ASPECTS_ARE_BEING_CALLED__(__unsafe_unretained NSObject *self, SEL selector, NSInvocation *invocation) {
+    NSCParameterAssert(self);
+    NSCParameterAssert(invocation);
+    SEL originalSelector = invocation.selector;
+    SEL aliasSelector = aspect_aliasForSelector(invocation.selector);
+    invocation.selector = aliasSelector;
+    AspectsContainer *objectContainer = objc_getAssociatedObject(self, aliasSelector);
+    AspectsContainer *classContainer = aspect_getContainerForClass(object_getClass(self), aliasSelector);
+    AspectInfo *info = [[AspectInfo alloc] initWithInstance:self invocation:invocation];
+    NSArray *aspectsToRemove = nil;
+
+    // Before hooks.
+    aspect_invoke(classContainer.beforeAspects, info);
+    aspect_invoke(objectContainer.beforeAspects, info);
+
+    // Instead hooks.
+    BOOL respondsToAlias = YES;
+    if (objectContainer.insteadAspects.count || classContainer.insteadAspects.count) {
+        aspect_invoke(classContainer.insteadAspects, info);
+        aspect_invoke(objectContainer.insteadAspects, info);
+    }else {
+        Class klass = object_getClass(invocation.target);
+        do {
+            if ((respondsToAlias = [klass instancesRespondToSelector:aliasSelector])) {
+                [invocation invoke];
+                break;
+            }
+        }while (!respondsToAlias &amp;&amp; (klass = class_getSuperclass(klass)));
+    }
+
+    // After hooks.
+    aspect_invoke(classContainer.afterAspects, info);
+    aspect_invoke(objectContainer.afterAspects, info);
+
+    // 如果没有找到对应的hooks，调用原有的转发（通常抛出异常）
+    if (!respondsToAlias) {
+        invocation.selector = originalSelector;
+        SEL originalForwardInvocationSEL = NSSelectorFromString(AspectsForwardInvocationSelectorName);
+        if ([self respondsToSelector:originalForwardInvocationSEL]) {
+            ((void( *)(id, SEL, NSInvocation *))objc_msgSend)(self, originalForwardInvocationSEL, invocation);
+        }else {
+            [self doesNotRecognizeSelector:invocation.selector];
+        }
+    }
+    // Remove any hooks that are queued for deregistration.
+    [aspectsToRemove makeObjectsPerformSelector:@selector(remove)];
+}
+</code></pre>
 <p>用一张图表示下方法被Aspect hook之后的状态<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/11.png" width="65%" height="65%"></p>
 <h2 id="JSPatch和Aspects的Hook混战"><a href="#JSPatch和Aspects的Hook混战" class="headerlink" title="JSPatch和Aspects的Hook混战"></a>JSPatch和Aspects的Hook混战</h2><p>如果项目中接入的第三方库，同时有多个库对类的forwardInvocation函数进行了Hook，那么就可能会引发各种各样的问题，接下来以Aspects和JSPatch为例，看看它俩直间的碰撞</p>
 <p>先来点上下文</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="keyword">void</span>)test;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">- (<span class="keyword">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"MyClass origin log"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)aspects_hook_test &#123;</span><br><span class="line">    [MyClass aspect_hookSelector:<span class="keyword">@selector</span>(test)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="keyword">id</span> aspects) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"aspects log"</span>);</span><br><span class="line">    &#125; error:<span class="literal">nil</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'MyClass'</span>, &#123;</span><br><span class="line">            test: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"jspatch log"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<pre><code class="objc">@interface MyClass : NSObject
+- (void)test;
+@end
+
+@implementation MyClass
+- (void)test {
+    NSLog(@&quot;MyClass origin log&quot;);
+}
+@end
+</code></pre>
+<pre><code class="objc">- (void)aspects_hook_test {
+    [MyClass aspect_hookSelector:@selector(test)
+                     withOptions:AspectPositionInstead
+                      usingBlock:^(id aspects) {
+        NSLog(@&quot;aspects log&quot;);
+    } error:nil];
+}
+</code></pre>
+<pre><code class="js">defineClass(&#39;MyClass&#39;, {
+            test: function() {
+            console.log(&quot;jspatch log&quot;);
+    }
+});
+</code></pre>
 <p>先总结下遇到的问题</p>
 <table>
 <thead>
@@ -490,8 +719,29 @@
 <h3 id="Aspects-hook"><a href="#Aspects-hook" class="headerlink" title="Aspects hook"></a>Aspects hook</h3><p>Aspects的hook之后，类的SEL和IMP的指向示意图如下：<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/04.png" width="65%" height="65%"></p>
 <h3 id="JSPatch先hook，Aspects再hook"><a href="#JSPatch先hook，Aspects再hook" class="headerlink" title="JSPatch先hook，Aspects再hook"></a>JSPatch先hook，Aspects再hook</h3><p>JSPatch先hook函数test，Aspects在此基础上再对test进行hook，之后类的SEL和IMP的指向示意图如下：（注：这个时候不可避免地存在覆盖问题）<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/05.png" width="65%" height="65%"><br>如果此时向test方法发消息，根据①的指向，理所当然会进行转发，由于此时的<code>SEL(forwardInvocation)</code>指向了<code>IMP(__ASPECTS_ARE_BEING_CALLED__)</code>，所以转发会走到<code>__ASPECTS_ARE_BEING_CALLED__</code>函数中，由于此时能找到test对应的替换block，所以就会执行该block，输出<code>aspects log</code>，原先JSPatch的hook的JS代码片被覆盖，执行不到。</p>
 <h3 id="Aspects先hook，JSPatch再hook"><a href="#Aspects先hook，JSPatch再hook" class="headerlink" title="Aspects先hook，JSPatch再hook"></a>Aspects先hook，JSPatch再hook</h3><p><img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="65%" height="65%"><br>如果此时向test方法发消息，根据①的指向，理所当然会进行转发，由于此时的<code>SEL(forwardInvocation)</code>指向了<code>IMP(JPforwardInvocation)</code>，所以转发会走到<code>JPforwardInvocation</code>函数中，由于此时能找到test对应的JS代码块，所以就会执行该JS代码块，输出<code>jspatch log</code>，原先Aspects的hook的block被覆盖，执行不到。</p>
-<h3 id="Aspects先hook，JSPatch再hook，且JSpatch调用了self-ORIGtest-，会发生crash"><a href="#Aspects先hook，JSPatch再hook，且JSpatch调用了self-ORIGtest-，会发生crash" class="headerlink" title="Aspects先hook，JSPatch再hook，且JSpatch调用了self.ORIGtest()，会发生crash"></a>Aspects先hook，JSPatch再hook，且JSpatch调用了self.ORIGtest()，会发生crash</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70095:30054488] -[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30</span><br><span class="line">JPAndAspects[70095:30054488] *** Terminating app due to uncaught exception &apos;NSInvalidArgumentException&apos;</span><br><span class="line">reason: &apos;-[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30&apos;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001074dd1ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000106b7af41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x000000010755da34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x000000010524cd01 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   CoreFoundation                      0x000000010746149c __invoking___ + 140</span><br><span class="line">    5   CoreFoundation                      0x0000000107461370 -[NSInvocation invoke] + 320</span><br><span class="line">    6   JPAndAspects                        0x000000010526ba4d JPExecuteORIGForwardInvocation + 429</span><br><span class="line">    7   JPAndAspects                        0x000000010525d38a JPForwardInvocation + 666</span><br><span class="line">    8   CoreFoundation                      0x000000010745fe08 ___forwarding___ + 760</span><br><span class="line">    9   CoreFoundation                      0x000000010745fa88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
-<p><img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="75%" height="75%"><br>JSPatch hook的代码片如下所示，调用了self.ORIGtest()<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'MyClass'</span>, &#123;</span><br><span class="line">            test: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"jspatch log"</span>);</span><br><span class="line">            self.ORIGtest();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<h3 id="Aspects先hook，JSPatch再hook，且JSpatch调用了self-ORIGtest-，会发生crash"><a href="#Aspects先hook，JSPatch再hook，且JSpatch调用了self-ORIGtest-，会发生crash" class="headerlink" title="Aspects先hook，JSPatch再hook，且JSpatch调用了self.ORIGtest()，会发生crash"></a>Aspects先hook，JSPatch再hook，且JSpatch调用了self.ORIGtest()，会发生crash</h3><pre><code>JPAndAspects[70095:30054488] -[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30
+JPAndAspects[70095:30054488] *** Terminating app due to uncaught exception &#39;NSInvalidArgumentException&#39;
+reason: &#39;-[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30&#39;
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00000001074dd1ab __exceptionPreprocess + 171
+    1   libobjc.A.dylib                     0x0000000106b7af41 objc_exception_throw + 48
+    2   CoreFoundation                      0x000000010755da34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132
+    3   JPAndAspects                        0x000000010524cd01 __ASPECTS_ARE_BEING_CALLED__ + 6129
+    4   CoreFoundation                      0x000000010746149c __invoking___ + 140
+    5   CoreFoundation                      0x0000000107461370 -[NSInvocation invoke] + 320
+    6   JPAndAspects                        0x000000010526ba4d JPExecuteORIGForwardInvocation + 429
+    7   JPAndAspects                        0x000000010525d38a JPForwardInvocation + 666
+    8   CoreFoundation                      0x000000010745fe08 ___forwarding___ + 760
+    9   CoreFoundation                      0x000000010745fa88 _CF_forwarding_prep_0 + 120
+</code></pre><p><img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="75%" height="75%"><br>JSPatch hook的代码片如下所示，调用了self.ORIGtest()</p>
+<pre><code class="js">defineClass(&#39;MyClass&#39;, {
+            test: function() {
+            console.log(&quot;jspatch log&quot;);
+            self.ORIGtest();
+    }
+});
+</code></pre>
 <p>如果此时向test方法发消息，这个时候则会crash，为什么会crash呢？我们来分析一下：</p>
 <blockquote>
 <ul>
@@ -503,13 +753,72 @@
 </ul>
 </blockquote>
 <p>那么这个问题怎么解决呢？<br><strong>理论上，ORIGtest作为函数原有的实现，不应该走到转发里面，它应该是直接指向IMP(test)。然而一旦走到JPforwardInvocation里面，说明类的test方法已经被其它的库提前hook掉了。我们需要考虑当前的ORIGtest是否已经被hook，如果未hook，需要走原有的流程，如果已经被hook，需要去掉ORIG，再进行转发</strong></p>
-<p>修改JSPatch源代码，在函数<code>JPForwardInvocation</code>中，查不到对应到JS代码块并走原有转发之前，添加如下代码：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        <span class="comment">// 添加的代码</span></span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);</span><br><span class="line">        <span class="keyword">if</span>([selectorName hasPrefix:<span class="string">@"ORIG"</span>] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret))</span><br><span class="line">        &#123;</span><br><span class="line">            selectorName = [selectorName stringByReplacingOccurrencesOfString:<span class="string">@"ORIG"</span> withString:<span class="string">@""</span>];</span><br><span class="line">            invocation.selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 走原有的转发</span></span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
-<p>输出如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70724:30115450] JSPatch.log: jspatch log</span><br><span class="line">JPAndAspects[70724:30115450] aspects log</span><br></pre></td></tr></table></figure></p>
-<h3 id="Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self-super-xxx"><a href="#Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self-super-xxx" class="headerlink" title="Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self.super().xxx()"></a>Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self.super().xxx()</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="keyword">void</span>)test;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">- (<span class="keyword">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"MyClass origin log"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MySubClass</span> : <span class="title">MyClass</span></span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MySubClass</span></span></span><br><span class="line">- (<span class="keyword">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"MySubClass origin log"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)aspects_hook_test &#123;</span><br><span class="line">    [MyClass aspect_hookSelector:<span class="keyword">@selector</span>(test)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="keyword">id</span> aspects) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"MyClass aspects log"</span>);</span><br><span class="line">    &#125; error:<span class="literal">nil</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'MySubClass'</span>, &#123;</span><br><span class="line">            test: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"MySubClass jspatch log"</span>);</span><br><span class="line">            self.super().test();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-<p>如果此时向<code>MySubClass</code>的一个实例对象的test方法发送消息，则会crash<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[73431:30359622] JSPatch.log: MySubClass jspatch log</span><br><span class="line">JPAndAspects[73431:30359622] -[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220</span><br><span class="line">JPAndAspects[73431:30359622] *** Terminating app due to uncaught exception &apos;NSInvalidArgumentException&apos;</span><br><span class="line">reason: &apos;-[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220&apos;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001044cf1ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000103b64f41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x000000010454fa34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x0000000102733da1 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   JPAndAspects                        0x0000000102752b81 JPExecuteORIGForwardInvocation + 577</span><br><span class="line">    5   JPAndAspects                        0x000000010274442a JPForwardInvocation + 666</span><br><span class="line">    6   CoreFoundation                      0x0000000104451e08 ___forwarding___ + 760</span><br><span class="line">    7   CoreFoundation                      0x0000000104451a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure></p>
-<p>我们先来看下hook后的状态信息<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/07.png"><br>为什么会crash呢？我们来分析一下：</p>
+<p>修改JSPatch源代码，在函数<code>JPForwardInvocation</code>中，查不到对应到JS代码块并走原有转发之前，添加如下代码：</p>
+<pre><code class="objc">if (!jsFunc) {
+        // 添加的代码
+        IMP invocationIMP = class_getMethodImplementation([slf class], invocation.selector);
+        if([selectorName hasPrefix:@&quot;ORIG&quot;] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret))
+        {
+            selectorName = [selectorName stringByReplacingOccurrencesOfString:@&quot;ORIG&quot; withString:@&quot;&quot;];
+            invocation.selector = NSSelectorFromString(selectorName);
+        }
+
+        // 走原有的转发
+        JPExecuteORIGForwardInvocation(slf, selector, invocation);
+        return;
+    }
+</code></pre>
+<p>输出如下</p>
+<pre><code>JPAndAspects[70724:30115450] JSPatch.log: jspatch log
+JPAndAspects[70724:30115450] aspects log
+</code></pre><h3 id="Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self-super-xxx"><a href="#Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self-super-xxx" class="headerlink" title="Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self.super().xxx()"></a>Aspects先hook父类test方法，JSPatch再hook子类同一方法，且JSPatch调用了self.super().xxx()</h3><pre><code class="objc">@interface MyClass : NSObject
+- (void)test;
+@end
+@implementation MyClass
+- (void)test {
+    NSLog(@&quot;MyClass origin log&quot;);
+}
+@end
+
+@interface MySubClass : MyClass
+@end
+@implementation MySubClass
+- (void)test {
+    NSLog(@&quot;MySubClass origin log&quot;);
+}
+@end
+</code></pre>
+<pre><code class="objc">- (void)aspects_hook_test {
+    [MyClass aspect_hookSelector:@selector(test)
+                     withOptions:AspectPositionInstead
+                      usingBlock:^(id aspects) {
+        NSLog(@&quot;MyClass aspects log&quot;);
+    } error:nil];
+}
+</code></pre>
+<pre><code class="js">defineClass(&#39;MySubClass&#39;, {
+            test: function() {
+            console.log(&quot;MySubClass jspatch log&quot;);
+            self.super().test();
+    }
+});
+</code></pre>
+<p>如果此时向<code>MySubClass</code>的一个实例对象的test方法发送消息，则会crash</p>
+<pre><code>JPAndAspects[73431:30359622] JSPatch.log: MySubClass jspatch log
+JPAndAspects[73431:30359622] -[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220
+JPAndAspects[73431:30359622] *** Terminating app due to uncaught exception &#39;NSInvalidArgumentException&#39;
+reason: &#39;-[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220&#39;
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00000001044cf1ab __exceptionPreprocess + 171
+    1   libobjc.A.dylib                     0x0000000103b64f41 objc_exception_throw + 48
+    2   CoreFoundation                      0x000000010454fa34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132
+    3   JPAndAspects                        0x0000000102733da1 __ASPECTS_ARE_BEING_CALLED__ + 6129
+    4   JPAndAspects                        0x0000000102752b81 JPExecuteORIGForwardInvocation + 577
+    5   JPAndAspects                        0x000000010274442a JPForwardInvocation + 666
+    6   CoreFoundation                      0x0000000104451e08 ___forwarding___ + 760
+    7   CoreFoundation                      0x0000000104451a88 _CF_forwarding_prep_0 + 120
+</code></pre><p>我们先来看下hook后的状态信息<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/07.png"><br>为什么会crash呢？我们来分析一下：</p>
 <blockquote>
 <ul>
 <li>1、根据⑥的指向，如果向子类<code>MySubClass</code>的一个实例对象的test方法发送消息，则会走向转发，根据⑨的指向，此时<code>MySubClass</code>的<code>SEL(forwardInvocation)</code>指向了<code>IMP(JPforwardInvocation)</code>，肯定会转发到方法<code>JPforwardInvocation</code>中；</li>
@@ -520,13 +829,63 @@
 </blockquote>
 <p>那么如何解决这个问题呢？<br>这个问题与ORIG问题很相似，理论上，super的调用也不应该跑到自己的转发中，而是直接指向父类的实现。然而由于父类被Aspects提前hook，导致对<code>self.super().test()</code>的调用再次阴差阳错地进入到自己的转发中，于是就发生了后来的一切。。。</p>
 <p>继续照葫芦画瓢，在找不到对应的JS代码块进入原有转发之前，判断selectorName是否包含<code>SUPER_</code>前缀，并且其指向的IMP已经被hook为<code>_objc_msgForward</code>，如果是，需要去掉<code>SUPER_</code>前缀，然后再进行转发。</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>([selectorName hasPrefix:<span class="string">@"SUPER_"</span>] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret))&#123;</span><br><span class="line">            selectorName = [selectorName stringByReplacingOccurrencesOfString:<span class="string">@"SUPER_"</span> withString:<span class="string">@""</span>];</span><br><span class="line">            invocation.selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<h3 id="JSPatch先hook父类方法，Aspects再hook子类方法，然后调用-subclass-superTest"><a href="#JSPatch先hook父类方法，Aspects再hook子类方法，然后调用-subclass-superTest" class="headerlink" title="JSPatch先hook父类方法，Aspects再hook子类方法，然后调用[subclass superTest]"></a>JSPatch先hook父类方法，Aspects再hook子类方法，然后调用[subclass superTest]</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="keyword">void</span>)superTest;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">-(<span class="keyword">void</span>)superTest&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"MyClass superTest"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MySubClass</span> : <span class="title">MyClass</span></span></span><br><span class="line">-(<span class="keyword">void</span>)subTest;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MySubClass</span></span></span><br><span class="line">-(<span class="keyword">void</span>)subTest&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"MySubClass subTest"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'MyClass'</span>, &#123;</span><br><span class="line">            superTest: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"MyClass superTest jspatch log"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[MySubClass aspect_hookSelector:<span class="keyword">@selector</span>(subTest)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="keyword">id</span> aspects) &#123;</span><br><span class="line">                          <span class="built_in">NSLog</span>(<span class="string">@"MySubClass subTest aspects log"</span>);</span><br><span class="line">                          </span><br><span class="line">                      &#125; error:<span class="literal">nil</span>];</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[76443:30659220] -[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10</span><br><span class="line">JPAndAspects[76443:30659220] *** Terminating app due to uncaught exception &apos;NSInvalidArgumentException&apos;, </span><br><span class="line">reason: &apos;-[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10&apos;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001029071ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000101f9cf41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x0000000102987a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x0000000100b6bcb1 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   CoreFoundation                      0x0000000102889e08 ___forwarding___ + 760</span><br><span class="line">    5   CoreFoundation                      0x0000000102889a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
-<p>我们先来看下hook后的状态信息<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/08.png"></p>
+<pre><code class="objc">if (!jsFunc) {
+        IMP invocationIMP = class_getMethodImplementation([slf class], invocation.selector);
+
+        if([selectorName hasPrefix:@&quot;SUPER_&quot;] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret)){
+            selectorName = [selectorName stringByReplacingOccurrencesOfString:@&quot;SUPER_&quot; withString:@&quot;&quot;];
+            invocation.selector = NSSelectorFromString(selectorName);
+        }
+
+        JPExecuteORIGForwardInvocation(slf, selector, invocation);
+        return;
+    }
+</code></pre>
+<h3 id="JSPatch先hook父类方法，Aspects再hook子类方法，然后调用-subclass-superTest"><a href="#JSPatch先hook父类方法，Aspects再hook子类方法，然后调用-subclass-superTest" class="headerlink" title="JSPatch先hook父类方法，Aspects再hook子类方法，然后调用[subclass superTest]"></a>JSPatch先hook父类方法，Aspects再hook子类方法，然后调用[subclass superTest]</h3><pre><code class="objc">@interface MyClass : NSObject
+- (void)superTest;
+@end
+
+@implementation MyClass
+-(void)superTest{
+    NSLog(@&quot;MyClass superTest&quot;);
+}
+@end
+</code></pre>
+<pre><code class="objc">@interface MySubClass : MyClass
+-(void)subTest;
+@end
+
+@implementation MySubClass
+-(void)subTest{
+    NSLog(@&quot;MySubClass subTest&quot;);
+}
+@end
+</code></pre>
+<pre><code class="js">defineClass(&#39;MyClass&#39;, {
+            superTest: function() {
+            console.log(&quot;MyClass superTest jspatch log&quot;);
+    }
+});
+</code></pre>
+<pre><code class="objc">[MySubClass aspect_hookSelector:@selector(subTest)
+                     withOptions:AspectPositionInstead
+                      usingBlock:^(id aspects) {
+                          NSLog(@&quot;MySubClass subTest aspects log&quot;);
+
+                      } error:nil];
+</code></pre>
+<pre><code>JPAndAspects[76443:30659220] -[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10
+JPAndAspects[76443:30659220] *** Terminating app due to uncaught exception &#39;NSInvalidArgumentException&#39;, 
+reason: &#39;-[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10&#39;
+*** First throw call stack:
+(
+    0   CoreFoundation                      0x00000001029071ab __exceptionPreprocess + 171
+    1   libobjc.A.dylib                     0x0000000101f9cf41 objc_exception_throw + 48
+    2   CoreFoundation                      0x0000000102987a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132
+    3   JPAndAspects                        0x0000000100b6bcb1 __ASPECTS_ARE_BEING_CALLED__ + 6129
+    4   CoreFoundation                      0x0000000102889e08 ___forwarding___ + 760
+    5   CoreFoundation                      0x0000000102889a88 _CF_forwarding_prep_0 + 120
+</code></pre><p>我们先来看下hook后的状态信息<br><img src="/2018/01/24/iOS消息转发的正确Hook姿势/08.png"></p>
 <p>我们来分析下为什么会crash：</p>
 <blockquote>
 <ul>
@@ -536,9 +895,44 @@
 <li>4、由于子类本身<code>SEL(__aspects_forwardInvocation)</code>指向的<code>IMP(forwardInvocation)</code>并没有实现，所有直接crash。</li>
 </ul>
 </blockquote>
-<p>那么如何解决呢？<br>这个问题的本质原因是子类的处理不了<code>SEL(aspects__superTest)</code>，同时又无法让真正可以处理的父类的forwardInvocation来处理，换句话说， forwardInvocation的继承被父类的hook和子类的hook打断了。所以解决的方案就是想办法让继承层级来处理。<br>修改Aspect源代码：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 修改前</span></span><br><span class="line"><span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">    invocation.selector = originalSelector;</span><br><span class="line">    SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:originalForwardInvocationSEL]) &#123;</span><br><span class="line">        ((<span class="keyword">void</span>( *)(<span class="keyword">id</span>, SEL, <span class="built_in">NSInvocation</span> *))objc_msgSend)(<span class="keyword">self</span>, originalForwardInvocationSEL, invocation);</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">    &#125;</span><br><span class="line">&#125; </span><br><span class="line"></span><br><span class="line"><span class="comment">// 修改后</span></span><br><span class="line"><span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">    invocation.selector = originalSelector;</span><br><span class="line">    SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">    SEL forwardInvocationSEL = <span class="keyword">@selector</span>(forwardInvocation:);</span><br><span class="line">    Class kClass = object_getClass(<span class="keyword">self</span>);</span><br><span class="line">    Method method = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        method = class_getInstanceMethod(kClass, originalForwardInvocationSEL) ?:</span><br><span class="line">        class_getInstanceMethod(kClass, forwardInvocationSEL);</span><br><span class="line">        FORWARD_INVOCATION_IMP imp = method ? (FORWARD_INVOCATION_IMP)method_getImplementation(method) : <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">if</span>(imp &amp;&amp; (imp != &amp;__ASPECTS_ARE_BEING_CALLED__))&#123;</span><br><span class="line">            imp(<span class="keyword">self</span>,<span class="keyword">@selector</span>(forwardInvocation:),invocation);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="keyword">while</span>((kClass = class_getSuperclass(kClass)));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == method)&#123;</span><br><span class="line">        [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>修改后的运行结果如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[78567:30830810] JSPatch.log: MyClass superTest jspatch log</span><br></pre></td></tr></table></figure></p>
-<h2 id="如何保持正确的Hook姿势？"><a href="#如何保持正确的Hook姿势？" class="headerlink" title="如何保持正确的Hook姿势？"></a>如何保持正确的Hook姿势？</h2><p>到目前为止，我们分析了JSPatch和Aspects同时hook消息转发forwardInvocation带来的一些问题，并逐个分析给出了解决方案，<strong>解决的核心就是要找到多个库hook之后的转发状态，从中分析方法的调用流程。</strong></p>
+<p>那么如何解决呢？<br>这个问题的本质原因是子类的处理不了<code>SEL(aspects__superTest)</code>，同时又无法让真正可以处理的父类的forwardInvocation来处理，换句话说， forwardInvocation的继承被父类的hook和子类的hook打断了。所以解决的方案就是想办法让继承层级来处理。<br>修改Aspect源代码：</p>
+<pre><code class="objc">
+    // 修改前
+    if (!respondsToAlias) {
+        invocation.selector = originalSelector;
+        SEL originalForwardInvocationSEL = NSSelectorFromString(AspectsForwardInvocationSelectorName);
+        if ([self respondsToSelector:originalForwardInvocationSEL]) {
+            ((void( *)(id, SEL, NSInvocation *))objc_msgSend)(self, originalForwardInvocationSEL, invocation);
+        }else {
+            [self doesNotRecognizeSelector:invocation.selector];
+        }
+    } 
+
+    // 修改后
+    if (!respondsToAlias) {
+        invocation.selector = originalSelector;
+        SEL originalForwardInvocationSEL = NSSelectorFromString(AspectsForwardInvocationSelectorName);
+        SEL forwardInvocationSEL = @selector(forwardInvocation:);
+        Class kClass = object_getClass(self);
+        Method method = NULL;
+        do{
+            method = class_getInstanceMethod(kClass, originalForwardInvocationSEL) ?:
+            class_getInstanceMethod(kClass, forwardInvocationSEL);
+            FORWARD_INVOCATION_IMP imp = method ? (FORWARD_INVOCATION_IMP)method_getImplementation(method) : NULL;
+            if(imp &amp;&amp; (imp != &amp;__ASPECTS_ARE_BEING_CALLED__)){
+                imp(self,@selector(forwardInvocation:),invocation);
+                break;
+            }
+        }while((kClass = class_getSuperclass(kClass)));
+
+        if(NULL == method){
+            [self doesNotRecognizeSelector:invocation.selector];
+        }
+    }
+</code></pre>
+<p>修改后的运行结果如下：</p>
+<pre><code>JPAndAspects[78567:30830810] JSPatch.log: MyClass superTest jspatch log
+</code></pre><h2 id="如何保持正确的Hook姿势？"><a href="#如何保持正确的Hook姿势？" class="headerlink" title="如何保持正确的Hook姿势？"></a>如何保持正确的Hook姿势？</h2><p>到目前为止，我们分析了JSPatch和Aspects同时hook消息转发forwardInvocation带来的一些问题，并逐个分析给出了解决方案，<strong>解决的核心就是要找到多个库hook之后的转发状态，从中分析方法的调用流程。</strong></p>
 <p>前面的混战虽然只涉及到两个库，但是其中的复杂性还是相当复杂，相信读到这里的您一定也有体会。然而这仅仅是2个库的混战，倘若有多个库呢？每个库的hook逻辑往往只考虑到了自己，认为项目中只有自己在使用黑魔法，殊不知别的库也是这么想的，由于这些库的hook肯定有前后顺序，所以必然存在逻辑覆盖或者诡异的转发跳跃，进而导致了各种各样的crash和逻辑异常:</p>
 <blockquote>
 <ul>
@@ -815,7 +1209,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -1046,6 +1440,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>

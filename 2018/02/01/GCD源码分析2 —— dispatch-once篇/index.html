@@ -19,7 +19,6 @@
 
 
 
-
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -89,18 +88,18 @@
 
 
 
-<meta name="description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
+<meta name="description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。 + (instancetyp">
 <meta name="keywords" content="GCD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="GCD源码分析2 —— dispatch_once篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/02/01/GCD源码分析2 —— dispatch-once篇/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
+<meta property="og:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。 + (instancetyp">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:updated_time" content="2018-10-17T15:14:31.597Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GCD源码分析2 —— dispatch_once篇">
-<meta name="twitter:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。12345678+ (inst">
+<meta name="twitter:description" content="前言这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。 dispatch_once分析在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。 + (instancetyp">
 
 
 
@@ -356,7 +355,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  1,510
+                  1,405
                 </span>
               
 
@@ -394,18 +393,56 @@
 
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章主要分析一下dispatch_once的底层实现，相对而言，这应该是GCD源码分析系列中最简单的一篇了。</p>
-<h2 id="dispatch-once分析"><a href="#dispatch-once分析" class="headerlink" title="dispatch_once分析"></a>dispatch_once分析</h2><p>在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)sharedInstance &#123;</span><br><span class="line">    <span class="keyword">static</span> XXObject *_instance;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> _predicate;</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;_predicate, ^&#123;</span><br><span class="line">        _instance = [[XXObject alloc] init];</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> _instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="dispatch-once分析"><a href="#dispatch-once分析" class="headerlink" title="dispatch_once分析"></a>dispatch_once分析</h2><p>在iOS开发中，我们经常使用dispatch_once去定义一个单例，来保证对象的唯一性，不过我们是否去了解过dispatch_once是如何在多线程情况下保证生成对象的唯一性呢？例如，我们经常用下面的代码块生成一个单例。</p>
+<pre><code class="objc">+ (instancetype)sharedInstance {
+    static XXObject *_instance;
+    static dispatch_once_t _predicate;
+    dispatch_once(&amp;_predicate, ^{
+        _instance = [[XXObject alloc] init];
+    });
+    return _instance;
+}
+</code></pre>
 <p>这段代码中涉及到两个关键词，一个是<code>dispatch_once_t</code>，一个是<code>dispatch_once</code>，下面我们逐个分析</p>
-<h3 id="dispatch-once-t"><a href="#dispatch-once-t" class="headerlink" title="dispatch_once_t"></a>dispatch_once_t</h3><p>在once.h中找到其定义如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">typedef long dispatch_once_t;</span><br></pre></td></tr></table></figure></p>
-<p>dispatch_once_t原来是一个长整型！真是让人措手不及…</p>
-<h3 id="dispatch-once"><a href="#dispatch-once" class="headerlink" title="dispatch_once"></a>dispatch_once</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">void dispatch_once(dispatch_once_t *val, void (^block)(void))&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Block_basic</span> *<span class="title">bb</span> = (<span class="title">void</span> *)<span class="title">block</span>;</span></span><br><span class="line">    dispatch_once_f(val, block, (<span class="keyword">void</span> *)bb-&gt;Block_invoke);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="dispatch-once-t"><a href="#dispatch-once-t" class="headerlink" title="dispatch_once_t"></a>dispatch_once_t</h3><p>在once.h中找到其定义如下：</p>
+<pre><code>typedef long dispatch_once_t;
+</code></pre><p>dispatch_once_t原来是一个长整型！真是让人措手不及…</p>
+<h3 id="dispatch-once"><a href="#dispatch-once" class="headerlink" title="dispatch_once"></a>dispatch_once</h3><pre><code class="c">void dispatch_once(dispatch_once_t *val, void (^block)(void)){
+    struct Block_basic *bb = (void *)block;
+    dispatch_once_f(val, block, (void *)bb-&gt;Block_invoke);
+}
+</code></pre>
 <p>可以看到，在<code>dispatch_once</code>中，生成一个Block_basic指针，指向了block，并把其Block_invoke函数指针传递给了<code>dispatch_once_f</code><br>相信大家一定有疑问，<code>Block_basic</code>和<code>Block_invoke</code>是什么东西？很遗憾，源码中找不到，我们可以推测一下：</p>
 <ul>
 <li><code>Block_basic</code>首先是一个结构体，它定义的指针可以指向<code>void (^block)(void)</code>类型的<code>block</code></li>
 <li><code>Block_invoke</code>的字面意思是触发一个<code>block</code>，可以参考以下代码理解</li>
 </ul>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _dispatch_call_block_and_release(<span class="keyword">void</span> *block)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">void</span> (^b)(<span class="keyword">void</span>) = block;</span><br><span class="line">    b();</span><br><span class="line">    Block_release(b);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>接下来分析核心函数<code>dispatch_once_f</code>：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">void dispatch_once_f(dispatch_once_t *val, void *ctxt, void (*func)(void *))&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">volatile</span> <span class="keyword">long</span> *vval = val;</span><br><span class="line">    <span class="keyword">if</span> (dispatch_atomic_cmpxchg(val, <span class="number">0l</span>, <span class="number">1l</span>)) &#123;</span><br><span class="line">        func(ctxt); <span class="comment">// block真正执行</span></span><br><span class="line">        dispatch_atomic_barrier();</span><br><span class="line">        *val = ~<span class="number">0l</span>;</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">do</span></span><br><span class="line">        &#123;</span><br><span class="line">            _dispatch_hardware_pause();</span><br><span class="line">        &#125; <span class="keyword">while</span> (*vval != ~<span class="number">0l</span>);</span><br><span class="line">        dispatch_atomic_barrier();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<pre><code class="c">void _dispatch_call_block_and_release(void *block)
+{
+    void (^b)(void) = block;
+    b();
+    Block_release(b);
+}
+</code></pre>
+<p>接下来分析核心函数<code>dispatch_once_f</code>：</p>
+<pre><code class="c">void dispatch_once_f(dispatch_once_t *val, void *ctxt, void (*func)(void *)){
+
+    volatile long *vval = val;
+    if (dispatch_atomic_cmpxchg(val, 0l, 1l)) {
+        func(ctxt); // block真正执行
+        dispatch_atomic_barrier();
+        *val = ~0l;
+    } 
+    else 
+    {
+        do
+        {
+            _dispatch_hardware_pause();
+        } while (*vval != ~0l);
+        dispatch_atomic_barrier();
+    }
+}
+</code></pre>
 <blockquote>
 <ul>
 <li><p>1、在开篇中已经讲过<code>dispatch_atomic_cmpxchg</code>，它是一个宏定义，原型为<code>__sync_bool_compare_and_swap((p), (o), (n))</code> ，这是LockFree给予CAS的一种原子操作机制，原理就是 <strong>如果p==o，那么将p设置为n，然后返回true;否则，不做任何处理返回false</strong></p>
@@ -433,7 +470,76 @@
 <li>2、尽量能保持自给自足，减少对别的模块或者类的依赖；</li>
 <li>3、单例尽量考虑使用场景，不要随意实现单例，否则这些单例一旦初始化就会一直占着资源不能释放，造成大量的资源浪费。</li>
 </ul>
-<h2 id="dispatch-once写单例的省力姿势"><a href="#dispatch-once写单例的省力姿势" class="headerlink" title="dispatch_once写单例的省力姿势"></a>dispatch_once写单例的省力姿势</h2><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#ifdef __has_feature(objc_arc) </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_m static id _instanceType = nil;\</span></span><br><span class="line">+(<span class="keyword">instancetype</span>)sharedInstance\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [[<span class="keyword">self</span> alloc]init];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">+ (<span class="keyword">instancetype</span>)allocWithZone:(<span class="keyword">struct</span> _NSZone *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [<span class="keyword">super</span> allocWithZone:zone];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#else </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define singleton_m static id _instanceType = nil;\</span></span><br><span class="line">+(<span class="keyword">instancetype</span>)sharedInstance\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [[<span class="keyword">self</span> alloc]init];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">+ (<span class="keyword">instancetype</span>)allocWithZone:(<span class="keyword">struct</span> _NSZone *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;\</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;\</span><br><span class="line">        _instanceType = [<span class="keyword">super</span> allocWithZone:zone];\</span><br><span class="line">    &#125;);\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">oneway</span> <span class="keyword">void</span>)release\</span><br><span class="line">&#123;\</span><br><span class="line">\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">instancetype</span>)<span class="keyword">retain</span>\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">-(<span class="keyword">instancetype</span>)autorelease\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> _instanceType;\</span><br><span class="line">&#125;\</span><br><span class="line">- (<span class="built_in">NSUInteger</span>)retainCount\</span><br><span class="line">&#123;\</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#endif</span></span><br></pre></td></tr></table></figure>
+<h2 id="dispatch-once写单例的省力姿势"><a href="#dispatch-once写单例的省力姿势" class="headerlink" title="dispatch_once写单例的省力姿势"></a>dispatch_once写单例的省力姿势</h2><pre><code class="objc">#ifdef __has_feature(objc_arc) 
+
+#define singleton_h +(instancetype)sharedInstance;
+
+#define singleton_m static id _instanceType = nil;\
++(instancetype)sharedInstance\
+{\
+    static dispatch_once_t onceToken;\
+    dispatch_once(&amp;onceToken, ^{\
+        _instanceType = [[self alloc]init];\
+    });\
+    return _instanceType;\
+}\
++ (instancetype)allocWithZone:(struct _NSZone *)zone\
+{\
+    static dispatch_once_t onceToken;\
+    dispatch_once(&amp;onceToken, ^{\
+        _instanceType = [super allocWithZone:zone];\
+    });\
+    return _instanceType;\
+}\
+-(id)copyWithZone:(NSZone *)zone\
+{\
+    return _instanceType;\
+}
+
+#else 
+
+#define singleton_h +(instancetype)sharedInstance;
+
+#define singleton_m static id _instanceType = nil;\
++(instancetype)sharedInstance\
+{\
+    static dispatch_once_t onceToken;\
+    dispatch_once(&amp;onceToken, ^{\
+        _instanceType = [[self alloc]init];\
+    });\
+    return _instanceType;\
+}\
++ (instancetype)allocWithZone:(struct _NSZone *)zone\
+{\
+    static dispatch_once_t onceToken;\
+    dispatch_once(&amp;onceToken, ^{\
+        _instanceType = [super allocWithZone:zone];\
+    });\
+    return _instanceType;\
+}\
+-(id)copyWithZone:(NSZone *)zone\
+{\
+    return _instanceType;\
+}\
+-(oneway void)release\
+{\
+\
+}\
+-(instancetype)retain\
+{\
+    return _instanceType;\
+}\
+-(instancetype)autorelease\
+{\
+    return _instanceType;\
+}\
+- (NSUInteger)retainCount\
+{\
+    return 1;\
+}
+
+#endif
+</code></pre>
 <p>然后在要实现的单例.h文件中添加singleton_h，.m文件中添加singleton_m即可</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><code>dispatch_once</code>的分析是最简单的，这也意味着后续系列的的分析将逐渐变得复杂，等待猛烈的暴风雨吧！</p>
 
@@ -701,7 +807,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">80.7k</span>
+    <span title="Site words total count">71.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -932,6 +1038,16 @@
   
 
   
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
 
 </body>
 </html>
