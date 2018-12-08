@@ -100,7 +100,8 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/04.gif">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/03.gif">
-<meta property="og:updated_time" content="2018-11-25T15:33:08.467Z">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/05.png">
+<meta property="og:updated_time" content="2018-12-08T17:56:36.539Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS灵异事件集锦">
 <meta name="twitter:description" content="前言JavaScriptCore引擎的分析由于其复杂性，耗时性，暂时先告一段落，后续会进行回归，本篇将总结一些日常开发中遇到的问题 问题列表启动图之前在做视频闪屏的时候，遇到了一个比较棘手的问题：每次加载本地视频都会有一段黑屏的时间（大概0.2s左右），这本身和AVPlayer有很大的关系，猜测和视频的解码有关，无奈由于闭源，无计可施。 - (void)setupVideoPlayer {">
@@ -360,7 +361,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,597
+                  4,764
                 </span>
               
 
@@ -376,7 +377,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  17
+                  22
                 </span>
               
             </div>
@@ -1142,6 +1143,154 @@ inline ns_handle::~ns_handle()
 
 #endif /* NSHandle_h */
 </code></pre>
+<h3 id="UIScrollView中的UIButton延迟高亮问题"><a href="#UIScrollView中的UIButton延迟高亮问题" class="headerlink" title="UIScrollView中的UIButton延迟高亮问题"></a>UIScrollView中的UIButton延迟高亮问题</h3><p>之前在开发的过程中，就发现<code>UIButton</code>的点击在<code>UITableViewCell</code>中会出现高亮延迟的现象，究其原因是：<br>当手指触摸到UIScrollView内容的一瞬间，会产生下面的动作：</p>
+<p>1、拦截触摸事件,tracking属性变为YES<br>2、一个内置的计时器开始生效(默认时间间隔是150ms)，用来监控在极短的事件间隔内是否发生了手指移动<br>3、当检测到时间间隔内手指发生了移动，UIScrollView自己触发滚动，tracking属性变为NO，手指触摸下即使有(可以响应触摸事件的)内部控件也不会再响应触摸事件。<br>4、当检测到时间间隔内手指没有移动，tracking属性保持YES，手指触摸下如果有(可以响应触摸事件的)内部控件，则将触摸事件传递给控件进行处理。</p>
+<p>可以通过<code>delaysContentTouches</code>属性来搞定该问题</p>
+<pre><code class="objc">self.tableView.delaysContentTouches = NO;
+for (id obj in self.tableView.subviews) {
+    if ([obj respondsToSelector:@selector(setDelaysContentTouches:)]) {
+        [obj setDelaysContentTouches:NO];
+    }
+}
+</code></pre>
+<h3 id="惹不起的UITableViewCell"><a href="#惹不起的UITableViewCell" class="headerlink" title="惹不起的UITableViewCell"></a>惹不起的UITableViewCell</h3><p>最近在做个颜色标签，感觉用UILabel很省事，想不到在<code>UITableViewCell</code>却遇到了麻烦，究其原因是<code>UITableViewCell</code>在高亮的时候会改变子视图的背景色:<br><img src="/2018/11/13/iOS灵异事件集锦/05.png" alt="优化前"></p>
+<p>但是有时候，并不想要这样的效果。</p>
+<p>通过查阅资料，找到一种<a href="https://m.sohu.com/n/473246903/" target="_blank" rel="noopener">解决方案</a></p>
+<p>主要思想：通过swizzle方式，分别hook <code>UITableViewCell</code>的<code>setHighlighted:animated:</code>方法，和<code>UILable</code>的<code>setBackgroundColor：</code>方法。然后在<code>UITableViewCell</code>高亮的时候，修改<code>UILabel</code>的<code>forbidSetBackgroundColor</code>属性，来进行控制</p>
+<pre><code class="objc">// UITableViewCell+CellClick.m
+
+- (void)qr_setHighlighted:(BOOL)highlighted animated:(BOOL)animated
+{
+    if (highlighted)
+    {
+        [self setupInnerLabelForbidState:YES superView:self.contentView];
+    }
+    else
+    {
+        [self setupInnerLabelForbidState:NO superView:self.contentView];
+    }
+    [self qr_setHighlighted:highlighted animated:animated];
+}
+
+- (void)setupInnerLabelForbidState:(BOOL)forbid superView:(UIView*)superView
+{
+    for (UIView *subview in superView.subviews)
+    {
+        if ([subview isKindOfClass:[UILabel class]])
+        {
+            // 如果设置了firbidSetBackgroundColorWhenHighlighted属性，则不允许改变
+            // UILabel的背景色值
+            UILabel *label = (UILabel *)subview;
+            if(label.firbidSetBackgroundColorWhenHighlighted)
+                label.forbidSetBackgroundColor = forbid;
+        }
+        else if(subview.class.isCustomClass)
+        {
+            // 递归遍历子视图
+            [self setupInnerLabelForbidState:forbid superView:subview];
+        }
+    }
+}
+</code></pre>
+<pre><code class="objc">//  UILabel+CellClick.m
+- (void)qr_setBackgroundColor:(UIColor *)backgroundColor
+{
+    // 如果没有禁止，就可以调用原来的改变颜色方法
+    if (!self.forbidSetBackgroundColor){
+        [self qr_setBackgroundColor:backgroundColor];
+    }
+}
+</code></pre>
+<p>这样的解决方案略显沉重，为了一个小小的背景色，竟然要付出这么高的代价，实在有些得不偿失：要知道每个<code>UITableViewCell</code>初始化的时候，都要调用<code>setBackgroundColor：</code>方法，此外还带着入侵性属性：<code>firbidSetBackgroundColorWhenHighlighted</code>，外部必须传这个属性值来告知是否要执行上面的这一套逻辑。</p>
+<p>最关键的是这个方案没有彻底解决问题，虽然躲过了<code>UITableViewCell</code>的高亮逻辑，然而工程项目中有些自定义的控件（也有自己的一套高亮逻辑），却不能幸免，只能说是一个不是很完美的解决方案。</p>
+<p><strong>该问题最根本的原因就是根本控制不住别人来调用视图的setBackgroundColor：方法</strong><br>如何化解这个大招呢？</p>
+<p>如果实现一个自定义控件，设置好<code>setBackgroundColor：</code>方法的调用权限，不就好了吗？</p>
+<p>以<code>QRCellLabel</code>为例：</p>
+<p>1、定义一个内部类：<code>QRCellInnerLabel</code>（继承自UILabel），设置<code>shouldSetBackgroundColor</code>属性，来控制<code>setBackgroundColor:</code>的调用权限</p>
+<pre><code class="objc">@interface QRCellInnerLabel : UILabel
+@property(nonatomic,assign) BOOL shouldSetBackgroundColor;
+@end
+
+@implementation QRCellInnerLabel
+- (void)setBackgroundColor:(UIColor *)backgroundColor
+{
+    if(_shouldSetBackgroundColor)
+    {
+       [super setBackgroundColor:backgroundColor];
+    }
+}
+
+@end
+</code></pre>
+<p>2、定义一个QRCellLabel类，和UILabel的各种属性保持一致，方便调用，编译级别禁止调用<code>setBackgroundColor:</code>方法，并暴露自己的颜色设置方法<code>qr_setBackgroundColor:</code></p>
+<pre><code class="objc">@interface QRCellLabel : UIView
+
+@property(nullable, nonatomic,copy)                 NSString *text;
+@property(null_resettable, nonatomic,strong)        UIFont *font;
+@property(null_resettable, nonatomic,strong)        UIColor *textColor;
+@property(nonatomic,assign)                         NSTextAlignment textAlignment;
+@property(nonatomic,assign)                         NSLineBreakMode lineBreakMode;
+
+// 注意NS_UNAVAILABLE，编译级别禁止调用该方法
+- (void)setBackgroundColor:(UIColor *_Nullable)backgroundColor NS_UNAVAILABLE;
+
+// 暴露自己的设置背景颜色方法
+- (void)qr_setBackgroundColor:(UIColor *_Nullable)backgroundColor;
+
+// 如果有不够用的属性，在下面添加，然后在.m文件中重新set方法
+@end
+</code></pre>
+<p>3、QRCellLabel包括一个子控件<code>QRCellInnerLabel</code>,分别实现<code>QRCellLabel</code>的<code>setBackgroundColor:</code>方法和<code>qr_setBackgroundColor:</code>方法：</p>
+<blockquote>
+<ul>
+<li><code>setBackgroundColor:</code>的实现为空方法，这样即使外侧调进来，也无法改变控件的背景色；</li>
+<li><code>qr_setBackgroundColor:</code>的实现如下：每次调用的时候，将<code>shouldSetBackgroundColor</code>的属性打开，一旦设置完毕<code>QRCellInnerLabel</code>的背景色，立刻将<code>shouldSetBackgroundColor</code>的属性关闭，所以该控件的背景色只能由自己暴露的<code>qr_setBackgroundColor:</code>方法来改变</li>
+</ul>
+</blockquote>
+<pre><code class="objc">@implementation QRCellLabel
+{
+    QRCellInnerLabel* _label;
+}
+
+- (void)setBackgroundColor:(UIColor *)backgroundColor
+{
+    // 什么都不做，成功躲过大招
+}
+
+
+- (void)qr_setBackgroundColor:(UIColor *)backgroundColor
+{
+    _label.shouldSetBackgroundColor = YES;
+    _label.backgroundColor = UIColor.clearColor;
+    _label.shouldSetBackgroundColor = NO;
+}
+
+
+// 各种setter方法的重写
+
+- (void)setFont:(UIFont *)font{
+    _label.font = font;
+}
+
+- (void)setText:(NSString *)text{
+    _label.text = text;
+}
+
+- (void)setLineBreakMode:(NSLineBreakMode)lineBreakMode{
+    _label.lineBreakMode = lineBreakMode;
+}
+
+- (void)setTextAlignment:(NSTextAlignment)textAlignment{
+    _label.textAlignment = textAlignment;
+}
+
+- (void)setTextColor:(UIColor *)textColor{
+    _label.textColor = textColor;
+}
+
+...
+</code></pre>
+<p>这样，无论这个控件放到哪个父视图里面，也不会被修改背景色，因为没有权限！</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>先写到这里，后续会更新添加内容</p>
 
       
@@ -1172,7 +1321,7 @@ inline ns_handle::~ns_handle()
   <p><span>本文标题:</span><a href="/2018/11/13/iOS灵异事件集锦/">iOS灵异事件集锦</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年11月13日 - 22:11</p>
-  <p><span>最后更新:</span>2018年11月25日 - 23:11</p>
+  <p><span>最后更新:</span>2018年12月09日 - 01:12</p>
   <p><span>原始链接:</span><a href="/2018/11/13/iOS灵异事件集锦/" title="iOS灵异事件集锦">https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1373,7 +1522,7 @@ inline ns_handle::~ns_handle()
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIScrollView中的UIButton延迟高亮问题"><span class="nav-number">2.6.</span> <span class="nav-text">UIScrollView中的UIButton延迟高亮问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#惹不起的UITableViewCell"><span class="nav-number">2.7.</span> <span class="nav-text">惹不起的UITableViewCell</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -1408,7 +1557,7 @@ inline ns_handle::~ns_handle()
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">75.6k</span>
+    <span title="Site words total count">76.8k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
