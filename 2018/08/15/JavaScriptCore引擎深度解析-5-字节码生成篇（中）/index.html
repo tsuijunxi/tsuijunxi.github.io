@@ -101,7 +101,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/07.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/06.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/09.png">
-<meta property="og:updated_time" content="2018-11-08T18:06:28.415Z">
+<meta property="og:updated_time" content="2018-12-09T10:08:28.844Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（中）">
 <meta name="twitter:description" content="前言上一节讲到继承自ScopeNode的4种Node：ProgramNode、EvalNode、FunctionNode和ModuleProgramNode，它们的字节码生成最终均走到了emitStatementsBytecode方法中。 字节码指令集在分析之前，先大概了解下字节码的长相： {         &amp;quot;section&amp;quot; : &amp;quot;Bytecodes&amp;quot;,">
@@ -361,7 +361,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2,461
+                  2,474
                 </span>
               
 
@@ -747,7 +747,7 @@ RegisterID* BytecodeGenerator::emitUnaryNoDstOp(OpcodeID opcodeID, RegisterID* s
     generator.emitLabel(scope-&gt;breakTarget());
 }
 </code></pre>
-<h4 id="FuncDeclNode"><a href="#FuncDeclNode" class="headerlink" title="FuncDeclNode"></a>FuncDeclNode</h4><p>函数的声明实际上就是要进行一个函数名字的注册</p>
+<h4 id="FuncDeclNode"><a href="#FuncDeclNode" class="headerlink" title="FuncDeclNode"></a>FuncDeclNode</h4><p>函数的声明实际上就是要进行一个函数的注册</p>
 <pre><code class="c++">void FuncDeclNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)
 {
     generator.hoistSloppyModeFunctionIfNecessary(metadata()-&gt;ident());
@@ -767,12 +767,17 @@ void BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(const Identifier&amp;
             currentValue = emitGetFromScope(newTemporary(), scope.get(), currentFunctionVariable, DoNotThrowIfNotFound);
         }
 
+        // 找到符号表
         SymbolTableStackEntry&amp; varScope = m_symbolTableStack[*m_varScopeSymbolTableIndex];
         SymbolTable* varSymbolTable = varScope.m_symbolTable;
 
+        // 上锁
         ConcurrentJITLocker locker(ConcurrentJITLocker::NoLockingNecessary);
+
+        // 寻找函数的符号项
         SymbolTableEntry entry = varSymbolTable-&gt;get(locker, functionName.impl());
         bool isLexicallyScoped = false;
+
         emitPutToScope(varScope.m_scope, variableForLocalEntry(functionName, entry, varScope.m_symbolTableConstantIndex, isLexicallyScoped), currentValue.get(), DoNotThrowIfNotFound, InitializationMode::NotInitialization);
     }
 }
@@ -806,7 +811,7 @@ void BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(const Identifier&amp;
   <p><span>本文标题:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/">JavaScriptCore引擎深度解析5-字节码生成篇（中）</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年08月15日 - 00:08</p>
-  <p><span>最后更新:</span>2018年11月09日 - 02:11</p>
+  <p><span>最后更新:</span>2018年12月09日 - 18:12</p>
   <p><span>原始链接:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/" title="JavaScriptCore引擎深度解析5-字节码生成篇（中）">https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/"  aria-label="复制成功！"></i></span>
   </p>
@@ -865,8 +870,8 @@ void BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(const Identifier&amp;
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/" rel="prev" title="JavaScriptCore引擎深度解析5-字节码生成篇（下）">
-                JavaScriptCore引擎深度解析5-字节码生成篇（下） <i class="fa fa-chevron-right"></i>
+              <a href="/2018/08/20/JavaScriptCore引擎深度解析-6-LLInt解释器篇/" rel="prev" title="JavaScriptCore引擎深度解析6——LLInt解释器篇">
+                JavaScriptCore引擎深度解析6——LLInt解释器篇 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -952,7 +957,7 @@ void BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(const Identifier&amp;
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">24</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1042,7 +1047,7 @@ void BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(const Identifier&amp;
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">76.8k</span>
+    <span title="Site words total count">78.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

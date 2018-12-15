@@ -101,7 +101,8 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/04.gif">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/03.gif">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/05.png">
-<meta property="og:updated_time" content="2018-12-08T17:56:36.539Z">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/06.png">
+<meta property="og:updated_time" content="2018-12-15T06:51:12.182Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS灵异事件集锦">
 <meta name="twitter:description" content="前言JavaScriptCore引擎的分析由于其复杂性，耗时性，暂时先告一段落，后续会进行回归，本篇将总结一些日常开发中遇到的问题 问题列表启动图之前在做视频闪屏的时候，遇到了一个比较棘手的问题：每次加载本地视频都会有一段黑屏的时间（大概0.2s左右），这本身和AVPlayer有很大的关系，猜测和视频的解码有关，无奈由于闭源，无计可施。 - (void)setupVideoPlayer {">
@@ -361,7 +362,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,764
+                  5,626
                 </span>
               
 
@@ -377,7 +378,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  22
+                  25
                 </span>
               
             </div>
@@ -1203,7 +1204,7 @@ for (id obj in self.tableView.subviews) {
 </code></pre>
 <p>这样的解决方案略显沉重，为了一个小小的背景色，竟然要付出这么高的代价，实在有些得不偿失：要知道每个<code>UITableViewCell</code>初始化的时候，都要调用<code>setBackgroundColor：</code>方法，此外还带着入侵性属性：<code>firbidSetBackgroundColorWhenHighlighted</code>，外部必须传这个属性值来告知是否要执行上面的这一套逻辑。</p>
 <p>最关键的是这个方案没有彻底解决问题，虽然躲过了<code>UITableViewCell</code>的高亮逻辑，然而工程项目中有些自定义的控件（也有自己的一套高亮逻辑），却不能幸免，只能说是一个不是很完美的解决方案。</p>
-<p><strong>该问题最根本的原因就是根本控制不住别人来调用视图的setBackgroundColor：方法</strong><br>如何化解这个大招呢？</p>
+<p><strong>该问题最根本的原因就是根本控制不住视图的setBackgroundColor：方法被调用</strong><br>如何化解这个大招呢？</p>
 <p>如果实现一个自定义控件，设置好<code>setBackgroundColor：</code>方法的调用权限，不就好了吗？</p>
 <p>以<code>QRCellLabel</code>为例：</p>
 <p>1、定义一个内部类：<code>QRCellInnerLabel</code>（继承自UILabel），设置<code>shouldSetBackgroundColor</code>属性，来控制<code>setBackgroundColor:</code>的调用权限</p>
@@ -1240,7 +1241,7 @@ for (id obj in self.tableView.subviews) {
 // 如果有不够用的属性，在下面添加，然后在.m文件中重新set方法
 @end
 </code></pre>
-<p>3、QRCellLabel包括一个子控件<code>QRCellInnerLabel</code>,分别实现<code>QRCellLabel</code>的<code>setBackgroundColor:</code>方法和<code>qr_setBackgroundColor:</code>方法：</p>
+<p>3、QRCellLabel包括两个子控件：<code>UIImageView</code>和<code>QRCellInnerLabel</code>,前者是为了添加背景色，后者是为了文字。<br>分别实现<code>QRCellLabel</code>的<code>setBackgroundColor:</code>方法和<code>qr_setBackgroundColor:</code>方法：</p>
 <blockquote>
 <ul>
 <li><code>setBackgroundColor:</code>的实现为空方法，这样即使外侧调进来，也无法改变控件的背景色；</li>
@@ -1249,7 +1250,15 @@ for (id obj in self.tableView.subviews) {
 </blockquote>
 <pre><code class="objc">@implementation QRCellLabel
 {
+    UIImageView* _bgView;
     QRCellInnerLabel* _label;
+}
+
+- (void)setupBackground
+{
+    _bgView = [[UIImageView alloc]init];
+    _bgView.backgroundColor = [UIColor clearColor];
+    [self addSubview:_bgView];
 }
 
 - (void)setBackgroundColor:(UIColor *)backgroundColor
@@ -1260,6 +1269,8 @@ for (id obj in self.tableView.subviews) {
 
 - (void)qr_setBackgroundColor:(UIColor *)backgroundColor
 {
+    [_bgView setImage:[UIImage qr_imageWithColor:backgroundColor]];
+
     _label.shouldSetBackgroundColor = YES;
     _label.backgroundColor = UIColor.clearColor;
     _label.shouldSetBackgroundColor = NO;
@@ -1291,6 +1302,105 @@ for (id obj in self.tableView.subviews) {
 ...
 </code></pre>
 <p>这样，无论这个控件放到哪个父视图里面，也不会被修改背景色，因为没有权限！</p>
+<h3 id="Lottie的坑"><a href="#Lottie的坑" class="headerlink" title="Lottie的坑"></a>Lottie的坑</h3><p>前端时间用lottie做动画的时候，碰到了几个问题，这里简单描述下：<br>（1）缓存问题<br>在利用lottie做动画的时候，都会把json文件和资源文件打包到一个bundle中，方便处理<br>有两个lottie文件如下，除了bundle的名字不一样之外，里面的json文件名和资源名称都是一样的：<br><img src="/2018/11/13/iOS灵异事件集锦/06.png" width="60%"></p>
+<pre><code class="objc">_leftAnimationBundle = [NSBundle bundleWithURL:[NSBundle.mainBundle URLForResource:@&quot;left_animation&quot;  withExtension:@&quot;bundle&quot;]];
+_leftAnimationView = [LOTAnimationView animationNamed:@&quot;data&quot; inBundle:self.leftAnimationBundle];
+_leftAnimationView.frame = QRRectMake(24, 0, 80, 90);
+_leftAnimationView.loopAnimation = NO;
+[self addSubview:_leftAnimationView];
+
+
+_rightAnimationBundle = [NSBundle bundleWithURL:[NSBundle.mainBundle URLForResource:@&quot;right_animation&quot;  withExtension:@&quot;bundle&quot;]];
+_rightAnimationView = [LOTAnimationView animationNamed:@&quot;data&quot; inBundle:self.rightAnimationBundle];
+_rightAnimationView.frame = QRRectMake(100, 0, 80, 90);
+_rightAnimationView.loopAnimation = NO;
+[self addSubview:_rightAnimationView];
+</code></pre>
+<p>然后在加载的时候，发现第二个lottie动画总是和第一个lottie展示一样，跟踪了源码，发现了如下端倪：<strong>animationName作为key，只用到了json的文件名，所以如果第二个bundle中的json文件名如果已经出现过，就不再加载，而是直接使用缓存</strong></p>
+<pre><code class="objc">// LOTComposition.m
++ (nullable instancetype)animationNamed:(nonnull NSString *)animationName inBundle:(nonnull NSBundle *)bundle {
+
+    // 这里的animationName作为key，只用到了json的文件名
+    NSArray *components = [animationName componentsSeparatedByString:@&quot;.&quot;];
+    animationName = components.firstObject;
+
+    LOTComposition *comp = [[LOTAnimationCache sharedCache] animationForKey:animationName];
+    if (comp) {
+    return comp;
+    }
+
+    ...
+
+    if (JSONObject &amp;&amp; !error) {
+        LOTComposition *laScene = [[self alloc] initWithJSON:JSONObject withAssetBundle:bundle];
+        [[LOTAnimationCache sharedCache] addAnimation:laScene forKey:animationName];
+        laScene.cacheKey = animationName;
+        return laScene;
+    }
+    return nil;
+}
+</code></pre>
+<p>这显然是不太合理的，没什么理由让开发者保证不同bundle中的json名字还要不一样。<br>如果能把bundle的文件名也能作为一个因素考虑进去，去合成一个新的key，应该就能解决问题。<br>修改如下：<strong>新建了animationKey，由json的文件名和bundle的文件名组合而成</strong></p>
+<pre><code class="objc">// LOTComposition.m
++ (nullable instancetype)animationNamed:(nonnull NSString *)animationName inBundle:(nonnull NSBundle *)bundle
+{
+    NSArray *components = [animationName componentsSeparatedByString:@&quot;.&quot;];
+
+    // 这里的key需要将bundle也作为一个参考因素，否则，多个bundle如果内部的json名字一样，会出问题
+    NSString* animationKey = [NSString stringWithFormat:@&quot;%@_%@&quot;,components.firstObject,bundle.bundlePath.lastPathComponent];
+
+    LOTComposition *comp = [[LOTAnimationCache sharedCache] animationForKey:animationKey];
+    if (comp) {
+        return comp;
+    }
+    ...
+    if (JSONObject &amp;&amp; !error) {
+        LOTComposition *laScene = [[self alloc] initWithJSON:JSONObject withAssetBundle:bundle];
+        [[LOTAnimationCache sharedCache] addAnimation:laScene forKey:animationKey];
+        laScene.cacheKey = animationKey;
+        return laScene;
+    }
+
+    return nil;
+}
+</code></pre>
+<p>（2）回调问题<br>由于项目需要，lottie动画播放完毕后，还需要做一些回调处理，所以一开始便用了下面的api</p>
+<pre><code class="objc">- (void)playWithCompletion:(nullable LOTAnimationCompletionBlock)completion;
+</code></pre>
+<p>但是却得不到任何回调处理，<a href="https://github.com/airbnb/lottie-ios/issues/304" target="_blank" rel="noopener">issue中也的确存在这个问题</a></p>
+<p>后来直接设置回调，设置loopAnimation为NO，然后调用play，回调OK了</p>
+<pre><code class="objc">_leftAnimationView.loopAnimation = NO;// 如果设置为YES，会一直播放下去，不会回调
+_leftAnimationView.completionBlock = [leftCompletionBlock copy];
+[_leftAnimationView play];
+</code></pre>
+<p>然而问题接踵而至：<br>项目需求中需要连续播放2次动画，然后再进行回调，lottie并没有这样的api可以调用，解决办法是在回调中再次调用<code>play</code>方法</p>
+<pre><code class="objc">@weakify(self)
+id (^leftCompletionBlock)(BOOL animationFinished) = ^(BOOL animationFinished)
+{
+    @strongify(self)
+    if(self.leftAnimationView.tag == 0){
+        self.leftAnimationView.tag = 1;
+        [self.leftAnimationView play];
+    }
+    else{
+        self.leftAnimationView.tag = 0;
+        self.leftAnimationView.hidden = YES;
+
+        // 最后的回调处理
+        ...
+    }
+};
+</code></pre>
+<p>本以为问题应该得到解决了，然后还是有点天真，第二次回调死活不回来。。。<br>跟踪源码后发现，回调只要调用1次，就会被设置为空：<code>self.completionBlock = nil</code></p>
+<pre><code>// LOTAnimationView.m
+- (void)_callCompletionIfNecessary:(BOOL)complete {
+    if (self.completionBlock) {
+        LOTAnimationCompletionBlock completion = self.completionBlock;
+        self.completionBlock = nil;
+        completion(complete);
+    }
+}
+</code></pre><p>难道是担心Block内存泄露？ARC时代好像也不用太担心这个问题吧？<br>所以先把这里的<code>self.completionBlock = nil</code>注释掉，问题得以解决。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>先写到这里，后续会更新添加内容</p>
 
       
@@ -1321,7 +1431,7 @@ for (id obj in self.tableView.subviews) {
   <p><span>本文标题:</span><a href="/2018/11/13/iOS灵异事件集锦/">iOS灵异事件集锦</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年11月13日 - 22:11</p>
-  <p><span>最后更新:</span>2018年12月09日 - 01:12</p>
+  <p><span>最后更新:</span>2018年12月15日 - 14:12</p>
   <p><span>原始链接:</span><a href="/2018/11/13/iOS灵异事件集锦/" title="iOS灵异事件集锦">https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1467,7 +1577,7 @@ for (id obj in self.tableView.subviews) {
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">24</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1522,7 +1632,7 @@ for (id obj in self.tableView.subviews) {
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIScrollView中的UIButton延迟高亮问题"><span class="nav-number">2.6.</span> <span class="nav-text">UIScrollView中的UIButton延迟高亮问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#惹不起的UITableViewCell"><span class="nav-number">2.7.</span> <span class="nav-text">惹不起的UITableViewCell</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIScrollView中的UIButton延迟高亮问题"><span class="nav-number">2.6.</span> <span class="nav-text">UIScrollView中的UIButton延迟高亮问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#惹不起的UITableViewCell"><span class="nav-number">2.7.</span> <span class="nav-text">惹不起的UITableViewCell</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lottie的坑"><span class="nav-number">2.8.</span> <span class="nav-text">Lottie的坑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -1557,7 +1667,7 @@ for (id obj in self.tableView.subviews) {
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">76.8k</span>
+    <span title="Site words total count">78.4k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
