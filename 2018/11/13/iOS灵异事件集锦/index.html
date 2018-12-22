@@ -102,7 +102,8 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/03.gif">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/05.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/06.png">
-<meta property="og:updated_time" content="2018-12-16T03:01:20.578Z">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/07.png">
+<meta property="og:updated_time" content="2018-12-22T10:43:42.919Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS灵异事件集锦">
 <meta name="twitter:description" content="前言JavaScriptCore引擎的分析由于其复杂性，耗时性，暂时先告一段落，后续会进行回归，本篇将总结一些日常开发中遇到的问题 问题列表启动图之前在做视频闪屏的时候，遇到了一个比较棘手的问题：每次加载本地视频都会有一段黑屏的时间（大概0.2s左右），这本身和AVPlayer有很大的关系，猜测和视频的解码有关，无奈由于闭源，无计可施。 - (void)setupVideoPlayer {">
@@ -362,7 +363,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,623
+                  6,046
                 </span>
               
 
@@ -378,7 +379,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  25
+                  27
                 </span>
               
             </div>
@@ -1401,6 +1402,42 @@ id (^leftCompletionBlock)(BOOL animationFinished) = ^(BOOL animationFinished)
     }
 }
 </code></pre><p>这里不是特别明白作者的用意（难道是担心Block内存泄露？）<br>所以先把这里的<code>self.completionBlock = nil</code>注释掉，问题得以解决。</p>
+<h3 id="UIImageView的复用问题"><a href="#UIImageView的复用问题" class="headerlink" title="UIImageView的复用问题"></a>UIImageView的复用问题</h3><p>QQReader之前有个问题：就是书架上的书封偶尔会出现错乱的情况，一直以为是cell的复用问题造成的，但是排查了许久，发现每次复用cell之前，都会把里面的UIImageView的image属性设置为nil，感觉不应该出问题，也甚至一直怀疑是刷新机制有些问题，天真的我…<br><img src="/2018/11/13/iOS灵异事件集锦/07.png" width="50%"><br>直到最近定位到了问题所在：假设某个cell加载的一个书封urlA，在网络回来之前就被复用了，复用之后也加载了一个书封urlB，但是urlB网络回来比urlA还早（或者设置了一个本地书封），最后urlA的书封网络才回来，但是并没有解绑，所以还是会设置上去，最后本来应该显示urlB的书封，结果还是显示了urlA的书封，这样就导致了书封错乱。这也解释了每次复用之前光设置<code>UIImageView</code>的<code>image</code>属性设置为nil不够的原因。</p>
+<blockquote>
+<ul>
+<li>那么如果工程中用的是第三方库<code>SDWebImage</code>，那么每次在复用之前需要调用这个方法来解除绑定</li>
+</ul>
+</blockquote>
+<pre><code class="objc">- (void)sd_cancelImageLoadOperationWithKey:(NSString *)key {
+    // Cancel in progress downloader from queue
+    NSMutableDictionary *operationDictionary = [self operationDictionary];
+    id operations = [operationDictionary objectForKey:key];
+    if (operations) {
+        if ([operations isKindOfClass:[NSArray class]]) {
+            for (id &lt;SDWebImageOperation&gt; operation in operations) {
+                if (operation) {
+                    [operation cancel];
+                }
+            }
+        } else if ([operations conformsToProtocol:@protocol(SDWebImageOperation)]){
+            [(id&lt;SDWebImageOperation&gt;) operations cancel];
+        }
+        [operationDictionary removeObjectForKey:key];
+    }
+}
+</code></pre>
+<p>如果工程中是自己实现的</p>
+<blockquote>
+<ul>
+<li>如果有解除绑定机制，那么在在复用之前解除绑定；</li>
+<li>如果没有解除绑定机制，那么在网络回来之后校验一下UIImageView当前的url和回来的imagedata对应的url是否一致：</li>
+</ul>
+</blockquote>
+<pre><code class="objc">if([self.imageUrl isEqualToString:imageFetchItem.key])
+{
+    self.image = image;
+}
+</code></pre>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>先写到这里，后续会更新添加内容</p>
 
       
@@ -1431,7 +1468,7 @@ id (^leftCompletionBlock)(BOOL animationFinished) = ^(BOOL animationFinished)
   <p><span>本文标题:</span><a href="/2018/11/13/iOS灵异事件集锦/">iOS灵异事件集锦</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年11月13日 - 22:11</p>
-  <p><span>最后更新:</span>2018年12月16日 - 11:12</p>
+  <p><span>最后更新:</span>2018年12月22日 - 18:12</p>
   <p><span>原始链接:</span><a href="/2018/11/13/iOS灵异事件集锦/" title="iOS灵异事件集锦">https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/11/13/iOS灵异事件集锦/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1632,7 +1669,7 @@ id (^leftCompletionBlock)(BOOL animationFinished) = ^(BOOL animationFinished)
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIScrollView中的UIButton延迟高亮问题"><span class="nav-number">2.6.</span> <span class="nav-text">UIScrollView中的UIButton延迟高亮问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#惹不起的UITableViewCell"><span class="nav-number">2.7.</span> <span class="nav-text">惹不起的UITableViewCell</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lottie的坑"><span class="nav-number">2.8.</span> <span class="nav-text">Lottie的坑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题列表"><span class="nav-number">2.</span> <span class="nav-text">问题列表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动图"><span class="nav-number">2.1.</span> <span class="nav-text">启动图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#你真的在复用cell吗？"><span class="nav-number">2.2.</span> <span class="nav-text">你真的在复用cell吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会说谎的屏幕尺寸"><span class="nav-number">2.3.</span> <span class="nav-text">会说谎的屏幕尺寸</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#躺着的tableview"><span class="nav-number">2.4.</span> <span class="nav-text">躺着的tableview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-的容器如何存放OC对象"><span class="nav-number">2.5.</span> <span class="nav-text">C++的容器如何存放OC对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIScrollView中的UIButton延迟高亮问题"><span class="nav-number">2.6.</span> <span class="nav-text">UIScrollView中的UIButton延迟高亮问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#惹不起的UITableViewCell"><span class="nav-number">2.7.</span> <span class="nav-text">惹不起的UITableViewCell</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lottie的坑"><span class="nav-number">2.8.</span> <span class="nav-text">Lottie的坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UIImageView的复用问题"><span class="nav-number">2.9.</span> <span class="nav-text">UIImageView的复用问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -1667,7 +1704,7 @@ id (^leftCompletionBlock)(BOOL animationFinished) = ^(BOOL animationFinished)
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">77.7k</span>
+    <span title="Site words total count">78.3k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/30/iOS启动优化/12.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/30/iOS启动优化/13.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/01/30/iOS启动优化/14.png">
-<meta property="og:updated_time" content="2018-02-09T18:08:47.627Z">
+<meta property="og:updated_time" content="2018-12-22T10:50:36.723Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS启动优化">
 <meta name="twitter:description" content="前言随着互联网的高速发展，用户对手机应用的要求越来越高，应用启动时间作为一项重要的参考指标，直接影响着用户的使用体验。QQ阅读App的启动流程包含了大量的业务模块，并且涉及了很多第三方库的初始化，这势必会增加应用的启动时间，因此非常有必要对App的启动进行优化。 Mach-O文件在优化之前，先来了解下什么是Mach-O文件。UNIX标准制定了一个通用的可移植的二进制格式文件，叫ELF，然而OSX却">
@@ -370,7 +370,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  4,551
+                  4,716
                 </span>
               
 
@@ -540,7 +540,7 @@ QQReaderUI (for architecture arm64):    Mach-O 64-bit executable arm64
 <li>3、 非基本类型的C++静态全局变量的创建(通常是类或结构体)(non-trivial initializer) 比如一个全局静态结构体的构建，如果在构造函数中有繁重的工作，那么会拖慢启动速度</li>
 </ul>
 </blockquote>
-<p>Objc的load函数和C++的静态构造函数采用由底向上的方式执行，来保证每个执行的方法，都可以找到所依赖的动态库</p>
+<p>Objc的load函数和C++的静态构造器采用由底向上的方式执行，来保证每个执行的方法，都可以找到所依赖的动态库</p>
 <blockquote>
 <ul>
 <li>1、 dyld开始将程序二进制文件初始化</li>
@@ -550,6 +550,14 @@ QQReaderUI (for architecture arm64):    Mach-O 64-bit executable arm64
 </ul>
 </blockquote>
 <p>整个事件由<code>dyld</code>主导，完成运行环境的初始化后，配合<code>ImageLoader</code> 将二进制文件按格式加载到内存，动态链接依赖库，并由<code>runtime</code>负责加载成objc 定义的结构，所有初始化工作结束后，<code>dyld</code>调用真正的<code>main</code>函数</p>
+<p>这里借用下<a href="http://blog.sunnyxx.com/2016/05/14/clang-attributes" target="_blank" rel="noopener">大神的博客</a>解释下静态构造器<br>constructor 和 +load 都是在 main 函数执行前调用，但 +load 比 constructor 更加早一丢丢，因为 dyld（动态链接器，程序的最初起点）在加载 image（可以理解成 Mach-O 文件）时会先通知 objc runtime 去加载其中所有的类，每加载一个类时，它的 +load 随之调用，全部加载完成后，dyld 才会调用这个 image 中所有的 constructor 方法。<br>所以 constructor 是一个干坏事的绝佳时机：</p>
+<blockquote>
+<ul>
+<li>所有 Class 都已经加载完成</li>
+<li>main 函数还未执行</li>
+<li>无需像 +load 还得挂载在一个 Class 中</li>
+</ul>
+</blockquote>
 <h2 id="pre-main阶段优化"><a href="#pre-main阶段优化" class="headerlink" title="pre-main阶段优化"></a>pre-main阶段优化</h2><h3 id="1、删除无用代码（未被调用的静态变量、类和方法）"><a href="#1、删除无用代码（未被调用的静态变量、类和方法）" class="headerlink" title="1、删除无用代码（未被调用的静态变量、类和方法）"></a>1、删除无用代码（未被调用的静态变量、类和方法）</h3><p>可以使用AppCode对工程进行扫描，删除以下无用代码</p>
 <blockquote>
 <ul>
@@ -641,7 +649,7 @@ Core4(xxxx4.o)     20.41M
   <p><span>本文标题:</span><a href="/2018/01/30/iOS启动优化/">iOS启动优化</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2018年01月30日 - 21:01</p>
-  <p><span>最后更新:</span>2018年02月10日 - 02:02</p>
+  <p><span>最后更新:</span>2018年12月22日 - 18:12</p>
   <p><span>原始链接:</span><a href="/2018/01/30/iOS启动优化/" title="iOS启动优化">https://tsuijunxi.github.io/2018/01/30/iOS启动优化/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/30/iOS启动优化/"  aria-label="复制成功！"></i></span>
   </p>
@@ -877,7 +885,7 @@ Core4(xxxx4.o)     20.41M
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">77.7k</span>
+    <span title="Site words total count">78.3k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
