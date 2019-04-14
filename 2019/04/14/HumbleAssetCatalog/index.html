@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Humble Asset Catalog">
+<meta property="og:url" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/12.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/11.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/13.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/14.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/15.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/18.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/16.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/17.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/19.png">
+<meta property="og:updated_time" content="2019-04-14T15:08:39.645Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Humble Asset Catalog">
+<meta name="twitter:description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/02.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/"/>
+
+
+
+
+
+  <title>Humble Asset Catalog | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Humble Asset Catalog</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-14T13:56:14+08:00">
+                2019-04-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,532
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  14
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。</p>
+<h2 id="首次分析解决"><a href="#首次分析解决" class="headerlink" title="首次分析解决"></a>首次分析解决</h2><p><img src="/2019/04/14/HumbleAssetCatalog/02.png" width="100%"><br>通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：<code>[UIImage imageNamed:]</code>，此时也就可以理解为什么只有首次才会出现卡顿了。</p>
+<p>通过hook <code>[UIImage imageNamed:]</code>方法，直接将设置所使用到的图片全部截获输出，发现竟然需要这么多图片的加载<br><img src="/2019/04/14/HumbleAssetCatalog/03.png" width="30%"></p>
+<p>首先想到的解决方案是异步加载这些本地资源的图片，但是感觉工作量很大，于是采取了另外一种方案：在进入阅读页的时候，添加一个观察着，在主线程空闲的时候，去主动预加载这些图片，直到这些图片全部加载完成，然后主动去除观察者<br><img src="/2019/04/14/HumbleAssetCatalog/04.png" width="100%"></p>
+<p>优化之后直观上感觉好了一些，进行了数据对比</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">iPhoneX数据对比</th>
+<th style="text-align:right">优化前</th>
+<th style="text-align:center">优化后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">首次启动</td>
+<td style="text-align:right">0.9481920s</td>
+<td style="text-align:center">0.0424747s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.0322121s</td>
+<td style="text-align:center">0.0330871s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.0308346s</td>
+<td style="text-align:center">0.0291347s</td>
+</tr>
+</tbody>
+</table>
+<p>可以看出，优化后，首次启动的时间和非首次启动的时间已经比较接近了，但是这里实际上还有待于进一步挖掘为什么首次的时间就一定长。<br>虽然进步不少，但是不太稳定，有时候还是会莫名其妙地卡顿，相比于前面提到的进一步缩短时间，这个问题更值得深究。用了以下几种方案测试</p>
+<blockquote>
+<ul>
+<li>每次杀掉进程，重新启动App，然后进入阅读页，首次点击设置，卡顿不明显；</li>
+<li>每次在阅读页切到后台，然后再切到前台，点击设置，卡顿必现；</li>
+<li>竖屏切横屏，横屏切竖屏，有时候会卡顿；</li>
+</ul>
+</blockquote>
+<p>关于第2点，怀疑是app在切后台的时候，UIImage的系统缓存会被清除，所以在阅读页切到前台的时候，再进行1次预加载<br><img src="/2019/04/14/HumbleAssetCatalog/05.png" width="50%"></p>
+<p>关于第3点，目前没有明显的证据，但是这样改完后，好一些了，横竖屏切换不再明显卡顿<br><img src="/2019/04/14/HumbleAssetCatalog/06.png" width="50%"></p>
+<p>最后各种转屏，切后台，切夜间模式，杀掉重启，效果比原来稳定了许多，该方案目前有一个缺陷，就是如果用户从后台切到前台，迅速点击设置按钮，还是会有些卡顿，原因就是图片尚未预加载完毕，毕竟虽然这些图片的加载都是利用主线程的闲暇时间完成的，但是这些图片预加载的总时间一点都节省不下，这点时间代价还是要付出的</p>
+<h2 id="二次分析解决"><a href="#二次分析解决" class="headerlink" title="二次分析解决"></a>二次分析解决</h2><p>就在我以为问题已经解决的时候，另一个同学提出了将用到的图片资源简单地放到<code>image.xcassets</code>中就可以解决这样的性能问题。出于好奇，把前文中提到的所有图片（27张图片）都挪到了image.xcassets中，并写了一个test方法，同时加载这些图片，并且和未挪动之前进行了对比<br><img src="/2019/04/14/HumbleAssetCatalog/07.png" width="100%"><br>对比结果如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">iPhoneX数据对比</th>
+<th style="text-align:right">图片文件夹</th>
+<th style="text-align:right">image.xcassets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">首次启动</td>
+<td style="text-align:right">0.99100500s</td>
+<td style="text-align:right">0.00879625s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.00311238s</td>
+<td style="text-align:right">0.00295617s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.00290383s</td>
+<td style="text-align:right">0.00289400s</td>
+</tr>
+</tbody>
+</table>
+<p>image.xcassets中图片的恐怖的加载速度已经突破天际，它的加载速度和普通文件夹中的图片的加载速度已经不在一个数量级上了，<strong>前后差了2个数量级了</strong></p>
+<p>在把所有图片都挪到了image.xcassets的基础上，再次对比了优化前和优化后的速度</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">iPhoneX数据对比</th>
+<th style="text-align:right">优化前</th>
+<th style="text-align:right">优化后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">首次启动</td>
+<td style="text-align:right">0.0384008s</td>
+<td style="text-align:right">0.0360755s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.0348377s</td>
+<td style="text-align:right">0.0342009s</td>
+</tr>
+<tr>
+<td style="text-align:left">非首次启动</td>
+<td style="text-align:right">0.0312605 s</td>
+<td style="text-align:right">0.0307469s</td>
+</tr>
+</tbody>
+</table>
+<p>可以看出，优化的优势已经极其微弱了，可以说是荡然无存也毫不夸张，这种情况下，优化代码已经没有存在的必要了，所以二次优化的结果就是：</p>
+<p><strong>去除首次优化的代码，将图片挪到<code>image.xcassets</code>中</strong></p>
+<p>！！！大写的尴尬！！！</p>
+<h2 id="Asset-Catalog的探索"><a href="#Asset-Catalog的探索" class="headerlink" title="Asset Catalog的探索"></a>Asset Catalog的探索</h2><p>二次优化后，自己被成功了炸回了石器时代，自己始终在纳闷为什么image.xcassets中的图片会有这么惊人的加载速度？</p>
+<p>Asset Catalog 是 Xcode 提供的项目资源管理工具，其核心理念在于：以设备特征（traits）为单位配置资源，包括但不限于images, sprites, textures, ARKit resources, colors和 data、PDF。既让开发者免于代码配置资源的烦恼，也让苹果能够更好的控制包的大小</p>
+<p><a href="https://developer.apple.com/videos/play/wwdc2018/227/" target="_blank" rel="noopener">Optimizing App Assets</a> 一文中提到：</p>
+<h3 id="自动图片打包"><a href="#自动图片打包" class="headerlink" title="自动图片打包"></a>自动图片打包</h3><p>在assets分类之前，仅仅是将图片直接放到工程的bundle中组织，这种方式存在一些缺点：</p>
+<blockquote>
+<ul>
+<li>每个图片资源都会存储自己的元数据和其他的一些属性信息，如果存在很多同类型的资源，这些相同的信息会产生冗余，造成空间浪费；</li>
+<li>压缩只针对到文件级别，那么对于一些小的资源文件，也没有进行充分的压缩；</li>
+<li>在组织文件的时候，处理大量分散的图片资源会比较麻烦，而且调用的接口也不一样；</li>
+<li>图片格式、属性的不一致性，例如一堆图片文件中，有的支持透明通道，而有的不支持；</li>
+</ul>
+</blockquote>
+<p>Asset Catalog会根据图片的图谱对图片进行分类，通过图集的方式进行存储，帮我们处理图片的压缩以及元数据的存储工作。</p>
+<blockquote>
+<ul>
+<li>同一种图片资源只需要存储一份元数据</li>
+<li>图片数据得到充分的压缩，图片资源越大使用assets分类后优化的效果就越明显</li>
+</ul>
+</blockquote>
+<p>这里的存储方式有点类似于创建<code>texture atlas</code>，维基百科解释如下：</p>
+<blockquote>
+<ul>
+<li>a texture atlas (also called a sprite sheet or an image sprite) is an image containing a collection of smaller images, usually packed together to reduce the atlas size。</li>
+</ul>
+</blockquote>
+<p>这在游戏领域屡见不鲜。</p>
+<h3 id="有损压缩"><a href="#有损压缩" class="headerlink" title="有损压缩"></a>有损压缩</h3><p>assets分类支持HEIF(<code>High Efficiency Image File Format</code>)，并且将该格式作为assets分类有损压缩的默认格式</p>
+<blockquote>
+<ul>
+<li>比现有的格式图片更大的压缩率</li>
+<li>支持透明度</li>
+<li>assets分类可以自动将其他类型的图片转换为HEIF</li>
+</ul>
+</blockquote>
+<h3 id="无损压缩"><a href="#无损压缩" class="headerlink" title="无损压缩"></a>无损压缩</h3><p>无损压缩是默认的压缩形式，工程中大部分assets分类都是使用的无所压缩<br>图片资源可以根据使用的色谱和轮廓分为两类，不同的形式在有损压缩时会有不同的优化方式。一种是简单的图片资源，这类使用了简单的配色和使用简单的设计简单，例如很多应用的icon。另一类指的是复杂的图片资源。有损压缩针对这两种形式都做了不同形式的优化</p>
+<p>Apple Deep Pixel Image Compression是苹果新引入的一种压缩形式，这是一种灵活的压缩形式，会根据图片的色谱特性选择最优的算法进行压缩</p>
+<blockquote>
+<ul>
+<li>会适配图片色谱</li>
+<li>选择最优的压缩算法</li>
+<li>压缩的大小能够提高15-20%</li>
+</ul>
+</blockquote>
+<p><img src="/2019/04/14/HumbleAssetCatalog/08.png" width="100%"><br><img src="/2019/04/14/HumbleAssetCatalog/09.png" width="100%"></p>
+<h3 id="应用瘦身"><a href="#应用瘦身" class="headerlink" title="应用瘦身"></a>应用瘦身</h3><p>各取所需<br><img src="/2019/04/14/HumbleAssetCatalog/10.png" width="100%"></p>
+<h3 id="结论1"><a href="#结论1" class="headerlink" title="结论1"></a>结论1</h3><p>可以看出，App Assets通过分类、压缩等途径，能够有效地减小资源包的大小，进而给应用瘦身。的确，资源变小了，加载速度可以提升，但是这仍然无法解释为什么图片的加载速度差异达到2个数量级之多</p>
+<h2 id="car文件探索"><a href="#car文件探索" class="headerlink" title=".car文件探索"></a>.car文件探索</h2><p>关于.car文件的结构，苹果讳莫如深:<br><strong>If your project has an iOS 7 deployment target, Xcode compiles your asset catalogs into a runtime binary file format that improves the speed of your app</strong></p>
+<h3 id="文件结构"><a href="#文件结构" class="headerlink" title="文件结构"></a>文件结构</h3><p>通过查询资料，发现.car文件实际上是一种特殊的bom文件，而bom(Bill of Materials)是从NeXTSTEP继承下来的一种文件格式，命令行输入：man 5 bom</p>
+<pre><code>The Mac OS X Installer uses a file system &quot;bill of materials&quot; to determine which files to install, remove, or upgrade
+</code></pre><p>类似于bom文件，car文件中包含一些blocks结构</p>
+<pre><code>CARHEADER               // 头部信息
+EXTENDED_METADATA       // 扩展的元信息
+KEYFORMAT
+CARGLOBALS
+KEYFORMATWORKAROUND
+EXTERNAL_KEYS
+</code></pre><p>同时包含一些trees结构：</p>
+<pre><code>FACETKEYS
+RENDITIONS
+APPEARANCEKEYS
+COLORS
+FONTS
+FONTSIZES
+GLYPHS
+BEZELS
+BITMAPKEYS
+ELEMENT_INFO
+PART_INFO
+</code></pre><p>在macos中，私有库<code>CoreUI.framework</code>负责解析car文件，中间会调用<code>Bom.framework</code>的C的API接口来解析BOM：</p>
+<pre><code class="c">typedef uint32_t BOMBlockID;
+typedef struct BOMStorage *BOMStorage;
+
+typedef struct BOMTree *BOMTree;
+typedef struct BOMTreeIterator *BOMTreeIterator;
+
+// Opening a BOM
+BOMStorage BOMStorageOpen(const char *inPath, Boolean inWriting);
+
+// Accessing a BOM block
+BOMBlockID BOMStorageGetNamedBlock(BOMStorage inStorage, const char *inName);
+size_t BOMStorageSizeOfBlock(BOMStorage inStorage, BOMBlockID inBlockID);
+int BOMStorageCopyFromBlock(BOMStorage inStorage, BOMBlockID inBlockID, void *outData);
+
+// Accessing a BOM tree
+BOMTree BOMTreeOpenWithName(BOMStorage inStorage, const char *inName, Boolean inWriting);
+BOMTreeIterator BOMTreeIteratorNew(BOMTree inTree, void *, void *, void *);
+Boolean BOMTreeIteratorIsAtEnd(BOMTreeIterator iterator);
+void BOMTreeIteratorNext(BOMTreeIterator iterator);
+
+// Accessing the keys and values of a BOM tree
+void * BOMTreeIteratorKey(BOMTreeIterator iterator);
+size_t BOMTreeIteratorKeySize(BOMTreeIterator iterator);
+void * BOMTreeIteratorValue(BOMTreeIterator iterator);
+size_t BOMTreeIteratorValueSize(BOMTreeIterator iterator);
+</code></pre>
+<p>更多的细节可以参考<a href="Reverse engineering the .car file format">Reverse engineering the .car file format</a></p>
+<h3 id="举栗说明"><a href="#举栗说明" class="headerlink" title="举栗说明"></a>举栗说明</h3><p>该Asset Catalog包含以下文件：<br>1、a PNG with 3 resolutions @1x, @2x and @3x<br>2、a PDF<br>3、a text file<br>4、a jpg image<br>5、a color (red with 50% transparency)<br><img src="/2019/04/14/HumbleAssetCatalog/12.png" width="100%"><br>编译之后，Asset Catalog里面所有的资源都会被编译为Assets.car文件（后缀名的含义是:Compiled Asset Catalogs）<br>命令行输入: assetutil -I Assets.car</p>
+<pre><code class="json">[
+  {
+    &quot;AssetStorageVersion&quot; : &quot;IBCocoaTouchImageCatalogTool-10.0&quot;,
+    &quot;Authoring Tool&quot; : &quot;@(#)PROGRAM:CoreThemeDefinition  PROJECT:CoreThemeDefinition-346.29\n&quot;,
+    &quot;CoreUIVersion&quot; : 498,
+    &quot;DumpToolVersion&quot; : 498.4599999999998976,
+    &quot;Key Format&quot; : [
+      &quot;kCRThemeAppearanceName&quot;,
+      &quot;kCRThemeScaleName&quot;,
+      &quot;kCRThemeIdiomName&quot;,
+      &quot;kCRThemeSubtypeName&quot;,
+      &quot;kCRThemeDeploymentTargetName&quot;,
+      &quot;kCRThemeGraphicsClassName&quot;,
+      &quot;kCRThemeMemoryClassName&quot;,
+      &quot;kCRThemeDisplayGamutName&quot;,
+      &quot;kCRThemeDirectionName&quot;,
+      &quot;kCRThemeSizeClassHorizontalName&quot;,
+      &quot;kCRThemeSizeClassVerticalName&quot;,
+      &quot;kCRThemeIdentifierName&quot;,
+      &quot;kCRThemeElementName&quot;,
+      &quot;kCRThemePartName&quot;,
+      &quot;kCRThemeStateName&quot;,
+      &quot;kCRThemeValueName&quot;,
+      &quot;kCRThemeDimension1Name&quot;,
+      &quot;kCRThemeDimension2Name&quot;
+    ],
+    &quot;MainVersion&quot; : &quot;@(#)PROGRAM:CoreUI  PROJECT:CoreUI-498.40.1\n&quot;,
+    &quot;Platform&quot; : &quot;ios&quot;,
+    &quot;PlatformVersion&quot; : &quot;12.0&quot;,
+    &quot;SchemaVersion&quot; : 2,
+    &quot;StorageVersion&quot; : 15,
+    &quot;ThinningParameters&quot; : &quot;carutil 498.460000, thinned &lt;mode app&gt; &lt;idiom *&gt; &lt;subtype *&gt; &lt;subtypefallback *&gt; &lt;scale *&gt; &lt;gamut *&gt; &lt;graphics *&gt; &lt;graphicsfallback *&gt; &lt;memory *&gt; &lt;deployment+ *&gt; &lt;hostedIdioms *&gt; &lt;removed none&gt;&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Data&quot;,
+    &quot;Compression&quot; : &quot;uncompressed&quot;,
+    &quot;Data Length&quot; : 7284,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Name&quot; : &quot;MyPDF&quot;,
+    &quot;Scale&quot; : 1,
+    &quot;SizeOnDisk&quot; : 7538,
+    &quot;UTI&quot; : &quot;com.adobe.pdf&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Data&quot;,
+    &quot;Compression&quot; : &quot;uncompressed&quot;,
+    &quot;Data Length&quot; : 14,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Name&quot; : &quot;MyText&quot;,
+    &quot;Scale&quot; : 1,
+    &quot;SizeOnDisk&quot; : 238,
+    &quot;UTI&quot; : &quot;UTI-Unknown&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Image&quot;,
+    &quot;BitsPerComponent&quot; : 8,
+    &quot;ColorModel&quot; : &quot;RGB&quot;,
+    &quot;Colorspace&quot; : &quot;srgb&quot;,
+    &quot;Compression&quot; : &quot;palette-img&quot;,
+    &quot;Encoding&quot; : &quot;ARGB&quot;,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Image Type&quot; : &quot;kCoreThemeOnePartScale&quot;,
+    &quot;Name&quot; : &quot;MyPNG&quot;,
+    &quot;Opaque&quot; : false,
+    &quot;PixelHeight&quot; : 28,
+    &quot;PixelWidth&quot; : 28,
+    &quot;RenditionName&quot; : &quot;Timac.png&quot;,
+    &quot;Scale&quot; : 1,
+    &quot;SizeOnDisk&quot; : 1007,
+    &quot;Template Mode&quot; : &quot;automatic&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Color&quot;,
+    &quot;Color components&quot; : [
+      1,
+      0,
+      0,
+      0.5
+    ],
+    &quot;Colorspace&quot; : &quot;srgb&quot;,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Name&quot; : &quot;MyColor&quot;,
+    &quot;Scale&quot; : 1
+  },
+  {
+    &quot;AssetType&quot; : &quot;Image&quot;,
+    &quot;BitsPerComponent&quot; : 8,
+    &quot;ColorModel&quot; : &quot;RGB&quot;,
+    &quot;Encoding&quot; : &quot;JPEG&quot;,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Image Type&quot; : &quot;kCoreThemeOnePartScale&quot;,
+    &quot;Name&quot; : &quot;MyJPG&quot;,
+    &quot;Opaque&quot; : true,
+    &quot;PixelHeight&quot; : 200,
+    &quot;PixelWidth&quot; : 200,
+    &quot;RenditionName&quot; : &quot;TimacJPG.jpg&quot;,
+    &quot;Scale&quot; : 1,
+    &quot;SizeOnDisk&quot; : 8042,
+    &quot;Template Mode&quot; : &quot;automatic&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Image&quot;,
+    &quot;BitsPerComponent&quot; : 8,
+    &quot;ColorModel&quot; : &quot;RGB&quot;,
+    &quot;Colorspace&quot; : &quot;srgb&quot;,
+    &quot;Compression&quot; : &quot;palette-img&quot;,
+    &quot;Encoding&quot; : &quot;ARGB&quot;,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Image Type&quot; : &quot;kCoreThemeOnePartScale&quot;,
+    &quot;Name&quot; : &quot;MyPNG&quot;,
+    &quot;Opaque&quot; : false,
+    &quot;PixelHeight&quot; : 56,
+    &quot;PixelWidth&quot; : 56,
+    &quot;RenditionName&quot; : &quot;Timac@2x.png&quot;,
+    &quot;Scale&quot; : 2,
+    &quot;SizeOnDisk&quot; : 1102,
+    &quot;Template Mode&quot; : &quot;automatic&quot;
+  },
+  {
+    &quot;AssetType&quot; : &quot;Image&quot;,
+    &quot;BitsPerComponent&quot; : 8,
+    &quot;ColorModel&quot; : &quot;RGB&quot;,
+    &quot;Colorspace&quot; : &quot;srgb&quot;,
+    &quot;Compression&quot; : &quot;palette-img&quot;,
+    &quot;Encoding&quot; : &quot;ARGB&quot;,
+    &quot;Idiom&quot; : &quot;universal&quot;,
+    &quot;Image Type&quot; : &quot;kCoreThemeOnePartScale&quot;,
+    &quot;Name&quot; : &quot;MyPNG&quot;,
+    &quot;Opaque&quot; : false,
+    &quot;PixelHeight&quot; : 84,
+    &quot;PixelWidth&quot; : 84,
+    &quot;RenditionName&quot; : &quot;Timac@3x.png&quot;,
+    &quot;Scale&quot; : 3,
+    &quot;SizeOnDisk&quot; : 1961,
+    &quot;Template Mode&quot; : &quot;automatic&quot;
+  }
+]
+</code></pre>
+<pre><code class="objc">UIImage *myImage = [UIImage imageNamed:@&quot;MyImage&quot;];
+</code></pre>
+<p>当程序加载assets中的MyImage图片时，最终会找到图中的二进制流，并利用<code>CUIThemePixelRendition</code>完成数据解析，找到图片的各种信息</p>
+<pre><code class="c">struct CUIThemePixelRendition {
+    uint32_t tag;                   // &#39;CELM&#39;
+    uint32_t version;
+    uint32_t compressionType;
+    uint32_t rawDataLength;
+    uint8_t rawData[];
+} __attribute__((packed));
+</code></pre>
+<pre><code class="objc">if(csiHeader-&gt;pixelFormat == &#39;ARGB&#39; || csiHeader-&gt;pixelFormat == &#39;GA8 &#39; ||
+                    csiHeader-&gt;pixelFormat == &#39;RGB5&#39; || csiHeader-&gt;pixelFormat == &#39;RGBW&#39; ||
+                    csiHeader-&gt;pixelFormat == &#39;GA16&#39;)
+{
+    struct CUIThemePixelRendition *themePixelRendition = (struct CUIThemePixelRendition *)renditionBytes;
+
+    uint32_t compressionType = themePixelRendition-&gt;compressionType;
+    uint32_t rawDataLength = themePixelRendition-&gt;rawDataLength;
+    uint8_t * __unused rawDataBytes = themePixelRendition-&gt;rawData;
+
+    fprintf(stderr, &quot;\n\t\t Found ThemePixelRendition with size %u and compression %s\n&quot;, rawDataLength, [GetRenditionCompressionDescription(compressionType) UTF8String]);
+}
+</code></pre>
+<p><img src="/2019/04/14/HumbleAssetCatalog/11.png" width="100%"><br>依次解释颜色含义：</p>
+<blockquote>
+<ul>
+<li>蓝色：csiheader，长度固定为184字节</li>
+<li>绿色：TLV列表</li>
+<li>粉红色：tag标记：CELM</li>
+<li>黄色：版本号，总是被设置为0</li>
+<li>深蓝色：压缩算法RenditionCompressionType</li>
+<li>水红色：图片数据长度</li>
+<li>红色：图片数据，可能被压缩</li>
+</ul>
+</blockquote>
+<p>压缩算法包含以下类型：</p>
+<pre><code class="c">enum RenditionCompressionType
+{
+kRenditionCompressionType_uncompressed = 0,
+kRenditionCompressionType_rle,
+kRenditionCompressionType_zip,
+kRenditionCompressionType_lzvn,
+kRenditionCompressionType_lzfse,
+kRenditionCompressionType_jpeg_lzfse,
+kRenditionCompressionType_blurred,
+kRenditionCompressionType_astc,
+kRenditionCompressionType_palette_img,
+kRenditionCompressionType_deepmap_lzfse,
+};
+</code></pre>
+<h3 id="结论2"><a href="#结论2" class="headerlink" title="结论2"></a>结论2</h3><blockquote>
+<ul>
+<li>这部分内容可以确认的事实是：当加载assets的图片时，不会再进行read I/O 系统调用，而是直接拿到了图片的二进制流数据，这好像离目的地近了一些</li>
+<li>中间用到了CoreUI.framework和BOM.framework两个私有的framework</li>
+</ul>
+</blockquote>
+<h2 id="实验证明"><a href="#实验证明" class="headerlink" title="实验证明"></a>实验证明</h2><h3 id="调用栈"><a href="#调用栈" class="headerlink" title="调用栈"></a>调用栈</h3><p>通过hook <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到CoreUI.framework中的<code>CUICatalog</code>的使用，这里的命名很有意义<br><img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"></p>
+<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>有个现象很有意思，即使<code>[UIImage imageNamed：]</code>加载的图片并不在assets中，而只是普通文件夹中的一张图片，调用堆栈仍然会走上述流程，例如普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候会显示assets中的图片<br><img src="/2019/04/14/HumbleAssetCatalog/14.png" width="50%"><br><img src="/2019/04/14/HumbleAssetCatalog/15.png" width="50%"></p>
+<pre><code class="objc">- (void)viewDidLoad 
+{
+    [super viewDidLoad]; 
+    UIImage* image = [UIImage imageNamed:@&quot;checkin_finallottery_header&quot;];
+    self.tempView.image = image;
+}
+</code></pre>
+<p>这个现象说明，无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，这从情理上也说得通，毕竟在加载一张图片之前，无法确认它究竟来自哪里</p>
+<h3 id="虚拟内存和I-O"><a href="#虚拟内存和I-O" class="headerlink" title="虚拟内存和I/O"></a>虚拟内存和I/O</h3><pre><code class="objc">- (void)btnAction
+{
+    // title_page_card_placeholder在assets和普通文件夹中都存在，图片内容不一样
+    UIImage* image = [UIImage imageNamed:@&quot;title_page_card_placeholder&quot;];
+    _tempView.image = image;
+}
+</code></pre>
+<p>首次加载assets中的图片时，会首先触发car文件的读取。car文件的加载属于懒加载方式，本次实验中启动的时候没有图片加载，所以也没有看到car文件的加载（注意这里的<code>Requested Bytes</code>，无论读取的图片的大小是多少，这里都统统是512 Bytes）<br><img src="/2019/04/14/HumbleAssetCatalog/18.png" width="100%"><br>同时也会触发虚拟内存的映射<br><img src="/2019/04/14/HumbleAssetCatalog/16.png" width="100%"><br><img src="/2019/04/14/HumbleAssetCatalog/17.png" width="100%"></p>
+<p>而读取一个普通文件夹中的图片时，只会触发I/O，并不会触发虚拟内存</p>
+<pre><code class="objc">- (void)touchesBegan:(NSSet&lt;UITouch *&gt; *)touches withEvent:(UIEvent *)event
+{
+    UIImage* image = [UIImage imageNamed:@&quot;header&quot;];// header来自普通文件夹
+    _tempView.image = image;
+}
+</code></pre>
+<p><img src="/2019/04/14/HumbleAssetCatalog/19.png" width="100%"></p>
+<h3 id="结论3"><a href="#结论3" class="headerlink" title="结论3"></a>结论3</h3><p>这里猜测如下：assets文件并不是整个文件都加载到内存中，而是在首次加载的时候做了内存映射，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断进行读取，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，这比直接读取文件自然要快很多，而这种内存级的操作和硬盘级的速度对比就可以解释得通前文中提到了2个数量级的差距了。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>1、资源文件如果没有什么特殊需求，尽量迁移到assets中；<br>2、Asset Catalog中的资源有如此惊人的加载速度，苹果却谦卑地只字不提，大概是不以为然吧。<br>3、文章尚有诸多不足之处，后续会继续完善</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+
+      <div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/01/Txt引擎之切章重构之路/" rel="next" title="Txt引擎之切章重构之路">
+                <i class="fa fa-chevron-left"></i> Txt引擎之切章重构之路
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        
+            <ul class="sidebar-nav motion-element">
+            <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+                文章目录
+            </li>
+            <li class="sidebar-nav-overview" data-target="site-overview">
+                站点概览
+            </li>
+            </ul>
+        
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/favicon.ico"
+               alt="lingyun" />
+          <p class="site-author-name" itemprop="name">lingyun</p>
+          <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives/ || archive">
+              <span class="site-state-item-count">26</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/ || th">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/ || tags">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+      
+        
+        <!--noindex-->
+            <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+            <div class="post-toc">
+                
+                    
+                        
+                    
+                
+
+                
+                <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#首次分析解决"><span class="nav-number">2.</span> <span class="nav-text">首次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二次分析解决"><span class="nav-number">3.</span> <span class="nav-text">二次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Asset-Catalog的探索"><span class="nav-number">4.</span> <span class="nav-text">Asset Catalog的探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自动图片打包"><span class="nav-number">4.1.</span> <span class="nav-text">自动图片打包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有损压缩"><span class="nav-number">4.2.</span> <span class="nav-text">有损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无损压缩"><span class="nav-number">4.3.</span> <span class="nav-text">无损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用瘦身"><span class="nav-number">4.4.</span> <span class="nav-text">应用瘦身</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论1"><span class="nav-number">4.5.</span> <span class="nav-text">结论1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car文件探索"><span class="nav-number">5.</span> <span class="nav-text">.car文件探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文件结构"><span class="nav-number">5.1.</span> <span class="nav-text">文件结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#举栗说明"><span class="nav-number">5.2.</span> <span class="nav-text">举栗说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论2"><span class="nav-number">5.3.</span> <span class="nav-text">结论2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验证明"><span class="nav-number">6.</span> <span class="nav-text">实验证明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调用栈"><span class="nav-number">6.1.</span> <span class="nav-text">调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优先级"><span class="nav-number">6.2.</span> <span class="nav-text">优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#虚拟内存和I-O"><span class="nav-number">6.3.</span> <span class="nav-text">虚拟内存和I/O</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论3"><span class="nav-number">6.4.</span> <span class="nav-text">结论3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li></ol></div>
+                
+            </div>
+            </section>
+        <!--/noindex-->
+        
+      
+
+      
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">86.3k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+
+  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
+<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+      prettyPrint();
+  });
+</script>
+
+</body>
+</html>
