@@ -113,7 +113,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/16.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/17.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/19.png">
-<meta property="og:updated_time" content="2019-04-16T05:27:47.137Z">
+<meta property="og:updated_time" content="2019-04-16T12:58:16.514Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Humble Asset Catalog">
 <meta name="twitter:description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
@@ -351,7 +351,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,697
+                  3,768
                 </span>
               
 
@@ -783,7 +783,7 @@ kRenditionCompressionType_deepmap_lzfse,
 </ul>
 </blockquote>
 <h2 id="实验求证"><a href="#实验求证" class="headerlink" title="实验求证"></a>实验求证</h2><h3 id="调用栈"><a href="#调用栈" class="headerlink" title="调用栈"></a>调用栈</h3><p>通过hook <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用<br><img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"></p>
-<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>实现过程中，发现有个现象很有意思，即使<code>[UIImage imageNamed：]</code>加载的图片并不在assets中，而只是普通文件夹中的一张图片，调用堆栈仍然会走上述流程，例如普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候会显示assets中的图片</p>
+<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>实现过程中，发现有个现象很有意思:普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候用<code>[UIImage imageNamed:]</code>加载该文件名时，会显示assets中的图片</p>
 <pre><code class="objc">- (void)viewDidLoad 
 {
     [super viewDidLoad]; 
@@ -792,7 +792,15 @@ kRenditionCompressionType_deepmap_lzfse,
 }
 </code></pre>
 <p><img src="/2019/04/14/HumbleAssetCatalog/14.png" width="50%"><br><img src="/2019/04/14/HumbleAssetCatalog/15.png" width="50%"></p>
-<p>这个现象说明，无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，这从理论上也说得通，毕竟在加载一张图片之前，无法确认它究竟来自普通文件夹还是assets</p>
+<p>而如果assets中没有该文件时，肯定会显示普通文件夹中的图片</p>
+<p>imageNamed实际上调用的是一个叫做UIAssetManager的类，每个Bundle有一个UIAssetManager。它有一个strong-strong的NSMapTable的属性，用来做缓存。这里推测下imageNamed的加载顺序：</p>
+<blockquote>
+<ul>
+<li>首先从缓存中查找，如果命中直接返回；</li>
+<li>如果查询不到缓存，首先命中的是Assets.car，这个是<code>CoreUI.Framework</code>处理的（私有framework），会解压（有缓存）那个Assets.car然后解码取回图。</li>
+<li>如果还找不到，会通过Bundle的path，按照搜索@3x @2x @1x .png等规则，直到找到一个那种非Assets.car的bundle图，然后加载。</li>
+</ul>
+</blockquote>
 <h3 id="虚拟内存和I-O"><a href="#虚拟内存和I-O" class="headerlink" title="虚拟内存和I/O"></a>虚拟内存和I/O</h3><pre><code class="objc">- (void)btnAction
 {
     // title_page_card_placeholder在assets和普通文件夹中都存在，图片内容不一样
@@ -810,7 +818,7 @@ kRenditionCompressionType_deepmap_lzfse,
 }
 </code></pre>
 <p><img src="/2019/04/14/HumbleAssetCatalog/19.png" width="100%"></p>
-<h3 id="结论3"><a href="#结论3" class="headerlink" title="结论3"></a>结论3</h3><p>这里猜测如下：assets文件并不是整个文件都加载到内存中，而是在首次加载的时候做了内存映射，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断，等物理页加载到内存中，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，这比直接读取文件自然要快很多，而这种内存级的操作和硬盘级的速度对比就可以解释得通前文中提到了2个数量级的差距了。</p>
+<h3 id="结论3"><a href="#结论3" class="headerlink" title="结论3"></a>结论3</h3><p>.car文件并不是整个文件都加载到内存中，而是在首次加载的时候做了内存映射，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断，等物理页加载到内存中，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，这比直接读取文件自然要快很多，而这种内存级的操作和硬盘级的速度对比就可以解释得通前文中提到了2个数量级的差距了。</p>
 <h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>1、资源文件如果没有什么特殊需求，尽量迁移到assets中；<br>2、Asset Catalog中的资源有如此惊人的加载速度，苹果却谦卑地只字不提，大概是不以为然吧。<br>3、文章尚有诸多不足之处，后续会继续完善</p>
 
       
@@ -1029,7 +1037,7 @@ kRenditionCompressionType_deepmap_lzfse,
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">86.6k</span>
+    <span title="Site words total count">86.8k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
