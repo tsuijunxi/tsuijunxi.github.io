@@ -113,7 +113,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/16.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/17.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/19.png">
-<meta property="og:updated_time" content="2019-04-14T15:08:39.645Z">
+<meta property="og:updated_time" content="2019-04-16T05:27:47.137Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Humble Asset Catalog">
 <meta name="twitter:description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
@@ -351,7 +351,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,532
+                  3,697
                 </span>
               
 
@@ -367,7 +367,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  14
+                  15
                 </span>
               
             </div>
@@ -487,8 +487,8 @@
 </table>
 <p>可以看出，优化的优势已经极其微弱了，可以说是荡然无存也毫不夸张，这种情况下，优化代码已经没有存在的必要了，所以二次优化的结果就是：</p>
 <p><strong>去除首次优化的代码，将图片挪到<code>image.xcassets</code>中</strong></p>
-<p>！！！大写的尴尬！！！</p>
-<h2 id="Asset-Catalog的探索"><a href="#Asset-Catalog的探索" class="headerlink" title="Asset Catalog的探索"></a>Asset Catalog的探索</h2><p>二次优化后，自己被成功了炸回了石器时代，自己始终在纳闷为什么image.xcassets中的图片会有这么惊人的加载速度？</p>
+<p>！！！大写的尴尬 ！！！</p>
+<h2 id="Asset-Catalog的探索"><a href="#Asset-Catalog的探索" class="headerlink" title="Asset Catalog的探索"></a>Asset Catalog的探索</h2><p>二次优化后，被成功了炸回了石器时代，令人纳闷的是：为什么image.xcassets中的图片会有这么惊人的加载速度？</p>
 <p>Asset Catalog 是 Xcode 提供的项目资源管理工具，其核心理念在于：以设备特征（traits）为单位配置资源，包括但不限于images, sprites, textures, ARKit resources, colors和 data、PDF。既让开发者免于代码配置资源的烦恼，也让苹果能够更好的控制包的大小</p>
 <p><a href="https://developer.apple.com/videos/play/wwdc2018/227/" target="_blank" rel="noopener">Optimizing App Assets</a> 一文中提到：</p>
 <h3 id="自动图片打包"><a href="#自动图片打包" class="headerlink" title="自动图片打包"></a>自动图片打包</h3><p>在assets分类之前，仅仅是将图片直接放到工程的bundle中组织，这种方式存在一些缺点：</p>
@@ -534,7 +534,7 @@
 <p><img src="/2019/04/14/HumbleAssetCatalog/08.png" width="100%"><br><img src="/2019/04/14/HumbleAssetCatalog/09.png" width="100%"></p>
 <h3 id="应用瘦身"><a href="#应用瘦身" class="headerlink" title="应用瘦身"></a>应用瘦身</h3><p>各取所需<br><img src="/2019/04/14/HumbleAssetCatalog/10.png" width="100%"></p>
 <h3 id="结论1"><a href="#结论1" class="headerlink" title="结论1"></a>结论1</h3><p>可以看出，App Assets通过分类、压缩等途径，能够有效地减小资源包的大小，进而给应用瘦身。的确，资源变小了，加载速度可以提升，但是这仍然无法解释为什么图片的加载速度差异达到2个数量级之多</p>
-<h2 id="car文件探索"><a href="#car文件探索" class="headerlink" title=".car文件探索"></a>.car文件探索</h2><p>关于.car文件的结构，苹果讳莫如深:<br><strong>If your project has an iOS 7 deployment target, Xcode compiles your asset catalogs into a runtime binary file format that improves the speed of your app</strong></p>
+<h2 id="car文件探索"><a href="#car文件探索" class="headerlink" title=".car文件探索"></a>.car文件探索</h2><p>assets里面所有的资源在编译过程结束后会被编译为.car文件，关于.car文件的结构，苹果讳莫如深:<br><strong>If your project has an iOS 7 deployment target, Xcode compiles your asset catalogs into a runtime binary file format that improves the speed of your app</strong></p>
 <h3 id="文件结构"><a href="#文件结构" class="headerlink" title="文件结构"></a>文件结构</h3><p>通过查询资料，发现.car文件实际上是一种特殊的bom文件，而bom(Bill of Materials)是从NeXTSTEP继承下来的一种文件格式，命令行输入：man 5 bom</p>
 <pre><code>The Mac OS X Installer uses a file system &quot;bill of materials&quot; to determine which files to install, remove, or upgrade
 </code></pre><p>类似于bom文件，car文件中包含一些blocks结构</p>
@@ -584,7 +584,7 @@ void * BOMTreeIteratorValue(BOMTreeIterator iterator);
 size_t BOMTreeIteratorValueSize(BOMTreeIterator iterator);
 </code></pre>
 <p>更多的细节可以参考<a href="Reverse engineering the .car file format">Reverse engineering the .car file format</a></p>
-<h3 id="举栗说明"><a href="#举栗说明" class="headerlink" title="举栗说明"></a>举栗说明</h3><p>该Asset Catalog包含以下文件：<br>1、a PNG with 3 resolutions @1x, @2x and @3x<br>2、a PDF<br>3、a text file<br>4、a jpg image<br>5、a color (red with 50% transparency)<br><img src="/2019/04/14/HumbleAssetCatalog/12.png" width="100%"><br>编译之后，Asset Catalog里面所有的资源都会被编译为Assets.car文件（后缀名的含义是:Compiled Asset Catalogs）<br>命令行输入: assetutil -I Assets.car</p>
+<h3 id="举个栗子"><a href="#举个栗子" class="headerlink" title="举个栗子"></a>举个栗子</h3><p>该Asset Catalog包含以下文件：<br>1、a PNG with 3 resolutions @1x, @2x and @3x<br>2、a PDF<br>3、a text file<br>4、a jpg image<br>5、a color (red with 50% transparency)<br><img src="/2019/04/14/HumbleAssetCatalog/12.png" width="100%"><br>编译之后，Asset Catalog里面所有的资源都会被编译为Assets.car文件（后缀名的含义是:Compiled Asset Catalogs）<br>命令行输入: assetutil -I Assets.car</p>
 <pre><code class="json">[
   {
     &quot;AssetStorageVersion&quot; : &quot;IBCocoaTouchImageCatalogTool-10.0&quot;,
@@ -723,6 +723,7 @@ size_t BOMTreeIteratorValueSize(BOMTreeIterator iterator);
   }
 ]
 </code></pre>
+<p>以加载其中的png图片为例：</p>
 <pre><code class="objc">UIImage *myImage = [UIImage imageNamed:@&quot;MyImage&quot;];
 </code></pre>
 <p>当程序加载assets中的MyImage图片时，最终会找到图中的二进制流，并利用<code>CUIThemePixelRendition</code>完成数据解析，找到图片的各种信息</p>
@@ -747,7 +748,8 @@ size_t BOMTreeIteratorValueSize(BOMTreeIterator iterator);
     fprintf(stderr, &quot;\n\t\t Found ThemePixelRendition with size %u and compression %s\n&quot;, rawDataLength, [GetRenditionCompressionDescription(compressionType) UTF8String]);
 }
 </code></pre>
-<p><img src="/2019/04/14/HumbleAssetCatalog/11.png" width="100%"><br>依次解释颜色含义：</p>
+<p>这个是图片对应的二进制流：<br><img src="/2019/04/14/HumbleAssetCatalog/11.png" width="100%"></p>
+<p>依次解释颜色含义：</p>
 <blockquote>
 <ul>
 <li>蓝色：csiheader，长度固定为184字节</li>
@@ -780,8 +782,8 @@ kRenditionCompressionType_deepmap_lzfse,
 <li>中间用到了CoreUI.framework和BOM.framework两个私有的framework</li>
 </ul>
 </blockquote>
-<h2 id="实验证明"><a href="#实验证明" class="headerlink" title="实验证明"></a>实验证明</h2><h3 id="调用栈"><a href="#调用栈" class="headerlink" title="调用栈"></a>调用栈</h3><p>通过hook <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到CoreUI.framework中的<code>CUICatalog</code>的使用，这里的命名很有意义<br><img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"></p>
-<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>有个现象很有意思，即使<code>[UIImage imageNamed：]</code>加载的图片并不在assets中，而只是普通文件夹中的一张图片，调用堆栈仍然会走上述流程，例如普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候会显示assets中的图片<br><img src="/2019/04/14/HumbleAssetCatalog/14.png" width="50%"><br><img src="/2019/04/14/HumbleAssetCatalog/15.png" width="50%"></p>
+<h2 id="实验求证"><a href="#实验求证" class="headerlink" title="实验求证"></a>实验求证</h2><h3 id="调用栈"><a href="#调用栈" class="headerlink" title="调用栈"></a>调用栈</h3><p>通过hook <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用<br><img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"></p>
+<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>实现过程中，发现有个现象很有意思，即使<code>[UIImage imageNamed：]</code>加载的图片并不在assets中，而只是普通文件夹中的一张图片，调用堆栈仍然会走上述流程，例如普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候会显示assets中的图片</p>
 <pre><code class="objc">- (void)viewDidLoad 
 {
     [super viewDidLoad]; 
@@ -789,7 +791,8 @@ kRenditionCompressionType_deepmap_lzfse,
     self.tempView.image = image;
 }
 </code></pre>
-<p>这个现象说明，无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，这从情理上也说得通，毕竟在加载一张图片之前，无法确认它究竟来自哪里</p>
+<p><img src="/2019/04/14/HumbleAssetCatalog/14.png" width="50%"><br><img src="/2019/04/14/HumbleAssetCatalog/15.png" width="50%"></p>
+<p>这个现象说明，无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，这从理论上也说得通，毕竟在加载一张图片之前，无法确认它究竟来自普通文件夹还是assets</p>
 <h3 id="虚拟内存和I-O"><a href="#虚拟内存和I-O" class="headerlink" title="虚拟内存和I/O"></a>虚拟内存和I/O</h3><pre><code class="objc">- (void)btnAction
 {
     // title_page_card_placeholder在assets和普通文件夹中都存在，图片内容不一样
@@ -797,8 +800,9 @@ kRenditionCompressionType_deepmap_lzfse,
     _tempView.image = image;
 }
 </code></pre>
-<p>首次加载assets中的图片时，会首先触发car文件的读取。car文件的加载属于懒加载方式，本次实验中启动的时候没有图片加载，所以也没有看到car文件的加载（注意这里的<code>Requested Bytes</code>，无论读取的图片的大小是多少，这里都统统是512 Bytes）<br><img src="/2019/04/14/HumbleAssetCatalog/18.png" width="100%"><br>同时也会触发虚拟内存的映射<br><img src="/2019/04/14/HumbleAssetCatalog/16.png" width="100%"><br><img src="/2019/04/14/HumbleAssetCatalog/17.png" width="100%"></p>
-<p>而读取一个普通文件夹中的图片时，只会触发I/O，并不会触发虚拟内存</p>
+<p>首次加载assets中的图片时，会首先触发car文件的打开操作。<br>另外，car文件的加载属于懒加载方式，由于本次实验中启动的时候没有图片加载，所以没有看到car文件的加载，只有在首次读取加载图片的时候，才会触发car文件的读取。由于前文中提到无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，所以这里也同样，无论图片是否是来自assets中，都会触发car文件的打开操作<br><img src="/2019/04/14/HumbleAssetCatalog/18.png" width="100%"></p>
+<p>同时也会 <strong>触发虚拟内存的映射</strong><br>注意图中的<code>Requested Bytes</code>，无论读取的图片的大小是多少，这里都统统是512 Bytes（实验中在assets中添加了1张2M的图片，进行加载，这里仍然是512 Bytes）<br><img src="/2019/04/14/HumbleAssetCatalog/16.png" width="100%"><br><img src="/2019/04/14/HumbleAssetCatalog/17.png" width="100%"></p>
+<p>而读取一个普通文件夹中的图片时，只会简单地触发I/O，并不会触发虚拟内存</p>
 <pre><code class="objc">- (void)touchesBegan:(NSSet&lt;UITouch *&gt; *)touches withEvent:(UIEvent *)event
 {
     UIImage* image = [UIImage imageNamed:@&quot;header&quot;];// header来自普通文件夹
@@ -806,7 +810,7 @@ kRenditionCompressionType_deepmap_lzfse,
 }
 </code></pre>
 <p><img src="/2019/04/14/HumbleAssetCatalog/19.png" width="100%"></p>
-<h3 id="结论3"><a href="#结论3" class="headerlink" title="结论3"></a>结论3</h3><p>这里猜测如下：assets文件并不是整个文件都加载到内存中，而是在首次加载的时候做了内存映射，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断进行读取，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，这比直接读取文件自然要快很多，而这种内存级的操作和硬盘级的速度对比就可以解释得通前文中提到了2个数量级的差距了。</p>
+<h3 id="结论3"><a href="#结论3" class="headerlink" title="结论3"></a>结论3</h3><p>这里猜测如下：assets文件并不是整个文件都加载到内存中，而是在首次加载的时候做了内存映射，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断，等物理页加载到内存中，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，这比直接读取文件自然要快很多，而这种内存级的操作和硬盘级的速度对比就可以解释得通前文中提到了2个数量级的差距了。</p>
 <h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>1、资源文件如果没有什么特殊需求，尽量迁移到assets中；<br>2、Asset Catalog中的资源有如此惊人的加载速度，苹果却谦卑地只字不提，大概是不以为然吧。<br>3、文章尚有诸多不足之处，后续会继续完善</p>
 
       
@@ -991,7 +995,7 @@ kRenditionCompressionType_deepmap_lzfse,
                 
 
                 
-                <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#首次分析解决"><span class="nav-number">2.</span> <span class="nav-text">首次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二次分析解决"><span class="nav-number">3.</span> <span class="nav-text">二次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Asset-Catalog的探索"><span class="nav-number">4.</span> <span class="nav-text">Asset Catalog的探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自动图片打包"><span class="nav-number">4.1.</span> <span class="nav-text">自动图片打包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有损压缩"><span class="nav-number">4.2.</span> <span class="nav-text">有损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无损压缩"><span class="nav-number">4.3.</span> <span class="nav-text">无损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用瘦身"><span class="nav-number">4.4.</span> <span class="nav-text">应用瘦身</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论1"><span class="nav-number">4.5.</span> <span class="nav-text">结论1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car文件探索"><span class="nav-number">5.</span> <span class="nav-text">.car文件探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文件结构"><span class="nav-number">5.1.</span> <span class="nav-text">文件结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#举栗说明"><span class="nav-number">5.2.</span> <span class="nav-text">举栗说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论2"><span class="nav-number">5.3.</span> <span class="nav-text">结论2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验证明"><span class="nav-number">6.</span> <span class="nav-text">实验证明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调用栈"><span class="nav-number">6.1.</span> <span class="nav-text">调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优先级"><span class="nav-number">6.2.</span> <span class="nav-text">优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#虚拟内存和I-O"><span class="nav-number">6.3.</span> <span class="nav-text">虚拟内存和I/O</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论3"><span class="nav-number">6.4.</span> <span class="nav-text">结论3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li></ol></div>
+                <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#首次分析解决"><span class="nav-number">2.</span> <span class="nav-text">首次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二次分析解决"><span class="nav-number">3.</span> <span class="nav-text">二次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Asset-Catalog的探索"><span class="nav-number">4.</span> <span class="nav-text">Asset Catalog的探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自动图片打包"><span class="nav-number">4.1.</span> <span class="nav-text">自动图片打包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有损压缩"><span class="nav-number">4.2.</span> <span class="nav-text">有损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无损压缩"><span class="nav-number">4.3.</span> <span class="nav-text">无损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用瘦身"><span class="nav-number">4.4.</span> <span class="nav-text">应用瘦身</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论1"><span class="nav-number">4.5.</span> <span class="nav-text">结论1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car文件探索"><span class="nav-number">5.</span> <span class="nav-text">.car文件探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文件结构"><span class="nav-number">5.1.</span> <span class="nav-text">文件结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#举个栗子"><span class="nav-number">5.2.</span> <span class="nav-text">举个栗子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论2"><span class="nav-number">5.3.</span> <span class="nav-text">结论2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验求证"><span class="nav-number">6.</span> <span class="nav-text">实验求证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调用栈"><span class="nav-number">6.1.</span> <span class="nav-text">调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优先级"><span class="nav-number">6.2.</span> <span class="nav-text">优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#虚拟内存和I-O"><span class="nav-number">6.3.</span> <span class="nav-text">虚拟内存和I/O</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论3"><span class="nav-number">6.4.</span> <span class="nav-text">结论3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li></ol></div>
                 
             </div>
             </section>
@@ -1025,7 +1029,7 @@ kRenditionCompressionType_deepmap_lzfse,
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">86.3k</span>
+    <span title="Site words total count">86.6k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
