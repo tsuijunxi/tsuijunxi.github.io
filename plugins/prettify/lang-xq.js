@@ -48,7 +48,7 @@ PR['registerLangHandler'](
          // Matching @Attributes
          [PR['PR_LITERAL'], /^\@[\w-]+/],
          // Matching xml tags
-         [PR['PR_TAG'], /^<\/?[a-z](?:[\w.:-]*\w)?|\/?>$/i],
+         [PR['PR_TAG'], /^<\ ?[a-z](?:[\w.:-]*\w)?|\="" ?="">$/i],
          // Matching single or multiline xquery comments -> (: <text> :)
          [PR['PR_COMMENT'], /^\(:[\s\S]*?:\)/],
          // Tokenizing /{}:=;*,[]() as plain
@@ -69,3 +69,4 @@ PR['registerLangHandler'](
          ]),
     ['xq', 'xquery']);
 })();
+</text></\>

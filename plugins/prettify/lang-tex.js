@@ -18,7 +18,7 @@
 /**
  * @fileoverview
  * Support for tex highlighting as discussed on
- * <a href="http://meta.tex.stackexchange.com/questions/872/text-immediate-following-double-backslashes-is-highlighted-as-macro-inside-a-code/876#876">meta.tex.stackexchange.com</a>.
+ * <a href="http://meta.tex.stackexchange.com/questions/872/text-immediate-following-double-backslashes-is-highlighted-as-macro-inside-a-code/876#876" target="_blank" rel="noopener">meta.tex.stackexchange.com</a>.
  *
  * @author Martin S.
  */

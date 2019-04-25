@@ -80,3 +80,4 @@ PR['registerLangHandler'](
          [PR['PR_PUNCTUATION'], /^(?:\.+|\/|[:~])/]
         ]),
     ['ex','exs']);
+</(?:[^\></foo::binary></=></=>

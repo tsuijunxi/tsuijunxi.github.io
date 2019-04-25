@@ -17,7 +17,7 @@
 
 /**
  * @fileoverview
- * Registers a language handler for Lasso. <http://www.lassosoft.com>
+ * Registers a language handler for Lasso. <http: www.lassosoft.com="">
  *
  * To use, include prettify.js and this file in your HTML page.
  * Then enclose your code in an HTML tag like so:
@@ -65,3 +65,4 @@ PR['registerLangHandler'](
           [PR['PR_PUNCTUATION'],  /^:=|[-+*\/%=<>&|!?\\]+/]
         ]),
     ['lasso', 'ls', 'lassoscript']);
+</\?(?:lasso(?:script)?|=)|\?></http:>

@@ -27,14 +27,14 @@
  * |                  |               | is called on page load.      |        |
  * +------------------+---------------+------------------------------+--------+
  * | lang=            | language name | Loads the language handler   | Can    |
- * |                  |               | named "lang-<NAME>.js".      | appear |
+ * |                  |               | named "lang-<name>.js".      | appear |
  * |                  |               | See available handlers at    | many   |
  * |                  |               | https://github.com/google/   | times. |
  * |                  |               | code-prettify/tree/master/   |        |
  * |                  |               | src                          |        |
  * +------------------+---------------+------------------------------+--------+
  * | skin=            | skin name     | Loads the skin stylesheet    | none.  |
- * |                  |               | named "<NAME>.css".          |        |
+ * |                  |               | named "<name>.css".          |        |
  * |                  |               | https://cdn.rawgit.com/      |        |
  * |                  |               | google/code-prettify/master/ |        |
  * |                  |               | styles/index.html            |        |
@@ -1240,8 +1240,7 @@ var IN_GLOBAL_SCOPE = false;
 
           // which means that only a '#' after /(?:^|[{}|&$;<>\s])/ starts a
           // comment but empirically
-          // $ echo {#}
-          // {#}
+          // $ echo 
           // $ echo \$#
           // $#
           // $ echo }#
@@ -2006,3 +2005,4 @@ var IN_GLOBAL_SCOPE = false;
   checkPendingLanguages();
 
 }());
+</style></name></name></div>

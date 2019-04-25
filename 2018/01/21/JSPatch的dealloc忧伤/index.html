@@ -19,6 +19,7 @@
 
 
 
+
 <meta http-equiv="Cache-Control" content="no-transform" />
 <meta http-equiv="Cache-Control" content="no-siteapp" />
 
@@ -359,7 +360,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3,075
+                  3,311
                 </span>
               
 
@@ -375,7 +376,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  13
+                  15
                 </span>
               
             </div>
@@ -410,163 +411,34 @@
 <li>1、调用dealloc时self不包装成weakObject，而是包装成assignObject传给JS</li>
 </ul>
 </blockquote>
-<pre><code class="objc">if ([slf class] == slf) {
-        [argList addObject:[JSValue valueWithObject:@{@&quot;__clsName&quot;: NSStringFromClass([slf class])}
-                                          inContext:_context]];
-} else if ([selectorName isEqualToString:@&quot;dealloc&quot;]) {
-    [argList addObject:[JPBoxing boxAssignObj:slf]];
-    deallocFlag = YES;
-} else {
-    [argList addObject:[JPBoxing boxWeakObj:slf]];
-}
-</code></pre>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ([slf <span class="keyword">class</span>] == slf) &#123;</span><br><span class="line">        [argList addObject:[JSValue valueWithObject:@&#123;<span class="string">@"__clsName"</span>: <span class="built_in">NSStringFromClass</span>([slf <span class="keyword">class</span>])&#125;</span><br><span class="line">                                          inContext:_context]];</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> ([selectorName isEqualToString:<span class="string">@"dealloc"</span>]) &#123;</span><br><span class="line">    [argList addObject:[JPBoxing boxAssignObj:slf]];</span><br><span class="line">    deallocFlag = <span class="literal">YES</span>;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    [argList addObject:[JPBoxing boxWeakObj:slf]];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <blockquote>
 <ul>
 <li>2、调用<code>ORIGdealloc</code>时因为selectorName改变，ARC不认这是dealloc方法，所以需要欺骗ARC</li>
 </ul>
 </blockquote>
-<pre><code class="objc">if (deallocFlag) {
-    slf = nil;
-    Class instClass = object_getClass(assignSlf);
-    Method deallocMethod = class_getInstanceMethod(instClass, NSSelectorFromString(@&quot;ORIGdealloc&quot;));
-    void (*originalDealloc)(__unsafe_unretained id, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);
-    originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));
-}
-</code></pre>
-<p>当时看到作者的解决手法着实令人拍案叫绝！美中不足的是，这个方案仍然未能彻底解决<code>JSPatch</code>的dealloc问题，为什么呢？因为这个解决方案有一个遗留问题：JS的dealloc方法和OC里面的dealloc方法会同时被调用：</p>
-<pre><code class="objc">@implementation JPViewController
-- (void)dealloc {
-    NSLog(@&quot;dealloc from OC&quot;);
-}
-@end
-</code></pre>
-<pre><code class="js">defineClass(&#39;JPViewController&#39;, {
-    dealloc: function() {
-        console.log(&#39;dealloc from JS&#39;);
-    }
-}
-</code></pre>
-<p>会输出：</p>
-<pre><code>dealloc from JS
-dealloc from OC
-</code></pre><p><strong>试想：倘若OC的dealloc方法有错误，我只想通过通过JSPatch热修复之后只执行JS的dealloc方法，并不想执行OC的dealloc，同时又能正确地释放对象内存。而现在JSPatch的热修复之后，OC的dealloc还得执行，那原来dealloc里面的错误岂不是还得再犯？所以谓之曰dealloc之忧伤</strong></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"ORIGdealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当时看到作者的解决手法着实令人拍案叫绝！美中不足的是，这个方案仍然未能彻底解决<code>JSPatch</code>的dealloc问题，为什么呢？因为这个解决方案有一个遗留问题：JS的dealloc方法和OC里面的dealloc方法会同时被调用：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"dealloc from OC"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'JPViewController'</span>, &#123;</span><br><span class="line">    dealloc: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'dealloc from JS'</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dealloc from JS</span><br><span class="line">dealloc from OC</span><br></pre></td></tr></table></figure></p>
+<p><strong>试想：倘若OC的dealloc方法有错误，我只想通过通过JSPatch热修复之后只执行JS的dealloc方法，并不想执行OC的dealloc，同时又能正确地释放对象内存。而现在JSPatch的热修复之后，OC的dealloc还得执行，那原来dealloc里面的错误岂不是还得再犯？所以谓之曰dealloc之忧伤</strong></p>
 <h2 id="dealloc忧伤的分析和解决"><a href="#dealloc忧伤的分析和解决" class="headerlink" title="dealloc忧伤的分析和解决"></a>dealloc忧伤的分析和解决</h2><p>那么我们来分析一下为什么JSPatch的dealloc的问题如此棘手。</p>
 <h3 id="weak包装为什么会crash？"><a href="#weak包装为什么会crash？" class="headerlink" title="weak包装为什么会crash？"></a>weak包装为什么会crash？</h3><p>作者一开始的做法：调用到dealloc时会把self包装成weakObject传给JS，其目的主要是为了避免JS对self强引用，从而导致dealloc无法被调用。然而，该方案会crash</p>
-<pre><code>objc[54707]: Cannot form weak reference to instance (0x7f9d46f073d0) of class JPViewController. It is possible that this object was over-released, or is in the process of deallocation.
-</code></pre><p>看下堆栈，挂到了<code>weak_register_no_lock</code>函数里面</p>
-<pre><code>* thread #1, queue = &#39;com.apple.main-thread&#39;, stop reason = signal SIGABRT
-    frame #0: 0x000000010d1fc1a6 libsystem_kernel.dylib`__abort_with_payload + 10
-    frame #1: 0x000000010d1f686e libsystem_kernel.dylib`abort_with_payload_wrapper_internal + 89
-    frame #2: 0x000000010d1f6815 libsystem_kernel.dylib`abort_with_reason + 22
-    frame #3: 0x000000010945f923 libobjc.A.dylib`_objc_fatalv(unsigned long long, unsigned long long, char const*, __va_list_tag*) + 108
-    frame #4: 0x000000010945f84c libobjc.A.dylib`_objc_fatal(char const*, ...) + 127
-    frame #5: 0x00000001094738fd libobjc.A.dylib`weak_register_no_lock + 291
-    frame #6: 0x0000000109473eca libobjc.A.dylib`objc_storeWeak + 480
-    frame #7: 0x0000000107fceb7e JSPatchDemo`-[JPBoxing setWeakObj:](self=0x0000600000053770, _cmd=&quot;setWeakObj:&quot;, weakObj=0x00007fa258004b60) at JPEngine.h:0
-  * frame #8: 0x0000000107fce73f JSPatchDemo`+[JPBoxing boxWeakObj:](self=JPBoxing, _cmd=&quot;boxWeakObj:&quot;, obj=0x00007fa258004b60) at JPEngine.m:32
-    frame #9: 0x0000000107fdd1c4 JSPatchDemo`JPForwardInvocation(assignSlf=0x00007fa258004b60, selector=&quot;forwardInvocation:&quot;, invocation=0x0000600000076380) at JPEngine.m:657
-    frame #10: 0x0000000109d4ce08 CoreFoundation`___forwarding___ + 760
-    frame #11: 0x0000000109d4ca88 CoreFoundation`__forwarding_prep_0___ + 120
-</code></pre><p>跟踪下runtime源码的<code>weak_register_no_lock</code>函数，从中发现了如下端倪：</p>
-<pre><code class="c++">// 判断被引用对象是否允许弱引用
-BOOL (*allowsWeakReference)(objc_object *, SEL) =
-    (BOOL(*)(objc_object *, SEL))
-    object_getMethodImplementation((id)referent, 
-                                   SEL_allowsWeakReference);
-if ((IMP)allowsWeakReference == _objc_msgForward) {
-    return nil;
-}
-// 从对象是否允许弱引用判断是否该对象正在释放
-deallocating = ! (*allowsWeakReference)(referent, SEL_allowsWeakReference);
-...
-
-if (deallocating) {
-    if (crashIfDeallocating) {
-        _objc_fatal(&quot;Cannot form weak reference to instance (%p) of &quot;
-                    &quot;class %s. It is possible that this object was &quot;
-                    &quot;over-released, or is in the process of deallocation.&quot;,
-                    (void*)referent, object_getClassName((id)referent));
-    } else {
-        return nil;
-    }
-}
-</code></pre>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">objc[54707]: Cannot form weak reference to instance (0x7f9d46f073d0) of class JPViewController. It is possible that this object was over-released, or is in the process of deallocation.</span><br></pre></td></tr></table></figure>
+<p>看下堆栈，挂到了<code>weak_register_no_lock</code>函数里面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">* thread #1, queue = &apos;com.apple.main-thread&apos;, stop reason = signal SIGABRT</span><br><span class="line">    frame #0: 0x000000010d1fc1a6 libsystem_kernel.dylib`__abort_with_payload + 10</span><br><span class="line">    frame #1: 0x000000010d1f686e libsystem_kernel.dylib`abort_with_payload_wrapper_internal + 89</span><br><span class="line">    frame #2: 0x000000010d1f6815 libsystem_kernel.dylib`abort_with_reason + 22</span><br><span class="line">    frame #3: 0x000000010945f923 libobjc.A.dylib`_objc_fatalv(unsigned long long, unsigned long long, char const*, __va_list_tag*) + 108</span><br><span class="line">    frame #4: 0x000000010945f84c libobjc.A.dylib`_objc_fatal(char const*, ...) + 127</span><br><span class="line">    frame #5: 0x00000001094738fd libobjc.A.dylib`weak_register_no_lock + 291</span><br><span class="line">    frame #6: 0x0000000109473eca libobjc.A.dylib`objc_storeWeak + 480</span><br><span class="line">    frame #7: 0x0000000107fceb7e JSPatchDemo`-[JPBoxing setWeakObj:](self=0x0000600000053770, _cmd=&quot;setWeakObj:&quot;, weakObj=0x00007fa258004b60) at JPEngine.h:0</span><br><span class="line">  * frame #8: 0x0000000107fce73f JSPatchDemo`+[JPBoxing boxWeakObj:](self=JPBoxing, _cmd=&quot;boxWeakObj:&quot;, obj=0x00007fa258004b60) at JPEngine.m:32</span><br><span class="line">    frame #9: 0x0000000107fdd1c4 JSPatchDemo`JPForwardInvocation(assignSlf=0x00007fa258004b60, selector=&quot;forwardInvocation:&quot;, invocation=0x0000600000076380) at JPEngine.m:657</span><br><span class="line">    frame #10: 0x0000000109d4ce08 CoreFoundation`___forwarding___ + 760</span><br><span class="line">    frame #11: 0x0000000109d4ca88 CoreFoundation`__forwarding_prep_0___ + 120</span><br></pre></td></tr></table></figure></p>
+<p>跟踪下runtime源码的<code>weak_register_no_lock</code>函数，从中发现了如下端倪：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 判断被引用对象是否允许弱引用</span></span><br><span class="line">BOOL (*allowsWeakReference)(objc_object *, SEL) =</span><br><span class="line">    (BOOL(*)(objc_object *, SEL))</span><br><span class="line">    object_getMethodImplementation((id)referent, </span><br><span class="line">                                   SEL_allowsWeakReference);</span><br><span class="line"><span class="keyword">if</span> ((IMP)allowsWeakReference == _objc_msgForward) &#123;</span><br><span class="line">    <span class="keyword">return</span> nil;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 从对象是否允许弱引用判断是否该对象正在释放</span></span><br><span class="line">deallocating = ! (*allowsWeakReference)(referent, SEL_allowsWeakReference);</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (deallocating) &#123;</span><br><span class="line">    <span class="keyword">if</span> (crashIfDeallocating) &#123;</span><br><span class="line">        _objc_fatal(<span class="string">"Cannot form weak reference to instance (%p) of "</span></span><br><span class="line">                    <span class="string">"class %s. It is possible that this object was "</span></span><br><span class="line">                    <span class="string">"over-released, or is in the process of deallocation."</span>,</span><br><span class="line">                    (<span class="keyword">void</span>*)referent, object_getClassName((id)referent));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> nil;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>可以看到，<code>weak_register_no_lock</code>函数先检查了该对象是否正在释放中，如果正在释放中，直接通过<code>_objc_fatal</code>abort掉程序，从而crash。冤有头，债有主，我们得到的crash信息正是这里的_objc_fatal引起的。从中可以看出，<strong>当一个OC对象的dealloc函数被触发调用的时候，是不允许对其进行弱引用的</strong>。</p>
-<p>简单验证一下，在dealloc函数中弱引用自己：</p>
-<pre><code class="objc">-(void)dealloc{
-    __weak __typeof(self) weakSelf = self;
-    NSLog(@&quot;%@&quot;,weakSelf);
-}
-</code></pre>
-<p>同样会引发crash：</p>
-<pre><code>objc[56044]: Cannot form weak reference to instance (0x7f8fc750aad0) of class JPViewController. It is possible that this object was over-released, or is in the process of deallocation.
-</code></pre><p>从道理上这也可以说的通，弱引用一个即将被释放的对象除了白白耗费资源和引入潜在的危险之外，还有什么意义呢？</p>
+<p>简单验证一下，在dealloc函数中弱引用自己：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-(<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    __<span class="keyword">weak</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>) weakSelf = <span class="keyword">self</span>;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>,weakSelf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>同样会引发crash：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">objc[56044]: Cannot form weak reference to instance (0x7f8fc750aad0) of class JPViewController. It is possible that this object was over-released, or is in the process of deallocation.</span><br></pre></td></tr></table></figure></p>
+<p>从道理上这也可以说的通，弱引用一个即将被释放的对象除了白白耗费资源和引入潜在的危险之外，还有什么意义呢？</p>
 <h3 id="若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？"><a href="#若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？" class="headerlink" title="若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？"></a>若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？</h3><p>首先assign只是一个指针指向，它本身不参与OC的内存管理，所以不会发生前面的crash，但是不适当的访问也很容易造成野指针crash，所以需要格外小心。<br>如何能避免调用OC的dealloc？在解决这个问题之前，不妨先了解下OC对象的dealloc释放过程。我们知道，OC的ARC代码中不允许调用<code>[super dealloc]</code>，编译器会在编译的时候，自动帮我们的代码插入<code>[super dealloc]</code></p>
-<p>我们写一个类叫XXObject，来跟踪下dealloc的调用过程</p>
-<pre><code class="objc">@implementation XXObject
--(void)dealloc{
-    NSLog(@&quot;XXObject dealloc&quot;);
-}
-@end
-</code></pre>
+<p>我们写一个类叫XXObject，来跟踪下dealloc的调用过程<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">XXObject</span></span></span><br><span class="line">-(<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"XXObject dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
 <p><img src="/2018/01/21/JSPatch的dealloc忧伤/01.jpg" alt="OC dealloc"></p>
-<pre><code class="objc">- (void)dealloc {
-    _objc_rootDealloc(self);
-}
-</code></pre>
-<pre><code class="c">void _objc_rootDealloc(id obj)
-{
-    assert(obj);
-    obj-&gt;rootDealloc();
-}
-</code></pre>
-<pre><code class="c++">inline void objc_object::rootDealloc()
-{
-    if (isTaggedPointer()) return;  // fixme necessary?
-
-    if (fastpath(isa.nonpointer  &amp;&amp;  
-                 !isa.weakly_referenced  &amp;&amp;  
-                 !isa.has_assoc  &amp;&amp;  
-                 !isa.has_cxx_dtor  &amp;&amp;  
-                 !isa.has_sidetable_rc))
-    {
-        assert(!sidetable_present());
-        free(this);
-    } 
-    else {
-        object_dispose((id)this);
-    }
-}
-</code></pre>
-<pre><code class="c++">id object_dispose(id obj)
-{
-    if (!obj) return nil;
-    objc_destructInstance(obj);    
-    free(obj);
-    return nil;
-}
-</code></pre>
-<pre><code class="c++">void *objc_destructInstance(id obj) 
-{
-    if (obj) {
-        // Read all of the flags at once for performance.
-        bool cxx = obj-&gt;hasCxxDtor();
-        bool assoc = obj-&gt;hasAssociatedObjects();
-
-        // This order is important.
-        // 1.如果类存在c++析构函数，就执行C++析构函数
-        if (cxx) object_cxxDestruct(obj);
-
-        // 2.移除和释放通过runtime关联到对象上的关联对象
-        if (assoc) _object_remove_assocations(obj);
-
-        // 3.清除对象的SideTable的weak_table
-        obj-&gt;clearDeallocating();
-    }
-
-    return obj;
-}
-</code></pre>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)dealloc &#123;</span><br><span class="line">    _objc_rootDealloc(<span class="keyword">self</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _objc_rootDealloc(id obj)</span><br><span class="line">&#123;</span><br><span class="line">    assert(obj);</span><br><span class="line">    obj-&gt;rootDealloc();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span> objc_object::rootDealloc()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (isTaggedPointer()) <span class="keyword">return</span>;  <span class="comment">// fixme necessary?</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (fastpath(isa.nonpointer  &amp;&amp;  </span><br><span class="line">                 !isa.weakly_referenced  &amp;&amp;  </span><br><span class="line">                 !isa.has_assoc  &amp;&amp;  </span><br><span class="line">                 !isa.has_cxx_dtor  &amp;&amp;  </span><br><span class="line">                 !isa.has_sidetable_rc))</span><br><span class="line">    &#123;</span><br><span class="line">        assert(!sidetable_present());</span><br><span class="line">        <span class="built_in">free</span>(<span class="keyword">this</span>);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        object_dispose((id)<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">id <span class="title">object_dispose</span><span class="params">(id obj)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!obj) <span class="keyword">return</span> nil;</span><br><span class="line">    objc_destructInstance(obj);    </span><br><span class="line">    <span class="built_in">free</span>(obj);</span><br><span class="line">    <span class="keyword">return</span> nil;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">objc_destructInstance</span><span class="params">(id obj)</span> </span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (obj) &#123;</span><br><span class="line">        <span class="comment">// Read all of the flags at once for performance.</span></span><br><span class="line">        <span class="keyword">bool</span> cxx = obj-&gt;hasCxxDtor();</span><br><span class="line">        <span class="keyword">bool</span> assoc = obj-&gt;hasAssociatedObjects();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// This order is important.</span></span><br><span class="line">        <span class="comment">// 1.如果类存在c++析构函数，就执行C++析构函数</span></span><br><span class="line">        <span class="keyword">if</span> (cxx) object_cxxDestruct(obj);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2.移除和释放通过runtime关联到对象上的关联对象</span></span><br><span class="line">        <span class="keyword">if</span> (assoc) _object_remove_assocations(obj);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3.清除对象的SideTable的weak_table</span></span><br><span class="line">        obj-&gt;clearDeallocating();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>不难发现，OC对象的dealloc函数只是处理我们写的释放逻辑，而真正的对象清理工作是由runtime来完成的，在<code>objc_destructInstance</code>中可以看到：</p>
 <blockquote>
 <ul>
@@ -576,147 +448,38 @@ if (deallocating) {
 </ul>
 </blockquote>
 <p><strong>既然这里OC的dealloc逻辑已经被JS的dealloc逻辑所覆盖，那么OC的dealloc逻辑就应该被扔掉，之前因为我们不太了解OC的dealloc内幕，总觉得编译器在里面做了很多不为人知的神奇工作，所以束手无策，但是我们现在已经了解到，对象的清理核心在<code>objc_destructInstance</code>里面，即使OC的dealloc不会被调用，也不会绝对影响到OC对象的清理，我们可以采取某种手段绕过去这个OC的dealloc这个障碍：调用完JS的dealloc方法后，跳过OC对象的dealloc方法，直接调用父类的dealloc方法。虽然在ARC中，受制于编译器，无法写<code>[super dealloc]</code>这样的代码，但是我们还有runtime</strong></p>
-<p>打开文件<code>JSPatch.mm</code>，修改<code>JPForwardInvocation</code>函数的最后几行：</p>
-<pre><code class="objc">/// 修改前
-if (deallocFlag) {
-    slf = nil;
-    Class instClass = object_getClass(assignSlf);
-    Method deallocMethod = class_getInstanceMethod(instClass, NSSelectorFromString(@&quot;ORIGdealloc&quot;));
-    void (*originalDealloc)(__unsafe_unretained id, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);
-    originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));
-}
-
-/// 修改后
-if (deallocFlag) {
-    slf = nil;
-    Class instClass = object_getClass(assignSlf);
-    Class instSuperClass = [instClass superclass];
-    Method deallocMethod = class_getInstanceMethod(instSuperClass, NSSelectorFromString(@&quot;dealloc&quot;));
-    void (*originalDealloc)(__unsafe_unretained id, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);
-    originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));
-}
-</code></pre>
-<p>修改完毕后，用以下代码验证一下结果：</p>
-<pre><code class="objc">// OC 
--(void)dealloc{
-    NSLog(@&quot;oc dealloc&quot;);
-}
-</code></pre>
-<pre><code class="js">// JS
-dealloc:function(){
-    console.log(&quot;js dealloc&quot;);
-}
-</code></pre>
+<p>打开文件<code>JSPatch.mm</code>，修改<code>JPForwardInvocation</code>函数的最后几行：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// 修改前</span></span><br><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"ORIGdealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 修改后</span></span><br><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instSuperClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>修改完毕后，用以下代码验证一下结果：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// OC </span></span><br><span class="line">-(<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"oc dealloc"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JS</span></span><br><span class="line">dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"js dealloc"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <blockquote>
 <ul>
-<li>1、先看下输出，确实OC的dealloc函数没有再调用<pre><code>JSPatchDemo[60463:20377984] JSPatch.log: js dealloc
-</code></pre></li>
-<li>2、再用Instrument检查下是否有内存泄露，可以看到该对象是得到正确释放的<br><img src="/2018/01/21/JSPatch的dealloc忧伤/02.jpg" alt="内存泄露"></li>
+<li><p>1、先看下输出，确实OC的dealloc函数没有再调用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[60463:20377984] JSPatch.log: js dealloc</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>2、再用Instrument检查下是否有内存泄露，可以看到该对象是得到正确释放的<br><img src="/2018/01/21/JSPatch的dealloc忧伤/02.jpg" alt="内存泄露"></p>
+</li>
 </ul>
 </blockquote>
-<h3 id="如果同时hook父类和子类的dealloc方法，会发生什么呢？"><a href="#如果同时hook父类和子类的dealloc方法，会发生什么呢？" class="headerlink" title="如果同时hook父类和子类的dealloc方法，会发生什么呢？"></a>如果同时hook父类和子类的dealloc方法，会发生什么呢？</h3><pre><code class="objc">@implementation JPBaseViewController
-- (void)dealloc{
-    NSLog(@&quot;JPBaseViewController OC dealloc&quot;);
-}
-@end
-
-@interface JPViewController : JPBaseViewController
-@end
-@implementation JPViewController
-- (void)dealloc{
-    NSLog(@&quot;JPViewController OC dealloc&quot;);
-}
-@end
-</code></pre>
-<pre><code class="js">defineClass(&#39;JPBaseViewController&#39;, {            
-    dealloc:function(){
-        console.log(&quot;JPBaseViewController JS dealloc&quot;);
-    },            
-})
-
-defineClass(&#39;JPViewController&#39;, {            
-    dealloc:function(){
-        console.log(&quot;JPViewController JS dealloc&quot;);
-    },            
-})
-</code></pre>
+<h3 id="如果同时hook父类和子类的dealloc方法，会发生什么呢？"><a href="#如果同时hook父类和子类的dealloc方法，会发生什么呢？" class="headerlink" title="如果同时hook父类和子类的dealloc方法，会发生什么呢？"></a>如果同时hook父类和子类的dealloc方法，会发生什么呢？</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPBaseViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPBaseViewController OC dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">JPViewController</span> : <span class="title">JPBaseViewController</span></span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPViewController OC dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">defineClass(<span class="string">'JPBaseViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPBaseViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">defineClass(<span class="string">'JPViewController'</span>, &#123;            </span><br><span class="line">    dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"JPViewController JS dealloc"</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 <p>结果还是发生了crash，原因是堆栈溢出…<br><img src="/2018/01/21/JSPatch的dealloc忧伤/03.png" width="65%"></p>
-<pre><code>JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc
-...
-</code></pre><p>如上图，一直不停地执行<code>JPViewController JS dealloc</code></p>
-<p>按照上个步骤修改完的代码来分析一下原因：</p>
-<pre><code class="objc">if (deallocFlag) {
-    slf = nil;
-    Class instClass = object_getClass(assignSlf);
-    Class instSuperClass = [instClass superclass];
-    Method deallocMethod = class_getInstanceMethod(instSuperClass, NSSelectorFromString(@&quot;dealloc&quot;));
-    void (*originalDealloc)(__unsafe_unretained id, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);
-    originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));
-}
-</code></pre>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>如上图，一直不停地执行<code>JPViewController JS dealloc</code></p>
+<p>按照上个步骤修改完的代码来分析一下原因：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instSuperClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>当子类<code>JPViewController</code>的dealloc被调用的时候，我们是找到了父类的dealloc的IMP，以<code>originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));</code>的方式去调用父类的dealloc方法。<br>由于父类<code>JPBaseViewController</code>的dealloc方法也被hook掉了，所以最后又会转发到上述的代码里，然而代码<code>Class instClass = object_getClass(assignSlf);</code>执行完后，Class仍然是<code>JPViewController</code>，其父类仍然是<code>JPBaseViewController</code>，所以构成了一个死循环，导致最后堆栈溢出…</p>
 <p>解决方案首先想到在这里用一个while循环，直接暴力处理dealloc的继承链，但是如果中间有一个dealloc方法被hook成JS代码块，那么就还得处理JS代码块的执行，显然这个处理方式工作量很巨大，而且考虑因素很多。</p>
 <p>如果能保存dealloc的执行层级，那么就可以避免死循环了，但是看函数的参数也不大可能具备这个条件:<code>static void JPForwardInvocation(__unsafe_unretained id assignSlf, SEL selector, NSInvocation *invocation)</code>。</p>
-<p>最后就只能依托于<code>assignSlf</code>了，如果能在这个对象本身上面做点文章就好了<br>绞尽脑汁，想到了加1行代码：</p>
-<pre><code class="objc">if (deallocFlag) {
-    slf = nil;
-    Class instClass = object_getClass(assignSlf);
-    Class instSuperClass = [instClass superclass];
-
-    // 每次获取到父类时，就利用runtime把assignSlf的类设置为instSuperClass
-    object_setClass(assignSlf, instSuperClass);
-
-    Method deallocMethod = class_getInstanceMethod(instSuperClass, NSSelectorFromString(@&quot;dealloc&quot;));
-    void (*originalDealloc)(__unsafe_unretained id, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);
-    originalDealloc(assignSlf, NSSelectorFromString(@&quot;dealloc&quot;));
-}
-</code></pre>
-<p>如上面的代码块所示：每次获取到父类时，就利用runtime把assignSlf的类设置为其父类instSuperClass，这样就打破了死循环的条件。<br>验证下结果：</p>
-<pre><code>JSPatchDemo[93127:50640251] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[93127:50640251] JSPatch.log: JPBaseViewController JS dealloc
-</code></pre><p>确实都被调用到了。</p>
+<p>最后就只能依托于<code>assignSlf</code>了，如果能在这个对象本身上面做点文章就好了<br>绞尽脑汁，想到了加1行代码：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (deallocFlag) &#123;</span><br><span class="line">    slf = <span class="literal">nil</span>;</span><br><span class="line">    Class instClass = object_getClass(assignSlf);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 每次获取到父类时，就利用runtime把assignSlf的类设置为instSuperClass</span></span><br><span class="line">    object_setClass(assignSlf, instSuperClass);</span><br><span class="line"></span><br><span class="line">    Method deallocMethod = class_getInstanceMethod(instSuperClass, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">    <span class="keyword">void</span> (*originalDealloc)(__<span class="keyword">unsafe_unretained</span> <span class="keyword">id</span>, SEL) = (__typeof__(originalDealloc))method_getImplementation(deallocMethod);</span><br><span class="line">    originalDealloc(assignSlf, <span class="built_in">NSSelectorFromString</span>(<span class="string">@"dealloc"</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如上面的代码块所示：每次获取到父类时，就利用runtime把assignSlf的类设置为其父类instSuperClass，这样就打破了死循环的条件。<br>验证下结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[93127:50640251] JSPatch.log: JPBaseViewController JS dealloc</span><br></pre></td></tr></table></figure></p>
+<p>确实都被调用到了。</p>
 <p>可能会有人怀疑说，这样修改对象的类，会不会存在crash的风险呢？普通情况下，风险肯定有，比如以下代码会直接crash：</p>
-<pre><code class="objc">- (void)crashTest{
-    JPViewController* JPVC = [[JPViewController alloc]init];
-    Class instClass = object_getClass(JPVC);
-    Class instSuperClass = [instClass superclass];
-    object_setClass(JPVC, instSuperClass);
-    [JPVC test];
-}
-</code></pre>
-<pre><code>    0   CoreFoundation                      0x0000000109b901ab __exceptionPreprocess + 171
-    1   libobjc.A.dylib                     0x0000000109225f41 objc_exception_throw + 48
-    2   CoreFoundation                      0x0000000109c10a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132
-    3   UIKit                               0x000000010ad54761 -[UIResponder doesNotRecognizeSelector:] + 295
-    4   CoreFoundation                      0x0000000109b130a8 ___forwarding___ + 1432
-    5   CoreFoundation                      0x0000000109b12a88 _CF_forwarding_prep_0 + 120
-</code></pre><p>在上述代码中，test方法是<code>JPViewController</code>特有的，其父类并没有这个方法，所以会crash</p>
-<p>但是经过验证，JSPatch并没有crash，可以正常调用：</p>
-<pre><code class="objc">@implementation JPViewController
-- (void)dealloc{
-    NSLog(@&quot;JPViewController OC dealloc&quot;);
-}
-
--(void)test{
-    NSLog(@&quot;JPViewController test&quot;);
-}
-@end
-</code></pre>
-<pre><code class="js">dealloc:function(){
-    console.log(&quot;JPViewController JS dealloc&quot;);
-    self.test();
-},
-</code></pre>
-<p>输出：</p>
-<pre><code>JSPatchDemo[94941:50784057] JSPatch.log: JPViewController JS dealloc
-JSPatchDemo[94941:50784057] JPViewController test
-JSPatchDemo[94941:50784057] JSPatch.log: JPBaseViewController JS dealloc
-</code></pre><p>这是为什么呢？主要有两点原因：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)crashTest&#123;</span><br><span class="line">    JPViewController* JPVC = [[JPViewController alloc]init];</span><br><span class="line">    Class instClass = object_getClass(JPVC);</span><br><span class="line">    Class instSuperClass = [instClass superclass];</span><br><span class="line">    object_setClass(JPVC, instSuperClass);</span><br><span class="line">    [JPVC test];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0   CoreFoundation                      0x0000000109b901ab __exceptionPreprocess + 171</span><br><span class="line">1   libobjc.A.dylib                     0x0000000109225f41 objc_exception_throw + 48</span><br><span class="line">2   CoreFoundation                      0x0000000109c10a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">3   UIKit                               0x000000010ad54761 -[UIResponder doesNotRecognizeSelector:] + 295</span><br><span class="line">4   CoreFoundation                      0x0000000109b130a8 ___forwarding___ + 1432</span><br><span class="line">5   CoreFoundation                      0x0000000109b12a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
+<p>在上述代码中，test方法是<code>JPViewController</code>特有的，其父类并没有这个方法，所以会crash</p>
+<p>但是经过验证，JSPatch并没有crash，可以正常调用：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JPViewController</span></span></span><br><span class="line">- (<span class="keyword">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPViewController OC dealloc"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">-(<span class="keyword">void</span>)test&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"JPViewController test"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dealloc:<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"JPViewController JS dealloc"</span>);</span><br><span class="line">    self.test();</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+<p>输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[94941:50784057] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[94941:50784057] JPViewController test</span><br><span class="line">JSPatchDemo[94941:50784057] JSPatch.log: JPBaseViewController JS dealloc</span><br></pre></td></tr></table></figure></p>
+<p>这是为什么呢？主要有两点原因：</p>
 <blockquote>
 <ul>
 <li><p>1、OC本身的dealloc方法已经被Hook成JS代码块，所以OC的dealloc方法基本上不可能被执行到（<strong>切记不要在JS的dealloc代码块中调用self.ORIGdealloc()方法，否则会画蛇添足，反而crash</strong>）</p>
@@ -869,96 +632,106 @@ JSPatchDemo[94941:50784057] JSPatch.log: JPBaseViewController JS dealloc
   </div>
 
   <aside id="sidebar" class="sidebar">
+    
     <div class="sidebar-inner">
 
       
 
       
-        
-            <ul class="sidebar-nav motion-element">
-            <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
-                文章目录
-            </li>
-            <li class="sidebar-nav-overview" data-target="site-overview">
-                站点概览
-            </li>
-            </ul>
-        
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
       
 
-      <section class="site-overview sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/images/favicon.ico"
-               alt="lingyun" />
-          <p class="site-author-name" itemprop="name">lingyun</p>
-          <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
-        </div>
-        <nav class="site-state motion-element">
-          <div class="site-state-item site-state-posts">
-            <a href="/archives/ || archive">
-              <span class="site-state-item-count">26</span>
-              <span class="site-state-item-name">日志</span>
-            </a>
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
           </div>
 
-          
-            <div class="site-state-item site-state-categories">
-              <a href="/categories/ || th">
-                <span class="site-state-item-count">4</span>
-                <span class="site-state-item-name">分类</span>
-              </a>
-            </div>
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
           
 
           
-            <div class="site-state-item site-state-tags">
-              <a href="/tags/ || tags">
-                <span class="site-state-item-count">15</span>
-                <span class="site-state-item-name">标签</span>
-              </a>
-            </div>
+
+          
           
 
-        </nav>
-
-        
-
-        <div class="links-of-author motion-element">
           
+          
+
+          
+
         </div>
-
-        
-        
-
-        
-        
-
-        
-
-
       </section>
-      
-        
-        <!--noindex-->
-            <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-            <div class="post-toc">
-                
-                    
-                        
-                    
-                
-
-                
-                <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何为dealloc忧伤？"><span class="nav-number">2.</span> <span class="nav-text">何为dealloc忧伤？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dealloc忧伤的分析和解决"><span class="nav-number">3.</span> <span class="nav-text">dealloc忧伤的分析和解决</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#weak包装为什么会crash？"><span class="nav-number">3.1.</span> <span class="nav-text">weak包装为什么会crash？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？"><span class="nav-number">3.2.</span> <span class="nav-text">若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如果同时hook父类和子类的dealloc方法，会发生什么呢？"><span class="nav-number">3.3.</span> <span class="nav-text">如果同时hook父类和子类的dealloc方法，会发生什么呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
-                
-            </div>
-            </section>
-        <!--/noindex-->
-        
-      
 
       
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何为dealloc忧伤？"><span class="nav-number">2.</span> <span class="nav-text">何为dealloc忧伤？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dealloc忧伤的分析和解决"><span class="nav-number">3.</span> <span class="nav-text">dealloc忧伤的分析和解决</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#weak包装为什么会crash？"><span class="nav-number">3.1.</span> <span class="nav-text">weak包装为什么会crash？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？"><span class="nav-number">3.2.</span> <span class="nav-text">若使用assignObject，为什么不会crash？如何能避免调用OC的dealloc？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如果同时hook父类和子类的dealloc方法，会发生什么呢？"><span class="nav-number">3.3.</span> <span class="nav-text">如果同时hook父类和子类的dealloc方法，会发生什么呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
     </div>
   </aside>
 
@@ -984,7 +757,7 @@ JSPatchDemo[94941:50784057] JSPatch.log: JPBaseViewController JS dealloc
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">88.7k</span>
+    <span title="Site words total count">100.1k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -1215,16 +988,6 @@ JSPatchDemo[94941:50784057] JSPatch.log: JPBaseViewController JS dealloc
   
 
   
-
-
-  <link rel="stylesheet" href="/plugins/prettify/skins/tomorrow-night-eighties.css" type="text/css">
-<script src="/plugins/prettify/prettify.js" type="text/javascript"></script>
-<script type="text/javascript">
-  $(document).ready(function() {
-      $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
-      prettyPrint();
-  });
-</script>
 
 </body>
 </html>

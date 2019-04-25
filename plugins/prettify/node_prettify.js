@@ -24,23 +24,23 @@ var IN_GLOBAL_SCOPE = false;
  *
  * <p>
  * For a fairly comprehensive set of languages see the
- * <a href="https://github.com/google/code-prettify#for-which-languages-does-it-work">README</a>
+ * <a href="https://github.com/google/code-prettify#for-which-languages-does-it-work" target="_blank" rel="noopener">README</a>
  * file that came with this source.  At a minimum, the lexer should work on a
  * number of languages including C and friends, Java, Python, Bash, SQL, HTML,
  * XML, CSS, Javascript, and Makefiles.  It works passably on Ruby, PHP and Awk
  * and a subset of Perl, but, because of commenting conventions, doesn't work on
  * Smalltalk, Lisp-like, or CAML-like languages without an explicit lang class.
- * <p>
+ * </p><p>
  * Usage: <ol>
  * <li> include this source file in an html page via
  *   {@code <script type="text/javascript" src="/path/to/prettify.js"></script>}
- * <li> define style rules.  See the example page for examples.
- * <li> mark the {@code <pre>} and {@code <code>} tags in your source with
+ * </li><li> define style rules.  See the example page for examples.
+ * </li><li> mark the {@code <pre>} and {@code <code>} tags in your source with
  *    {@code class=prettyprint.}
  *    You can also use the (html deprecated) {@code <xmp>} tag, but the pretty
  *    printer needs to do more substantial DOM manipulations to support that, so
  *    some css styles may not be preserved.
- * </ol>
+ * </xmp></code></pre></li></ol>
  * That's it.  I wanted to keep the API as simple as possible, so there's no
  * need to specify which language the code is in, but if you wish, you can add
  * another class to the {@code <pre>} or {@code <code>} element to specify the
@@ -276,7 +276,7 @@ var prettyPrint;
    * matches the union of the sets of strings matched by the input RegExp.
    * Since it matches globally, if the input strings have a start-of-input
    * anchor (/^.../), it is ignored for the purposes of unioning.
-   * @param {Array.<RegExp>} regexs non multiline, non-global regexs.
+   * @param {Array.<regexp>} regexs non multiline, non-global regexs.
    * @return {RegExp} a global regex.
    */
   function combinePrefixPatterns(regexs) {
@@ -314,60 +314,7 @@ var prettyPrint;
       cc0 = escapeCharToCodeUnit[c1];
       if (cc0) {
         return cc0;
-      } else if ('0' <= c1 && c1 <= '7') {
-        return parseInt(charsetPart.substring(1), 8);
-      } else if (c1 === 'u' || c1 === 'x') {
-        return parseInt(charsetPart.substring(2), 16);
-      } else {
-        return charsetPart.charCodeAt(1);
-      }
-    }
-
-    function encodeEscape(charCode) {
-      if (charCode < 0x20) {
-        return (charCode < 0x10 ? '\\x0' : '\\x') + charCode.toString(16);
-      }
-      var ch = String.fromCharCode(charCode);
-      return (ch === '\\' || ch === '-' || ch === ']' || ch === '^')
-          ? "\\" + ch : ch;
-    }
-
-    function caseFoldCharset(charSet) {
-      var charsetParts = charSet.substring(1, charSet.length - 1).match(
-          new RegExp(
-              '\\\\u[0-9A-Fa-f]{4}'
-              + '|\\\\x[0-9A-Fa-f]{2}'
-              + '|\\\\[0-3][0-7]{0,2}'
-              + '|\\\\[0-7]{1,2}'
-              + '|\\\\[\\s\\S]'
-              + '|-'
-              + '|[^-\\\\]',
-              'g'));
-      var ranges = [];
-      var inverse = charsetParts[0] === '^';
-
-      var out = ['['];
-      if (inverse) { out.push('^'); }
-
-      for (var i = inverse ? 1 : 0, n = charsetParts.length; i < n; ++i) {
-        var p = charsetParts[i];
-        if (/\\[bdsw]/i.test(p)) {  // Don't muck with named groups.
-          out.push(p);
-        } else {
-          var start = decodeEscape(p);
-          var end;
-          if (i + 2 < n && '-' === charsetParts[i + 1]) {
-            end = decodeEscape(charsetParts[i + 2]);
-            i += 2;
-          } else {
-            end = start;
-          }
-          ranges.push([start, end]);
-          // If the range might intersect letters, then expand it.
-          // This case handling is too simplistic.
-          // It does not deal with non-latin case folding.
-          // It works for latin source code identifiers though.
-          if (!(end < 65 || start > 122)) {
+      } else if ('0' <= 1="" 2="" 65="" c1="" &&="" <="7" )="" {="" return="" parseint(charsetpart.substring(1),="" 8);="" }="" else="" if="" (c1="==" 'u'="" ||="" 'x')="" parseint(charsetpart.substring(2),="" 16);="" charsetpart.charcodeat(1);="" function="" encodeescape(charcode)="" (charcode="" 0x20)="" 0x10="" ?="" '\\x0'="" :="" '\\x')="" +="" charcode.tostring(16);="" var="" ch="String.fromCharCode(charCode);" (ch="==" '\\'="" '-'="" ']'="" '^')="" "\\"="" ch;="" casefoldcharset(charset)="" charsetparts="charSet.substring(1," charset.length="" -="" 1).match(="" new="" regexp(="" '\\\\u[0-9a-fa-f]{4}'="" '|\\\\x[0-9a-fa-f]{2}'="" '|\\\\[0-3][0-7]{0,2}'="" '|\\\\[0-7]{1,2}'="" '|\\\\[\\s\\s]'="" '|-'="" '|[^-\\\\]',="" 'g'));="" ranges="[];" inverse="charsetParts[0]" =="=" '^';="" out="['['];" (inverse)="" out.push('^');="" for="" (var="" i="inverse" 0,="" n="charsetParts.length;" n;="" ++i)="" p="charsetParts[i];" (="" \\[bdsw]="" i.test(p))="" don't="" muck="" with="" named="" groups.="" out.push(p);="" start="decodeEscape(p);" end;="" (i="" charsetparts[i="" 1])="" end="decodeEscape(charsetParts[i" 2]);="" ranges.push([start,="" end]);="" the="" range="" might="" intersect="" letters,="" then="" expand="" it.="" this="" case="" handling="" is="" too="" simplistic.="" it="" does="" not="" deal="" non-latin="" folding.="" works="" latin="" source="" code="" identifiers="" though.="" (!(end=""> 122)) {
             if (!(end < 65 || start > 90)) {
               ranges.push([Math.max(65, start) | 32, Math.min(end, 90) | 32]);
             }
@@ -385,17 +332,7 @@ var prettyPrint;
       var lastRange = [];
       for (var i = 0; i < ranges.length; ++i) {
         var range = ranges[i];
-        if (range[0] <= lastRange[1] + 1) {
-          lastRange[1] = Math.max(lastRange[1], range[1]);
-        } else {
-          consolidatedRanges.push(lastRange = range);
-        }
-      }
-
-      for (var i = 0; i < consolidatedRanges.length; ++i) {
-        var range = consolidatedRanges[i];
-        out.push(encodeEscape(range[0]));
-        if (range[1] > range[0]) {
+        if (range[0] <= lastrange[1]="" +="" 1)="" {="" range[1]);="" }="" else="" consolidatedranges.push(lastrange="range);" for="" (var="" i="0;" <="" consolidatedranges.length;="" ++i)="" var="" range="consolidatedRanges[i];" out.push(encodeescape(range[0]));="" if="" (range[1]=""> range[0]) {
           if (range[1] + 1 > range[0]) { out.push('-'); }
           out.push(encodeEscape(range[1]));
         }
@@ -438,53 +375,7 @@ var prettyPrint;
         } else if ('\\' === p.charAt(0)) {
           var decimalValue = +p.substring(1);
           if (decimalValue) {
-            if (decimalValue <= groupIndex) {
-              capturedGroups[decimalValue] = -1;
-            } else {
-              // Replace with an unambiguous escape sequence so that
-              // an octal escape sequence does not turn into a backreference
-              // to a capturing group from an earlier regex.
-              parts[i] = encodeEscape(decimalValue);
-            }
-          }
-        }
-      }
-
-      // Renumber groups and reduce capturing groups to non-capturing groups
-      // where possible.
-      for (var i = 1; i < capturedGroups.length; ++i) {
-        if (-1 === capturedGroups[i]) {
-          capturedGroups[i] = ++capturedGroupIndex;
-        }
-      }
-      for (var i = 0, groupIndex = 0; i < n; ++i) {
-        var p = parts[i];
-        if (p === '(') {
-          ++groupIndex;
-          if (!capturedGroups[groupIndex]) {
-            parts[i] = '(?:';
-          }
-        } else if ('\\' === p.charAt(0)) {
-          var decimalValue = +p.substring(1);
-          if (decimalValue && decimalValue <= groupIndex) {
-            parts[i] = '\\' + capturedGroups[decimalValue];
-          }
-        }
-      }
-
-      // Remove any prefix anchors so that the output will match anywhere.
-      // ^^ really does mean an anchored match though.
-      for (var i = 0; i < n; ++i) {
-        if ('^' === parts[i] && '^' !== parts[i + 1]) { parts[i] = ''; }
-      }
-
-      // Expand letters to groups to handle mixing of case-sensitive and
-      // case-insensitive patterns if necessary.
-      if (regex.ignoreCase && needToFoldCase) {
-        for (var i = 0; i < n; ++i) {
-          var p = parts[i];
-          var ch0 = p.charAt(0);
-          if (p.length >= 2 && ch0 === '[') {
+            if (decimalValue <= groupindex)="" {="" capturedgroups[decimalvalue]="-1;" }="" else="" replace="" with="" an="" unambiguous="" escape="" sequence="" so="" that="" octal="" does="" not="" turn="" into="" a="" backreference="" to="" capturing="" group="" from="" earlier="" regex.="" parts[i]="encodeEscape(decimalValue);" renumber="" groups="" and="" reduce="" non-capturing="" where="" possible.="" for="" (var="" i="1;" <="" capturedgroups.length;="" ++i)="" if="" (-1="==" capturedgroups[i])="" capturedgroups[i]="++capturedGroupIndex;" groupindex="0;" n;="" var="" p="parts[i];" (p="==" '(')="" ++groupindex;="" (!capturedgroups[groupindex])="" ;="" ('\\'="==" p.charat(0))="" decimalvalue="+p.substring(1);" (decimalvalue="" &&="" +="" capturedgroups[decimalvalue];="" remove="" any="" prefix="" anchors="" the="" output="" will="" match="" anywhere.="" ^^="" really="" mean="" anchored="" though.="" ('^'="==" '^'="" !="=" parts[i="" 1])="" expand="" letters="" handle="" mixing="" of="" case-sensitive="" case-insensitive="" patterns="" necessary.="" (regex.ignorecase="" needtofoldcase)="" ch0="p.charAt(0);" (p.length="">= 2 && ch0 === '[') {
             parts[i] = caseFoldCharset(p);
           } else if (ch0 !== '\\') {
             // TODO: handle letters in numeric escapes.
@@ -529,7 +420,7 @@ var prettyPrint;
    * </pre>
    * <p>
    * corresponds to the HTML
-   * {@code <p><b>print </b>'Hello '<br>  + 'World';</p>}.</p>
+   * {@code </p><p><b>print </b>'Hello '<br>  + 'World';</p>}.</=></=></=></regexp></code></pre></string></p>
    *
    * <p>
    * It will produce the output:</p>
@@ -640,7 +531,7 @@ var prettyPrint;
    * it contains contain only space characters, return the sole child element.
    * Otherwise returns undefined.
    * <p>
-   * This is meant to return the CODE element in {@code <pre><code ...>} when
+   * This is meant to return the CODE element in {@code <pre><code ...="">} when
    * there is a single child element that contains all the non-space textual
    * content, but not to return anything where there are multiple child elements
    * as in {@code <pre><code>...</code><code>...</code></pre>} or when there
@@ -664,22 +555,7 @@ var prettyPrint;
     * returns a decoration list of the form
     * [index_0, style_0, index_1, style_1, ..., index_n, style_n]
     * where index_n is an index into the sourceCode, and style_n is a style
-    * constant like PR_PLAIN.  index_n-1 <= index_n, and style_n-1 applies to
-    * all characters in sourceCode[index_n-1:index_n].
-    *
-    * The stylePatterns is a list whose elements have the form
-    * [style : string, pattern : RegExp, DEPRECATED, shortcut : string].
-    *
-    * Style is a style constant like PR_PLAIN, or can be a string of the
-    * form 'lang-FOO', where FOO is a language extension describing the
-    * language of the portion of the token in $1 after pattern executes.
-    * E.g., if style is 'lang-lisp', and group 1 contains the text
-    * '(hello (world))', then that portion of the token will be passed to the
-    * registered lisp handler for formatting.
-    * The text before and after group 1 will be restyled using this decorator
-    * so decorators should take care that this doesn't result in infinite
-    * recursion.  For example, the HTML lexer rule for SCRIPT elements looks
-    * something like ['lang-js', /<[s]cript>(.+?)<\/script>/].  This may match
+    * constant like PR_PLAIN.  index_n-1 <= 1="" index_n,="" and="" style_n-1="" applies="" to="" *="" all="" characters="" in="" sourcecode[index_n-1:index_n].="" the="" stylepatterns="" is="" a="" list="" whose="" elements="" have="" form="" [style="" :="" string,="" pattern="" regexp,="" deprecated,="" shortcut="" string].="" style="" constant="" like="" pr_plain,="" or="" can="" be="" string="" of="" 'lang-foo',="" where="" foo="" language="" extension="" describing="" portion="" token="" $1="" after="" executes.="" e.g.,="" if="" 'lang-lisp',="" group="" contains="" text="" '(hello="" (world))',="" then="" that="" will="" passed="" registered="" lisp="" handler="" for="" formatting.="" before="" restyled="" using="" this="" decorator="" so="" decorators="" should="" take="" care="" doesn't="" result="" infinite="" recursion.="" example,="" html="" lexer="" rule="" script="" looks="" something="" ['lang-js',="" <[s]cript="">(.+?)<\ script="">/].  This may match
     * '<script>foo()<\/script>', which would cause the current decorator to
     * be called with '<script>' which would not match the same rule since
     * group 1 must not be empty, so it would be instead styled as PR_TAG by
@@ -963,8 +839,7 @@ var prettyPrint;
 
       // which means that only a '#' after /(?:^|[{}|&$;<>\s])/ starts a
       // comment but empirically
-      // $ echo {#}
-      // {#}
+      // $ echo 
       // $ echo \$#
       // $#
       // $ echo }#
@@ -1713,3 +1588,4 @@ module.exports = {
     path.resolve(__dirname, '../styles')
   ]
 };
+</script></\></=></code></pre></p></pre></code></pre></p>

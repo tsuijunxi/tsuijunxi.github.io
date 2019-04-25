@@ -36,7 +36,7 @@
  * "About"   = 'Clojure is a lisp for the jvm with concurrency primitives and a richer set of types.'
  *
  *
- * I used <a href="http://clojure.org/Reference">Clojure.org Reference</a> as
+ * I used <a href="http://clojure.org/Reference" target="_blank" rel="noopener">Clojure.org Reference</a> as
  * the basis for the reserved word list.
  *
  *

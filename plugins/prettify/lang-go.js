@@ -21,7 +21,7 @@
  * <p>
  * Based on the lexical grammar at 
  * http://golang.org/doc/go_spec.html#Lexical_elements
- * <p>
+ * </p><p>
  * Go uses a minimal style for highlighting so the below does not distinguish
  * strings, keywords, literals, etc. by design.
  * From a discussion with the Go designers:
@@ -37,7 +37,7 @@
  * >
  * > Like http://golang.org/pkg/go/scanner/ where comments are blue and all
  * > other content is black?  I can do that.
- * </pre>
+ * </...></...></pre>
  *
  * @author mikesamuel@gmail.com
  */
@@ -57,3 +57,4 @@ PR['registerLangHandler'](
          [PR['PR_PLAIN'],       /^(?:[^\/\"\'`]|\/(?![\/\*]))+/i]
         ]),
     ['go']);
+</p>

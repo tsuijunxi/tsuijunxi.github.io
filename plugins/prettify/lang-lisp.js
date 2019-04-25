@@ -59,7 +59,7 @@
  *            |
  *
  *
- * I used <a href="http://gigamonkeys.com/book/">Practical Common Lisp</a> as
+ * I used <a href="http://gigamonkeys.com/book/" target="_blank" rel="noopener">Practical Common Lisp</a> as
  * the basis for the reserved word list.
  *
  *

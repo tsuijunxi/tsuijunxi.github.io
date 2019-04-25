@@ -54,3 +54,4 @@ PR['registerLangHandler'](
          [PR['PR_PUNCTUATION'], /^(?:\.+|\/)/]
         ]),
     ['scala']);
+</=></=>

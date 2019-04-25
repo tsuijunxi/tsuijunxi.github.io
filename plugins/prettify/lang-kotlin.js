@@ -56,3 +56,4 @@ PR['registerLangHandler'](
             [PR['PR_LITERAL'], /^[a-zA-Z0-9_]+@/]
         ]),
     ['kotlin']);
+</=></=>

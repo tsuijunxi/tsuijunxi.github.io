@@ -48,8 +48,8 @@ PR['registerLangHandler'](
          // newline      ->    return linefeed | return | linefeed | formfeed
          [PR['PR_PLAIN'],       /^[\t\n\x0B\x0C\r ]+/, null, '\t\n\x0B\x0C\r '],
          // Single line double and single-quoted strings.
-         // char         ->    ' (graphic<' | \> | space | escape<\&>) '
-         // string       ->    " {graphic<" | \> | space | escape | gap}"
+         // char         ->    ' (graphic<' |="" \=""> | space | escape<\&>) '
+         // string       ->    " {graphic<" |="" \=""> | space | escape | gap}"
          // escape       ->    \ ( charesc | ascii | decimal | o octal
          //                        | x hexadecimal )
          // charesc      ->    a | b | f | n | r | t | v | \ | " | ' | &
@@ -100,3 +100,4 @@ PR['registerLangHandler'](
          [PR['PR_PUNCTUATION'], /^[^\t\n\x0B\x0C\r a-zA-Z0-9\'\"]+/]
         ]),
     ['hs']);
+</reservedid></symbol></"></\&></'>
