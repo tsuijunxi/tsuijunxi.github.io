@@ -11,6 +11,16 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
 
 
 
@@ -108,8 +118,6 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/12.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/11.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/13.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/14.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/15.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/18.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/16.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/17.png">
@@ -130,7 +138,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/53.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/54.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/55.png">
-<meta property="og:updated_time" content="2019-04-25T15:48:52.825Z">
+<meta property="og:updated_time" content="2019-04-30T15:52:11.516Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Humble Assets Catalog">
 <meta name="twitter:description" content="背景QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直接将设置所使用到的图片全部截获输出，发">
@@ -390,7 +398,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  5,840
+                  5,821
                 </span>
               
 
@@ -607,8 +615,7 @@
 </ul>
 </blockquote>
 <h2 id="实验求证"><a href="#实验求证" class="headerlink" title="实验求证"></a>实验求证</h2><h3 id="调用栈"><a href="#调用栈" class="headerlink" title="调用栈"></a>调用栈</h3><p>通过hook <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用<br><img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"></p>
-<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>实现过程中，发现有个现象很有意思:普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候用<code>[UIImage imageNamed:]</code>加载该文件名时，会显示assets中的图片<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)viewDidLoad </span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">super</span> viewDidLoad]; </span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@"checkin_finallottery_header"</span>];</span><br><span class="line">    <span class="keyword">self</span>.tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p><img src="/2019/04/14/HumbleAssetCatalog/14.png" width="50%"><br><img src="/2019/04/14/HumbleAssetCatalog/15.png" width="50%"></p>
+<h3 id="优先级"><a href="#优先级" class="headerlink" title="优先级"></a>优先级</h3><p>实现过程中，发现有个现象很有意思:普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候用<code>[UIImage imageNamed:]</code>加载该文件名时，会显示assets中的图片</p>
 <p>而如果assets中没有该文件时，肯定会显示普通文件夹中的图片</p>
 <p>imageNamed实际上调用的是一个叫做<code>UIAssetManager</code>的类，每个Bundle有一个<code>UIAssetManager</code>。它有一个strong-strong的NSMapTable的属性，用来做缓存。这里推测下imageNamed的加载顺序：</p>
 <blockquote>
@@ -818,7 +825,7 @@
   <p><span>本文标题:</span><a href="/2019/04/14/HumbleAssetCatalog/">Humble Assets Catalog</a></p>
   <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
   <p><span>发布时间:</span>2019年04月14日 - 13:04</p>
-  <p><span>最后更新:</span>2019年04月25日 - 23:04</p>
+  <p><span>最后更新:</span>2019年04月30日 - 23:04</p>
   <p><span>原始链接:</span><a href="/2019/04/14/HumbleAssetCatalog/" title="Humble Assets Catalog">https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1044,7 +1051,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">102.2k</span>
+    <span title="Site words total count">104.7k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
