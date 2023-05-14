@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="iOS Runloop IO多路复用," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
+<meta name="keywords" content="iOS Runloop IO多路复用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何去实现一个轻量级的Runloop（1）">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg">
+<meta property="og:updated_time" content="2018-06-19T16:29:10.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何去实现一个轻量级的Runloop（1）">
+<meta name="twitter:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/"/>
+
+
+
+
+
+  <title>如何去实现一个轻量级的Runloop（1） | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">如何去实现一个轻量级的Runloop（1）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-09T16:49:22+08:00">
+                2018-06-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,310
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：</p>
+<blockquote>
+<ul>
+<li><a href="https://segmentfault.com/a/1190000004938638" target="_blank" rel="noopener">Runloop知识树</a></li>
+<li><a href="https://blog.ibireme.com/2015/05/18/runloop/" target="_blank" rel="noopener">深入理解RunLoop</a></li>
+</ul>
+</blockquote>
+<p>然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。</p>
+<p>Runloop就是事件驱动的一个大循环，事件驱动在很多语言中都有实现，伪代码如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> * argv[])</span> </span>&#123;</span><br><span class="line">     <span class="comment">//程序一直运行状态</span></span><br><span class="line">     <span class="keyword">while</span> (AppIsRunning) &#123;</span><br><span class="line">          <span class="comment">//睡眠状态，等待唤醒事件</span></span><br><span class="line">          id whoWakesMe = SleepForWakingUp();</span><br><span class="line">          <span class="comment">//得到唤醒事件</span></span><br><span class="line">          id event = GetEvent(whoWakesMe);</span><br><span class="line">          <span class="comment">//开始处理事件</span></span><br><span class="line">          HandleEvent(event);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>有时候会想，如果凭着自己的学习和理解去实现一个简（山）易（寨）版的Runloop，自己又该怎么做呢？</p>
+<blockquote>
+<ul>
+<li>本着对Runloop是个圈的理解，首先应该写个死循环；</li>
+<li>同时Runloop还应该有一个自己的事件队列，存放事件，每当有事件发生时，将事件加入队列，而Runloop每次循环中，取出一个事件，进行处理；</li>
+<li>Runloop在队列为空的情况下，还得让所在的线程学会睡眠，当有事件发生的时候，还得将线程唤醒，在我有限的知识仓库中，似乎也只有IO多路复用能解决这个问题</li>
+<li>Runloop得区分Timer、Observer、Source等</li>
+<li>…</li>
+</ul>
+</blockquote>
+<p>收集资料的过程中，无意中发现了一位大神写的<a href="https://github.com/wuyunfeng/LightWeightRunLoop-A-Reactor-Style-NSRunLoop" target="_blank" rel="noopener">LightWeightRunLoop-A-Reactor-Style-NSRunLoop</a>，真是踏破铁鞋无觅处，仔细拜读之后，发现和自己的构思还整体比较吻合，这里借花献佛，借源码分析一下如何去实现一个轻量级的Runloop，这里首先感谢一下作者 <strong>wuyunfeng</strong>。</p>
+<h2 id="整体框架"><a href="#整体框架" class="headerlink" title="整体框架"></a>整体框架</h2><p><code>LightWeightRunLoop</code>主要实现了和Runloop相关的一些API，例如：PerformSelector、Timer、URLConnection、LWStream和LWPort等，但是本文的目的不是为了怎么去使用这些API，而是去理解这些API的内部实现，从而加深对Runloop的理解。</p>
+<p>借用下作者的图<br><img src="/2018/06/09/如何实现一个简单的RunLoop（1）/01.jpg" width="75%"></p>
+<h2 id="LWRunloop"><a href="#LWRunloop" class="headerlink" title="LWRunloop"></a>LWRunloop</h2><h3 id="线程如果获取LWRunLoop对象"><a href="#线程如果获取LWRunLoop对象" class="headerlink" title="线程如果获取LWRunLoop对象"></a>线程如果获取LWRunLoop对象</h3><p>每一个线程（除了主线程），都可以拥有一个<code>LWRunLoop</code>对象，可以通过以下方式获取：在运行的线程中调用<code>[LWRunLoop currentLWRunLoop]</code><br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSThread</span> *_lwRunLoopThread = [[<span class="built_in">NSThread</span> alloc] initWithTarget:<span class="keyword">self</span> selector:<span class="keyword">@selector</span>(lightWeightRunloopThreadEntryPoint:) object:<span class="literal">nil</span>];</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)lightWeightRunloopThreadEntryPoint:(<span class="keyword">id</span>)data</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">@autoreleasepool</span> &#123;</span><br><span class="line">        [[LWRunLoop currentLWRunLoop] run];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="currentLWRunLoop内部实现"><a href="#currentLWRunLoop内部实现" class="headerlink" title="currentLWRunLoop内部实现"></a>currentLWRunLoop内部实现</h3><p>看一下<code>currentLWRunLoop</code>的内部实现<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)currentLWRunLoop</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> result = pthread_once(&amp; mTLSKeyOnceToken, initTLSKey);</span><br><span class="line">    LWRunLoop *instance = (__bridge LWRunLoop *)pthread_getspecific(mTLSKey);</span><br><span class="line">    <span class="keyword">if</span> (instance == <span class="literal">nil</span>) &#123;</span><br><span class="line">        instance = [[[<span class="keyword">self</span> <span class="keyword">class</span>] alloc] init];</span><br><span class="line">        [[<span class="built_in">NSThread</span> currentThread] setLooper:instance];</span><br><span class="line">        pthread_setspecific(mTLSKey, (__bridge <span class="keyword">const</span> <span class="keyword">void</span> *)(instance));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过源码可以发现，线程的LWRunloop对象被存储为线程私有数据（TSD)，通过<code>pthread_setspecific</code>和<code>pthread_getspecific</code>进行存取。继续看下LWRunloop的初始化函数，只是简单地初始化了一个类型为<code>LWMessageQueue</code>的消息队列。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</span><br><span class="line">        _queue = [LWMessageQueue defaultInstance];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="LWRunloop如何运行"><a href="#LWRunloop如何运行" class="headerlink" title="LWRunloop如何运行"></a>LWRunloop如何运行</h3><p>再看下<code>LWRunloop</code>的run函数的实现过程<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)run</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> runMode:LWDefaultRunLoop];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#pragma mark run this loop at specific mode</span></span><br><span class="line">- (<span class="keyword">void</span>)runMode:(<span class="built_in">NSString</span> *)mode</span><br><span class="line">&#123;</span><br><span class="line">    _currentRunLoopMode = mode;</span><br><span class="line">    _queue.queueRunMode = _currentRunLoopMode;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">YES</span>) </span><br><span class="line">    &#123;</span><br><span class="line">        LWMessage *msg = [_queue next:_queue.queueRunMode];</span><br><span class="line">        [msg performSelectorForTarget];</span><br><span class="line">        [<span class="keyword">self</span> necessaryInvocationForThisLoop:msg];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>实际上思路也很简单：每次循环中，都从消息队列中取出一个消息，然后执行对应的事件。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)performSelectorForTarget</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (_mTarget == <span class="literal">nil</span>) &#123; <span class="keyword">return</span>; &#125;</span><br><span class="line">    <span class="keyword">if</span> ([_mTarget respondsToSelector:_mSelector]) &#123;</span><br><span class="line">        [_mTarget performSelector:_mSelector withObject:_mArgument];</span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 周期性的LWTime要特殊处理</span></span><br><span class="line">- (<span class="keyword">void</span>)necessaryInvocationForThisLoop:(LWMessage *)msg</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([msg.data isKindOfClass:[LWTimer <span class="keyword">class</span>]]) &#123; </span><br><span class="line">        LWTimer *timer = msg.data;</span><br><span class="line">        <span class="keyword">if</span> (timer.repeat) &#123;</span><br><span class="line">            msg.when = timer.timeInterval; <span class="comment">// must</span></span><br><span class="line">            [<span class="keyword">self</span> postMessage:msg];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="LWMessageQueue"><a href="#LWMessageQueue" class="headerlink" title="LWMessageQueue"></a>LWMessageQueue</h2><h3 id="LWMessageQueue如何获取"><a href="#LWMessageQueue如何获取" class="headerlink" title="LWMessageQueue如何获取"></a>LWMessageQueue如何获取</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)defaultInstance</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</span><br><span class="line">        pthread_key_create(&amp;mThreadOneInstanceKey, threadDestructor);</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    LWMessageQueue *queue = (__bridge LWMessageQueue *)(pthread_getspecific(mThreadOneInstanceKey));</span><br><span class="line">    <span class="keyword">if</span> (queue == <span class="literal">nil</span>) &#123;</span><br><span class="line">        queue = [[LWMessageQueue alloc] init];</span><br><span class="line">        pthread_setspecific(mThreadOneInstanceKey, (__bridge <span class="keyword">const</span> <span class="keyword">void</span> *)(queue));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> queue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>显然，和<code>LWRunloop</code>的获取是一样的套路，不再赘言。</p>
+<h3 id="LWMessageQueue的初始化工作"><a href="#LWMessageQueue的初始化工作" class="headerlink" title="LWMessageQueue的初始化工作"></a>LWMessageQueue的初始化工作</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) </span><br><span class="line">    &#123;</span><br><span class="line">        _nativeRunLoop = [[LWNativeRunLoop alloc] init];</span><br><span class="line">        _allowStop = <span class="literal">NO</span>;</span><br><span class="line">        [<span class="keyword">self</span> addObserver:<span class="keyword">self</span> forKeyPath:<span class="string">@"queueRunMode"</span> options:<span class="built_in">NSKeyValueObservingOptionNew</span> | <span class="built_in">NSKeyValueObservingOptionOld</span> context:<span class="string">"modechange"</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>里面做了两件比较重要的事情</p>
+<blockquote>
+<ul>
+<li><p>定义了一个<code>LWNativeRunLoop</code>，这个和内核相关，也就是前文提到的IO多路复用.<code>LWNativeRunLoop</code>是<code>LWRunloop</code>的核心，也是<code>LWRunloop</code>之所以可以跑圈的基石(看西部世界看多了)。</p>
+</li>
+<li><p>观察了RunMode的切换，一旦切换，便调用<code>LWNativeRunLoop</code>唤醒内核。</p>
+</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)observeValueForKeyPath:(<span class="built_in">NSString</span> *)keyPath ofObject:(<span class="keyword">id</span>)object change:(<span class="built_in">NSDictionary</span>&lt;<span class="built_in">NSString</span> *,<span class="keyword">id</span>&gt; *)change context:(<span class="keyword">void</span> *)context</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([keyPath isEqualToString:<span class="string">@"queueRunMode"</span>] &amp;&amp; (strcmp(<span class="string">"modechange"</span>, context) == <span class="number">0</span> )) &#123;</span><br><span class="line">        _messages = _preMessages;<span class="comment">//runtime change</span></span><br><span class="line">        [_nativeRunLoop nativeWakeRunLoop];<span class="comment">// should wake kernel</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="LWMessageQueue的消息入队"><a href="#LWMessageQueue的消息入队" class="headerlink" title="LWMessageQueue的消息入队"></a>LWMessageQueue的消息入队</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)enqueueMessage:(LWMessage *)msg when:(<span class="built_in">NSInteger</span>)when</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">@synchronized</span>(<span class="keyword">self</span>) </span><br><span class="line">    &#123;</span><br><span class="line">        msg.when = when;</span><br><span class="line">        LWMessage *p = _messages;</span><br><span class="line">        <span class="built_in">BOOL</span> needInterruptBolckingState = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (p == <span class="literal">nil</span> <span class="comment">/*|| when == 0 */</span>|| when &lt; p.when) &#123;</span><br><span class="line">            msg.next = p;</span><br><span class="line">            _messages = msg;</span><br><span class="line">            needInterruptBolckingState = _isCurrentLoopBlock;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            LWMessage *prev = <span class="literal">nil</span>;</span><br><span class="line">            <span class="keyword">while</span> (p != <span class="literal">nil</span> &amp;&amp; p.when &lt;= when) &#123;</span><br><span class="line">                prev = p;</span><br><span class="line">                p = p.next;</span><br><span class="line">            &#125;</span><br><span class="line">            msg.next = prev.next;</span><br><span class="line">            prev.next = msg;</span><br><span class="line">            needInterruptBolckingState = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (needInterruptBolckingState) &#123;</span><br><span class="line">            [_nativeRunLoop nativeWakeRunLoop];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>消息入队方法有两个参数，一个时消息本身，另一个是消息触发的时间。可以看到，消息的存储结构是通过链表来实现的。首先寻找链表头，<br>（1）如果链表头为空，或者当前入队的消息触发时间比队首消息的时间要早，则把当前消息设置为链表头；<br>（2）否则，沿着链表往后寻找第一个比当前消息触发时间晚的消息，然后将入队消息插入到该消息之前；<br>最后如果当前线程出于阻塞状态，则需要调用nativeWakeRunLoop进行唤醒。</p>
+<h3 id="LWMessageQueue的消息出队"><a href="#LWMessageQueue的消息出队" class="headerlink" title="LWMessageQueue的消息出队"></a>LWMessageQueue的消息出队</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">- (LWMessage *)next:(<span class="built_in">NSString</span> *)mode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSInteger</span> nextWakeTimeoutMillis = <span class="number">0</span>;</span><br><span class="line">    _queueRunMode = mode;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">YES</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        [_nativeRunLoop nativeRunLoopFor:nextWakeTimeoutMillis];</span><br><span class="line">        <span class="keyword">@synchronized</span>(<span class="keyword">self</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">NSInteger</span> now = [LWSystemClock uptimeMillions];</span><br><span class="line">            LWMessage *msg = _messages;</span><br><span class="line">            <span class="comment">//find the head message, assign it to _preMessages for preposition</span></span><br><span class="line">            <span class="keyword">if</span> (msg != <span class="literal">nil</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">if</span> (![<span class="keyword">self</span> isMsgModesHit:msg.modes])</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="comment">// can not discard, but may use in mode's changing</span></span><br><span class="line">                    <span class="keyword">if</span> (!_preMessages) &#123;</span><br><span class="line">                        _preMessages = msg;</span><br><span class="line">                        notHitCurrentMsg = _preMessages;</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        notHitCurrentMsg.next = msg;</span><br><span class="line">                        notHitCurrentMsg = msg;</span><br><span class="line">                    &#125;</span><br><span class="line">                    _messages = msg.next;</span><br><span class="line">                    <span class="keyword">continue</span>;<span class="comment">// enter into next loop</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="keyword">if</span> (now &lt; msg.when) &#123;</span><br><span class="line">                        nextWakeTimeoutMillis = msg.when - now;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">else</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        _isCurrentLoopBlock = <span class="literal">NO</span>;</span><br><span class="line">                        _messages = msg.next;</span><br><span class="line">                        msg.next = <span class="literal">nil</span>;</span><br><span class="line">                        <span class="keyword">return</span> msg;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                nextWakeTimeoutMillis = <span class="number">-1</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            _isCurrentLoopBlock = <span class="literal">YES</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先从nativeRunLoopFor获取到需要处理的消息_messages，<br>（1）如果消息为空，将当前线程设置为阻塞状态；<br>（2）如果消息命中了当前线程的RunMode，则检查其触发时间：如果触发时间小于等于当前时间，则需要将该消息从消息队列中取出并返回，否则简单地设置<code>nextWakeTimeoutMillis</code>唤醒时间即可；<br>（3）如果消息并没有命中当前线程的RunMode，则需要将其保存到一个没有命中的消息队列中，以防止RunMode切换的时候会用到。</p>
+<h2 id="LWNativeRunLoop（核心）"><a href="#LWNativeRunLoop（核心）" class="headerlink" title="LWNativeRunLoop（核心）"></a>LWNativeRunLoop（核心）</h2><p>上述内容看完后，总感觉还是不痛不痒，真正核心的东西还是没有讲到，如前所述，<code>LWNativeRunLoop</code>是基石，是核心重点，那么我们来分析下<code>LWNativeRunLoop</code>到底为什么这么重要。</p>
+<blockquote>
+<ul>
+<li>注：看这部分代码的时候需要预先准备下 <strong>IO多路复用</strong> 的知识</li>
+</ul>
+</blockquote>
+<h3 id="LWNativeRunLoop初始化工作"><a href="#LWNativeRunLoop初始化工作" class="headerlink" title="LWNativeRunLoop初始化工作"></a>LWNativeRunLoop初始化工作</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</span><br><span class="line">        [<span class="keyword">self</span> prepareLWRunLoop];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)prepareLWRunLoop</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> fds[<span class="number">2</span>];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 利用pipe创建一个管道</span></span><br><span class="line">    <span class="keyword">int</span> result = pipe(fds);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// fds参数返回两个文件描述符,fds[0]指向管道的读端,fds[1]指向管道的写端</span></span><br><span class="line">    _mReadPipeFd = fds[<span class="number">0</span>];</span><br><span class="line">    _mWritePipeFd = fds[<span class="number">1</span>];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// fcntl系统调用可以用来对已打开的文件描述符进行各种控制操作以改变已打开文件的的各种属性</span></span><br><span class="line">    <span class="comment">// 这里的一堆代码主要是为了讲上述两个文件描述符的I/O操作设置为非阻塞模式，主要是出于性能考虑</span></span><br><span class="line">    <span class="keyword">int</span> rflags;</span><br><span class="line">    <span class="keyword">if</span> ((rflags = fcntl(_mReadPipeFd, F_GETFL, <span class="number">0</span>)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"Failure in fcntl F_GETFL"</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    rflags |= O_NONBLOCK;</span><br><span class="line">    result = fcntl(_mReadPipeFd, F_SETFL, rflags);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">int</span> wflags;</span><br><span class="line">    <span class="keyword">if</span> ((wflags = fcntl(_mWritePipeFd, F_GETFL, <span class="number">0</span>)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"Failure in fcntl F_GETFL"</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    wflags |= O_NONBLOCK;</span><br><span class="line">    result = fcntl(_mWritePipeFd, F_SETFL, wflags);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义一个kqueue</span></span><br><span class="line">    _kq = kqueue();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置要监视的事件列表</span></span><br><span class="line">    <span class="keyword">struct</span> kevent changes[<span class="number">1</span>];</span><br><span class="line">    EV_SET(changes, _mReadPipeFd, EVFILT_READ, EV_ADD, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 进行kevent函数调用，如果changes列表里有任何就绪的fd，则把该事件对应的结构体放进events列表里面，但是这里不太关心events，所以设置为NULL</span></span><br><span class="line">    <span class="keyword">int</span> ret = kevent(_kq, changes, <span class="number">1</span>, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 其它等</span></span><br><span class="line">    _fds = [[<span class="built_in">NSMutableArray</span> alloc] init];</span><br><span class="line">    _requests = [[<span class="built_in">NSMutableDictionary</span> alloc] init];</span><br><span class="line">    _portClients = [[<span class="built_in">NSMutableDictionary</span> alloc] init];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现，kqueue体系有三样东西：struct kevent结构体，EV_SET宏以及kevent函数。</p>
+<blockquote>
+<ul>
+<li>struct kevent 结构体内容如下：</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">kevent</span> &#123;</span></span><br><span class="line">    <span class="keyword">uintptr_t</span>       ident;          <span class="comment">/* identifier for this event，比如该事件关联的文件描述符 */</span></span><br><span class="line">    <span class="keyword">int16_t</span>         filter;         <span class="comment">/* filter for event，可以指定监听类型，如EVFILT_READ，EVFILT_WRITE，EVFILT_TIMER等 */</span></span><br><span class="line">    <span class="keyword">uint16_t</span>        flags;          <span class="comment">/* general flags ，可以指定事件操作类型，比如EV_ADD，EV_ENABLE， EV_DELETE等 */</span></span><br><span class="line">    <span class="keyword">uint32_t</span>        fflags;         <span class="comment">/* filter-specific flags */</span></span><br><span class="line">    <span class="keyword">intptr_t</span>        data;           <span class="comment">/* filter-specific data */</span></span><br><span class="line">    <span class="keyword">void</span>            *udata;         <span class="comment">/* opaque user data identifier，可以携带的任意数据 */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>EV_SET 是用于初始化kevent结构的便利宏，其签名为:</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EV_SET(&amp;kev, ident, filter, flags, fflags, data, udata);</span><br></pre></td></tr></table></figure>
+<p>它和kevent结构体完全对应，第一个参数就是你要初始化的那个kevent结构。</p>
+<blockquote>
+<ul>
+<li>kevent 是真正进行IO复用的函数，其签名为：</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">kevent</span><span class="params">(<span class="keyword">int</span> kq, </span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> struct kevent *changelist, <span class="comment">// 监视列表</span></span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">int</span> nchanges, <span class="comment">// 长度</span></span></span></span><br><span class="line"><span class="function"><span class="params">    struct kevent *eventlist, <span class="comment">// kevent函数用于返回已经就绪的事件列表</span></span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">int</span> nevents, <span class="comment">// 长度</span></span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> struct timespec *timeout)</span></span>; <span class="comment">// 超时限制</span></span><br></pre></td></tr></table></figure>
+<p>总的来说，<code>prepareLWRunLoop</code>方法主要就是对<code>_mReadPipeFd</code>文件描述符进行了监视。</p>
+<h3 id="神奇的nativeRunLoopFor"><a href="#神奇的nativeRunLoopFor" class="headerlink" title="神奇的nativeRunLoopFor"></a>神奇的nativeRunLoopFor</h3><p>前面代码中多次出现了关键的<code>nativeRunLoopFor</code>，我们来重点分析下：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)nativeRunLoopFor:(<span class="built_in">NSInteger</span>)timeoutMillis</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">struct</span> kevent events[MAX_EVENT_COUNT];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设定超时时间</span></span><br><span class="line">    <span class="keyword">struct</span> timespec *waitTime = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (timeoutMillis == <span class="number">-1</span>) &#123;</span><br><span class="line">        waitTime = <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        waitTime = (<span class="keyword">struct</span> timespec *)malloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> timespec));</span><br><span class="line">        waitTime-&gt;tv_sec = timeoutMillis / <span class="number">1000</span>;</span><br><span class="line">        waitTime-&gt;tv_nsec = timeoutMillis % <span class="number">1000</span> * <span class="number">1000</span> * <span class="number">1000</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果之前监视的changes列表里有任何就绪的fd，则把该事件对应的结构体放进events列表里面</span></span><br><span class="line">    <span class="comment">// 在fd就绪之前或者超时时间未结束之前，kevent将使得该线程阻塞</span></span><br><span class="line">    <span class="keyword">int</span> ret = kevent(_kq, <span class="literal">NULL</span>, <span class="number">0</span>, events, MAX_EVENT_COUNT, waitTime);</span><br><span class="line">    </span><br><span class="line">    free(waitTime);</span><br><span class="line">    waitTime = <span class="literal">NULL</span>; <span class="comment">// avoid wild pointer</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 依次循环处理就绪</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ret; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> fd = (<span class="keyword">int</span>)events[i].ident;</span><br><span class="line">        <span class="keyword">int</span> event = events[i].filter;</span><br><span class="line">        <span class="keyword">if</span> (fd == _mReadPipeFd) &#123; <span class="comment">// for pipe read fd</span></span><br><span class="line">            <span class="keyword">if</span> (event &amp; EVFILT_READ) &#123;</span><br><span class="line">                <span class="comment">// 如果是之前监视的mReadWakeFd描述符，则进行nativePollRunLoop调用</span></span><br><span class="line">                [<span class="keyword">self</span> nativePollRunLoop];</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (_leader == fd)&#123;<span class="comment">//for LWPort leader fd</span></span><br><span class="line">            <span class="keyword">if</span> (event &amp; EVFILT_READ) &#123;</span><br><span class="line">                [<span class="keyword">self</span> handleAccept:fd];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (_follower == fd) &#123;<span class="comment">// leader -&gt; follower</span></span><br><span class="line">            <span class="keyword">if</span> (![<span class="keyword">self</span> handleLeaderToFollower:fd]) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// follower -&gt; leader read for LWPort follower fd, then notify leader</span></span><br><span class="line">            <span class="keyword">if</span> (![<span class="keyword">self</span> handleFollowerToLeader:event fd:fd]) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里我们先只关心<code>_mReadPipeFd</code>文件描述符，一旦契合，则进行<code>nativePollRunLoop</code>方法调用：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)nativePollRunLoop</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">char</span> buffer[<span class="number">16</span>];</span><br><span class="line">    ssize_t nRead;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="comment">// 从管道的读端_mReadPipeFd读取数据</span></span><br><span class="line">        nRead = read(_mReadPipeFd, buffer, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">    &#125; <span class="keyword">while</span> ((nRead == <span class="number">-1</span> &amp;&amp; errno == EINTR) || nRead == <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>nativePollRunLoop</code>方法中读出来的数据buffer仅仅是读出来，然后什么都没做就被扔掉了，有人可能要问，为什么要多此一举呢？</p>
+<p>我们先来想想：如果管道的一端有数据可读，必然在管道的另一端有数据写入：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)nativeWakeRunLoop</span><br><span class="line">&#123;</span><br><span class="line">    ssize_t nWrite;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        nWrite = write(_mWritePipeFd, <span class="string">"w"</span>, <span class="number">1</span>);</span><br><span class="line">    &#125; <span class="keyword">while</span> (nWrite == <span class="number">-1</span> &amp;&amp; errno == EINTR);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到了吗？这个方法名起的是多么地直抒胸臆！<br><strong>我们知道，在被监视的文件描述符就绪之前或者超时时间未结束之前，kevent将一直使得该线程阻塞（休眠），不再占用CPU的时间。所以管道里面发送和接受了什么数据，我们根本不需要关心！我们要关心的是它们这么一发一收，直接造成了Runloop被唤醒的结果，从而可以继续进行消息的处理。有了kevent的阻塞休眠，有了这里管道的唤醒（也可以有其他的唤醒方式），一个线程的Runloop就形成了。</strong></p>
+<h2 id="NSObject"><a href="#NSObject" class="headerlink" title="NSObject"></a>NSObject</h2><p>看看这里的<code>postSelector</code>，来想象下<code>performSelector</code>的实现吧<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)postSelector:(SEL)aSelector onThread:(<span class="built_in">NSThread</span> *)thread</span><br><span class="line">          withObject:(<span class="keyword">id</span>)arg afterDelay:(<span class="built_in">NSInteger</span>)delay</span><br><span class="line">&#123;</span><br><span class="line">    __<span class="keyword">weak</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>) weakSelf = <span class="keyword">self</span>;</span><br><span class="line">    LWRunLoop *loop = [thread looper];</span><br><span class="line">    [loop postTarget:weakSelf withAction:aSelector withObject:arg afterDelay:delay];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)postTarget:(<span class="keyword">id</span>)target withAction:(SEL)aSel withObject:(<span class="keyword">id</span>)arg afterDelay:(<span class="built_in">NSInteger</span>)delayMillis</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSInteger</span> when = [LWSystemClock uptimeMillions] + delayMillis;</span><br><span class="line">    LWMessage *message = [[LWMessage alloc] initWithTarget:target aSel:aSel withArgument:arg at:when];</span><br><span class="line">    <span class="comment">// 将target和selector直接封装为LWMessage，入队</span></span><br><span class="line">    [_queue enqueueMessage:message when:when];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="LWTimer"><a href="#LWTimer" class="headerlink" title="LWTimer"></a>LWTimer</h2><p>一个套路，自己体会吧<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">+ (LWTimer *)scheduledLWTimerWithTimeInterval:(<span class="built_in">NSTimeInterval</span>)interval target:(<span class="keyword">id</span>)aTarget selector:(SEL)aSelector userInfo:(<span class="keyword">id</span>)userInfo repeats:(<span class="built_in">BOOL</span>)yesOrNo</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (interval &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        interval = <span class="number">100</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    LWTimer *instance = [[[<span class="keyword">self</span> <span class="keyword">class</span>] alloc] init];</span><br><span class="line">    [instance setTimeInterval:interval];</span><br><span class="line">    [instance setValid:<span class="literal">YES</span>];</span><br><span class="line">    [instance setUserInfo:userInfo];</span><br><span class="line">    [instance setRepeat:yesOrNo];</span><br><span class="line">    LWMessage *msg = [[LWMessage alloc] initWithTarget:aTarget aSel:aSelector withArgument:instance at:interval];</span><br><span class="line">    msg.data = instance;</span><br><span class="line">    [instance setMessage:msg];</span><br><span class="line">    LWRunLoop *runloop = [[<span class="built_in">NSThread</span> currentThread] looper];</span><br><span class="line">    [runloop postMessage:msg];</span><br><span class="line">    <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)postMessage:(LWMessage *)msg</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSInteger</span> when = msg.when + [LWSystemClock uptimeMillions];</span><br><span class="line">    [_queue enqueueMessage:msg when:when];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/">如何去实现一个轻量级的Runloop（1）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年06月09日 - 16:06</p>
+  <p><span>最后更新:</span>2018年06月20日 - 00:06</p>
+  <p><span>原始链接:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/" title="如何去实现一个轻量级的Runloop（1）">https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/">如何去实现一个轻量级的Runloop（1）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年06月09日 - 16:06</p>
+  <p><span>最后更新:</span>2018年06月20日 - 00:06</p>
+  <p><span>原始链接:</span><a href="/2018/06/09/如何实现一个简单的RunLoop（1）/" title="如何去实现一个轻量级的Runloop（1）">https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/06/09/如何实现一个简单的RunLoop（1）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS-Runloop-IO多路复用/" rel="tag"># iOS Runloop IO多路复用</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/26/CEFGlue之回忆篇/" rel="next" title="CEFGlue之回忆篇">
+                <i class="fa fa-chevron-left"></i> CEFGlue之回忆篇
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/15/如何实现一个简单的RunLoop（2）/" rel="prev" title="如何去实现一个轻量级的Runloop（2）">
+                如何去实现一个轻量级的Runloop（2） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#整体框架"><span class="nav-number">2.</span> <span class="nav-text">整体框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWRunloop"><span class="nav-number">3.</span> <span class="nav-text">LWRunloop</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#线程如果获取LWRunLoop对象"><span class="nav-number">3.1.</span> <span class="nav-text">线程如果获取LWRunLoop对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#currentLWRunLoop内部实现"><span class="nav-number">3.2.</span> <span class="nav-text">currentLWRunLoop内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWRunloop如何运行"><span class="nav-number">3.3.</span> <span class="nav-text">LWRunloop如何运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWMessageQueue"><span class="nav-number">4.</span> <span class="nav-text">LWMessageQueue</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LWMessageQueue如何获取"><span class="nav-number">4.1.</span> <span class="nav-text">LWMessageQueue如何获取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWMessageQueue的初始化工作"><span class="nav-number">4.2.</span> <span class="nav-text">LWMessageQueue的初始化工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWMessageQueue的消息入队"><span class="nav-number">4.3.</span> <span class="nav-text">LWMessageQueue的消息入队</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWMessageQueue的消息出队"><span class="nav-number">4.4.</span> <span class="nav-text">LWMessageQueue的消息出队</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWNativeRunLoop（核心）"><span class="nav-number">5.</span> <span class="nav-text">LWNativeRunLoop（核心）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LWNativeRunLoop初始化工作"><span class="nav-number">5.1.</span> <span class="nav-text">LWNativeRunLoop初始化工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#神奇的nativeRunLoopFor"><span class="nav-number">5.2.</span> <span class="nav-text">神奇的nativeRunLoopFor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSObject"><span class="nav-number">6.</span> <span class="nav-text">NSObject</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWTimer"><span class="nav-number">7.</span> <span class="nav-text">LWTimer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#未完待续"><span class="nav-number">8.</span> <span class="nav-text">未完待续</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

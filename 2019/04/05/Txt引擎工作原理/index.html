@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。 打开文件获取文件大小和文件流1234567// 给定文件路径，获取文件大小。_fileSize = [[[NSF">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Txt引擎工作原理">
+<meta property="og:url" content="https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。 打开文件获取文件大小和文件流1234567// 给定文件路径，获取文件大小。_fileSize = [[[NSF">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-12-27T04:28:03.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Txt引擎工作原理">
+<meta name="twitter:description" content="前言最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。 打开文件获取文件大小和文件流1234567// 给定文件路径，获取文件大小。_fileSize = [[[NSF">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/"/>
+
+
+
+
+
+  <title>Txt引擎工作原理 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Txt引擎工作原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-05T23:06:59+08:00">
+                2019-04-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  9,947
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  45
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。</p>
+<h2 id="打开文件"><a href="#打开文件" class="headerlink" title="打开文件"></a>打开文件</h2><h3 id="获取文件大小和文件流"><a href="#获取文件大小和文件流" class="headerlink" title="获取文件大小和文件流"></a>获取文件大小和文件流</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 给定文件路径，获取文件大小。</span></span><br><span class="line">_fileSize = [[[<span class="built_in">NSFileManager</span> defaultManager] attributesOfItemAtPath:filePath error:<span class="literal">nil</span>] fileSize];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取文件流（如果文件较大，需要分批次读入）</span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> readSize = (_fileSize &lt; QR_MAX_GUESS_LEN ? _fileSize:QR_MAX_GUESS_LEN);</span><br><span class="line"><span class="built_in">NSData</span>* data = [_fileHandle readDataOfLength:readSize];</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">char</span>* buff = (<span class="keyword">unsigned</span> <span class="keyword">char</span>*)[data bytes];</span><br></pre></td></tr></table></figure>
+<h3 id="编码检测"><a href="#编码检测" class="headerlink" title="编码检测"></a>编码检测</h3><p>在对文件流解析之前，需要确定其编码类型。那么如何判断一个文件的编码类型呢 ？</p>
+<h4 id="有BOM文件的识别"><a href="#有BOM文件的识别" class="headerlink" title="有BOM文件的识别"></a>有BOM文件的识别</h4><p>BOM（Byte Order Mark），字节序标志，通常在文件的最开头，添加额外的几个无效字节，用来专门说明该文件是什么类型编码的文件，有的情况下BOM还带着大小端的信息。读取到文件的开头几个字节，就能明确该用什么样的编码方式解析文件流。 </p>
+<p>常见的UTF编码方式有以下这些，其中UTF-16和UTF-32还有大小端之分<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FF FE 00 00 : UTF-32/UCS-4, 小端</span><br><span class="line">00 00 FE FF : UTF-32/UCS-4, 大端</span><br><span class="line">FF FE : UTF-16, 小端</span><br><span class="line">FE FF : UTF-16, 大端</span><br><span class="line">EF BB BF : UTF-8 没有大小端之分</span><br></pre></td></tr></table></figure></p>
+<p>为什么UTF-8没有大小端的问题呢？这是因为如果一个字符使用utf-8表示，就需要将这个字符的Unicode码，编码成字节数组，所以对于字节数组写入内存时，只需要按照数组的顺序，一个一个字节写入，不存在高位和低位的问题。 所以，一个汉字在任何类型的CPU中生成的utf-8序列是一样的。</p>
+<p>另外，在微软Window操作系统中，会给utf-8文件添加BOM【EF BB BF】（虽然不需要这么做），这并不是说明UTF-8需要字节序，而是仅仅表名该文件是utf-8编码的文件。有的情况下这样多余的动作有时候反而会带来额外的麻烦，所以在编码判定过程中也应该将这样的情况考虑在内，切莫把BOM作为该文件开头正文的一部分。</p>
+<p>到此为止，打开一个文件，如果看到有BOM，就能通过识别BOM，来判断该文件的编码是UTF-16、UTF-32，UTF-8，同时判断是大端还是小端。</p>
+<h4 id="无BOM文件的识别"><a href="#无BOM文件的识别" class="headerlink" title="无BOM文件的识别"></a>无BOM文件的识别</h4><p>对于没有BOM的文件，又该如何判定它的编码类型呢？<br>这里拿UTF-8和GBK举例说明（GBK编码没有BOM，UIF-8允许含BOM，但通常没有BOM）</p>
+<p>先看UTF-8：<br>UTF-8（Unicode Transformation Format-8bit）是用以解决国际上字符的一种多字节编码，它对英文使用8位（即一个字节），中文使用24为（三个字节）来编码。UTF-8包含全世界所有国家需要用到的字符，是国际编码，通用性强。它是一种多字节编码的字符集，表示一个Unicode字符时，它可以是1个至多个字节，在表示上有规律：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1字节：0xxxxxxx </span><br><span class="line">2字节：110xxxxx 10xxxxxx </span><br><span class="line">3字节：1110xxxx 10xxxxxx 10xxxxxx </span><br><span class="line">4字节：11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</span><br><span class="line">5字节：111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx </span><br><span class="line">6字节：1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx</span><br></pre></td></tr></table></figure>
+<p>通过识别头部，就能知道以几个字节为单位进行解析，并且头部只可能出现这几种情况，之后的每个字节均是以10开头的，规律非常明显。 这样就可以根据上面的特征对字符串进行遍历来判断一个字符串是不是UTF-8编码了。</p>
+<p>再看GBK：</p>
+<p>GBK是国家标准GB2312基础上扩容后兼容GB2312的标准。GBK的文字编码是用双字节来表示的，即不论中、英文字符均使用双字节来表示，为了区分中文，将其最高位都设定成1。GBK编码就是基于区位码的，用双字节编码表示中文和中文符号。一般编码方式是：0xA0+区号，0xA0+位号。例如汉字：“安”，区位号是1618（十进制），那么“安”字的GBK编码就是 0xA0+16 0xA0+18 也就是 0xB0 0xB2。虽然是双字节显示，但是GBK的每个字节的取值也是有范围的，GBK总体编码范围为0x8140~0xFEFE，首字节在 0x81~0xFE 之间，尾字节在 0x40~0xFE 之间，剔除 xx7F 一条线。</p>
+<p>通过以上，我们可以看出虽然GBK和UTF-8的文件没有标记，但是他们的编码结果都是有鲜明特征的，我们可以很容易的通过查看文件字节序列来判断该文件是GBK还是UTF-8编码的。</p>
+<p>然而这样也带来了一定的<strong>性能消耗</strong>：必须从头到尾检测每一个字符是否都在某种编码正常的规则范围之内，例如下面的代码中，全文检测每个字符是否符合UTF-8规范。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">isUTF8</span><span class="params">( <span class="keyword">const</span> <span class="keyword">char</span> *str, <span class="keyword">int</span> length )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i, mode = <span class="number">0</span>, m2;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> ucs;</span><br><span class="line">    <span class="keyword">char</span> ch;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span>( i = <span class="number">0</span> ; i &lt; length - <span class="number">2</span> ; i++ )&#123;</span><br><span class="line">        ch = str[ i ];</span><br><span class="line">        <span class="keyword">if</span>( mode == <span class="number">0</span> )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0x80</span>) == <span class="number">0</span> ) <span class="keyword">continue</span>;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xe0</span>) == <span class="number">0xc0</span> )&#123; mode = m2 = <span class="number">1</span>; ucs = (ch&amp;<span class="number">0x1f</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xf0</span>) == <span class="number">0xe0</span> )&#123; mode = m2 = <span class="number">2</span>; ucs = (ch&amp;<span class="number">0x0f</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xf8</span>) == <span class="number">0xf0</span> )&#123; mode = m2 = <span class="number">3</span>; ucs = (ch&amp;<span class="number">0x07</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xfc</span>) == <span class="number">0xf8</span> )&#123; mode = m2 = <span class="number">4</span>; ucs = (ch&amp;<span class="number">0x03</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xfe</span>) == <span class="number">0xfc</span> )&#123; mode = m2 = <span class="number">5</span>; ucs = (ch&amp;<span class="number">0x01</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xc0</span>) != <span class="number">0x80</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            ucs &lt;&lt;= <span class="number">6</span>; ucs += (ch&amp;<span class="number">0x3f</span>);</span><br><span class="line">            mode--;</span><br><span class="line">            <span class="keyword">if</span>( !mode )&#123;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">1</span> &amp;&amp; ucs &lt; <span class="number">0x0000080</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">2</span> &amp;&amp; ucs &lt; <span class="number">0x0000800</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">3</span> &amp;&amp; ucs &lt; <span class="number">0x0010000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">4</span> &amp;&amp; ucs &lt; <span class="number">0x0200000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">5</span> &amp;&amp; ucs &lt; <span class="number">0x4000000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>获取到文件的编码格式、字节序等信息后，确定一些无意义的字节<code>_docBOMSize</code>，</p>
+<h3 id="排版设置"><a href="#排版设置" class="headerlink" title="排版设置"></a>排版设置</h3><blockquote>
+<ul>
+<li>设置显示区域</li>
+<li>设置字体类型和字体大小</li>
+<li>设置行高、行间距、段间距</li>
+</ul>
+</blockquote>
+<p>区域、行间距、段间距都比较简单，这里重点说明下字体、行高、字宽的问题</p>
+<h4 id="字体注册"><a href="#字体注册" class="headerlink" title="字体注册"></a>字体注册</h4><p>如果是系统自带的字体，那么这里无需做什么，然而对于不是内置的字体，首先要加载字体并注册：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 加载字体</span></span><br><span class="line">NSString *fontFilePath = [self getFontFilePath:fontType];</span><br><span class="line">NSString *url = [NSURL fileURLWithPath:fontFilePath];</span><br><span class="line">CGDataProviderRef fontDataProvider = CGDataProviderCreateWithURL((CFURLRef)url);</span><br><span class="line">CGFontRef newFont = CGFontCreateWithDataProvider(fontDataProvider);</span><br><span class="line">CGDataProviderRelease(fontDataProvider);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册字体</span></span><br><span class="line">CTFontManagerRegisterGraphicsFont(newFont, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取CTFontRef</span></span><br><span class="line">CTFontRef ctFont = CTFontCreateWithGraphicsFont(newFont, fontSize,<span class="literal">NULL</span>,<span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">return</span> ctFont;</span><br></pre></td></tr></table></figure></p>
+<h4 id="字宽计算"><a href="#字宽计算" class="headerlink" title="字宽计算"></a>字宽计算</h4><p>TxtEngine中涉及到的主要字符：ASCII字符、CJK字符和一些标点符号，对于每一种字体，在某个行高下，都需要去计算对应的字宽</p>
+<blockquote>
+<ul>
+<li><p>目前QQ阅读的字体有多种选择：除了自带的系统黑体，还提供了很多其它可供下载的字体：汉仪书宋、汉仪旗黑、汉仪楷体、方正兰亭、方正书宋、方正卡通、方正启体、方正行黑等，因为有字体注册功能，所以这里可以继续扩展新的字体。</p>
+</li>
+<li><p>对于每一种字体，TxtEngine支持的字体高度介于10~55</p>
+</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CacheFontSizeMin               10  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CacheFontSizeMax               55</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>对于每一种字体，在每一个行高下，都需要额外计算并缓存相应的字宽（懒加载方式）</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">unsigned</span> <span class="keyword">char</span>       _bak_ascii_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">256</span>][<span class="number">20</span>];     <span class="comment">// 字体大小|ASCII字符|字体类型</span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">char</span>       _bak_wchar_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">20</span>];          <span class="comment">// 字体大小|字体类型  </span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">char</span>       _bak_biaodian_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">18</span>][<span class="number">20</span>];   <span class="comment">// 字体大小|标点字符|字体类型</span></span><br></pre></td></tr></table></figure>
+<h4 id="ASCII字符宽度"><a href="#ASCII字符宽度" class="headerlink" title="ASCII字符宽度"></a>ASCII字符宽度</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache visible character width</span></span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; <span class="number">256</span>; ++i )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ( _bak_ascii_width[nFontSize - CacheFontSizeMin][i][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        _bak_ascii_width[ nFontSize - CacheFontSizeMin][i][nFontType] = font_character_width([_setting parseFont], (QWCHAR)(i));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>font_character_width</code>会根据当前的字体类型确定是否是系统内置字体，如果不是，还需要找到字体文件进行加载注册，最后将字体对应的<code>CTFontRef</code>返回，然后根据字体的CTFontRef和字符计算宽度<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">font_string_width_byCTFont</span><span class="params">(CTFontRef ctFont, NSString* uniChar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    UniChar *characters;</span><br><span class="line">    CGGlyph *glyphs;</span><br><span class="line">    CFIndex count = [uniChar length] ;<span class="comment">//1;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Allocate our buffers for characters and glyphs.</span></span><br><span class="line">    characters = (UniChar *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(UniChar) * count);</span><br><span class="line">    <span class="comment">//assert(characters != NULL);</span></span><br><span class="line">    </span><br><span class="line">    glyphs = (CGGlyph *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(CGGlyph) * count);</span><br><span class="line">    <span class="comment">//assert(glyphs != NULL);</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Get the characters from the string.</span></span><br><span class="line">    CFStringGetCharacters((CFStringRef)uniChar, CFRangeMake(<span class="number">0</span>, count), characters);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Get the glyphs for the characters.</span></span><br><span class="line">    CTFontGetGlyphsForCharacters(ctFont, characters, glyphs, count);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Do something with the glyphs here, if a character is unmapped</span></span><br><span class="line">    CGSize *cSize = (CGSize *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(CGSize)*count);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 英文字体可能会有小数，所以这里做四舍五入，以免英文字体挤压。</span></span><br><span class="line">    <span class="keyword">int</span> fontwidth = (<span class="keyword">int</span>) (<span class="number">0.5</span> + CTFontGetAdvancesForGlyphs(ctFont, kCTFontDefaultOrientation, glyphs, cSize, count) );</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Free our buffers</span></span><br><span class="line">    <span class="built_in">free</span>(characters);</span><br><span class="line">    <span class="built_in">free</span>(glyphs);</span><br><span class="line">    <span class="built_in">free</span>(cSize);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> fontwidth;</span><br><span class="line">   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="设置汉字宽度"><a href="#设置汉字宽度" class="headerlink" title="设置汉字宽度"></a>设置汉字宽度</h4><p>中日韩文字（CJK)宽度基本上是固定的，因此只需要计算某一个字符的宽度并缓存下来，而不是每次都计算一个字的宽度，这样可以加快排版速度。这里<code>font_character_width_2</code>的第二个参数就是取了CJK的第一个unicode 0x4E00，用来代表所有的CJK符号的宽度。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">(chr &gt;= <span class="number">0x4E00</span> &amp;&amp; chr &lt;= <span class="number">0x9FBF</span>)            <span class="comment">// 4E00-9FBF：CJK 统一表意符号 (CJK Unified Ideographs)</span></span><br><span class="line">(chr &gt;= <span class="number">0xF900</span> &amp;&amp; chr &lt;= <span class="number">0xFAFF</span>)            <span class="comment">// F900-FAFF：CJK 兼容象形文字 (CJK Compatibility Ideographs)</span></span><br><span class="line">(chr &gt;= <span class="number">0xFE30</span> &amp;&amp; chr &lt;= <span class="number">0xFE4F</span>)            <span class="comment">// FE30-FE4F：CJK 兼容形式 (CJK Compatibility Forms)</span></span><br><span class="line">(chr &gt;= <span class="number">0xFF00</span> &amp;&amp; chr &lt;= <span class="number">0xFFEF</span>)            <span class="comment">// FF00-FFEF：半型及全型形式 (Halfwidth and Fullwidth Form)全角标点、全角ASCII</span></span><br><span class="line">(chr &gt;= <span class="number">0x3200</span> &amp;&amp; chr &lt;= <span class="number">0x32FF</span>)            <span class="comment">// 3200-32FF：封闭式 CJK 文字和月份 (Enclosed CJK Letters and Months)</span></span><br><span class="line">(chr &gt;= <span class="number">0xAC00</span> &amp;&amp; chr &lt;= <span class="number">0xD7AF</span>)            <span class="comment">// 韩文拼音</span></span><br><span class="line">(chr &gt;= <span class="number">0x1100</span> &amp;&amp; chr &lt;= <span class="number">0x11FF</span>)            <span class="comment">// 韩文字母</span></span><br><span class="line">(chr &gt;= <span class="number">0x3130</span> &amp;&amp; chr &lt;= <span class="number">0x318F</span>)            <span class="comment">// 韩文兼容字母</span></span><br><span class="line">(chr &gt;= <span class="number">0x3040</span> &amp;&amp; chr &lt;= <span class="number">0x309F</span>)            <span class="comment">// 日文平假名 (Hiragana)</span></span><br><span class="line">(chr &gt;= <span class="number">0x30A0</span> &amp;&amp; chr &lt;= <span class="number">0x30FF</span>)            <span class="comment">// 日文片假名 (Katakana)</span></span><br></pre></td></tr></table></figure></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache chinese character</span></span><br><span class="line"><span class="keyword">int</span> nChineseWidth = font_character_width_2([_setting parseFont], (QWCHAR)<span class="number">0x4E00</span> ,  nFontType);</span><br><span class="line"><span class="keyword">if</span> ( _bak_wchar_width[nFontSize - CacheFontSizeMin][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">&#123;</span><br><span class="line">    _bak_wchar_width[nFontSize - CacheFontSizeMin][nFontType] = nChineseWidth;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="设置标点符号宽度"><a href="#设置标点符号宽度" class="headerlink" title="设置标点符号宽度"></a>设置标点符号宽度</h4><p>排版过程中用到的标点符号（这里是全角，半角的应该包含在ASCII字符中）主要包括以下类型</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 标点符合类型</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">unsigned</span> <span class="keyword">short</span> biaodian_array[] =</span><br><span class="line">&#123;</span><br><span class="line">    U_PUNCT_COMMA,                          <span class="comment">//  0xFF0C | ，</span></span><br><span class="line">    U_PUNCT_FULLPOINT,                      <span class="comment">//  0x3002 | 。</span></span><br><span class="line">    U_PUNCT_QUESTION,                       <span class="comment">//  0xFF1F | ？</span></span><br><span class="line">    U_PUNCT_SEMICOLON,                      <span class="comment">//  0xFF1B | ；</span></span><br><span class="line">    U_PUNCT_EXCLAMATION,                    <span class="comment">//  0xFF01 | ！</span></span><br><span class="line">    U_PUNCT_COLON,                          <span class="comment">//  0xFF1A | ：</span></span><br><span class="line">    U_PUNCT_PAUSE,                          <span class="comment">//  0x3001 | 、</span></span><br><span class="line">    U_PUNCT_LEFTSINGLEQUOTE,                <span class="comment">//  0x2018 | ‘</span></span><br><span class="line">    U_PUNCT_RIGHTSINGLEQUOTE,               <span class="comment">//  0x2019 | ’</span></span><br><span class="line">    U_PUNCT_LEFTDOUBLEQUOTE,                <span class="comment">//  0x201C | “</span></span><br><span class="line">    U_PUNCT_RIGHTDOUBLEQUOTE,               <span class="comment">//  0x201D | ”</span></span><br><span class="line">    U_PUNCT_LEFTBOOKQUOTE,                  <span class="comment">//  0x300A |《</span></span><br><span class="line">    U_PUNCT_RIGHTBOOKQUOTE,                 <span class="comment">//  0x300B | 》 </span></span><br><span class="line">    U_PUNCT_LEFTBRACKET,                    <span class="comment">//  0xFF08 |（</span></span><br><span class="line">    U_PUNCT_RIGHTBRACKET,                   <span class="comment">//  0xFF09 | ）</span></span><br><span class="line">    U_PUNCT_CONNECT,                        <span class="comment">//  0x002D | -</span></span><br><span class="line">    U_PUNCT_PERCENT,                        <span class="comment">//  0x0025 | %</span></span><br><span class="line">    U_PUNCT_SPACER,                         <span class="comment">//  0x00B7 | .</span></span><br><span class="line">    U_PUNCT_POZHE,                          <span class="comment">//  0x2014 | 破折号——</span></span><br><span class="line">    U_PUNCT_SHENGLUE,                       <span class="comment">//  0x2026 | 省略号</span></span><br><span class="line">    U_PUNCT_LEFTANCIENTEQUOTE,              <span class="comment">//  0x300C | 古体左引号「</span></span><br><span class="line">    U_PUNCT_RIGHTANCIENTEQUOTE              <span class="comment">//  0x300D | 古体右引号」</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>对于这些标点符号，会计算每一个标点符号在某种字体大小条件下的宽度，并进行缓存，计算过程和前面计算ASCII的过程一致</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache biaodian character</span></span><br><span class="line"><span class="keyword">int</span> nLen = <span class="keyword">sizeof</span>( biaodian_array ) / <span class="keyword">sizeof</span> ( <span class="keyword">unsigned</span> <span class="keyword">short</span>) ;</span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; nLen; ++i )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ( _bak_biaodian_width[ nFontSize - CacheFontSizeMin][i][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        _bak_biaodian_width[ nFontSize - CacheFontSizeMin][i][nFontType] = font_character_width_2([_setting parseFont], (QWCHAR)(biaodian_array[i]) ,  nFontType);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="排版"><a href="#排版" class="headerlink" title="排版"></a>排版</h2><p>在打开文件之后，一般都会从一个锚点进入，锚点包含2部分：段落偏移和行偏移。</p>
+<h3 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h3><p>如果锚点所在的段落链表尚未建立，便会触发段落解析逻辑。分段逻辑是根据这几个标识符来进行的：【\n\r】【\n】【\r】【\r\n】，每次都会从当前的数据流中找到下一个标识符，如果找到了，就可以根据前后两个偏移值确定一个新段落的偏移和大小</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>) NextBreaker:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *) buffcountCharInWidth</span><br><span class="line">            buffSize:(<span class="keyword">unsigned</span> <span class="keyword">long</span>) buff_size</span><br><span class="line">             buffOff:(<span class="keyword">unsigned</span> <span class="keyword">long</span> )buff_off</span><br><span class="line">              brkOff:(<span class="keyword">unsigned</span> <span class="keyword">long</span> * )brk_off</span><br><span class="line">           skipBytes:(<span class="keyword">unsigned</span> <span class="keyword">long</span> * )skip_bytes</span><br></pre></td></tr></table></figure>
+<p>以UTF-8格式为例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;第1章 下辈子也不会爱上你\r\n6月6日，星期六。\r\n    这是一个十分吉利的日子，更是一个黄道吉日。\r\n    这一日，是京城有名的富家之女梁贝璇与其男友曹瑞年的婚礼，婚礼早就被各路媒体公布出去了，好多人的眼睛都在看着这一个家室及其不匹配的婚姻，所有人都报以怀疑的态度，只是没有人会主动说出来。\r\n    此时的梁贝璇坐在宽敞明亮、奢华至极的房间内，穿着洁白定制的婚纱，脸上带着甜蜜的梦幻般的笑容。\r\n    只是这样的笑容在她收到一个快递之后就彻底的失去了......\r\n</span><br></pre></td></tr></table></figure>
+<p>这是一部分章节内容，如何进行分段呢？当然是从前往后一次遍历，逐个寻找\r\n，直到结束</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">qr_utf8_next_breaker</span><span class="params">( <span class="keyword">unsigned</span> <span class="keyword">char</span> * buff, <span class="keyword">unsigned</span> <span class="keyword">long</span> buff_size, <span class="keyword">unsigned</span> <span class="keyword">long</span> * brk_off, <span class="keyword">unsigned</span> <span class="keyword">long</span> * skip_bytes )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">bool</span> found = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   offset;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( offset = <span class="number">0</span>; offset &lt; buff_size; ++offset )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果已经到了二进制流的结尾，跳出循环。结尾判定条件：buff[offset] == 0x00</span></span><br><span class="line">        <span class="keyword">if</span> ( qr_is_end_char( buff[offset] ) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 如果找到\r，分为两种情况：\r\n和\r</span></span><br><span class="line">        <span class="keyword">if</span> ( <span class="number">0x0D</span> == buff[offset] ) <span class="comment">// \r</span></span><br><span class="line">        &#123;</span><br><span class="line">            *brk_off = offset;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( (offset + <span class="number">1</span> &lt; buff_size) &amp;&amp; (<span class="number">0x0A</span> == buff[offset + <span class="number">1</span>]) )</span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">2</span>;  <span class="comment">// \r\n</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">1</span>; <span class="comment">// \r</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            found = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果找到\n，分为两种情况：\n\r和\n</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">0x0A</span> == buff[offset] ) <span class="comment">// \n</span></span><br><span class="line">        &#123;</span><br><span class="line">            *brk_off = offset;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( (offset + <span class="number">1</span> &lt; buff_size) &amp;&amp; (<span class="number">0x0D</span> == buff[offset + <span class="number">1</span>]) )</span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">2</span>; <span class="comment">// \n\r</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">1</span>; <span class="comment">// \n</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            found = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 边界判定</span></span><br><span class="line">    <span class="keyword">if</span> (offset &gt;= buff_size)</span><br><span class="line">    &#123;</span><br><span class="line">        found = <span class="literal">false</span>;</span><br><span class="line">        *skip_bytes = buff_size;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> found;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样一次遍历后，便会找到一个段落的开始偏移和结束偏移</p>
+<h3 id="获取段落字数"><a href="#获取段落字数" class="headerlink" title="获取段落字数"></a>获取段落字数</h3><p>拿到一个段落对应的字节流之后，需要确定其对应的字符个数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)    CharCount:( <span class="keyword">unsigned</span> <span class="keyword">char</span> * )buff</span><br><span class="line">             buffSize:(<span class="keyword">unsigned</span> <span class="keyword">long</span>) buff_size</span><br><span class="line">            charCount:(<span class="keyword">unsigned</span> <span class="keyword">long</span> * )cnt</span><br></pre></td></tr></table></figure>
+<p>还是以UTF-8举例，一般情况下，utf8每一个字可能有1到3各字节<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1字节：0xxxxxxx  0000~0111 8种情况都是1个字节</span><br><span class="line">2字节：110xxxxx  1100和1101 索引为12和13的两种情况都是2个字节</span><br><span class="line">3字节：1110xxxx  1110，只有1种情况，是3个字节</span><br><span class="line">0字节：其它的都是0个字节</span><br></pre></td></tr></table></figure></p>
+<p>有了上面的基础，就可以用一个数组__bpc存放字节数，取utf8首字节的高4位，转换为索引，直接获取对应的字节数<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> __bpc[<span class="number">16</span>] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">0</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">qr_utf_char_bytes</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">char</span> ch)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">int</span>)(__bpc[ch &gt;&gt; <span class="number">4</span>]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>有了上面的铺垫，就可以快速计算某一段字节流对应的字符数。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span>   <span class="title">qr_utf8_charcnt</span><span class="params">( <span class="keyword">unsigned</span> <span class="keyword">char</span> * buff, <span class="keyword">unsigned</span> <span class="keyword">long</span> buff_size )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   chr_cnt;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   offset;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   chr_bytes;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="number">0</span> == buff_size )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( chr_cnt = <span class="number">0</span>, offset = <span class="number">0</span>; offset &lt; buff_size; ++chr_cnt )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> ( qr_is_end_char( buff[offset] ) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        chr_bytes = qr_utf_char_bytes( buff[offset] );<span class="comment">//</span></span><br><span class="line">        <span class="keyword">if</span> ( chr_bytes == <span class="number">0</span> )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( offset + chr_bytes &gt; buff_size )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        offset += chr_bytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> chr_cnt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="生成段落结构体"><a href="#生成段落结构体" class="headerlink" title="生成段落结构体"></a>生成段落结构体</h3><p>TxtEngine里面有2种段落结构体，分别是段文本<code>__struct_TextPrgf_Text</code>和段属性<code>__struct_TextPrgf</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span>        <span class="title">TextPrgf_Text_t</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span> *      <span class="title">TextPrgf_Text_ptr_t</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//段文本数据结构</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    TextPrgf_t            link;           <span class="comment">//段属性</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        line_count;</span><br><span class="line">    TextLine_ptr_t        first_line;        <span class="comment">// [strong ref]</span></span><br><span class="line">    TextLine_ptr_t        last_line;        <span class="comment">// [strong ref]</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">short</span>      *wide_buff;        <span class="comment">// Paragraph text buffer (UCS2 encoding)</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        wide_size;        <span class="comment">// Size of paragraph text buffer</span></span><br><span class="line">    QRRect              *char_rects;     <span class="comment">// character drawrect array</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>       *charactersOffsets;  <span class="comment">// 段内每个字相对文件起始位置的字节offset</span></span><br><span class="line">    <span class="keyword">long</span>                charactersCountAddOne;    <span class="comment">// 该段中字的个数加1</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span>            <span class="title">TextPrgf_t</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span> *          <span class="title">TextPrgf_ptr_t</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//段属性数据结构</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    TextPrgf_ptr_t        prev;            <span class="comment">// [weak ref]</span></span><br><span class="line">    TextPrgf_ptr_t        next;            <span class="comment">// [weak ref]</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        type;            <span class="comment">// QR_TEXT_PRGF_TYPE_XXX</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        attrib;            <span class="comment">// QR_TEXT_PRGF_ATTR_XXX</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        offset;            <span class="comment">// Offset in current charpter //..file</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        size;            <span class="comment">// Paragraph size in charpter //file</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        page_index;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        charpter_index;</span><br><span class="line">    <span class="comment">//章节尾页模型的序号</span></span><br><span class="line">    <span class="keyword">int</span>                 tail_index;</span><br><span class="line">    <span class="keyword">int</span>                 need_remove_para_space;<span class="comment">//0不需要。1需要</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>值得注意的是：段文本的第一个字段<code>link</code>正好是段属性类型，所以给定一个段文本结构体:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__struct_TextPrgf_Text textPrgf_Text;</span><br></pre></td></tr></table></figure>
+<p>可以直接强制转换<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__struct_TextPrgf textPrgf = (__struct_TextPrgf)textPrgf_Text;</span><br></pre></td></tr></table></figure></p>
+<p>前面解析了段落的开始和结束偏移，并且计算出了字符数，确定了需要申请的内存大小，此时创建段落：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//申请空间</span></span><br><span class="line">last_prgf = qr_alloc_prgf_text( chr_count+<span class="number">2</span> );<span class="comment">//add two space ericni</span></span><br><span class="line">last_prgf-&gt;need_remove_para_space = <span class="number">0</span>;</span><br><span class="line">last_prgf-&gt;tail_index = <span class="number">-1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">TextPrgf_ptr_t <span class="title">qr_alloc_prgf_text</span><span class="params">( <span class="keyword">unsigned</span> <span class="keyword">long</span> char_cnt )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    TextPrgf_Text_ptr_t  prgf = <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="number">0</span> == char_cnt )  <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    prgf = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(TextPrgf_Text_t));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">long</span> charactersCountAddOne = char_cnt + <span class="number">1</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;link.prev        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;link.next        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;link.type        = QR_TEXT_PRGF_TYPE_TEXT;</span><br><span class="line">    prgf-&gt;link.attrib    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;link.offset    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;link.size        = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;wide_buff        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;char_rects    = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;wide_size        = QR_ROUND_UP_4( (charactersCountAddOne &lt;&lt; <span class="number">1</span>) );</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;line_count    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;first_line    = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;last_line        = <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;wide_buff = <span class="built_in">malloc</span>(prgf-&gt;wide_size);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// alloc memory for char_rects</span></span><br><span class="line">    prgf-&gt;char_rects = <span class="built_in">malloc</span>(charactersCountAddOne * <span class="keyword">sizeof</span>(QRRect));</span><br><span class="line">    <span class="built_in">memset</span>(prgf-&gt;char_rects, <span class="number">0</span>, charactersCountAddOne * <span class="keyword">sizeof</span>(QRRect));</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;charactersOffsets = <span class="built_in">malloc</span>(charactersCountAddOne * <span class="keyword">sizeof</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>));</span><br><span class="line">    <span class="built_in">memset</span>(prgf-&gt;charactersOffsets, <span class="number">0</span>, charactersCountAddOne * <span class="keyword">sizeof</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span>));</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;charactersCountAddOne = charactersCountAddOne;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> (TextPrgf_ptr_t)prgf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="计算字符偏移"><a href="#计算字符偏移" class="headerlink" title="计算字符偏移"></a>计算字符偏移</h3><p>计算每个字相对文件的字节offset</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[_endcoder countCharactersOffset:&amp;_readCache[prgf_offset]</span><br><span class="line">                                  characters:chr_count</span><br><span class="line">                                    buffSize:prgf_size</span><br><span class="line">                                  baseOffset:file_offset + prgf_offset</span><br><span class="line">                            characterOffsets:text_prgf-&gt;charactersOffsets];</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)_utf8CountCharactersOffset:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *)buff</span><br><span class="line">                        characters:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)characters</span><br><span class="line">                          buffSize:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)buffSize</span><br><span class="line">                        baseOffset:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)baseOffset</span><br><span class="line">                           offsets:(<span class="keyword">unsigned</span> <span class="keyword">long</span> *)offsets</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == buff || <span class="number">0</span> == buffSize || offsets == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> characterOffset = baseOffset;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// characterIndex &lt; characters 防止offsets越界</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> <span class="keyword">long</span> characterIndex = <span class="number">0</span>, offset = <span class="number">0</span>;offset &lt; buffSize &amp;&amp; characterIndex &lt; characters;++characterIndex) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (qr_is_end_char(buff[offset])) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        *(offsets + characterIndex) = characterOffset;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// utf8每一个字有1到3各字节的可能性</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">long</span> characterBytes = qr_utf_char_bytes(buff[offset]);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (characterBytes == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (offset + characterBytes &gt; buffSize) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        offset += characterBytes;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 下一个字的偏移</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        characterOffset += characterBytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="编码转换"><a href="#编码转换" class="headerlink" title="编码转换"></a>编码转换</h3><p>将字符编码转成Unicode，并存在&amp;text_prgf-&gt;wide_buff[0]</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)    EncodeUCS2:( <span class="keyword">unsigned</span> <span class="keyword">short</span> *) dst_buff</span><br><span class="line">                    destSize:(<span class="keyword">unsigned</span> <span class="keyword">long</span> )dst_size</span><br><span class="line">                    srcBuff:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *) src_buff</span><br><span class="line">                    srcSize:(<span class="keyword">unsigned</span> <span class="keyword">long</span>) src_size</span><br><span class="line">                    convLen:(<span class="keyword">unsigned</span> <span class="keyword">long</span> * )conv_len</span><br><span class="line">                    usedBytes:(<span class="keyword">unsigned</span> <span class="keyword">long</span> * )used_bytes</span><br></pre></td></tr></table></figure>
+<p>这里以utf8转换为unicode为例：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">qr_utf8_to_ucs2</span><span class="params">( <span class="keyword">unsigned</span> <span class="keyword">short</span> * buff, <span class="keyword">unsigned</span> <span class="keyword">long</span> buff_size, <span class="keyword">unsigned</span> <span class="keyword">char</span> * utf8_str, <span class="keyword">unsigned</span> <span class="keyword">long</span> utf8_len,<span class="keyword">unsigned</span> <span class="keyword">long</span>* used_utf8_len )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   conv_len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   char_cnt = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   char_bytes;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> * us_utf8_str = (<span class="keyword">unsigned</span> <span class="keyword">char</span>*)utf8_str;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>   i;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">short</span>  tmp_ch = <span class="string">'\0'</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == us_utf8_str || buff_size &lt; <span class="number">2</span> || <span class="number">0</span> == utf8_len )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    *used_utf8_len =  <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( utf8_len &gt;= <span class="number">3</span> &amp;&amp; (us_utf8_str[<span class="number">0</span>] == <span class="number">0xEF</span> &amp;&amp; us_utf8_str[<span class="number">1</span>] == <span class="number">0xBB</span> &amp;&amp; us_utf8_str[<span class="number">2</span>] == <span class="number">0xBF</span>) )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// skip BOM</span></span><br><span class="line">        us_utf8_str += <span class="number">3</span>;</span><br><span class="line">        *used_utf8_len +=  <span class="number">3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; utf8_len; ++i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> ( <span class="string">'\0'</span> == *us_utf8_str ) <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        char_bytes = __utf8_bpc[((<span class="keyword">unsigned</span> <span class="keyword">char</span>)*us_utf8_str) &gt;&gt; <span class="number">4</span>];</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ( <span class="number">1</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            tmp_ch = (<span class="keyword">unsigned</span> <span class="keyword">short</span>)us_utf8_str[<span class="number">0</span>];</span><br><span class="line">            *used_utf8_len += char_bytes;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">2</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> ( <span class="string">'\0'</span> != us_utf8_str[<span class="number">1</span>] )</span><br><span class="line">            &#123;</span><br><span class="line">                tmp_ch = ((<span class="keyword">unsigned</span> <span class="keyword">short</span>)(us_utf8_str[<span class="number">0</span>] &amp; <span class="number">0x1F</span>) &lt;&lt; <span class="number">6</span>) | ((<span class="keyword">unsigned</span> <span class="keyword">short</span>)(us_utf8_str[<span class="number">1</span>] ^ <span class="number">0x80</span>));</span><br><span class="line">                *used_utf8_len += char_bytes;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">3</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> ( <span class="string">'\0'</span> != us_utf8_str[<span class="number">1</span>] &amp;&amp; <span class="string">'\0'</span> != us_utf8_str[<span class="number">2</span>] )</span><br><span class="line">            &#123;</span><br><span class="line">                tmp_ch = ((<span class="keyword">unsigned</span> <span class="keyword">short</span>)(us_utf8_str[<span class="number">0</span>] &amp; <span class="number">0x0F</span>) &lt;&lt; <span class="number">12</span>) | ((<span class="keyword">unsigned</span> <span class="keyword">short</span>)(us_utf8_str[<span class="number">1</span>] ^ <span class="number">0x80</span>) &lt;&lt; <span class="number">6</span>) | ((<span class="keyword">unsigned</span> <span class="keyword">short</span>)(us_utf8_str[<span class="number">2</span>] ^ <span class="number">0x80</span>));</span><br><span class="line">                *used_utf8_len += char_bytes;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            *used_utf8_len += <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( char_cnt &gt;= ((buff_size / <span class="number">2</span>) - <span class="number">1</span>) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        buff[char_cnt] = tmp_ch;</span><br><span class="line">        char_cnt += <span class="number">1</span>;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        conv_len += <span class="number">2</span>;</span><br><span class="line">        us_utf8_str += char_bytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    buff[char_cnt] = <span class="string">'\0'</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> conv_len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="确定段落类型"><a href="#确定段落类型" class="headerlink" title="确定段落类型"></a>确定段落类型</h3><p>为了确定段的具体类型，需要对段落类型进行识别</p>
+<blockquote>
+<ul>
+<li>判断一个段落是否为一个章节的标题</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)isPrafChapterTitle:( TextPrgf_Text_ptr_t) text_prgf group:(TextPrgfGroup_ptr_t)groupPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (_isLocal || groupPtr == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    BOOL isTitle = NO;</span><br><span class="line">    <span class="keyword">if</span> (groupPtr-&gt;head == <span class="literal">NULL</span> &amp;&amp; groupPtr-&gt;tail == <span class="literal">NULL</span> &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span> &amp;&amp; _offset &lt;= <span class="number">4</span>) &#123;</span><br><span class="line">        <span class="comment">//用于目录跳转和从书架打开时 group这时为空链表时判断是否为标题</span></span><br><span class="line">        isTitle = YES;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (_offset &lt;= <span class="number">4</span> || groupPtr-&gt;head != <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//用户relayout 这时group已经有链表了</span></span><br><span class="line">        <span class="keyword">if</span> (( TextPrgf_Text_ptr_t)groupPtr -&gt;head == text_prgf &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span>) &#123;</span><br><span class="line">            isTitle = YES;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (_offset &gt; <span class="number">4</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//看书看到章节中间 然后退到书架再进入阅读页的情况</span></span><br><span class="line">        <span class="keyword">if</span> (groupPtr-&gt;head == <span class="literal">NULL</span> &amp;&amp; groupPtr-&gt;tail == <span class="literal">NULL</span> &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span>) &#123;</span><br><span class="line">            isTitle = YES;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> isTitle;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>该段落是否为作者的话,作者的话可以有多个段落，每个段落都以特殊字符”\u3000\u2029\u3000”结尾。另外，作者的话的第1段以”\u2029\u3000\u2029”开始</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 是否是作者的话</span></span><br><span class="line">- (BOOL)isAuthorTipsWithParagraphFirstPtr:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *)firstPtr endPtr:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *)endPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strlen</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)endPtr) &lt; QRAuthorTipsBeforeEndMarkLength || _isLocal)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 作者的话以特殊字符"\u3000\u2029\u3000"结尾</span></span><br><span class="line">    <span class="keyword">return</span> (endPtr[<span class="number">0</span>] == <span class="number">0xe3</span> &amp;&amp; endPtr[<span class="number">1</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">2</span>] == <span class="number">0x80</span> &amp;&amp;</span><br><span class="line">            endPtr[<span class="number">3</span>] == <span class="number">0xe2</span> &amp;&amp; endPtr[<span class="number">4</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">5</span>] == <span class="number">0xa9</span> &amp;&amp;</span><br><span class="line">            endPtr[<span class="number">6</span>] == <span class="number">0xe3</span> &amp;&amp; endPtr[<span class="number">7</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">8</span>] ==<span class="number">0x80</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 是否是作者的话中的第一段</span></span><br><span class="line">- (BOOL)isFirstParagOfAuthorTipsWithFirstPtr:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *)firstPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strlen</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)firstPtr) &lt; QRAuthorTipsBeforeEndMarkLength || _isLocal)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 作者的话第一段以"\u2029\u3000\u2029"开始</span></span><br><span class="line">    <span class="keyword">return</span> (firstPtr[<span class="number">0</span>] == <span class="number">0xe2</span> &amp;&amp; firstPtr[<span class="number">1</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">2</span>] == <span class="number">0xa9</span> &amp;&amp;</span><br><span class="line">            firstPtr[<span class="number">3</span>] == <span class="number">0xe3</span> &amp;&amp; firstPtr[<span class="number">4</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">5</span>] == <span class="number">0x80</span> &amp;&amp;</span><br><span class="line">            firstPtr[<span class="number">6</span>] == <span class="number">0xe2</span> &amp;&amp; firstPtr[<span class="number">7</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">8</span>] == <span class="number">0xa9</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>该段落是否为”(本章完)”，这个是判断ptr指向的内容是否是：”(本章完)\r\n”</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)isParagraphEndStr:(<span class="keyword">unsigned</span> <span class="keyword">char</span> *)ptr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!ptr || _isLocal || <span class="built_in">strlen</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)ptr) != <span class="number">13</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 判断ptr指向的内容是否是："(本章完)\r\n"</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">return</span> *ptr == <span class="string">'('</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">1</span>) == <span class="number">0xe6</span> &amp;&amp; *(ptr + <span class="number">2</span>) == <span class="number">0x9c</span> &amp;&amp; *(ptr + <span class="number">3</span>) == <span class="number">0xac</span> &amp;&amp;        <span class="comment">// "本"utf8</span></span><br><span class="line">    *(ptr + <span class="number">4</span>) == <span class="number">0xe7</span> &amp;&amp; *(ptr + <span class="number">5</span>) == <span class="number">0xab</span> &amp;&amp; *(ptr + <span class="number">6</span>) == <span class="number">0xa0</span> &amp;&amp;        <span class="comment">// "章"utf8</span></span><br><span class="line">    *(ptr + <span class="number">7</span>) == <span class="number">0xe5</span> &amp;&amp; *(ptr + <span class="number">8</span>) == <span class="number">0xae</span> &amp;&amp; *(ptr + <span class="number">9</span>) == <span class="number">0x8c</span> &amp;&amp;        <span class="comment">// "完"utf8</span></span><br><span class="line">    *(ptr + <span class="number">10</span>) == <span class="string">')'</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">11</span>) == <span class="string">'\r'</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">12</span>) == <span class="string">'\n'</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="段落分行"><a href="#段落分行" class="headerlink" title="段落分行"></a>段落分行</h3><p>对于前面提到的段落拆分、编码转换以及字符偏移计算等，只需要执行1次即可，之后便无需更新，因为这部分信息是相对独立的，没有依赖其它的布局条件。然而，将段内文本根据当前字体、方向等条件进行布局会依赖相关设置，例如绘制区域大小、横竖屏、字体大小、字体颜色、行间距、段间距等，一旦其中的某一个设置信息发生变化，那么这里的布局也需要更新。</p>
+<p>布局的本质：根据排版设置，将一个段落生成逐行的排版结果，需要注意的是，这里不会包含高度偏移信息</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这里的代码省略了对标题的判断逻辑</span></span><br><span class="line">- (BOOL)relayoutTextPrgf:(TextPrgf_Text_ptr_t) text_prgf midOff:(<span class="keyword">unsigned</span> <span class="keyword">long</span>) mid_off group:(TextPrgfGroup_ptr_t)groupPtr</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//TODO： 排一段</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        ret_val;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        width;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        length;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        bound_w;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        index;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        max_len;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>        offset;</span><br><span class="line">    TextLine_ptr_t        text_line;</span><br><span class="line">    QRFont*             doc_font;</span><br><span class="line">    QRFont*             doc_title_font = _titleSetting.font_obj ;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> != text_prgf-&gt;last_line )</span><br><span class="line">    &#123;</span><br><span class="line">        offset = text_prgf-&gt;last_line-&gt;offset;</span><br><span class="line">        <span class="keyword">if</span> ( offset + text_prgf-&gt;last_line-&gt;length &gt;= text_prgf-&gt;wide_size )</span><br><span class="line">            <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    doc_font = _setting.font_obj;</span><br><span class="line">    <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_AUTHOR == text_prgf-&gt;link.type ||</span><br><span class="line">        QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == text_prgf-&gt;link.type) &#123;</span><br><span class="line">        doc_font = [self authorTipsSetting].font_obj;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    max_len = text_prgf-&gt;wide_size / <span class="number">2</span>;</span><br><span class="line">    bound_w = _docBoundRc.w;</span><br><span class="line">    </span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//先对0到mid_off的字符进行分行</span></span><br><span class="line">    <span class="keyword">if</span> ( mid_off &gt; <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> ( offset = <span class="number">0</span>; offset &lt; mid_off; offset += length, ++index )</span><br><span class="line">        &#123;</span><br><span class="line">            ret_val = [doc_font countCharInWidth:&amp;text_prgf-&gt;wide_buff[offset] rect:&amp;text_prgf-&gt;char_rects[offset] length:(mid_off - offset) maxWidth:bound_w outWidth:&amp;width count:&amp;length alignmeng:<span class="number">0</span>];</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( QR_OK != ret_val || <span class="number">0</span> == length ) <span class="keyword">break</span>;</span><br><span class="line">                </span><br><span class="line">            <span class="comment">//20151023 lucas 添加 英语、数字断行不切断单词</span></span><br><span class="line">            qr_relayout_english_2(&amp;text_prgf-&gt;wide_buff[offset] , mid_off - offset , <span class="number">0</span>, &amp;length);</span><br><span class="line">                </span><br><span class="line">            text_line = qr_alloc_line();</span><br><span class="line">            <span class="keyword">if</span> ( <span class="literal">NULL</span> == text_line ) <span class="keyword">break</span>;</span><br><span class="line">                </span><br><span class="line">            text_line-&gt;index    = index;</span><br><span class="line">            text_line-&gt;offset    = offset;</span><br><span class="line">            text_line-&gt;width    = width;</span><br><span class="line">            text_line-&gt;length    = length;</span><br><span class="line">            text_line-&gt;isCharpterTitle = <span class="number">0</span>;</span><br><span class="line">            qr_push_back_line( text_prgf, text_line );</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//再从mid_off到结尾的字符进行分行</span></span><br><span class="line">    <span class="keyword">for</span> ( offset = mid_off; offset &lt; max_len; offset += length, ++index )</span><br><span class="line">    &#123;</span><br><span class="line">        ret_val = [doc_font countCharInWidth:&amp;text_prgf-&gt;wide_buff[offset] rect:&amp;text_prgf-&gt;char_rects[offset] length:(max_len - offset) maxWidth:bound_w outWidth:&amp;width count:&amp;length alignmeng:<span class="number">0</span>];</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( QR_OK != ret_val || <span class="number">0</span> == length ) <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">// 20151023 lucas 添加 英语、数字断行不切断单词</span></span><br><span class="line">        qr_relayout_english_2(&amp;text_prgf-&gt;wide_buff[offset] , max_len - offset , <span class="number">0</span>, &amp;length);</span><br><span class="line">    </span><br><span class="line">        text_line = qr_alloc_line();</span><br><span class="line">        <span class="keyword">if</span> ( <span class="literal">NULL</span> == text_line ) <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">        text_line-&gt;index    = index;</span><br><span class="line">        text_line-&gt;offset    = offset;</span><br><span class="line">        text_line-&gt;width    = width;</span><br><span class="line">        text_line-&gt;length    = length;</span><br><span class="line">    </span><br><span class="line">        text_line-&gt;isCharpterTitle = <span class="number">0</span>;</span><br><span class="line">        qr_push_back_line( text_prgf, text_line );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先来解决第一个问题：这里为什么会引入mid_off呢？主要是因为有些段落可能会跨页，在这种情况下，一旦发生转屏，那么当前页面会继续从开始锚点重新排版，而跨到上一页的段落的最后一行可能无法排满一行，所以这里引入了这样的规则：跨到上页段落的最后一行只排版到锚点的前一个字符，这样前一页的最后一行就可能会发生断行现象。而对于没有跨页的段落，mid_off自然是0，不会执行前半部分逻辑</p>
+<p>分行的核心在于计算其中每个字符的宽度，并根据排版页面的宽度决定某个字符是否是当前行的最后一个字符，从而生成段落中的一行<br>另外，除了正常的计算过程外，还有一些额外的规则：</p>
+<p>(1)过滤掉emoji表情字符<br>(2)标点符号避头尾规则：</p>
+<blockquote>
+<ul>
+<li>1、当前行行尾是左引号,左括号，左书名号,左单引号  （单双），破折号,省略号 ,移到下一行</li>
+<li>2、下一行连续两个标点符号，当前行行尾不是标点符号，将当前行的最后一个字符移到下一行，避免标点出现在行首</li>
+<li>3、下一行行首只有一个标点符号，将该标点符号往上一行移</li>
+</ul>
+</blockquote>
+<p>(3)行尾逗号、句号算一半宽度<br>(4)每排版完一行，最后需要将空格考虑在内，重新计算字符的x值和宽度</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">unsigned</span> <span class="keyword">long</span>)countCharInWidth:(<span class="keyword">unsigned</span> <span class="keyword">short</span>*)buff</span><br><span class="line">                             rect:(QRRect*)char_rects</span><br><span class="line">                           length:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)len</span><br><span class="line">                         maxWidth:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)max_width</span><br><span class="line">                         outWidth:(<span class="keyword">unsigned</span> <span class="keyword">long</span>*)pwidth</span><br><span class="line">                            count:(<span class="keyword">unsigned</span> <span class="keyword">long</span>*)char_cnt</span><br><span class="line">                        alignmeng:(<span class="keyword">unsigned</span> <span class="keyword">int</span>)text_align</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>           i;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>           t;</span><br><span class="line">    <span class="keyword">signed</span> <span class="keyword">long</span>         width = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>           count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">double</span>                  space_all;</span><br><span class="line">    <span class="keyword">double</span>                  space_each;</span><br><span class="line">    <span class="keyword">bool</span>                    break_line = <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( nil == _setting || <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == pwidth || <span class="literal">NULL</span> == char_cnt )</span><br><span class="line">        <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(char_rects == <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> ( i = <span class="number">0</span>; <span class="string">'\0'</span> != buff[i] &amp;&amp; i &lt; len; ++i )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 过滤掉emoji表情字符</span></span><br><span class="line">            <span class="keyword">if</span>(buff[i]&gt;=<span class="number">0xe000</span>&amp;&amp;buff[i]&lt;=<span class="number">0xe5ff</span>)</span><br><span class="line">                buff[i] = <span class="number">0x0020</span>;<span class="comment">//空格</span></span><br><span class="line">            </span><br><span class="line">            t = [self getCharWidth:buff[i]];</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( width + t &gt; max_width ) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            width += t;</span><br><span class="line">            count += <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        *pwidth     = width;</span><br><span class="line">        *char_cnt   = count;</span><br><span class="line">        </span><br><span class="line">        [self reLayoutSkipHeadPunct:buff length:(<span class="keyword">unsigned</span>)len count:char_cnt width:pwidth];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> QR_OK;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; <span class="string">'\0'</span> != buff[i] &amp;&amp; i &lt; len; ++i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 过滤掉emoji表情字符</span></span><br><span class="line">        <span class="keyword">if</span>(buff[i]&gt;=<span class="number">0xe000</span> &amp;&amp; buff[i]&lt;=<span class="number">0xe5ff</span>) buff[i] = <span class="number">0x0020</span>;<span class="comment">//空格</span></span><br><span class="line">        </span><br><span class="line">        t = [self getCharWidth:buff[i]];</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 判断是否已经满了一行</span></span><br><span class="line">        <span class="keyword">if</span> ( width + t &gt; max_width )</span><br><span class="line">        &#123;</span><br><span class="line">            break_line = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        (char_rects+i)-&gt;x = width;</span><br><span class="line">        (char_rects+i)-&gt;w = t;</span><br><span class="line">        </span><br><span class="line">        width += t;</span><br><span class="line">        count += <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    *pwidth     = width;</span><br><span class="line">    *char_cnt   = count;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 文字不够一行，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (!break_line)   <span class="keyword">return</span> QR_OK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 标点符号避头尾规则：</span></span><br><span class="line">    <span class="comment">// 1、当前行行尾是左引号,左括号，左书名号,左单引号  （单双），破折号,省略号 ,移到下一行</span></span><br><span class="line">    <span class="comment">// 2、下一行连续两个标点符号，当前行行尾不是标点符号，将当前行的最后一个字符移到下一行，避免标点出现在行首</span></span><br><span class="line">    <span class="comment">// 3、下一行行首只有一个标点符号，将该标点符号往上一行移</span></span><br><span class="line">    [self reLayoutSkipHeadPunct:buff length:(<span class="keyword">unsigned</span>)len count:char_cnt width:pwidth];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 行尾增加了一个标点</span></span><br><span class="line">    <span class="keyword">if</span>(*char_cnt&gt;count)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;x = width;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w = *pwidth - width;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 行尾逗号、句号算一半宽度</span></span><br><span class="line">    <span class="keyword">if</span>(buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_COMMA|| </span><br><span class="line">       buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_FULLPOINT||</span><br><span class="line">       buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_PAUSE)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w /= <span class="number">2</span>;</span><br><span class="line">        *pwidth -= (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 将空格考虑在内，重新计算字符的x值和宽度</span></span><br><span class="line">    space_all = (<span class="keyword">double</span>)max_width - (*pwidth);</span><br><span class="line">    space_each = space_all/(*char_cnt);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; *char_cnt ; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+i)-&gt;x += (space_each*i);</span><br><span class="line">        <span class="keyword">if</span>(i &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            (char_rects+i<span class="number">-1</span>)-&gt;w = (char_rects+i)-&gt;x - (char_rects+i<span class="number">-1</span>)-&gt;x;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    (char_rects+i<span class="number">-1</span>)-&gt;w = max_width - (char_rects+i<span class="number">-1</span>)-&gt;x;<span class="comment">//last character width can't be forget</span></span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> QR_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于英文文章，还有一些特殊的排版规则：有些英文字符过长，可能某一行的最后一个单词（数字）到行尾还没有排版完，为了避免断行不切断单词（数字），需要遵守一些规则：</p>
+<blockquote>
+<ul>
+<li>如果下一行的开始字符不是英文字符（数字），这说明当前行完全可以容纳最后一个单词，属于正常情况，直接返回；</li>
+<li>如果下一行的开始字符是数字或者英文字符，那么就需要查看当前行最后一个字符是否是字符或者数字<br><strong> 如果是，需要统计当前行的最后一个单词（数字）长度，如果单词（数字）的长度有限，那么将该单词(数字)的前半部分移到下一行，否则不做处理；
+</strong> 如果不是，不做处理；</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">qr_relayout_english_2</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">short</span> * buff, </span></span></span><br><span class="line"><span class="function"><span class="params">                                    <span class="keyword">unsigned</span> <span class="keyword">long</span> len,</span></span></span><br><span class="line"><span class="function"><span class="params">                                    <span class="keyword">unsigned</span> <span class="keyword">long</span> offsetX,</span></span></span><br><span class="line"><span class="function"><span class="params">                                    <span class="keyword">unsigned</span> <span class="keyword">long</span> * char_cnt )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">signed</span> <span class="keyword">long</span>             i;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>           t;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span>           count = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == char_cnt ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    i = *char_cnt;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (i &gt;= len || <span class="string">'\0'</span> == buff[i] ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 如果下一行的开始字符不是数字或英文字符，这说明当前行完全可以容纳最后一个单词，属于正常情况，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (qr_is_english_digist_letter(buff[i]) == QR_FAILED) <span class="comment">// lucas 1224</span></span><br><span class="line">        <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 否则如果下一行的开始字符是数字或者英文字符，那么就需要统计当前行的最后一个单词长度</span></span><br><span class="line">    t = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> ( i = (*char_cnt) - <span class="number">1</span>; i &gt;= <span class="number">0</span> &amp;&amp; <span class="string">'\0'</span> != buff[i] ; --i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (qr_is_english_digist_letter(buff[i]) == QR_FAILED)</span><br><span class="line">            <span class="keyword">if</span> (qr_is_skip_punct_letter_tail_forbid(buff[i]) == QR_FAILED) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        t++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (i &lt; <span class="number">0</span>  &amp;&amp; offsetX == <span class="number">0</span> ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 将单词的前半部分挪到下一行</span></span><br><span class="line">    count = *char_cnt;</span><br><span class="line">    count -= t;</span><br><span class="line">    *char_cnt   = count;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果追溯到行首，并且单词的字符个数已经超过了10个，但是单词仍然没有结束，此时还原回去，不做处理</span></span><br><span class="line">    <span class="keyword">if</span>(*char_cnt == <span class="number">0</span> &amp;&amp; t &gt; <span class="number">10</span>)<span class="comment">//连续英文超过10个就断开 ericni 2012.10.09</span></span><br><span class="line">        *char_cnt += t;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> QR_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="插入段处理"><a href="#插入段处理" class="headerlink" title="插入段处理"></a>插入段处理</h3><p>业务层要插入到排版里面的数据</p>
+<blockquote>
+<ul>
+<li>有的需要插入到段落中间，例如神想法，而有的需要插入到段落尾部，例如章尾的各种业务数据：文字广告、图片广告、QA问答、卡牌、广点通数据等等。</li>
+<li>这些插入的段落中有的需要向正文一样进行排版，例如作者的话，其排版规则和正文是一致的，除了字体、字体大小和颜色可能不同，而有的仅仅是需要占位，占位大小由业务层决定，引擎在排版完成后，需要将占位的坐标传递给业务层，让业务层在排版预留的占位区域内完成业务逻辑</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">TextPrgf_ptr_t custom_prgf = qr_alloc_prgf_space();</span><br><span class="line"><span class="keyword">if</span> (custom_prgf) &#123;</span><br><span class="line">    custom_prgf-&gt;type = QR_TEXT_PRGF_TYPE_CUSTOM;</span><br><span class="line">    custom_prgf-&gt;size = <span class="number">0</span>;</span><br><span class="line">    custom_prgf-&gt;tail_index = i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>插入逻辑如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)_insertPrgf:(TextPrgf_ptr_t)dstPrgf</span><br><span class="line">         beforePrgf:(TextPrgf_ptr_t)srcPrgf</span><br><span class="line">        atPrgfGroup:(TextPrgfGroup_ptr_t)prgfGroup</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (dstPrgf == <span class="literal">NULL</span> ||</span><br><span class="line">        srcPrgf == <span class="literal">NULL</span> ||</span><br><span class="line">        prgfGroup == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (srcPrgf == _currPage.beginPrgf &amp;&amp;</span><br><span class="line">        _currPage.beginLine.ref != <span class="literal">NULL</span> &amp;&amp;</span><br><span class="line">        _currPage.beginLine.ref-&gt;prev == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        _currPage.beginPrgf = dstPrgf;</span><br><span class="line">        [self setFirstLine:_currPage.beginPrgf];</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    _nextPage.isValid = NO;</span><br><span class="line">    _prevPage.isValid = NO;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (srcPrgf-&gt;prev == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (srcPrgf != prgfGroup-&gt;head) &#123;</span><br><span class="line">            <span class="comment">// 说明src不在prgfGroup中</span></span><br><span class="line">            <span class="comment">//</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        dstPrgf-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">        dstPrgf-&gt;next = srcPrgf;</span><br><span class="line">        srcPrgf-&gt;prev = dstPrgf;</span><br><span class="line">        prgfGroup-&gt;head = dstPrgf;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        dstPrgf-&gt;prev = srcPrgf-&gt;prev;</span><br><span class="line">        dstPrgf-&gt;next = srcPrgf;</span><br><span class="line">        srcPrgf-&gt;prev = dstPrgf;</span><br><span class="line">        dstPrgf-&gt;prev-&gt;next = dstPrgf;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    prgfGroup-&gt;count += <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h2><p>有了排版过程的各种前期准备，渲染过程就相对简单了：<br>（1）准备好画布、画笔、颜料<br>（2）找到当前页的首段落指针和首行指针；<br>（3）确定好行高、行间距、段间距；</p>
+<p>逐行根据排版得到每个字符的x值和w值绘制字符，直到当前画布无法容纳为止；<br>这里的渲染过程省略了一些代码，方便流程梳理<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)repaint:(QRCanvas *)canvas rect:(QRRect *)rect</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 各种数据准备</span></span><br><span class="line">    ...</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// 开始绘制</span></span><br><span class="line">    [canvas drawTextBatchStart:<span class="number">0</span> length:<span class="number">0</span> destinationRect:<span class="number">0</span> alignment:align_flag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 设置高度区域</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> yOffset = _docBoundRc.y;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> yOffsetMax = _docBoundRc.y+_docBoundRc.h-_fontHeight;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 设置绘制区域</span></span><br><span class="line">    [self recalc];</span><br><span class="line">    draw_rect.x = _docBoundRc.x;</span><br><span class="line">    draw_rect.y = yOffset;</span><br><span class="line">    draw_rect.w = _docBoundRc.w;</span><br><span class="line">    draw_rect.h = _fontHeight;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 设置画笔颜色</span></span><br><span class="line">    UIColor *lineColor =  [QRThemeColorWithKey(kGlobalQRReadViewTextSelectionMainColor) getValue];</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (; yOffset &lt; yOffsetMax &amp;&amp; <span class="literal">NULL</span> != p_curr_prgf;)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_SPACE == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// 空段不处理</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_TEXT == p_curr_prgf-&gt;type ||</span><br><span class="line">                 QR_TEXT_PRGF_TYPE_AUTHOR == p_curr_prgf-&gt;type ||</span><br><span class="line">                 QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == p_curr_prgf-&gt;type)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 获取某段落开始绘制的行</span></span><br><span class="line">            text_prgf = (TextPrgf_Text_ptr_t)p_curr_prgf;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (p_curr_prgf == _currPrgf) &#123;</span><br><span class="line">                p_curr_line = _currLine.ref;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                p_curr_line = text_prgf-&gt;first_line;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (text_prgf-&gt;line_count &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> curLineH = <span class="number">0</span>;</span><br><span class="line">            QRSetting *fontSetting = nil;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 逐行绘制</span></span><br><span class="line">            <span class="keyword">for</span> (; yOffset &lt; yOffsetMax &amp;&amp; <span class="literal">NULL</span> != p_curr_line;) &#123;</span><br><span class="line">                draw_rect.y = yOffset;</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_AUTHOR == p_curr_prgf-&gt;type ||</span><br><span class="line">                         QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">                    fontSetting = [self authorTipsSetting];</span><br><span class="line">                    curLineH = [self authorTipsLineHeight];</span><br><span class="line">                    [canvas setContentFont:[fontSetting getFontSize:FontState_Render] Type:[fontSetting getFontType:FontState_Render]];</span><br><span class="line">                    [canvas setPenColor:textcolor];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span> &#123;</span><br><span class="line">                    curLineH = _lineHeight;</span><br><span class="line">                    [canvas setContentFont:[_setting getFontSize:FontState_Render] Type:[_setting getFontType:FontState_Render]];</span><br><span class="line">                    fontSetting = _setting;</span><br><span class="line">                    [canvas setPenColor:textcolor];</span><br><span class="line">                &#125;</span><br><span class="line">                </span><br><span class="line">                QRFont *currentFont = fontSetting.font_obj;</span><br><span class="line">                <span class="keyword">unsigned</span> <span class="keyword">int</span> currentFontHeight = <span class="number">0</span>;</span><br><span class="line">                [currentFont getHeight:&amp;currentFontHeight];</span><br><span class="line">                draw_rect.h = currentFontHeight;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">//画一行文字</span></span><br><span class="line">                [canvas drawTextBatchDoing:(text_prgf-&gt;wide_buff + p_curr_line-&gt;offset)</span><br><span class="line">                                    inRect:(QRRect *)(text_prgf-&gt;char_rects + p_curr_line-&gt;offset)</span><br><span class="line">                                    length:p_curr_line-&gt;length</span><br><span class="line">                           destinationRect:(QRRect *)&amp;draw_rect</span><br><span class="line">                                 alignment:align_flag];</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 增加偏移值</span></span><br><span class="line">                yOffset += curLineH;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 和高亮区间有重合就画高亮，全文搜索高亮显示会走到这里（代码省略）</span></span><br><span class="line">                ...</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 段评气泡绘制（代码省略）</span></span><br><span class="line">                ...</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 指向下一行</span></span><br><span class="line">                p_curr_line = p_curr_line-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 段间距偏移</span></span><br><span class="line">            <span class="keyword">if</span> (p_curr_prgf-&gt;need_remove_para_space == <span class="number">1</span>) &#123;</span><br><span class="line">                yOffset -= _lineSpace/<span class="number">2</span>;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                yOffset += _paraSpace;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_BOTTOMMENU == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// 底部4tab入口绘制(代码省略)</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_EXCELLENTPARACOMMENT == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// 神想法绘制(代码省略)</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_CUSTOM == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// 自定义模块（代码省略）</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 指向下一段</span></span><br><span class="line">        p_curr_prgf = p_curr_prgf-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 结束绘制</span></span><br><span class="line">    [canvas drawTextBatchEnd:<span class="number">0</span> length:<span class="number">0</span> destinationRect:<span class="number">0</span> alignment:<span class="number">0</span>];</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里最后的真正绘制还是系统的方法：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[text drawAtPoint:<span class="built_in">CGPointMake</span>(x, y) withAttributes:@&#123;<span class="built_in">NSFontAttributeName</span> : gc-&gt;fontBatch, <span class="built_in">NSForegroundColorAttributeName</span> : textColor&#125;];</span><br></pre></td></tr></table></figure></p>
+<p>有一些额外的信息需要注意：<br>（1）绘制高亮区域，例如有些笔记划线，所以每绘制完一行，都要去进行判断；<br>（2）在每个文字段的结尾判断是否需要绘制段评气泡；<br>（3）中间遇到一些定制的业务信息，根据给定的高度预留位置；</p>
+<h2 id="翻页"><a href="#翻页" class="headerlink" title="翻页"></a>翻页</h2><p>当前页已经渲染完成，此时如果想移动到下一页或者上一页，就需要寻找下一页的开始锚点或者上一页的开始锚点。TxtEngine主要用到了下面的几个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)moveNextPage;</span><br><span class="line">- (<span class="built_in">BOOL</span>)movePrevPage;</span><br><span class="line">- (<span class="built_in">BOOL</span>)isTop;</span><br><span class="line">- (<span class="built_in">BOOL</span>)isBottom;</span><br></pre></td></tr></table></figure>
+<p>前两个方法的逻辑和渲染方法的逻辑大概是一致的，只是整个过程中仅仅计算Y的偏移，而不进行绘制<br>（1）moveNextPage：根据当前页的锚点，逐行排版到当前页的结尾，然后找到下一页的开始段落偏移和行偏移；<br>（2）movePrevPage：根据当前页的锚点，倒着排版到上一页的开始，找到上一页的开始段落偏移和行偏移；</p>
+<p>这里有几个缺陷：</p>
+<blockquote>
+<ul>
+<li>当前页已经渲染完成，寻找下一页的开始锚点只需要根据当前页的尾指针就可以很快定位，无需大循环跑一遍，遗憾的是，尽管很早之前就引入了<code>TxtPage</code>，里面就包含尾指针，却未能利用起来；这也是斯雨目前正在努力做的事情；</li>
+<li>判断是否是当前章的结尾<code>isBottom</code>，也是只需要根据尾指针进行判断，遗憾的是，<code>isBottom</code>也在跑着大循环圈；</li>
+<li>无论是哪个方法，每次跑完循环，都不做任何缓存，导致大圈会执行很多次；</li>
+<li>前面这两个循环和渲染的循环存在着一定的误差，有时候会造成段落丢失或者重复排版的现象。</li>
+</ul>
+</blockquote>
+<p>如果能用<code>TxtPage</code>记录下当前页面的开始指针和结束指针，一方面保证每一页的排版和渲染过程只走1次，那么可以去除很多没有必要的性能消耗，另一方面保证渲染和排版的结果是一致的，省去很多烦人的排版问题<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">TxtPage</span> : <span class="title">NSObject</span></span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   TextPrgf_ptr_t beginPrgf;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   LinePos_t      beginLine;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   TextPrgf_ptr_t endPrgf;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   LinePos_t      endLine</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="段落缓存"><a href="#段落缓存" class="headerlink" title="段落缓存"></a>段落缓存</h3><p>前后翻页的时候往往首先需要判定当前内存中构建的段落是否足够构建上一页或者下一页：<br>（1）有的情况下，章节文件较大，可能无法一次性将章节文件全部读入，<br>（2）有的情况下，从章节中间的某个锚点进入，此时只加载当前锚点之后的数据流，此时往前翻页的时候，就需要加载锚点之前的数据流，构建之前的段落。</p>
+<p>这里的判定是设置了一个阈值：cache_bytes = 8 * 1024</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *功能：从上往下可用的缓存是否足够</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">- (BOOL)enoughUp2down:(TextPrgf_ptr_t)from_prgf cacheBytes:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)cache_bytes</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == from_prgf) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == _prgfGroup.tail) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果已经是最后一段，offset标识</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.tail-&gt;offset + _prgfGroup.tail-&gt;size &gt;= _fileSize) &#123;</span><br><span class="line">        <span class="keyword">return</span> YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果已经是最后一段，类型标识</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.tail-&gt;type == QR_TEXT_PRGF_TYPE_BOTTOMMENU) &#123;</span><br><span class="line">        <span class="keyword">return</span> YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 判断最后一段到当前段落之间的offset差距是否大于 8 * 1024</span></span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> temp_size = (<span class="keyword">long</span> <span class="keyword">long</span>)(_prgfGroup.tail-&gt;offset + _prgfGroup.tail-&gt;size) - (<span class="keyword">long</span> <span class="keyword">long</span>)(from_prgf-&gt;offset + from_prgf-&gt;size);</span><br><span class="line">    <span class="keyword">return</span> temp_size &gt;= (<span class="keyword">long</span> <span class="keyword">long</span>)cache_bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *功能：从下往上可用的缓存是否足够</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">- (BOOL)enoughDown2up:(TextPrgf_ptr_t)from_prgf cacheBytes:(<span class="keyword">unsigned</span> <span class="keyword">long</span>)cache_bytes</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> temp_size;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == _prgfGroup.head) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == from_prgf) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果当前段落已经是首段，说明之前已经没有数据，无需再缓存</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.head-&gt;offset &lt;= _docBOMSize) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 判断当前段落的偏移到首段偏移之间的差距是否大于 8 * 1024</span></span><br><span class="line">    temp_size = from_prgf-&gt;offset - _prgfGroup.head-&gt;offset;</span><br><span class="line">    <span class="keyword">return</span> (temp_size &gt;= cache_bytes ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>新加载的缓存会立刻被解析为段落链表，包括段落拆分、编码转换、及字符偏移等，并且将段内文本根据当前字体、方向等条件进行布局。最后将新缓存解析的结果<code>prgf_group</code> merge 到总的段落组中<code>_prgfGroup</code>中<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qr_merge_front_prgf( &amp;_prgfGroup, &amp;prgf_group );</span><br></pre></td></tr></table></figure></p>
+<p>在线书的章节文件普遍都比较小，某个章节对应的段落链表大部分情况下都会被缓存到内存中，然而碰到文件比较大的情况时（例如导入书），段落链表就不能一直缓存到内存中，需要根据当前阅读的偏移值，前后缓存一定距离的段落，在这个距离之外的段落就需要清除掉。<br>具体的逻辑可以参考：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>) recycleFromTop:(<span class="keyword">unsigned</span> <span class="keyword">long</span>) recycle_size;</span><br><span class="line">- (<span class="keyword">void</span>) recycleFromBottom:(<span class="keyword">unsigned</span> <span class="keyword">long</span> )recycle_size;</span><br></pre></td></tr></table></figure></p>
+<h3 id="通用思路"><a href="#通用思路" class="headerlink" title="通用思路"></a>通用思路</h3><p>对于在线书，其章节文件本身就比较小，完全可以尝试下新的思路：<strong>将章节文件内容一次性全部读入，段落拆分、编码转换、分行，然后从头到尾根据当前设置进行分页，并将分页结果缓存下来，每次渲染直接拿页码去获取页面的开始指针和结束指针直接绘制，这样就不会存在正翻和倒翻的区别了，更不会存在段落丢失或者重复排版的现象</strong></p>
+<h2 id="断章"><a href="#断章" class="headerlink" title="断章"></a>断章</h2><p>何为断章？有的文件中可能包含多个章节，并且除了该文件外，没有其它任何信息，这样就需要根据文件内容确定章节信息（章节个数，每个章节标题、内容和起始偏移等）。而确定的过程就是寻找”第xxx章（章节回卷篇部）”的过程，而寻找这些字符的过程和前面寻找\n\r的过程是极其类似的<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">short</span>    __charset_spc[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// （半角空格，TAB，全角空格）</span></span><br><span class="line">    <span class="number">0x0020</span>,<span class="number">0x0009</span>,<span class="number">0x3000</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">short</span>    __charset_1st[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 第</span></span><br><span class="line">    <span class="number">0x7B2C</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">short</span>    __charset_2nd[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 零一二三四五六七八九十百千零壹贰叁肆伍陆柒捌玖拾佰仟0123456789</span></span><br><span class="line">    <span class="number">0x96F6</span>,<span class="number">0x4E00</span>,<span class="number">0x4E8C</span>,<span class="number">0x4E09</span>,<span class="number">0x56DB</span>,<span class="number">0x4E94</span>,<span class="number">0x516D</span>,<span class="number">0x4E03</span>,<span class="number">0x516B</span>,<span class="number">0x4E5D</span>,</span><br><span class="line">    <span class="number">0x5341</span>,<span class="number">0x767E</span>,<span class="number">0x5343</span>,<span class="number">0x96F6</span>,<span class="number">0x58F9</span>,<span class="number">0x8D30</span>,<span class="number">0x53C1</span>,<span class="number">0x8086</span>,<span class="number">0x4F0D</span>,<span class="number">0x9646</span>,</span><br><span class="line">    <span class="number">0x67D2</span>,<span class="number">0x634C</span>,<span class="number">0x7396</span>,<span class="number">0x62FE</span>,<span class="number">0x4F70</span>,<span class="number">0x4EDF</span>,<span class="number">0x0030</span>,<span class="number">0x0031</span>,<span class="number">0x0032</span>,<span class="number">0x0033</span>,</span><br><span class="line">    <span class="number">0x0034</span>,<span class="number">0x0035</span>,<span class="number">0x0036</span>,<span class="number">0x0037</span>,<span class="number">0x0038</span>,<span class="number">0x0039</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">short</span>    __charset_3rd[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 章节回卷篇部</span></span><br><span class="line">    <span class="number">0x7AE0</span>,<span class="number">0x8282</span>,<span class="number">0x56DE</span>,<span class="number">0x5377</span>,<span class="number">0x7BC7</span>,<span class="number">0x90E8</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>文章尚有诸多不足，后续完善</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2019/04/05/Txt引擎工作原理/">Txt引擎工作原理</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2019年04月05日 - 23:04</p>
+  <p><span>最后更新:</span>2020年12月27日 - 12:12</p>
+  <p><span>原始链接:</span><a href="/2019/04/05/Txt引擎工作原理/" title="Txt引擎工作原理">https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2019/04/05/Txt引擎工作原理/">Txt引擎工作原理</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2019年04月05日 - 23:04</p>
+  <p><span>最后更新:</span>2020年12月27日 - 12:12</p>
+  <p><span>原始链接:</span><a href="/2019/04/05/Txt引擎工作原理/" title="Txt引擎工作原理">https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/04/05/Txt引擎工作原理/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/01/Txt引擎之切章重构之路/" rel="next" title="Txt引擎之切章重构之路">
+                <i class="fa fa-chevron-left"></i> Txt引擎之切章重构之路
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/14/HumbleAssetCatalog/" rel="prev" title="Humble Assets Catalog">
+                Humble Assets Catalog <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#打开文件"><span class="nav-number">2.</span> <span class="nav-text">打开文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#获取文件大小和文件流"><span class="nav-number">2.1.</span> <span class="nav-text">获取文件大小和文件流</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编码检测"><span class="nav-number">2.2.</span> <span class="nav-text">编码检测</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#有BOM文件的识别"><span class="nav-number">2.2.1.</span> <span class="nav-text">有BOM文件的识别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#无BOM文件的识别"><span class="nav-number">2.2.2.</span> <span class="nav-text">无BOM文件的识别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#排版设置"><span class="nav-number">2.3.</span> <span class="nav-text">排版设置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#字体注册"><span class="nav-number">2.3.1.</span> <span class="nav-text">字体注册</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#字宽计算"><span class="nav-number">2.3.2.</span> <span class="nav-text">字宽计算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ASCII字符宽度"><span class="nav-number">2.3.3.</span> <span class="nav-text">ASCII字符宽度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#设置汉字宽度"><span class="nav-number">2.3.4.</span> <span class="nav-text">设置汉字宽度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#设置标点符号宽度"><span class="nav-number">2.3.5.</span> <span class="nav-text">设置标点符号宽度</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#排版"><span class="nav-number">3.</span> <span class="nav-text">排版</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分段"><span class="nav-number">3.1.</span> <span class="nav-text">分段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#获取段落字数"><span class="nav-number">3.2.</span> <span class="nav-text">获取段落字数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成段落结构体"><span class="nav-number">3.3.</span> <span class="nav-text">生成段落结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算字符偏移"><span class="nav-number">3.4.</span> <span class="nav-text">计算字符偏移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编码转换"><span class="nav-number">3.5.</span> <span class="nav-text">编码转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#确定段落类型"><span class="nav-number">3.6.</span> <span class="nav-text">确定段落类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#段落分行"><span class="nav-number">3.7.</span> <span class="nav-text">段落分行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插入段处理"><span class="nav-number">3.8.</span> <span class="nav-text">插入段处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#渲染"><span class="nav-number">4.</span> <span class="nav-text">渲染</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#翻页"><span class="nav-number">5.</span> <span class="nav-text">翻页</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#段落缓存"><span class="nav-number">5.1.</span> <span class="nav-text">段落缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通用思路"><span class="nav-number">5.2.</span> <span class="nav-text">通用思路</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#断章"><span class="nav-number">6.</span> <span class="nav-text">断章</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

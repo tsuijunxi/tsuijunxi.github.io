@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下：可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…路漫漫其修远兮……不管怎样，词法分析篇也">
+<meta name="keywords" content="JavaScriptCore">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析4-语法分析篇">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下：可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…路漫漫其修远兮……不管怎样，词法分析篇也">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/04.png">
+<meta property="og:updated_time" content="2018-11-04T16:00:42.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析4-语法分析篇">
+<meta name="twitter:description" content="前言在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下：可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…路漫漫其修远兮……不管怎样，词法分析篇也">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析4-语法分析篇 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析4-语法分析篇</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-02T00:32:58+08:00">
+                2018-08-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,581
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  32
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="http://lingyuncxb.com/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-3-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/" target="_blank" rel="noopener">JavaScriptCore引擎深度解析3—词法分析篇</a>一文中，我们提到：<code>Lexer</code>是作为<code>Parser</code>的一个成员而存在的，主要目的就是为<code>Parser</code>提供一个个的<code>JSToken</code>，依赖图如下：<br><img src="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/01.png" width="100%"><br>可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…<br>路漫漫其修远兮……<br>不管怎样，词法分析篇也算是为我们的继续分析打了一些基础，我们继续来分析，尽可能在本篇把上图的下半部分分析完成。<br><strong>注：有些源码过长，为了代码清晰便于分析，会删除一些逻辑，这并不意味这删除的代码逻辑不重要，如果想看全部源码，建议去看下源码工程对应的文件</strong></p>
+<h2 id="语法分析概述"><a href="#语法分析概述" class="headerlink" title="语法分析概述"></a>语法分析概述</h2><p>我们知道编译原理的语法分析有自顶向下和自底向上两种：</p>
+<blockquote>
+<ul>
+<li><p>自顶向下分析法：从分析树的顶部(根节点)向底部(叶节点)方向构造分析树，而<strong>递归下降分析</strong>是自顶向下语法分析的通用形式，它可能需要回溯，导致效率较低，所以会引入预测分析，通过在输入中向前看固定个数(k)符号来选择正确的产生式，其中最典型的就是LL(1)文法（消除二义性、消除左递归、消除回溯）。在LL(1)文法的基础上，甚至会继续计算文法的FIRST集、FOLLOW集和SELECT集，进一步引入预测分析表，根据预测分析表进行产生式的选择。</p>
+</li>
+<li><p>自底向上分析法：从分析树的底部(叶节点)向顶部(根节点)方向构造分析树，而自底向上语法分析的通用框架是”移入-归约分析”，而LR文法是最大的、可以构造出相应<br>移入-归约语法分析器的文法类，最具代表性的有LR(0)、SLR、LR(1)、LASR几类。</p>
+</li>
+</ul>
+</blockquote>
+<p>而我们本文要讨论的JavaScript的语法分析采用的递归下降法，这是一种适合手写语法编译器的方法，且非常简单。递归下降法对语言所用的文法有一些限制，但递归下降是现阶段主流的语法分析方法，因为它可以由开发人员高度控制，在提供错误信息方面也很有优势。</p>
+<h2 id="语法树"><a href="#语法树" class="headerlink" title="语法树"></a>语法树</h2><p>我们知道，JavaScriptCore词法分析的输入是一个个的JSToken，而输出是一棵语法分析树。<br>例如，我们有如下的JavaScript代码：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (x &gt; <span class="number">10</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span>(x &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            sum += x;</span><br><span class="line">            x--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过语法分析将得到如下的简化版本语法树：<br><img src="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/06.png" width="100%"></p>
+<h3 id="语法树节点"><a href="#语法树节点" class="headerlink" title="语法树节点"></a>语法树节点</h3><p>在了解语法树细节之前，我们先来看下语法树的节点，如下图所示<br><img src="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/02.png" width="100%"><br><a href="http://on-img.com/chart_image/5ba2658fe4b0bd4db944af74.png" target="_blank" rel="noopener">高清版本传送门</a></p>
+<p>上图容纳了语法分析树中的绝大部分节点，可以看出，最重要的节点当属<code>ExpressionNode</code>和<code>StatementNode</code>节点，图中的大部分节点都继承自这两个节点。</p>
+<blockquote>
+<ul>
+<li><code>StatementNode</code>，基本语句节点，它的子节点主要是用来描述语言结构，例如<br>(1)顺序结构：<code>ClassDeclNode</code>、<code>DeclarationStateMentNode</code><br>(2)条件结构：<code>IFElseNode</code>、<code>SwitchNode</code><br>(3)循环结构：<code>WhileNode</code>、<code>ForNode</code>、<code>DoWhileNode</code><br>(4)还有一个主要的节点是<code>ScopeNode</code>，用来描述区域</li>
+<li><code>ExpressionNode</code>，表达式节点，它的子节点主要用来描述各种表达式<br>(1)<code>ConstantNode</code>，常量节点，它又衍生出字符串节点、Bool节点、整形、浮点型节点<br>(2)<code>BinaryOpNode</code>，两目运算符，衍生出加、减、乘、除、模、左移、右移等运算符节点<br>(3)此外，还有正则表达式节点、this节点、super节点等</li>
+</ul>
+</blockquote>
+<h3 id="节点内存管理"><a href="#节点内存管理" class="headerlink" title="节点内存管理"></a>节点内存管理</h3><p>ParserArenaFreeable &amp; ParserArenaDeletable</p>
+<p>从图中可以看出，大部分Node节点追溯到根节点，都会到<code>ParserArenaFreeable</code>类，它重写了C++的<code>new</code>操作符，主要是实现自己的内存管理方式，不再是默认的的new、delete对象机制。如果熟悉C++，就会发现这和C++的<code>placement new/delete</code>的机制如出一辙：它主要是反复使用一块较大的动态分配成功的内存来构造不同类型的对象或者它们的数组。例如可以先申请一个足够大的字符数组，然后当需要时在它上面构造不同类型的对象或数组。它不用担心内存分配失败，因为它根本不分配内存，它只是调用对象的构造函数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ParserArenaFreeable</span> &#123;</span></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span>* <span class="keyword">operator</span> <span class="title">new</span><span class="params">(<span class="keyword">size_t</span>, ParserArena&amp;)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span>* ParserArenaFreeable::<span class="function"><span class="keyword">operator</span> <span class="title">new</span><span class="params">(<span class="keyword">size_t</span> size, ParserArena&amp; parserArena)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> parserArena.allocateFreeable(size);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li>ParserArenaFreeable objects are freed when the arena is deleted.<br><strong>Destructors are not called</strong>. Clients must not call delete on such objects<br>注意：<code>ParserArenaFreeable</code>的析构函数是不会被调用的，所以Node节点如果继承自<code>ParserArenaFreeable</code>，就不要去实现析构函数了，即使写了，也不会被调用！</li>
+</ul>
+</blockquote>
+<p>例如，用如下方式创建一个字符串节点<code>StringNode</code>，其中<code>ParserArena&amp; m_parserArena</code><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ExpressionNode* <span class="title">createString</span><span class="params">(<span class="keyword">const</span> JSTokenLocation&amp; location, <span class="keyword">const</span> Identifier* <span class="built_in">string</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;       </span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> (m_parserArena) StringNode(location, *<span class="built_in">string</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>实际上还有一个<code>ParserArenaDeletable</code>，它和<code>ParserArenaFreeable</code>很类似，除了 <strong>可以调用析构函数</strong>，所以要想节点被调用析构函数，做一些释放逻辑的话，可以选择继承<code>ParserArenaDeletable</code>。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">ParserArenaDeletable</span> &#123;</span></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="keyword">virtual</span> ~ParserArenaDeletable() &#123; &#125;</span><br><span class="line">        <span class="function"><span class="keyword">void</span>* <span class="keyword">operator</span> <span class="title">new</span><span class="params">(<span class="keyword">size_t</span>, ParserArena&amp;)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<ul>
+<li>ParserArenaDeletable objects are deleted when the arena is deleted.<br><strong>Destructors can be called</strong>. Clients must not call delete directly on such objects.</li>
+</ul>
+</blockquote>
+<p>如果想进一步探索内存分配机制，可以看下类<code>ParserArena</code>的实现：<br>1、两个比较重要的alloc方法<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">allocateFreeable</span><span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 字节对齐</span></span><br><span class="line">    <span class="keyword">size_t</span> alignedSize = alignSize(size);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果当前的内存块不够，进行扩容，并将扩容地址记录到m_freeablePools中</span></span><br><span class="line">    <span class="keyword">if</span> ((m_freeablePoolEnd - m_freeableMemory) &lt; alignedSize))</span><br><span class="line">        allocateFreeablePool();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分配地址</span></span><br><span class="line">    <span class="keyword">void</span>* block = m_freeableMemory;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 修改可用地址数值</span></span><br><span class="line">    m_freeableMemory += alignedSize;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> block;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">allocateDeletable</span><span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 首先调用allocateFreeable进行内存分配</span></span><br><span class="line">    ParserArenaDeletable* deletable = <span class="keyword">static_cast</span>&lt;ParserArenaDeletable*&gt;(allocateFreeable(size));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将分配的地址添加到m_deletableObjects容器中，方便后续调用析构函数</span></span><br><span class="line">    m_deletableObjects.append(deletable);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回地址</span></span><br><span class="line">    <span class="keyword">return</span> deletable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>2、ParserArena的析构函数<br>首先对于<code>m_deletableObjects</code>的每个对象，要调用其析构函数，然后将之前记录到<code>m_freeablePools</code>中的每个地址都进行释放<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">ParserArena::~ParserArena()</span><br><span class="line">&#123;</span><br><span class="line">    deallocateObjects();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span> ParserArena::deallocateObjects()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 调用析构函数</span></span><br><span class="line">    <span class="keyword">size_t</span> size = m_deletableObjects.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; size; ++i)</span><br><span class="line">        m_deletableObjects[i]-&gt;~ParserArenaDeletable();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">    <span class="keyword">if</span> (m_freeablePoolEnd)</span><br><span class="line">        fastFree(freeablePool());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放所有申请的地址块</span></span><br><span class="line">    size = m_freeablePools.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; size; ++i)</span><br><span class="line">        fastFree(m_freeablePools[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="ASTBuilder"><a href="#ASTBuilder" class="headerlink" title="ASTBuilder"></a>ASTBuilder</h2><p><code>ASTBuilder</code>用来构建语法树AST，它主要包含以下成员：</p>
+<blockquote>
+<ul>
+<li>一个虚拟机m_vm；</li>
+<li>内存管理类<code>ParserArena</code>;</li>
+<li>源代码类<code>SourceCode</code>;</li>
+<li>Scope；</li>
+<li>4个栈容器；</li>
+</ul>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ASTBuilder</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    ...</span><br><span class="line">    VM* m_vm;</span><br><span class="line">    ParserArena&amp; m_parserArena;</span><br><span class="line">    SourceCode* m_sourceCode;</span><br><span class="line">    Scope m_scope;</span><br><span class="line">    Vector&lt;BinaryOperand, <span class="number">10</span>, UnsafeVectorOverflow&gt; m_binaryOperandStack;</span><br><span class="line">    Vector&lt;AssignmentInfo, <span class="number">10</span>, UnsafeVectorOverflow&gt; m_assignmentInfoStack;</span><br><span class="line">    Vector&lt;<span class="built_in">std</span>::pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;, <span class="number">10</span>, UnsafeVectorOverflow&gt; m_binaryOperatorStack;</span><br><span class="line">    Vector&lt;<span class="built_in">std</span>::pair&lt;<span class="keyword">int</span>, JSTextPosition&gt;, <span class="number">10</span>, UnsafeVectorOverflow&gt; m_unaryTokenStack;</span><br><span class="line">    <span class="keyword">int</span> m_evalCount;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Vector"><a href="#Vector" class="headerlink" title="Vector"></a>Vector</h3><p>Vector不同于STL的vector，它是Webkit基础类库里面的一个工具类，位于：<br><code>webkit-master/Source/WTF/wtf/Vector.h</code>，这里的模板参数声明如下：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">size_t</span> inlineCapacity = <span class="number">0</span>, <span class="keyword">typename</span> OverflowHandler = CrashOnOverflow, <span class="keyword">size_t</span> minCapacity = <span class="number">16</span>&gt;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<ul>
+<li>第1个参数代表存放的数据类型；</li>
+<li>第2个参数代表容量；</li>
+<li>第3个参数代表溢出异常处理，默认处理方案<code>CrashOnOverflow</code>，这里给的是<code>UnsafeVectorOverflow</code>，这两种异常处理方案最后都会走向<code>CRASH()</code>；</li>
+<li>第4个参数代表最小的容量，这里我们没有传，将使用默认值16；</li>
+</ul>
+</blockquote>
+<h3 id="操作数-BinaryOperand"><a href="#操作数-BinaryOperand" class="headerlink" title="操作数 BinaryOperand"></a>操作数 BinaryOperand</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> BinaryOperand;</span><br></pre></td></tr></table></figure>
+<h3 id="二元操作结构体"><a href="#二元操作结构体" class="headerlink" title="二元操作结构体"></a>二元操作结构体</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BinaryOpInfo</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    BinaryOpInfo() &#123;&#125;</span><br><span class="line">    BinaryOpInfo(<span class="keyword">const</span> JSTextPosition&amp; otherStart, <span class="keyword">const</span> JSTextPosition&amp; otherDivot, <span class="keyword">const</span> JSTextPosition&amp; otherEnd, <span class="keyword">bool</span> rhsHasAssignment)</span><br><span class="line">        : start(otherStart)</span><br><span class="line">        , divot(otherDivot)</span><br><span class="line">        , end(otherEnd)</span><br><span class="line">        , hasAssignment(rhsHasAssignment)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    BinaryOpInfo(<span class="keyword">const</span> BinaryOpInfo&amp; lhs, <span class="keyword">const</span> BinaryOpInfo&amp; rhs)</span><br><span class="line">        : start(lhs.start)</span><br><span class="line">        , divot(rhs.start)</span><br><span class="line">        , end(rhs.end)</span><br><span class="line">        , hasAssignment(lhs.hasAssignment || rhs.hasAssignment)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    JSTextPosition start;</span><br><span class="line">    JSTextPosition divot;</span><br><span class="line">    JSTextPosition end;</span><br><span class="line">    <span class="keyword">bool</span> hasAssignment;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="赋值操作结构体"><a href="#赋值操作结构体" class="headerlink" title="赋值操作结构体"></a>赋值操作结构体</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">AssignmentInfo</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    AssignmentInfo() &#123;&#125;</span><br><span class="line">    AssignmentInfo(ExpressionNode* node, <span class="keyword">const</span> JSTextPosition&amp; start, <span class="keyword">const</span> JSTextPosition&amp; divot, <span class="keyword">int</span> initAssignments, Operator op)</span><br><span class="line">        : m_node(node)</span><br><span class="line">        , m_start(start)</span><br><span class="line">        , m_divot(divot)</span><br><span class="line">        , m_initAssignments(initAssignments)</span><br><span class="line">        , m_op(op)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    ExpressionNode* m_node;</span><br><span class="line">    JSTextPosition m_start;</span><br><span class="line">    JSTextPosition m_divot;</span><br><span class="line">    <span class="keyword">int</span> m_initAssignments;</span><br><span class="line">    Operator m_op;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中<code>Operator</code>是一个枚举:<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> Operator</span><br><span class="line">&#123;</span><br><span class="line">    OpEqual,</span><br><span class="line">    OpPlusEq,</span><br><span class="line">    OpMinusEq,</span><br><span class="line">    OpMultEq,</span><br><span class="line">    OpDivEq,</span><br><span class="line">    OpPlusPlus,</span><br><span class="line">    OpMinusMinus,</span><br><span class="line">    OpAndEq,</span><br><span class="line">    OpXOrEq,</span><br><span class="line">    OpOrEq,</span><br><span class="line">    OpModEq,</span><br><span class="line">    OpLShift,</span><br><span class="line">    OpRShift,</span><br><span class="line">    OpURShift</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h2 id="parse堆栈"><a href="#parse堆栈" class="headerlink" title="parse堆栈"></a>parse堆栈</h2><p>JavsScriptCore的语法分析起始于<code>parse</code>方法，<code>parse</code>的核心在<code>parseInner</code>方法，<code>parseInner</code>方法的两个参数类型分别是<code>Identifier</code>和<code>SourceParseMode</code>。<code>Identifier</code>前文提到过，代表标识符，而<code>SourceParseMode</code>是一个枚举：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">SourceParseMode</span> :</span> <span class="keyword">uint8_t</span> </span><br><span class="line">&#123;</span><br><span class="line">    NormalFunctionMode,</span><br><span class="line">    GeneratorBodyMode,</span><br><span class="line">    GeneratorWrapperFunctionMode,</span><br><span class="line">    GetterMode,</span><br><span class="line">    SetterMode,</span><br><span class="line">    MethodMode,</span><br><span class="line">    ArrowFunctionMode,</span><br><span class="line">    ProgramMode,</span><br><span class="line">    ModuleAnalyzeMode,</span><br><span class="line">    ModuleEvaluateMode</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>parse方法的内部调用流程大概如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">parse</span><br><span class="line">└──parseInner</span><br><span class="line">    └──parseArrowFunctionSingleExpressionBodySourceElements(箭头函数)</span><br><span class="line">    └──parseModuleSourceElements（模块导入导出）</span><br><span class="line">    └──parseGeneratorFunctionSourceElements</span><br><span class="line">    └──parseSourceElements</span><br><span class="line">        └──parseStatementListItem（语句列表）</span><br><span class="line">            └──parseVariableDeclaration（变量声明var、let）</span><br><span class="line">            └──parseClassDeclaration（类声明）</span><br><span class="line">            └──parseFunctionDeclaration（方法声明）</span><br><span class="line">            └──parseExpressionOrLabelStatement（表达式或者标签）</span><br><span class="line">            └──parseStatement（基本语句）</span><br><span class="line">                └──parseBlockStatement</span><br><span class="line">                └──parseVariableDeclaration</span><br><span class="line">                └──parseFunctionDeclaration</span><br><span class="line">                └──parseIfStatement</span><br><span class="line">                └──parseDoWhileStatement</span><br><span class="line">                └──parseWhileStatement</span><br><span class="line">                └──parseForStatement</span><br><span class="line">                └──parseContinueStatement</span><br><span class="line">                └──parseBreakStatement</span><br><span class="line">                └──parseReturnStatement</span><br><span class="line">                └──parseWithStatement</span><br><span class="line">                └──parseSwitchStatement</span><br><span class="line">                └──parseThrowStatement</span><br><span class="line">                └──parseTryStatement</span><br><span class="line">                └──parseExpressionOrLabelStatement</span><br><span class="line">                └──parseExpressionStatement</span><br><span class="line">                    └──parseExpression</span><br></pre></td></tr></table></figure></p>
+<p>其中有些语句是相互嵌套的，例如，<code>parseIfStatement</code>里面可以继续调用<code>parseStatement</code>。由于这些代码规模较为庞大，不可能逐个分析到，本文将挑选下面的路径做一个大致的分析：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">parse</span><br><span class="line">└──parseInner</span><br><span class="line">    └──parseSourceElements</span><br><span class="line">        └──parseStatementListItem（语句列表）</span><br><span class="line">            └──parseStatement（基本语句）</span><br><span class="line">                └──parseVariableDeclaration</span><br><span class="line">                └──parseWhileStatement</span><br><span class="line">                └──parseExpressionStatement</span><br><span class="line">                    └──parseExpression</span><br></pre></td></tr></table></figure></p>
+<h3 id="parseInner"><a href="#parseInner" class="headerlink" title="parseInner"></a>parseInner</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 进行语法分析，生成抽象语法树（为了代码清晰，省略了部分代码）</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line">String Parser&lt;LexerType&gt;::parseInner(<span class="keyword">const</span> Identifier&amp; calleeName, SourceParseMode parseMode)</span><br><span class="line">&#123;</span><br><span class="line">    String parseError = String();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义ASTBuilder</span></span><br><span class="line">    ASTBuilder context(const_cast&lt;VM*&gt;(m_vm), m_parserArena, const_cast&lt;SourceCode*&gt;(m_source));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置scope</span></span><br><span class="line">    ScopeRef scope = currentScope();</span><br><span class="line">    scope-&gt;setIsLexicalScope();</span><br><span class="line">    SetForScope&lt;FunctionParsePhase&gt; functionParsePhasePoisoner(m_parserState.functionParsePhase, FunctionParsePhase::Body);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!calleeName.isNull())</span><br><span class="line">        scope-&gt;declareCallee(&amp;calleeName);</span><br><span class="line">    <span class="keyword">if</span> (m_lexer-&gt;isReparsingFunction())</span><br><span class="line">        m_statementDepth--;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开始解析生成语法树的一个节点：</span></span><br><span class="line">    SourceElements* sourceElements = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 核心逻辑</span></span><br><span class="line">    <span class="keyword">if</span> (!hasError())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (isArrowFunctionBodyExpression)</span><br><span class="line">            <span class="comment">// 箭头函数</span></span><br><span class="line">            sourceElements = parseArrowFunctionSingleExpressionBodySourceElements(context);</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (isModuleParseMode(parseMode))</span><br><span class="line">            <span class="comment">// Module导入导出</span></span><br><span class="line">            sourceElements = parseModuleSourceElements(context, parseMode);</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (parseMode == SourceParseMode::GeneratorWrapperFunctionMode)</span><br><span class="line">                sourceElements = parseGeneratorFunctionSourceElements(context, CheckForStrictMode);</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                <span class="comment">// 基本语句解析</span></span><br><span class="line">                sourceElements = parseSourceElements(context, CheckForStrictMode);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    didFinishParsing(sourceElements, scope-&gt;takeFunctionDeclarations(), varDeclarations, WTFMove(sloppyModeHoistedFunctions), features, context.numConstants());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> parseError;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="parseSourceElements"><a href="#parseSourceElements" class="headerlink" title="parseSourceElements"></a>parseSourceElements</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeSourceElements</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseSourceElements(TreeBuilder&amp; context, SourceElementsMode mode)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">unsigned</span> lengthOfUseStrictLiteral = <span class="number">12</span>; <span class="comment">// "use strict".length</span></span><br><span class="line">    TreeSourceElements sourceElements = context.createSourceElements();</span><br><span class="line">    <span class="keyword">bool</span> seenNonDirective = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">const</span> Identifier* directive = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> directiveLiteralLength = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">auto</span> savePoint = createSavePoint();</span><br><span class="line">    <span class="keyword">bool</span> hasSetStrict = <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 主要逻辑在parseStatementListItem中</span></span><br><span class="line">    <span class="keyword">while</span> (TreeStatement statement = parseStatementListItem(context, directive, &amp;directiveLiteralLength)) &#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 添加语法节点到ASTBuilder</span></span><br><span class="line">        context.appendStatement(sourceElements, statement);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    propagateError();</span><br><span class="line">    <span class="keyword">return</span> sourceElements;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="parseStatementListItem"><a href="#parseStatementListItem" class="headerlink" title="parseStatementListItem"></a>parseStatementListItem</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseStatementListItem(TreeBuilder&amp; context, <span class="keyword">const</span> Identifier*&amp; directive, <span class="keyword">unsigned</span>* directiveLiteralLength)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">DepthManager <span class="title">statementDepth</span><span class="params">(&amp;m_statementDepth)</span></span>;</span><br><span class="line">    m_statementDepth++;</span><br><span class="line">    TreeStatement result = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">bool</span> shouldSetEndOffset = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">switch</span> (m_token.m_type)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> CONSTTOKEN:</span><br><span class="line">            <span class="comment">// 变量声明解析</span></span><br><span class="line">            result = parseVariableDeclaration(context, DeclarationType::ConstDeclaration);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> LET: &#123;</span><br><span class="line">            <span class="keyword">bool</span> shouldParseVariableDeclaration = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">if</span> (shouldParseVariableDeclaration)</span><br><span class="line">                result = parseVariableDeclaration(context, DeclarationType::LetDeclaration);</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">bool</span> allowFunctionDeclarationAsStatement = <span class="literal">true</span>;</span><br><span class="line">                result = parseExpressionOrLabelStatement(context, allowFunctionDeclarationAsStatement);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> CLASSTOKEN:</span><br><span class="line">            <span class="comment">// 类声明解析</span></span><br><span class="line">            result = parseClassDeclaration(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> FUNCTION:</span><br><span class="line">            <span class="comment">// 方法声明解析</span></span><br><span class="line">            result = parseFunctionDeclaration(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> IDENT:</span><br><span class="line">        <span class="keyword">case</span> YIELD: &#123;</span><br><span class="line">            <span class="comment">// 表达式或者标签解析</span></span><br><span class="line">            <span class="keyword">bool</span> allowFunctionDeclarationAsStatement = <span class="literal">true</span>;</span><br><span class="line">            result = parseExpressionOrLabelStatement(context, allowFunctionDeclarationAsStatement);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="comment">// 普通语句解析</span></span><br><span class="line">            m_statementDepth--; <span class="comment">// parseStatement() increments the depth.</span></span><br><span class="line">            result = parseStatement(context, directive, directiveLiteralLength);</span><br><span class="line">            shouldSetEndOffset = <span class="literal">false</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result &amp;&amp; shouldSetEndOffset)</span><br><span class="line">        context.setEndOffset(result, m_lastTokenEndPosition.offset);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="parseStatement"><a href="#parseStatement" class="headerlink" title="parseStatement"></a>parseStatement</h3><p>可以看到基本语句的解析都是通过switch分支来进行的<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseStatement(TreeBuilder&amp; context, <span class="keyword">const</span> Identifier*&amp; directive, <span class="keyword">unsigned</span>* directiveLiteralLength)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">DepthManager <span class="title">statementDepth</span><span class="params">(&amp;m_statementDepth)</span></span>;</span><br><span class="line">    m_statementDepth++;</span><br><span class="line">    directive = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> nonTrivialExpressionCount = <span class="number">0</span>;</span><br><span class="line">    failIfStackOverflow();</span><br><span class="line">    TreeStatement result = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">bool</span> shouldSetEndOffset = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">bool</span> parentAllowsFunctionDeclarationAsStatement = m_immediateParentAllowsFunctionDeclarationInStatement;</span><br><span class="line">    m_immediateParentAllowsFunctionDeclarationInStatement = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (m_token.m_type) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> OPENBRACE:</span><br><span class="line">            result = parseBlockStatement(context);</span><br><span class="line">            shouldSetEndOffset = <span class="literal">false</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> VAR:</span><br><span class="line">            result = parseVariableDeclaration(context, DeclarationType::VarDeclaration);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> FUNCTION: &#123;</span><br><span class="line">            <span class="function">DepthManager <span class="title">statementDepth</span><span class="params">(&amp;m_statementDepth)</span></span>;</span><br><span class="line">            m_statementDepth = <span class="number">1</span>;</span><br><span class="line">            result = parseFunctionDeclaration(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> SEMICOLON: &#123;</span><br><span class="line">            JSTokenLocation location(tokenLocation());</span><br><span class="line">            next();</span><br><span class="line">            result = context.createEmptyStatement(location);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> IF:</span><br><span class="line">            result = parseIfStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> DO:</span><br><span class="line">            result = parseDoWhileStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> WHILE:</span><br><span class="line">            result = parseWhileStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> FOR:</span><br><span class="line">            result = parseForStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> CONTINUE:</span><br><span class="line">            result = parseContinueStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> BREAK:</span><br><span class="line">            result = parseBreakStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> RETURN:</span><br><span class="line">            result = parseReturnStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> WITH:</span><br><span class="line">            result = parseWithStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> SWITCH:</span><br><span class="line">            result = parseSwitchStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> THROW:</span><br><span class="line">            result = parseThrowStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> TRY:</span><br><span class="line">            result = parseTryStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> DEBUGGER:</span><br><span class="line">            result = parseDebuggerStatement(context);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> EOFTOK:</span><br><span class="line">        <span class="keyword">case</span> CASE:</span><br><span class="line">        <span class="keyword">case</span> CLOSEBRACE:</span><br><span class="line">        <span class="keyword">case</span> DEFAULT:</span><br><span class="line">            <span class="comment">// These tokens imply the end of a set of source elements</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">case</span> IDENT:</span><br><span class="line">        <span class="keyword">case</span> YIELD: &#123;</span><br><span class="line">            <span class="keyword">bool</span> allowFunctionDeclarationAsStatement = <span class="literal">false</span>;</span><br><span class="line">            result = parseExpressionOrLabelStatement(context, allowFunctionDeclarationAsStatement);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> STRING:</span><br><span class="line">            directive = m_token.m_data.ident;</span><br><span class="line">            <span class="keyword">if</span> (directiveLiteralLength)</span><br><span class="line">                *directiveLiteralLength = m_token.m_location.endOffset - m_token.m_location.startOffset;</span><br><span class="line">            nonTrivialExpressionCount = m_parserState.nonTrivialExpressionCount;</span><br><span class="line">            FALLTHROUGH;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            TreeStatement exprStatement = parseExpressionStatement(context);</span><br><span class="line">            <span class="keyword">if</span> (directive &amp;&amp; nonTrivialExpressionCount != m_parserState.nonTrivialExpressionCount)</span><br><span class="line">                directive = <span class="number">0</span>;</span><br><span class="line">            result = exprStatement;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result &amp;&amp; shouldSetEndOffset)</span><br><span class="line">        context.setEndOffset(result, m_lastTokenEndPosition.offset);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="parseExpression"><a href="#parseExpression" class="headerlink" title="parseExpression"></a>parseExpression</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeExpression</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseExpression(TreeBuilder&amp; context)</span><br><span class="line">&#123;</span><br><span class="line">    failIfStackOverflow();</span><br><span class="line">    JSTokenLocation location(tokenLocation());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析第一个表达式</span></span><br><span class="line">    TreeExpression node = parseAssignmentExpression(context);</span><br><span class="line">    context.setEndOffset(node, m_lastTokenEndPosition.offset);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是逗号，解析结束，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (!match(COMMA)) <span class="keyword">return</span> node;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 匹配到逗号，继续往右解析</span></span><br><span class="line">    next();</span><br><span class="line">    m_parserState.nonTrivialExpressionCount++;</span><br><span class="line">    m_parserState.nonLHSCount++;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">    TreeExpression right = parseAssignmentExpression(context);</span><br><span class="line">    context.setEndOffset(right, m_lastTokenEndPosition.offset);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 赋值表达式可能是一个逗号分隔的表达式，例如：b,2+3，c+5,d&gt;&gt;1;</span></span><br><span class="line">    <span class="keyword">typename</span> TreeBuilder::Comma head = context.createCommaExpr(location, node);</span><br><span class="line">    <span class="keyword">typename</span> TreeBuilder::Comma tail = context.appendToCommaExpr(location, head, head, right);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从左往右依次匹配逗号，如果成功，就进行解析</span></span><br><span class="line">    <span class="keyword">while</span> (match(COMMA)) &#123;</span><br><span class="line">        next(TreeBuilder::DontBuildStrings);</span><br><span class="line">        right = parseAssignmentExpression(context);</span><br><span class="line">        context.setEndOffset(right, m_lastTokenEndPosition.offset);</span><br><span class="line">        tail = context.appendToCommaExpr(location, head, tail, right);</span><br><span class="line">    &#125;</span><br><span class="line">    context.setEndOffset(head, m_lastTokenEndPosition.offset);</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="parseAssignmentExpression"><a href="#parseAssignmentExpression" class="headerlink" title="parseAssignmentExpression"></a>parseAssignmentExpression</h4><p>接下来重点分析下赋值表达式的解析：<code>parseAssignmentExpression</code><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> TreeBuilder&gt; TreeExpression Parser&lt;LexerType&gt;::parseAssignmentExpression(TreeBuilder&amp; context, ExpressionErrorClassifier&amp; classifier)</span><br><span class="line">&#123;</span><br><span class="line">    failIfStackOverflow();</span><br><span class="line">    JSTextPosition start = tokenStartPosition();</span><br><span class="line">    JSTokenLocation location(tokenLocation());</span><br><span class="line">    <span class="keyword">int</span> initialAssignmentCount = m_parserState.assignmentCount;</span><br><span class="line">    <span class="keyword">int</span> initialNonLHSCount = m_parserState.nonLHSCount;</span><br><span class="line">    <span class="keyword">bool</span> maybeAssignmentPattern = match(OPENBRACE) || match(OPENBRACKET);</span><br><span class="line">    <span class="keyword">bool</span> wasOpenParen = match(OPENPAREN);</span><br><span class="line">    <span class="keyword">bool</span> isValidArrowFunctionStart = match(OPENPAREN) || match(IDENT);</span><br><span class="line">    SavePoint savePoint = createSavePoint();</span><br><span class="line">    <span class="keyword">size_t</span> usedVariablesSize = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (wasOpenParen) &#123;</span><br><span class="line">        usedVariablesSize = currentScope()-&gt;currentUsedVariablesSize();</span><br><span class="line">        currentScope()-&gt;pushUsedVariableSet();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (match(YIELD) &amp;&amp; !isYIELDMaskedAsIDENT(currentScope()-&gt;isGenerator()))</span><br><span class="line">        <span class="keyword">return</span> parseYieldExpression(context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析左值</span></span><br><span class="line">    TreeExpression lhs = parseConditionalExpression(context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 箭头函数的分析，有的情况下会把一个箭头函数赋值给一个变量：var a = (a)=&gt;a+2;</span></span><br><span class="line">    <span class="keyword">if</span> (isValidArrowFunctionStart &amp;&amp; !match(EOFTOK)) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">bool</span> isArrowFunctionToken = match(ARROWFUNCTION);</span><br><span class="line">        <span class="keyword">if</span> (!lhs || isArrowFunctionToken) &#123;</span><br><span class="line">            SavePointWithError errorRestorationSavePoint = createSavePointForError();</span><br><span class="line">            restoreSavePoint(savePoint);</span><br><span class="line">            <span class="keyword">if</span> (isArrowFunctionParameters()) &#123;</span><br><span class="line">                <span class="keyword">if</span> (wasOpenParen)</span><br><span class="line">                    currentScope()-&gt;revertToPreviousUsedVariables(usedVariablesSize);</span><br><span class="line">                <span class="keyword">return</span> parseArrowFunctionExpression(context);</span><br><span class="line">            &#125;</span><br><span class="line">            restoreSavePointWithError(errorRestorationSavePoint);</span><br><span class="line">            <span class="keyword">if</span> (isArrowFunctionToken)</span><br><span class="line">                failDueToUnexpectedToken();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (initialNonLHSCount != m_parserState.nonLHSCount) &#123;</span><br><span class="line">        <span class="keyword">return</span> lhs;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">int</span> assignmentStack = <span class="number">0</span>;</span><br><span class="line">    Operator op;</span><br><span class="line">    <span class="keyword">bool</span> hadAssignment = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 解析操作符</span></span><br><span class="line">        <span class="keyword">switch</span> (m_token.m_type) </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> EQUAL: op = OpEqual; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> PLUSEQUAL: op = OpPlusEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> MINUSEQUAL: op = OpMinusEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> MULTEQUAL: op = OpMultEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> DIVEQUAL: op = OpDivEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> LSHIFTEQUAL: op = OpLShift; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> RSHIFTEQUAL: op = OpRShift; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> URSHIFTEQUAL: op = OpURShift; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> ANDEQUAL: op = OpAndEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> XOREQUAL: op = OpXOrEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> OREQUAL: op = OpOrEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> MODEQUAL: op = OpModEq; <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">goto</span> end;</span><br><span class="line">        &#125;</span><br><span class="line">        m_parserState.nonTrivialExpressionCount++;</span><br><span class="line">        hadAssignment = <span class="literal">true</span>;</span><br><span class="line">        </span><br><span class="line">        context.assignmentStackAppend(assignmentStack, lhs, start, tokenStartPosition(), m_parserState.assignmentCount, op);</span><br><span class="line">        start = tokenStartPosition();</span><br><span class="line">        m_parserState.assignmentCount++;</span><br><span class="line">        next(TreeBuilder::DontBuildStrings);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 解析</span></span><br><span class="line">        lhs = parseAssignmentExpression(context);</span><br><span class="line">        <span class="keyword">if</span> (initialNonLHSCount != m_parserState.nonLHSCount) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">end:</span><br><span class="line">    <span class="keyword">if</span> (hadAssignment)</span><br><span class="line">        m_parserState.nonLHSCount++;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!TreeBuilder::CreatesAST)</span><br><span class="line">        <span class="keyword">return</span> lhs;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">while</span> (assignmentStack)</span><br><span class="line">        lhs = context.createAssignment(location, assignmentStack, lhs, initialAssignmentCount, m_parserState.assignmentCount, lastTokenEndPosition());</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> lhs;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="StatementNode"><a href="#StatementNode" class="headerlink" title="StatementNode"></a>StatementNode</h2><p>接下来将挑选若干<code>StatementNode</code>的子类进行细节分析，这部分内容某种意义上也是为之后的字节码生成做一定的铺垫</p>
+<h3 id="DeclarationStatement"><a href="#DeclarationStatement" class="headerlink" title="DeclarationStatement"></a>DeclarationStatement</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DeclarationStatement</span> :</span> <span class="keyword">public</span> StatementNode &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        DeclarationStatement(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode*);</span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_expr;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<p>一个<code>JavaScript</code>变量的声明的代码篇幅，已经超出了我的想象：</p>
+<h4 id="parseVariableDeclaration"><a href="#parseVariableDeclaration" class="headerlink" title="parseVariableDeclaration"></a>parseVariableDeclaration</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseVariableDeclaration(TreeBuilder&amp; context, DeclarationType declarationType, ExportType exportType)</span><br><span class="line">&#123;</span><br><span class="line">    ASSERT(match(VAR) || match(LET) || match(CONSTTOKEN));</span><br><span class="line">    JSTokenLocation location(tokenLocation());</span><br><span class="line">    <span class="keyword">int</span> start = tokenLine();</span><br><span class="line">    <span class="keyword">int</span> end = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> scratch;</span><br><span class="line">    TreeDestructuringPattern scratch1 = <span class="number">0</span>;</span><br><span class="line">    TreeExpression scratch2 = <span class="number">0</span>;</span><br><span class="line">    JSTextPosition scratch3;</span><br><span class="line">    <span class="keyword">bool</span> scratchBool;</span><br><span class="line">    <span class="comment">// 核心重点在parseVariableDeclarationList</span></span><br><span class="line">    TreeExpression variableDecls = parseVariableDeclarationList(context, scratch, scratch1, scratch2, scratch3, scratch3, scratch3, VarDeclarationContext, declarationType, exportType, scratchBool);</span><br><span class="line">    propagateError();</span><br><span class="line">    failIfFalse(autoSemiColon(), <span class="string">"Expected ';' after variable declaration"</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> context.createDeclarationStatement(location, variableDecls, start, end);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="parseVariableDeclarationList"><a href="#parseVariableDeclarationList" class="headerlink" title="parseVariableDeclarationList"></a>parseVariableDeclarationList</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeExpression</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseVariableDeclarationList(TreeBuilder&amp; context, <span class="keyword">int</span>&amp; declarations, TreeDestructuringPattern&amp; lastPattern, TreeExpression&amp; lastInitializer, JSTextPosition&amp; identStart, JSTextPosition&amp; initStart, JSTextPosition&amp; initEnd, VarDeclarationListContext declarationListContext, DeclarationType declarationType, ExportType exportType, <span class="keyword">bool</span>&amp; forLoopConstDoesNotHaveInitializer)</span><br><span class="line">&#123;</span><br><span class="line">    TreeExpression head = <span class="number">0</span>;</span><br><span class="line">    TreeExpression tail = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">const</span> Identifier* lastIdent;</span><br><span class="line">    JSToken lastIdentToken; </span><br><span class="line">    AssignmentContext assignmentContext = assignmentContextFromDeclarationType(declarationType);</span><br><span class="line">    <span class="keyword">do</span> </span><br><span class="line">    &#123;</span><br><span class="line">        lastIdent = <span class="number">0</span>;</span><br><span class="line">        lastPattern = TreeDestructuringPattern(<span class="number">0</span>);</span><br><span class="line">        JSTokenLocation location(tokenLocation());</span><br><span class="line">        next();</span><br><span class="line">        TreeExpression node = <span class="number">0</span>;</span><br><span class="line">        declarations++;</span><br><span class="line">        <span class="keyword">bool</span> hasInitializer = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (matchSpecIdentifier()) </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 获取变量标识符Identifier</span></span><br><span class="line">            JSTextPosition varStart = tokenStartPosition();</span><br><span class="line">            JSTokenLocation varStartLocation(tokenLocation());</span><br><span class="line">            identStart = varStart;</span><br><span class="line">            <span class="comment">// 从JSToken中获取Identifier信息</span></span><br><span class="line">            <span class="keyword">const</span> Identifier* name = m_token.m_data.ident;</span><br><span class="line">            lastIdent = name;</span><br><span class="line">            lastIdentToken = m_token;</span><br><span class="line">            <span class="comment">// 获取下一个JSToken</span></span><br><span class="line">            next();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 是否是等于号，如果是，表明在变量声明之后就要进行初始化</span></span><br><span class="line">            hasInitializer = match(EQUAL);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 在当前Scope中声明一个变量，同时检查该变量声明是否合法</span></span><br><span class="line">            DeclarationResultMask declarationResult = declareVariable(name, declarationType);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (hasInitializer) &#123;</span><br><span class="line">                <span class="comment">// 如果有等于号</span></span><br><span class="line">                JSTextPosition varDivot = tokenStartPosition() + <span class="number">1</span>;</span><br><span class="line">                initStart = tokenStartPosition();</span><br><span class="line">                next(TreeBuilder::DontBuildStrings); <span class="comment">// consume '='</span></span><br><span class="line">                propagateError();</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 解析等号右面的表达式</span></span><br><span class="line">                TreeExpression initializer = parseAssignmentExpression(context);</span><br><span class="line">                initEnd = lastTokenEndPosition();</span><br><span class="line">                lastInitializer = initializer;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 创建一个赋值</span></span><br><span class="line">                node = context.createAssignResolve(location, *name, initializer, varStart, varDivot, lastTokenEndPosition(), assignmentContext);</span><br><span class="line">            &#125; </span><br><span class="line">            <span class="keyword">else</span> </span><br><span class="line">            &#123;</span><br><span class="line">                ...</span><br><span class="line">                <span class="keyword">if</span> (declarationType == DeclarationType::VarDeclaration)</span><br><span class="line">                    <span class="comment">// 空变量声明</span></span><br><span class="line">                    node = context.createEmptyVarExpression(varStartLocation, *name);</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                    <span class="comment">// 空左值声明</span></span><br><span class="line">                    node = context.createEmptyLetExpression(varStartLocation, *name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; </span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (node)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!head) head = node;</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (!tail) &#123;</span><br><span class="line">                head = context.createCommaExpr(location, head);</span><br><span class="line">                tail = context.appendToCommaExpr(location, head, head, node);</span><br><span class="line">            &#125; <span class="keyword">else</span></span><br><span class="line">                tail = context.appendToCommaExpr(location, head, tail, node);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (match(COMMA));</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><p>一段js代码，一个变量的声明和赋值</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> age = <span class="number">6</span> * <span class="number">7</span>;</span><br></pre></td></tr></table></figure>
+<p>在经过<a href="http://esprima.org/demo/parse.html?code=var%20age%20%3D%206%20*%207%3B" target="_blank" rel="noopener">Esprima</a>语法分析后，会得到下面的结果：<br><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">```json</span><br><span class="line">&#123;</span><br><span class="line">    <span class="attr">"type"</span>: <span class="string">"Program"</span>,</span><br><span class="line">    <span class="attr">"body"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"VariableDeclaration"</span>,</span><br><span class="line">            <span class="attr">"declarations"</span>: [</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="attr">"type"</span>: <span class="string">"VariableDeclarator"</span>,</span><br><span class="line">                    <span class="attr">"id"</span>: &#123;</span><br><span class="line">                        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">                        <span class="attr">"name"</span>: <span class="string">"age"</span></span><br><span class="line">                    &#125;,</span><br><span class="line">                    <span class="attr">"init"</span>: &#123;</span><br><span class="line">                        <span class="attr">"type"</span>: <span class="string">"BinaryExpression"</span>,</span><br><span class="line">                        <span class="attr">"operator"</span>: <span class="string">"*"</span>,</span><br><span class="line">                        <span class="attr">"left"</span>: &#123;</span><br><span class="line">                            <span class="attr">"type"</span>: <span class="string">"Literal"</span>,</span><br><span class="line">                            <span class="attr">"value"</span>: <span class="number">6</span>,</span><br><span class="line">                            <span class="attr">"raw"</span>: <span class="string">"6"</span></span><br><span class="line">                        &#125;,</span><br><span class="line">                        <span class="attr">"right"</span>: &#123;</span><br><span class="line">                            <span class="attr">"type"</span>: <span class="string">"Literal"</span>,</span><br><span class="line">                            <span class="attr">"value"</span>: <span class="number">7</span>,</span><br><span class="line">                            <span class="attr">"raw"</span>: <span class="string">"7"</span></span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            ],</span><br><span class="line">            <span class="attr">"kind"</span>: <span class="string">"var"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">"sourceType"</span>: <span class="string">"script"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="WhileNode"><a href="#WhileNode" class="headerlink" title="WhileNode"></a>WhileNode</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WhileNode</span> :</span> <span class="keyword">public</span> StatementNode &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        WhileNode(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode*, StatementNode*);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_expr;</span><br><span class="line">        StatementNode* m_statement;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<h4 id="parseWhileStatement"><a href="#parseWhileStatement" class="headerlink" title="parseWhileStatement"></a>parseWhileStatement</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseWhileStatement(TreeBuilder&amp; context)</span><br><span class="line">&#123;</span><br><span class="line">    ASSERT(match(WHILE));</span><br><span class="line">    JSTokenLocation location(tokenLocation());</span><br><span class="line">    <span class="keyword">int</span> startLine = tokenLine();</span><br><span class="line">    next();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 确认while左括号</span></span><br><span class="line">    handleProductionOrFail(OPENPAREN, <span class="string">"("</span>, <span class="string">"start"</span>, <span class="string">"while loop condition"</span>);</span><br><span class="line">    semanticFailIfTrue(match(CLOSEPAREN), <span class="string">"Must provide an expression as a while loop condition"</span>);</span><br><span class="line">    <span class="comment">// 解析括号里的条件表达式</span></span><br><span class="line">    TreeExpression expr = parseExpression(context);</span><br><span class="line">    failIfFalse(expr, <span class="string">"Unable to parse while loop condition"</span>);</span><br><span class="line">    <span class="keyword">int</span> endLine = tokenLine();</span><br><span class="line">    <span class="comment">// 确认while右括号</span></span><br><span class="line">    handleProductionOrFail(CLOSEPAREN, <span class="string">")"</span>, <span class="string">"end"</span>, <span class="string">"while loop condition"</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">const</span> Identifier* unused = <span class="number">0</span>;</span><br><span class="line">    startLoop();</span><br><span class="line">    <span class="comment">// 解析while循环体</span></span><br><span class="line">    TreeStatement statement = parseStatement(context, unused);</span><br><span class="line">    endLoop();</span><br><span class="line">    </span><br><span class="line">    failIfFalse(statement, <span class="string">"Expected a statement as the body of a while loop"</span>);</span><br><span class="line">    <span class="keyword">return</span> context.createWhileStatement(location, expr, statement, startLine, endLine);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span>(a &gt; <span class="number">0</span>)&#123;</span><br><span class="line">    a--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在经过<a href="http://esprima.org/demo/parse.html?" target="_blank" rel="noopener">Esprima</a>语法分析后，会得到下面的结果：<br><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"type"</span>: <span class="string">"Program"</span>,</span><br><span class="line">    <span class="attr">"body"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">"type"</span>: <span class="string">"WhileStatement"</span>,</span><br><span class="line">            <span class="attr">"test"</span>: &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"BinaryExpression"</span>,</span><br><span class="line">                <span class="attr">"operator"</span>: <span class="string">"&gt;"</span>,</span><br><span class="line">                <span class="attr">"left"</span>: &#123;</span><br><span class="line">                    <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">                    <span class="attr">"name"</span>: <span class="string">"a"</span></span><br><span class="line">                &#125;,</span><br><span class="line">                <span class="attr">"right"</span>: &#123;</span><br><span class="line">                    <span class="attr">"type"</span>: <span class="string">"Literal"</span>,</span><br><span class="line">                    <span class="attr">"value"</span>: <span class="number">0</span>,</span><br><span class="line">                    <span class="attr">"raw"</span>: <span class="string">"0"</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="attr">"body"</span>: &#123;</span><br><span class="line">                <span class="attr">"type"</span>: <span class="string">"BlockStatement"</span>,</span><br><span class="line">                <span class="attr">"body"</span>: [</span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="attr">"type"</span>: <span class="string">"ExpressionStatement"</span>,</span><br><span class="line">                        <span class="attr">"expression"</span>: &#123;</span><br><span class="line">                            <span class="attr">"type"</span>: <span class="string">"UpdateExpression"</span>,</span><br><span class="line">                            <span class="attr">"operator"</span>: <span class="string">"--"</span>,</span><br><span class="line">                            <span class="attr">"argument"</span>: &#123;</span><br><span class="line">                                <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">                                <span class="attr">"name"</span>: <span class="string">"a"</span></span><br><span class="line">                            &#125;,</span><br><span class="line">                            <span class="attr">"prefix"</span>: <span class="literal">false</span></span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                ]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">"sourceType"</span>: <span class="string">"script"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="IfElseNode"><a href="#IfElseNode" class="headerlink" title="IfElseNode"></a>IfElseNode</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">IfElseNode</span> :</span> <span class="keyword">public</span> StatementNode &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        IfElseNode(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode* condition, StatementNode* ifBlock, StatementNode* elseBlock);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">tryFoldBreakAndContinue</span><span class="params">(BytecodeGenerator&amp;, StatementNode* ifBlock,</span></span></span><br><span class="line"><span class="function"><span class="params">            Label*&amp; trueTarget, FallThroughMode&amp;)</span></span>;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_condition;</span><br><span class="line">        StatementNode* m_ifBlock;</span><br><span class="line">        StatementNode* m_elseBlock;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<p>一直觉得if语句的解析应该比较简单，但是看了<code>parseIfStatement</code>后，觉得并不是想象的那么容易:</p>
+<p>如果是这样的if语句，相对来说比较容易理解，且语法树比较擅长这种形式；<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">if(con1)&#123;&#125;</span><br><span class="line">else&#123;&#125;</span><br></pre></td></tr></table></figure></p>
+<p>但是如果出现了下面的这种情况，就比较费劲了，因为语法树不太好表达这样的形式，所以需要将其转换成标准的“树形式”，转换的过程看下面的代码和图<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if(con1) xxx;   </span><br><span class="line">else if(con2) xxx;</span><br><span class="line">...</span><br><span class="line">else if(conn) xxx;</span><br><span class="line">else xxx;</span><br></pre></td></tr></table></figure></p>
+<h4 id="parseIfStatement"><a href="#parseIfStatement" class="headerlink" title="parseIfStatement"></a>parseIfStatement</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseIfStatement(TreeBuilder&amp; context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 确定if的JSToken</span></span><br><span class="line">    JSTokenLocation ifLocation(tokenLocation());</span><br><span class="line">    <span class="keyword">int</span> start = tokenLine();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 确认if后面的左括号</span></span><br><span class="line">    next();</span><br><span class="line">    handleProductionOrFail2(OPENPAREN, <span class="string">"("</span>, <span class="string">"start"</span>, <span class="string">"'if' condition"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析括号中的条件表达式</span></span><br><span class="line">    TreeExpression condition = parseExpression(context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确认和前面左括号对应的右括号</span></span><br><span class="line">    <span class="keyword">int</span> end = tokenLine();</span><br><span class="line">    handleProductionOrFail2(CLOSEPAREN, <span class="string">")"</span>, <span class="string">"end"</span>, <span class="string">"'if' condition"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> Identifier* unused = <span class="number">0</span>;</span><br><span class="line">    m_immediateParentAllowsFunctionDeclarationInStatement = <span class="literal">true</span>;</span><br><span class="line">    TreeStatement trueBlock = parseStatement(context, unused);</span><br><span class="line">    failIfFalse(trueBlock, <span class="string">"Expected a statement as the body of an if block"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有else模块，createIfStatement，然后直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (!match(ELSE))</span><br><span class="line">        <span class="keyword">return</span> context.createIfStatement(ifLocation, condition, trueBlock, <span class="number">0</span>, start, end);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析else模块</span></span><br><span class="line">    Vector&lt;TreeExpression&gt; exprStack;</span><br><span class="line">    Vector&lt;<span class="built_in">std</span>::pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; posStack;</span><br><span class="line">    Vector&lt;JSTokenLocation&gt; tokenLocationStack;</span><br><span class="line">    Vector&lt;TreeStatement&gt; statementStack;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 寻找最后一个else，不是else if</span></span><br><span class="line">    <span class="keyword">bool</span> trailingElse = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 记录当前的else位置</span></span><br><span class="line">        JSTokenLocation tempLocation = tokenLocation();</span><br><span class="line">        next();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果没有匹配到if，说明是最后一个else，解析完，循环结束</span></span><br><span class="line">        <span class="keyword">if</span> (!match(IF)) </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">const</span> Identifier* unused = <span class="number">0</span>;</span><br><span class="line">            m_immediateParentAllowsFunctionDeclarationInStatement = <span class="literal">true</span>;</span><br><span class="line">            <span class="comment">// 解析else里面的语句块</span></span><br><span class="line">            TreeStatement block = parseStatement(context, unused);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 放到statementStack栈中，以便后续使用</span></span><br><span class="line">            statementStack.append(block);</span><br><span class="line">            <span class="comment">// 标明最后一个else</span></span><br><span class="line">            trailingElse = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果匹配到了if</span></span><br><span class="line">        <span class="keyword">int</span> innerStart = tokenLine();</span><br><span class="line">        next();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 确认else if后面的左括号</span></span><br><span class="line">        handleProductionOrFail2(OPENPAREN, <span class="string">"("</span>, <span class="string">"start"</span>, <span class="string">"'if' condition"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 解析else if括号中的条件表达式</span></span><br><span class="line">        TreeExpression innerCondition = parseExpression(context);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 确认else if后面的右括号</span></span><br><span class="line">        <span class="keyword">int</span> innerEnd = tokenLine();</span><br><span class="line">        handleProductionOrFail2(CLOSEPAREN, <span class="string">")"</span>, <span class="string">"end"</span>, <span class="string">"'if' condition"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">const</span> Identifier* unused = <span class="number">0</span>;</span><br><span class="line">        m_immediateParentAllowsFunctionDeclarationInStatement = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 解析else if里面的语句块</span></span><br><span class="line">        TreeStatement innerTrueBlock = parseStatement(context, unused);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 将else的位置添加到tokenLocationStack中</span></span><br><span class="line">        tokenLocationStack.append(tempLocation);</span><br><span class="line">        <span class="comment">// 将else if的条件表达式添加到exprStack中</span></span><br><span class="line">        exprStack.append(innerCondition);</span><br><span class="line">        <span class="comment">// 添加</span></span><br><span class="line">        posStack.append(<span class="built_in">std</span>::make_pair(innerStart, innerEnd));</span><br><span class="line">        <span class="comment">// 将语句块放到statementStack栈中，以便后续使用</span></span><br><span class="line">        statementStack.append(innerTrueBlock);</span><br><span class="line">    &#125; <span class="keyword">while</span> (match(ELSE));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有else模块，即以else if模块结束</span></span><br><span class="line">    <span class="keyword">if</span> (!trailingElse)</span><br><span class="line">    &#123;</span><br><span class="line">        TreeExpression condition = exprStack.last();</span><br><span class="line">        exprStack.removeLast();</span><br><span class="line">        TreeStatement trueBlock = statementStack.last();</span><br><span class="line">        statementStack.removeLast();</span><br><span class="line">        <span class="built_in">std</span>::pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; pos = posStack.last();</span><br><span class="line">        posStack.removeLast();</span><br><span class="line">        JSTokenLocation elseLocation = tokenLocationStack.last();</span><br><span class="line">        tokenLocationStack.removeLast();</span><br><span class="line">        TreeStatement ifStatement = context.createIfStatement(elseLocation, condition, trueBlock, <span class="number">0</span>, pos.first, pos.second);</span><br><span class="line">        context.setEndOffset(ifStatement, context.endOffset(trueBlock));</span><br><span class="line">        statementStack.append(ifStatement);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 整个循环的目的：将else后面的信息变为一个falseBlock</span></span><br><span class="line">    <span class="keyword">while</span> (!exprStack.isEmpty()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 提取条件表达式</span></span><br><span class="line">        TreeExpression condition = exprStack.last();</span><br><span class="line">        exprStack.removeLast();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 提取falseBlock</span></span><br><span class="line">        TreeStatement falseBlock = statementStack.last();</span><br><span class="line">        statementStack.removeLast();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 提取trueBlock</span></span><br><span class="line">        TreeStatement trueBlock = statementStack.last();</span><br><span class="line">        statementStack.removeLast();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 提取位置信息</span></span><br><span class="line">        <span class="built_in">std</span>::pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; pos = posStack.last();</span><br><span class="line">        posStack.removeLast();</span><br><span class="line">        JSTokenLocation elseLocation = tokenLocationStack.last();</span><br><span class="line">        tokenLocationStack.removeLast();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建TreeStatement</span></span><br><span class="line">        TreeStatement ifStatement = context.createIfStatement(elseLocation, condition, trueBlock, falseBlock, pos.first, pos.second);</span><br><span class="line">        context.setEndOffset(ifStatement, context.endOffset(falseBlock));</span><br><span class="line">        statementStack.append(ifStatement);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建总的ifStatement</span></span><br><span class="line">    <span class="keyword">return</span> context.createIfStatement(ifLocation, condition, trueBlock, statementStack.last(), start, end);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面讲了这么多，可能会感觉很迷糊，可能要问：为什么一个ifStatement要搞的这么复杂！里面为什么要用那么多栈？为什么还带着那么多循环？</p>
+<blockquote>
+<ul>
+<li><p>先来解决第一个问题: <code>while (!exprStack.isEmpty())</code>这个最后的while循环的目的是什么呢？<br><img src="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/05.png" width="100%"><br>如图所示，它的目的就是将<code>if ... else if ... else if... else</code>的结构变成一个标准的<code>if ... else</code>结构，方便语法树的处理</p>
+</li>
+<li><p>再来看第二个问题：<code>if (!trailingElse)</code>，如果没有最后的else，这里要单独处理的目的是什么<br><img src="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/04.png" width="100%"><br>实际上有了第一个问题的铺垫，也不难理解了，它将不规范的<code>if ... else if ... else if</code>结构（不包含最后的else）变成标准的<code>if ... else if ... else if... else</code>结构了，方便第一个问题中while循环的处理。</p>
+</li>
+</ul>
+</blockquote>
+<p>到了这里，不妨再回看下代码，应该会觉得比较清楚。</p>
+<h4 id="示例-2"><a href="#示例-2" class="headerlink" title="示例"></a>示例</h4><p>来<a href="http://esprima.org/demo/parse.html?" target="_blank" rel="noopener">这里</a>自己输入if语句看吧。</p>
+<h3 id="SwitchNode"><a href="#SwitchNode" class="headerlink" title="SwitchNode"></a>SwitchNode</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SwitchNode</span> :</span> <span class="keyword">public</span> StatementNode, <span class="keyword">public</span> VariableEnvironmentNode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        SwitchNode(<span class="keyword">const</span> JSTokenLocation&amp;, ExpressionNode*, CaseBlockNode*, VariableEnvironment&amp;, FunctionStack&amp;&amp;);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* = <span class="number">0</span>)</span> override</span>;</span><br><span class="line"></span><br><span class="line">        ExpressionNode* m_expr;</span><br><span class="line">        CaseBlockNode* m_block;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<h4 id="parseSwitchStatement"><a href="#parseSwitchStatement" class="headerlink" title="parseSwitchStatement"></a>parseSwitchStatement</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeStatement</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseSwitchStatement(TreeBuilder&amp; context)</span><br><span class="line">&#123;</span><br><span class="line">    JSTokenLocation location(tokenLocation());</span><br><span class="line">    <span class="keyword">int</span> startLine = tokenLine();</span><br><span class="line">    next();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确定switch后面的左括号</span></span><br><span class="line">    handleProductionOrFail(OPENPAREN, <span class="string">"("</span>, <span class="string">"start"</span>, <span class="string">"subject of a 'switch'"</span>);</span><br><span class="line">    <span class="comment">// 解析switch括号中的表达式</span></span><br><span class="line">    TreeExpression expr = parseExpression(context);</span><br><span class="line">    <span class="keyword">int</span> endLine = tokenLine();</span><br><span class="line">    <span class="comment">// 确定switch后面的右括号</span></span><br><span class="line">    handleProductionOrFail(CLOSEPAREN, <span class="string">")"</span>, <span class="string">"end"</span>, <span class="string">"subject of a 'switch'"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确定switch的左花括号</span></span><br><span class="line">    handleProductionOrFail(OPENBRACE, <span class="string">"&#123;"</span>, <span class="string">"start"</span>, <span class="string">"body of a 'switch'"</span>);</span><br><span class="line">    AutoPopScopeRef lexicalScope(this, pushScope());</span><br><span class="line">    lexicalScope-&gt;setIsLexicalScope();</span><br><span class="line">    lexicalScope-&gt;preventVarDeclarations();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// m_switchDepth++</span></span><br><span class="line">    startSwitch();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 循环遍历，解析case语句</span></span><br><span class="line">    TreeClauseList firstClauses = parseSwitchClauses(context);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 解析default语句</span></span><br><span class="line">    TreeClause defaultClause = parseSwitchDefaultClause(context);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 再次循环遍历，解析case语句</span></span><br><span class="line">    TreeClauseList secondClauses = parseSwitchClauses(context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// m_switchDepth--</span></span><br><span class="line">    endSwitch();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确定switch的右=花括号</span></span><br><span class="line">    handleProductionOrFail(CLOSEBRACE, <span class="string">"&#125;"</span>, <span class="string">"end"</span>, <span class="string">"body of a 'switch'"</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 利用解析好的caseCaluse和defaultClause创建一个SwitchStatement</span></span><br><span class="line">    TreeStatement result = context.createSwitchStatement(location, expr, firstClauses, defaultClause, secondClauses, startLine, endLine, lexicalScope-&gt;finalizeLexicalEnvironment(), lexicalScope-&gt;takeFunctionDeclarations());</span><br><span class="line"></span><br><span class="line">    popScope(lexicalScope, TreeBuilder::NeedsFreeVariableInfo);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> LexerType&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TreeBuilder</span>&gt; <span class="title">TreeClauseList</span> <span class="title">Parser</span>&lt;LexerType&gt;:</span>:parseSwitchClauses(TreeBuilder&amp; context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!match(CASE)) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> startOffset = tokenStart();</span><br><span class="line">    next();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析case对应的常量表达式</span></span><br><span class="line">    TreeExpression condition = parseExpression(context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确认表达式后面的冒号：</span></span><br><span class="line">    consumeOrFail(COLON, <span class="string">"Expected a ':' after switch clause expression"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析case对应的body语句</span></span><br><span class="line">    TreeSourceElements statements = parseSourceElements(context, DontCheckForStrictMode);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 将case对应的常量表达式和语句创建一个Clause</span></span><br><span class="line">    TreeClause clause = context.createClause(condition, statements);</span><br><span class="line">    context.setStartOffset(clause, startOffset);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 建立链表</span></span><br><span class="line">    TreeClauseList clauseList = context.createClauseList(clause);</span><br><span class="line">    TreeClauseList tail = clauseList;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 继续循环遍历，直到匹配不到case</span></span><br><span class="line">    <span class="keyword">while</span> (match(CASE)) &#123;</span><br><span class="line">        startOffset = tokenStart();</span><br><span class="line">        next();</span><br><span class="line">        TreeExpression condition = parseExpression(context);</span><br><span class="line">        consumeOrFail(COLON, <span class="string">"Expected a ':' after switch clause expression"</span>);</span><br><span class="line">        TreeSourceElements statements = parseSourceElements(context, DontCheckForStrictMode);</span><br><span class="line">        clause = context.createClause(condition, statements);</span><br><span class="line">        context.setStartOffset(clause, startOffset);</span><br><span class="line">        tail = context.createClauseList(tail, clause);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> clauseList;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大部分逻辑看代码中的注释应该就可以理解，这里比较费解的是：case语句解析了两次<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TreeClauseList firstClauses = parseSwitchClauses(context);</span><br><span class="line">TreeClauseList secondClauses = parseSwitchClauses(context);</span><br></pre></td></tr></table></figure></p>
+<p>原因是在switch语法中，defalut关键字的位置是不确定的，可能在开头，可能在结尾，也可能在中间，甚至还可能不存在。它相当于把switch所有的case劈成了两半，为了在遍历case的循环中不被defalut打断，所以这里采取了前后两次遍历，逻辑清晰，易于理解。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>语法分析涉及到的东西较大，篇幅有些多，后续可能会继续更新，添加一些细节分析。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/">JavaScriptCore引擎深度解析4-语法分析篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月02日 - 00:08</p>
+  <p><span>最后更新:</span>2018年11月05日 - 00:11</p>
+  <p><span>原始链接:</span><a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/" title="JavaScriptCore引擎深度解析4-语法分析篇">https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/">JavaScriptCore引擎深度解析4-语法分析篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月02日 - 00:08</p>
+  <p><span>最后更新:</span>2018年11月05日 - 00:11</p>
+  <p><span>原始链接:</span><a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/" title="JavaScriptCore引擎深度解析4-语法分析篇">https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/" rel="next" title="JavaScriptCore引擎深度解析3—词法分析篇">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore引擎深度解析3—词法分析篇
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/" rel="prev" title="JavaScriptCore引擎深度解析5-字节码生成篇（上）">
+                JavaScriptCore引擎深度解析5-字节码生成篇（上） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#语法分析概述"><span class="nav-number">2.</span> <span class="nav-text">语法分析概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#语法树"><span class="nav-number">3.</span> <span class="nav-text">语法树</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#语法树节点"><span class="nav-number">3.1.</span> <span class="nav-text">语法树节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#节点内存管理"><span class="nav-number">3.2.</span> <span class="nav-text">节点内存管理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ASTBuilder"><span class="nav-number">4.</span> <span class="nav-text">ASTBuilder</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Vector"><span class="nav-number">4.1.</span> <span class="nav-text">Vector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#操作数-BinaryOperand"><span class="nav-number">4.2.</span> <span class="nav-text">操作数 BinaryOperand</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二元操作结构体"><span class="nav-number">4.3.</span> <span class="nav-text">二元操作结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值操作结构体"><span class="nav-number">4.4.</span> <span class="nav-text">赋值操作结构体</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#parse堆栈"><span class="nav-number">5.</span> <span class="nav-text">parse堆栈</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#parseInner"><span class="nav-number">5.1.</span> <span class="nav-text">parseInner</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseSourceElements"><span class="nav-number">5.2.</span> <span class="nav-text">parseSourceElements</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseStatementListItem"><span class="nav-number">5.3.</span> <span class="nav-text">parseStatementListItem</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseStatement"><span class="nav-number">5.4.</span> <span class="nav-text">parseStatement</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parseExpression"><span class="nav-number">5.5.</span> <span class="nav-text">parseExpression</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#parseAssignmentExpression"><span class="nav-number">5.5.1.</span> <span class="nav-text">parseAssignmentExpression</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StatementNode"><span class="nav-number">6.</span> <span class="nav-text">StatementNode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DeclarationStatement"><span class="nav-number">6.1.</span> <span class="nav-text">DeclarationStatement</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#parseVariableDeclaration"><span class="nav-number">6.1.1.</span> <span class="nav-text">parseVariableDeclaration</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#parseVariableDeclarationList"><span class="nav-number">6.1.2.</span> <span class="nav-text">parseVariableDeclarationList</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例"><span class="nav-number">6.1.3.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WhileNode"><span class="nav-number">6.2.</span> <span class="nav-text">WhileNode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#parseWhileStatement"><span class="nav-number">6.2.1.</span> <span class="nav-text">parseWhileStatement</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例-1"><span class="nav-number">6.2.2.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IfElseNode"><span class="nav-number">6.3.</span> <span class="nav-text">IfElseNode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#parseIfStatement"><span class="nav-number">6.3.1.</span> <span class="nav-text">parseIfStatement</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例-2"><span class="nav-number">6.3.2.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SwitchNode"><span class="nav-number">6.4.</span> <span class="nav-text">SwitchNode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#parseSwitchStatement"><span class="nav-number">6.4.1.</span> <span class="nav-text">parseSwitchStatement</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore ByteCode," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言JavaScript源码经过了词法分析和语法分析的处理就产生了语法分析树，接下来的工作就是将语法分析树转换为字节码，也就是本文将要讲述的内容。上述的整个过程实际上就是任何一门程序语言必经的步骤——编译。但是不同于许多语言（C/C++/Objective-C），JavaScript编译结束之后，并不会生成存放在硬盘之中的目标代码或可执行文件，生成的指令字节码，可能会立即被虚拟机进行逐行解释执行，">
+<meta name="keywords" content="JavaScriptCore ByteCode">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（上）">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言JavaScript源码经过了词法分析和语法分析的处理就产生了语法分析树，接下来的工作就是将语法分析树转换为字节码，也就是本文将要讲述的内容。上述的整个过程实际上就是任何一门程序语言必经的步骤——编译。但是不同于许多语言（C/C++/Objective-C），JavaScript编译结束之后，并不会生成存放在硬盘之中的目标代码或可执行文件，生成的指令字节码，可能会立即被虚拟机进行逐行解释执行，">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/02.png">
+<meta property="og:updated_time" content="2019-04-12T03:36:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（上）">
+<meta name="twitter:description" content="前言JavaScript源码经过了词法分析和语法分析的处理就产生了语法分析树，接下来的工作就是将语法分析树转换为字节码，也就是本文将要讲述的内容。上述的整个过程实际上就是任何一门程序语言必经的步骤——编译。但是不同于许多语言（C/C++/Objective-C），JavaScript编译结束之后，并不会生成存放在硬盘之中的目标代码或可执行文件，生成的指令字节码，可能会立即被虚拟机进行逐行解释执行，">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/03.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析5-字节码生成篇（上） | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析5-字节码生成篇（上）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-10T00:34:33+08:00">
+                2018-08-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,163
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  16
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>JavaScript源码经过了<a href="http://lingyuncxb.com/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-3-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/" target="_blank" rel="noopener">词法分析</a>和<a href="http://lingyuncxb.com/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/" target="_blank" rel="noopener">语法分析</a>的处理就产生了语法分析树，接下来的工作就是将语法分析树转换为字节码，也就是本文将要讲述的内容。上述的整个过程实际上就是任何一门程序语言必经的步骤——<strong>编译</strong>。但是不同于许多语言（C/C++/Objective-C），JavaScript编译结束之后，并不会生成存放在硬盘之中的目标代码或可执行文件，生成的指令字节码，可能会立即被虚拟机进行逐行解释执行，也有可能被缓存下来通过JIT技术转换为本地代码。</p>
+<h2 id="CodeCache"><a href="#CodeCache" class="headerlink" title="CodeCache"></a>CodeCache</h2><p>在<a href="http://lingyuncxb.com/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/" target="_blank" rel="noopener">开篇</a>中，我们提到如下的图：<br><img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/03.png" width="100%"><br>当语法分析结束后，就该<code>CodeCache</code>大显身手了，从名字就可以推断出，它负责CodeBlock的缓存处理<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CodeCache</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    CodeCache();</span><br><span class="line">    ~CodeCache();</span><br><span class="line"></span><br><span class="line">    <span class="function">UnlinkedProgramCodeBlock* <span class="title">getProgramCodeBlock</span><span class="params">(VM&amp;, ProgramExecutable*, <span class="keyword">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedEvalCodeBlock* <span class="title">getEvalCodeBlock</span><span class="params">(VM&amp;, EvalExecutable*, <span class="keyword">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;, EvalContextType, <span class="keyword">const</span> VariableEnvironment*)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedModuleProgramCodeBlock* <span class="title">getModuleProgramCodeBlock</span><span class="params">(VM&amp;, ModuleProgramExecutable*, <span class="keyword">const</span> SourceCode&amp;, JSParserBuiltinMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedFunctionExecutable* <span class="title">getFunctionExecutableFromGlobalCode</span><span class="params">(VM&amp;, <span class="keyword">const</span> Identifier&amp;, <span class="keyword">const</span> SourceCode&amp;, ParserError&amp;)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">UnlinkedCodeBlockType</span>, <span class="title">class</span> <span class="title">ExecutableType</span>&gt; </span></span><br><span class="line"><span class="class">    <span class="title">UnlinkedCodeBlockType</span>* <span class="title">getGlobalCodeBlock</span>(<span class="title">VM</span>&amp;, <span class="title">ExecutableType</span>*, <span class="title">const</span> <span class="title">SourceCode</span>&amp;, <span class="title">JSParserBuiltinMode</span>, <span class="title">JSParserStrictMode</span>, <span class="title">DebuggerMode</span>, <span class="title">ParserError</span>&amp;, <span class="title">EvalContextType</span>, <span class="title">const</span> <span class="title">VariableEnvironment</span>*);</span></span><br><span class="line"></span><br><span class="line">    CodeCacheMap m_sourceCode;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<ul>
+<li><p><code>m_sourceCode</code>是容器，用来存储<code>CodeBlock</code></p>
+</li>
+<li><p><code>CodeCache</code>有4个getXXXCodeBlock，用来获取各种<code>CodeBlock</code>，其中前3个都会调到<br><code>getGlobalCodeBlock</code>方法：</p>
+</li>
+</ul>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">UnlinkedCodeBlockType</span>, <span class="title">class</span> <span class="title">ExecutableType</span>&gt;</span></span><br><span class="line"><span class="class"><span class="title">UnlinkedCodeBlockType</span>* <span class="title">CodeCache</span>:</span>:getGlobalCodeBlock(VM&amp; vm, ExecutableType* executable, <span class="keyword">const</span> SourceCode&amp; source, JSParserBuiltinMode builtinMode, JSParserStrictMode strictMode, DebuggerMode debuggerMode, ParserError&amp; error, EvalContextType evalContextType, <span class="keyword">const</span> VariableEnvironment* variablesUnderTDZ)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成Key</span></span><br><span class="line">    SourceCodeKey key(source, String(), CacheTypes&lt;UnlinkedCodeBlockType&gt;::codeType, builtinMode, strictMode, derivedContextType, evalContextType, isArrowFunctionContext);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 查找缓存</span></span><br><span class="line">    SourceCodeValue* cache = m_sourceCode.findCacheAndUpdateAge(key);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果命中，直接返回UnlinkedCodeBlock</span></span><br><span class="line">    <span class="keyword">if</span> (cache &amp;&amp; canCache) &#123;</span><br><span class="line">        UnlinkedCodeBlockType* unlinkedCodeBlock = jsCast&lt;UnlinkedCodeBlockType*&gt;(cache-&gt;cell.get());</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> unlinkedCodeBlock;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 否则，定义一个UnlinkedCodeBlock，存储`BytecodeGenerator`生成的字节码</span></span><br><span class="line">    UnlinkedCodeBlockType* unlinkedCodeBlock = UnlinkedCodeBlockType::create(&amp;vm, executable-&gt;executableInfo(), debuggerMode);</span><br><span class="line">    unlinkedCodeBlock-&gt;recordParse(rootNode-&gt;features(), rootNode-&gt;hasCapturedVariables(), rootNode-&gt;firstLine() - source.firstLine(), lineCount, unlinkedEndColumn);</span><br><span class="line">    unlinkedCodeBlock-&gt;setSourceURLDirective(source.provider()-&gt;sourceURL());</span><br><span class="line">    unlinkedCodeBlock-&gt;setSourceMappingURLDirective(source.provider()-&gt;sourceMappingURL());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用`BytecodeGenerator`生成字节码</span></span><br><span class="line">    error = BytecodeGenerator::generate(vm, rootNode.get(), unlinkedCodeBlock, debuggerMode, variablesUnderTDZ);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加缓存，用于后续查找</span></span><br><span class="line">    m_sourceCode.addCache(key, SourceCodeValue(vm, unlinkedCodeBlock, m_sourceCode.age()));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回UnlinkedCodeBlock</span></span><br><span class="line">    <span class="keyword">return</span> unlinkedCodeBlock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li><code>getFunctionExecutableFromGlobalCode</code>比较特殊：</li>
+</ul>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">UnlinkedFunctionExecutable* CodeCache::getFunctionExecutableFromGlobalCode(VM&amp; vm, <span class="keyword">const</span> Identifier&amp; name, <span class="keyword">const</span> SourceCode&amp; source, ParserError&amp; error)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">bool</span> isArrowFunctionContext = <span class="literal">false</span>;</span><br><span class="line">    <span class="comment">// 定义Key</span></span><br><span class="line">    <span class="function">SourceCodeKey <span class="title">key</span><span class="params">(</span></span></span><br><span class="line">        source, name.string(), SourceCodeType::FunctionType,</span><br><span class="line">        JSParserBuiltinMode::NotBuiltin,</span><br><span class="line">        JSParserStrictMode::NotStrict,</span><br><span class="line">        DerivedContextType::None,</span><br><span class="line">        EvalContextType::None,</span><br><span class="line">        isArrowFunctionContext);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 查找缓存</span></span><br><span class="line">    SourceCodeValue* cache = m_sourceCode.findCacheAndUpdateAge(key);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果命中</span></span><br><span class="line">    <span class="keyword">if</span> (cache) &#123;</span><br><span class="line">        UnlinkedFunctionExecutable* executable = jsCast&lt;UnlinkedFunctionExecutable*&gt;(cache-&gt;cell.get());</span><br><span class="line">        source.provider()-&gt;setSourceURLDirective(executable-&gt;sourceURLDirective());</span><br><span class="line">        source.provider()-&gt;setSourceMappingURLDirective(executable-&gt;sourceMappingURLDirective());</span><br><span class="line">        <span class="keyword">return</span> executable;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    JSTextPosition positionBeforeLastNewline;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成ProgramNode</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;ProgramNode&gt; program = parse&lt;ProgramNode&gt;(</span><br><span class="line">        &amp;vm, source, Identifier(), JSParserBuiltinMode::NotBuiltin,</span><br><span class="line">        JSParserStrictMode::NotStrict, SourceParseMode::ProgramMode, SuperBinding::NotNeeded,</span><br><span class="line">        error, &amp;positionBeforeLastNewline);</span><br><span class="line">    <span class="keyword">if</span> (!program) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// This function assumes an input string that would result in a single function declaration.</span></span><br><span class="line">    StatementNode* statement = program-&gt;singleStatement();</span><br><span class="line">    <span class="keyword">if</span> (!statement || !statement-&gt;isBlock())</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    StatementNode* funcDecl = <span class="keyword">static_cast</span>&lt;BlockNode*&gt;(statement)-&gt;singleStatement();</span><br><span class="line">    <span class="keyword">if</span> (!funcDecl || !funcDecl-&gt;isFuncDeclNode())</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    FunctionMetadataNode* metadata = <span class="keyword">static_cast</span>&lt;FuncDeclNode*&gt;(funcDecl)-&gt;metadata();</span><br><span class="line">    <span class="keyword">if</span> (!metadata)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    </span><br><span class="line">    metadata-&gt;overrideName(name);</span><br><span class="line">    metadata-&gt;setEndPosition(positionBeforeLastNewline);</span><br><span class="line">    <span class="comment">// The Function constructor only has access to global variables, so no variables will be under TDZ.</span></span><br><span class="line">    VariableEnvironment emptyTDZVariables;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义UnlinkedFunctionExecutable</span></span><br><span class="line">    UnlinkedFunctionExecutable* functionExecutable = UnlinkedFunctionExecutable::create(&amp;vm, source, metadata, UnlinkedNormalFunction, ConstructAbility::CanConstruct, emptyTDZVariables, DerivedContextType::None);</span><br><span class="line"></span><br><span class="line">    functionExecutable-&gt;setSourceURLDirective(source.provider()-&gt;sourceURL());</span><br><span class="line">    functionExecutable-&gt;setSourceMappingURLDirective(source.provider()-&gt;sourceMappingURL());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加缓存</span></span><br><span class="line">    m_sourceCode.addCache(key, SourceCodeValue(vm, functionExecutable, m_sourceCode.age()));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回</span></span><br><span class="line">    <span class="keyword">return</span> functionExecutable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它并没有返回<code>CodeBlock</code>，而是返回一个<code>UnlinkedFunctionExecutable</code>，然而在<code>UnlinkedFunctionExecutable</code>内部的方法<code>generateUnlinkedFunctionCodeBlock</code>实际上也调用了<code>BytecodeGenerator::generate</code>：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> UnlinkedFunctionCodeBlock* <span class="title">generateUnlinkedFunctionCodeBlock</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    VM&amp; vm, UnlinkedFunctionExecutable* executable, <span class="keyword">const</span> SourceCode&amp; source,</span></span></span><br><span class="line"><span class="function"><span class="params">    CodeSpecializationKind kind, DebuggerMode debuggerMode,</span></span></span><br><span class="line"><span class="function"><span class="params">    UnlinkedFunctionKind functionKind, ParserError&amp; error, SourceParseMode parseMode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSParserBuiltinMode builtinMode = executable-&gt;isBuiltinFunction() ? JSParserBuiltinMode::Builtin : JSParserBuiltinMode::NotBuiltin;</span><br><span class="line">    JSParserStrictMode strictMode = executable-&gt;isInStrictContext() ? JSParserStrictMode::Strict : JSParserStrictMode::NotStrict;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;FunctionNode&gt; function = parse&lt;FunctionNode&gt;(</span><br><span class="line">        &amp;vm, source, executable-&gt;name(), builtinMode, strictMode, executable-&gt;parseMode(), executable-&gt;superBinding(), error, <span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!function) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    function-&gt;finishParsing(executable-&gt;name(), executable-&gt;functionMode());</span><br><span class="line">    executable-&gt;recordParse(function-&gt;features(), function-&gt;hasCapturedVariables());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">bool</span> isClassContext = executable-&gt;superBinding() == SuperBinding::Needed;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成一个UnlinkedFunctionCodeBlock</span></span><br><span class="line">    UnlinkedFunctionCodeBlock* result = UnlinkedFunctionCodeBlock::create(&amp;vm, FunctionCode, ExecutableInfo(function-&gt;usesEval(), function-&gt;isStrictMode(), kind == CodeForConstruct, functionKind == UnlinkedBuiltinFunction, executable-&gt;constructorKind(), executable-&gt;superBinding(), parseMode, executable-&gt;derivedContextType(), <span class="literal">false</span>, isClassContext, EvalContextType::FunctionEvalContext), debuggerMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用`BytecodeGenerator`生成字节码</span></span><br><span class="line">    error = BytecodeGenerator::generate(vm, function.get(), result, debuggerMode, executable-&gt;parentScopeTDZVariables());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (error.isValid()) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>最终下来，<code>BytecodeGenerator</code>的探索显得格外重要了</p>
+<h2 id="BytecodeGenerator"><a href="#BytecodeGenerator" class="headerlink" title="BytecodeGenerator"></a>BytecodeGenerator</h2><p><code>BytecodeGenerator</code>名如其意：字节码生成器。它对外有一个类方法<code>generate</code>，里面调用了它的构造函数生成一个临时的<code>BytecodeGenerator</code>变量，并调用其不带参数的<code>generate</code>方法返回是否是解析错误，而真正的字节码结果存放在第3个参数<code>CodeBlock</code>中<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Args&gt;</span><br><span class="line"><span class="function"><span class="keyword">static</span> ParserError <span class="title">generate</span><span class="params">(VM&amp; vm, Args&amp;&amp; ...args)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> bytecodeGenerator = <span class="built_in">std</span>::make_unique&lt;BytecodeGenerator&gt;(vm, <span class="built_in">std</span>::forward&lt;Args&gt;(args)...);</span><br><span class="line">    <span class="keyword">return</span> bytecodeGenerator-&gt;generate(); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接下来看下它的几个私有构造函数：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BytecodeGenerator</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    BytecodeGenerator(VM&amp;, ProgramNode*, UnlinkedProgramCodeBlock*, DebuggerMode, <span class="keyword">const</span> VariableEnvironment*);</span><br><span class="line">    BytecodeGenerator(VM&amp;, FunctionNode*, UnlinkedFunctionCodeBlock*, DebuggerMode, <span class="keyword">const</span> VariableEnvironment*);</span><br><span class="line">    BytecodeGenerator(VM&amp;, EvalNode*, UnlinkedEvalCodeBlock*, DebuggerMode, <span class="keyword">const</span> VariableEnvironment*);</span><br><span class="line">    BytecodeGenerator(VM&amp;, ModuleProgramNode*, UnlinkedModuleProgramCodeBlock*, DebuggerMode, <span class="keyword">const</span> VariableEnvironment*);</span><br><span class="line"></span><br><span class="line">    ~BytecodeGenerator();</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Strong&lt;UnlinkedCodeBlock&gt; m_codeBlock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，<code>BytecodeGenerator</code>需要注入以下几个参数，其中除了DebuggerMode外，任何一个参数，都可能是一个篇幅讲述不完的，所以尽量讲的简要一点。</p>
+<blockquote>
+<ul>
+<li>VM 虚拟机</li>
+<li>Node，有<code>ProgramNode</code>、<code>FunctionNode</code>、<code>EvalNode</code>和<code>ModuleProgramNode</code>4种</li>
+<li><code>UnlinkedCodeBlock</code>，和Node相对应，有<code>UnlinkedProgramCodeBlock</code>、<code>UnlinkedFunctionCodeBlock</code>、<code>UnlinkedEvalCodeBlock</code>和<code>UnlinkedModuleProgramCodeBlock</code>4种</li>
+<li>DebuggerMode 是否是调试模式</li>
+<li>VariableEnvironment 变量环境</li>
+</ul>
+</blockquote>
+<h3 id="参数分析"><a href="#参数分析" class="headerlink" title="参数分析"></a>参数分析</h3><h4 id="VM"><a href="#VM" class="headerlink" title="VM"></a>VM</h4><p>如枚举<code>VMType</code>所示，VM有3种类型：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> VMType &#123; Default, APIContextGroup, APIShared &#125;`</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// WebCore has a one-to-one mapping of threads to VMs;</span><br><span class="line">// either create() or createLeaked() should only be called once</span><br><span class="line">// on a thread, this is the &apos;default&apos; VM .</span><br><span class="line">// API contexts created using the new context group aware interface</span><br><span class="line">// create APIContextGroup objects which require less locking of JSC</span><br><span class="line">// than the old singleton APIShared VM created for use by</span><br><span class="line">// the original API.</span><br></pre></td></tr></table></figure>
+<p>VM的定义如下:<br>其中构造函数是私有的，外部不可访问，另外还罗列了一些我认为重要的成员变量<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">VM</span> :</span> <span class="keyword">public</span> ThreadSafeRefCounted&lt;VM&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// VM的APIShared创建方式：单例</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">isSharedInstance</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> vmType == APIShared; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">usingAPI</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> vmType != Default; &#125;</span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">sharedInstanceExists</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="keyword">static</span> VM&amp; <span class="title">sharedInstance</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// VM的Default创建方式</span></span><br><span class="line">    JS_EXPORT_PRIVATE <span class="keyword">static</span> Ref&lt;VM&gt; create(HeapType = SmallHeap);</span><br><span class="line">    JS_EXPORT_PRIVATE <span class="keyword">static</span> Ref&lt;VM&gt; createLeaked(HeapType = SmallHeap);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// VM的APIContextGroup创建方式</span></span><br><span class="line">    <span class="keyword">static</span> Ref&lt;VM&gt; createContextGroup(HeapType = SmallHeap);</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// 锁</span></span><br><span class="line">    RefPtr&lt;JSLock&gt; m_apiLock;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ExecutableAllocator executableAllocator;</span><br><span class="line">    Heap heap;</span><br><span class="line">    VMType vmType;</span><br><span class="line">    VMEntryFrame* topVMEntryFrame;</span><br><span class="line">    ExecState* topCallFrame;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// a large numer of Structure</span></span><br><span class="line">    Strong&lt;Structure&gt; structureStructure;</span><br><span class="line">    Strong&lt;Structure&gt; structureRareDataStructure;</span><br><span class="line">    Strong&lt;Structure&gt; terminatedExecutionErrorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; stringStructure;</span><br><span class="line">    Strong&lt;Structure&gt; propertyNameIteratorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; propertyNameEnumeratorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; customGetterSetterStructure;</span><br><span class="line">    Strong&lt;Structure&gt; scopedArgumentsTableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; apiWrapperStructure;</span><br><span class="line">    Strong&lt;Structure&gt; JSScopeStructure;</span><br><span class="line">    Strong&lt;Structure&gt; executableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; nativeExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; evalExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; programExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; functionExecutableStructure;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    PrototypeMap prototypeMap;</span><br><span class="line">    SourceProviderCacheMap sourceProviderCacheMap;</span><br><span class="line">    Interpreter* interpreter;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    ExecState* newCallFrameReturnValue;</span><br><span class="line">    ExecState* callFrameForCatch;</span><br><span class="line"></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
+<p><code>ExecState</code>是执行脚本的对象，由<code>GlobalObject</code>管理的，负责记录脚本执行上下文</p>
+<h4 id="Node"><a href="#Node" class="headerlink" title="Node"></a>Node</h4><p>在语法分析篇中，我们提到了<code>Node</code>的继承图，其中本文提到的4中<code>Node</code>均继承自<code>ScopeNode</code>，而<code>ScopeNode</code>继承自<code>StatementNode</code>，显然这4种<code>Node</code>属于基本语句，并且和区域范围有关。<br><img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/01.png" width="100%"></p>
+<h4 id="UnlinkedCodeBlock"><a href="#UnlinkedCodeBlock" class="headerlink" title="UnlinkedCodeBlock"></a>UnlinkedCodeBlock</h4><p><code>UnlinkedCodeBlock</code>是代码管理类，主要有<code>UnlinkedProgramCodeBlock</code>、<code>UnlinkedFunctionCodeBlock</code>、<code>UnlinkedEvalCodeBlock</code>和<code>UnlinkedModuleProgramCodeBlock</code>4种。它存储的是 <strong>编译后的<code>ByteCode</code></strong> ，它的继承层级如下图所示：<br><img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/02.png" width="100%"></p>
+<p>与之对应的还有一个<code>CodeBlock</code>，主要用于<code>LLint</code>和<code>JIT</code>，它的继承层级和<code>UnlinkedCodeBlock</code>极其类似，我们后续的系列篇章中会提到。</p>
+<h4 id="VariableEnvironment"><a href="#VariableEnvironment" class="headerlink" title="VariableEnvironment"></a>VariableEnvironment</h4><p><code>VariableEnvironment</code>有一个非常重要的成员变量<code>m_map</code>，它用来存放各种被标记的变量：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map m_map;</span><br></pre></td></tr></table></figure></p>
+<p>它的key为<code>UniquedStringImpl*</code>类型，value为枚举类型<code>Traits</code><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> Traits : <span class="keyword">uint16_t</span> </span><br><span class="line">&#123;</span><br><span class="line">    IsCaptured = <span class="number">1</span> &lt;&lt; <span class="number">0</span>,</span><br><span class="line">    IsConst = <span class="number">1</span> &lt;&lt; <span class="number">1</span>,</span><br><span class="line">    IsVar = <span class="number">1</span> &lt;&lt; <span class="number">2</span>,</span><br><span class="line">    IsLet = <span class="number">1</span> &lt;&lt; <span class="number">3</span>,</span><br><span class="line">    IsExported = <span class="number">1</span> &lt;&lt; <span class="number">4</span>,</span><br><span class="line">    IsImported = <span class="number">1</span> &lt;&lt; <span class="number">5</span>,</span><br><span class="line">    IsImportedNamespace = <span class="number">1</span> &lt;&lt; <span class="number">6</span>,</span><br><span class="line">    IsFunction = <span class="number">1</span> &lt;&lt; <span class="number">7</span>,</span><br><span class="line">    IsParameter = <span class="number">1</span> &lt;&lt; <span class="number">8</span>,</span><br><span class="line">    IsSloppyModeHoistingCandidate = <span class="number">1</span> &lt;&lt; <span class="number">9</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>同时，它还有若干重要的方法，用来捕获和标记变量<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">hasCapturedVariables</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">captures</span><span class="params">(UniquedStringImpl* identifier)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markVariableAsCapturedIfDefined</span><span class="params">(<span class="keyword">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markVariableAsCaptured</span><span class="params">(<span class="keyword">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markAllVariablesAsCaptured</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markVariableAsImported</span><span class="params">(<span class="keyword">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markVariableAsExported</span><span class="params">(<span class="keyword">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>从这些方法名和枚举值可以简单地推测出：它主要用来标识变量的上下文，例如是否是闭包中捕获的变量，是否是导入的变量等</p>
+<h3 id="generate"><a href="#generate" class="headerlink" title="generate"></a>generate</h3><p>接下来就该分析核心函数<code>generate</code>了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">ParserError BytecodeGenerator::generate()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 设置this寄存器</span></span><br><span class="line">    m_codeBlock-&gt;setThisRegister(m_thisRegister.virtualRegister());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置arguments特殊参数和普通的参数</span></span><br><span class="line">    <span class="keyword">if</span> (m_needToInitializeArguments)</span><br><span class="line">        initializeVariable(variable(propertyNames().arguments), m_argumentsRegister);</span><br><span class="line">    <span class="keyword">if</span> (m_restParameter)</span><br><span class="line">        m_restParameter-&gt;emit(*<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果不是构造函数，调用emitBytecode生成字节码（重点）</span></span><br><span class="line">    <span class="keyword">bool</span> callingClassConstructor = constructorKind() != ConstructorKind::None &amp;&amp; !isConstructor();</span><br><span class="line">    <span class="keyword">if</span> (!callingClassConstructor)</span><br><span class="line">        m_scopeNode-&gt;emitBytecode(*<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将生成的字节码指令设置到m_codeBlock</span></span><br><span class="line">    m_codeBlock-&gt;setInstructions(<span class="built_in">std</span>::make_unique&lt;UnlinkedInstructionStream&gt;(m_instructions));</span><br><span class="line">    m_codeBlock-&gt;shrinkToFit();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 异常处理</span></span><br><span class="line">    <span class="keyword">if</span> (m_expressionTooDeep)</span><br><span class="line">        <span class="keyword">return</span> ParserError(ParserError::OutOfMemory);</span><br><span class="line">    <span class="keyword">return</span> ParserError(ParserError::ErrorNone);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="emitBytecode"><a href="#emitBytecode" class="headerlink" title="emitBytecode"></a>emitBytecode</h3><p>前文提到的4种Node均继承自<code>ScopeNode</code>，所以这里展开多态性分析：</p>
+<h4 id="ProgramNode"><a href="#ProgramNode" class="headerlink" title="ProgramNode"></a>ProgramNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ProgramNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    emitProgramNodeBytecode(generator, *<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">emitProgramNodeBytecode</span><span class="params">(BytecodeGenerator&amp; generator, ScopeNode&amp; scopeNode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; dstRegister = generator.newTemporary();</span><br><span class="line">    generator.emitLoad(dstRegister.get(), jsUndefined());</span><br><span class="line">    generator.emitProfileControlFlow(scopeNode.startStartOffset());</span><br><span class="line">    scopeNode.emitStatementsBytecode(generator, dstRegister.get());</span><br><span class="line">    generator.emitEnd(dstRegister.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用堆栈如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ProgramNode::emitBytecode</span><br><span class="line">└──emitProgramNodeBytecode</span><br><span class="line">    └──emitStatementsBytecode</span><br></pre></td></tr></table></figure></p>
+<h4 id="ModuleProgramNode"><a href="#ModuleProgramNode" class="headerlink" title="ModuleProgramNode"></a>ModuleProgramNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ModuleProgramNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    emitProgramNodeBytecode(generator, *<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到<code>ModuleProgramNode</code>和<code>ProgramNode</code>两者的<code>emitBytecode</code>调用堆栈是一致的，这里不再重复分析。<br>调用堆栈如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ModuleProgramNode::emitBytecode</span><br><span class="line">└──emitProgramNodeBytecode</span><br><span class="line">    └──emitStatementsBytecode</span><br></pre></td></tr></table></figure></p>
+<h4 id="EvalNode"><a href="#EvalNode" class="headerlink" title="EvalNode"></a>EvalNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> EvalNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; dstRegister = generator.newTemporary();</span><br><span class="line">    generator.emitLoad(dstRegister.get(), jsUndefined());</span><br><span class="line">    emitStatementsBytecode(generator, dstRegister.get());</span><br><span class="line">    generator.emitEnd(dstRegister.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用堆栈如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EvalNode::emitBytecode</span><br><span class="line">└──emitStatementsBytecode</span><br></pre></td></tr></table></figure></p>
+<h4 id="FunctionNode"><a href="#FunctionNode" class="headerlink" title="FunctionNode"></a>FunctionNode</h4><p><code>FunctionNode</code>的字节码生成比较麻烦，它区分了几种解析模式：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">SourceParseMode</span> :</span> <span class="keyword">uint8_t</span> &#123;</span><br><span class="line">    NormalFunctionMode,</span><br><span class="line">    GeneratorBodyMode,</span><br><span class="line">    GeneratorWrapperFunctionMode,</span><br><span class="line">    GetterMode,</span><br><span class="line">    SetterMode,</span><br><span class="line">    MethodMode,</span><br><span class="line">    ArrowFunctionMode,</span><br><span class="line">    ProgramMode,</span><br><span class="line">    ModuleAnalyzeMode,</span><br><span class="line">    ModuleEvaluateMode</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>其中前7种都算是Funtion的范畴，这里针对<code>GeneratorWrapperFunctionMode</code>和<code>GeneratorBodyMode</code>做了单独解析处理，其它的走默认解析方式</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> FunctionNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (generator.parseMode()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::GeneratorWrapperFunctionMode: </span><br><span class="line">        &#123;</span><br><span class="line">            StatementNode* singleStatement = <span class="keyword">this</span>-&gt;singleStatement();</span><br><span class="line">            ExprStatementNode* exprStatement = <span class="keyword">static_cast</span>&lt;ExprStatementNode*&gt;(singleStatement);</span><br><span class="line">            ExpressionNode* expr = exprStatement-&gt;expr();</span><br><span class="line">            FuncExprNode* funcExpr = <span class="keyword">static_cast</span>&lt;FuncExprNode*&gt;(expr);</span><br><span class="line"></span><br><span class="line">            RefPtr&lt;RegisterID&gt; next = generator.newTemporary();</span><br><span class="line">            generator.emitNode(next.get(), funcExpr);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (generator.superBinding() == SuperBinding::Needed) &#123;</span><br><span class="line">                RefPtr&lt;RegisterID&gt; homeObject = emitHomeObjectForCallee(generator);</span><br><span class="line">                emitPutHomeObject(generator, next.get(), homeObject.get());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// <span class="doctag">FIXME:</span> Currently, we just create an object and store generator related fields as its properties for ease.</span></span><br><span class="line">            <span class="comment">// But to make it efficient, we will introduce JSGenerator class, add opcode new_generator and use its C++ fields instead of these private properties.</span></span><br><span class="line">            <span class="comment">// https://bugs.webkit.org/show_bug.cgi?id=151545</span></span><br><span class="line"></span><br><span class="line">            generator.emitDirectPutById(generator.generatorRegister(), generator.propertyNames().generatorNextPrivateName, next.get(), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            generator.emitDirectPutById(generator.generatorRegister(), generator.propertyNames().generatorThisPrivateName, generator.thisRegister(), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            RegisterID* initialState = generator.emitLoad(<span class="literal">nullptr</span>, jsNumber(<span class="number">0</span>));</span><br><span class="line">            generator.emitDirectPutById(generator.generatorRegister(), generator.propertyNames().generatorStatePrivateName, initialState, PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            generator.emitDirectPutById(generator.generatorRegister(), generator.propertyNames().generatorFramePrivateName, generator.emitLoad(<span class="literal">nullptr</span>, jsNull()), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">           </span><br><span class="line">            generator.emitReturn(generator.generatorRegister());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::GeneratorBodyMode: </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;Label&gt; generatorBodyLabel = generator.newLabel();</span><br><span class="line">            &#123;</span><br><span class="line">                RefPtr&lt;RegisterID&gt; condition = generator.newTemporary();</span><br><span class="line">                generator.emitEqualityOp(op_stricteq, condition.get(), generator.generatorResumeModeRegister(), generator.emitLoad(<span class="literal">nullptr</span>, jsNumber(<span class="keyword">static_cast</span>&lt;<span class="keyword">int32_t</span>&gt;(JSGeneratorFunction::GeneratorResumeMode::NormalMode))));</span><br><span class="line">                generator.emitJumpIfTrue(condition.get(), generatorBodyLabel.get());</span><br><span class="line"></span><br><span class="line">                RefPtr&lt;Label&gt; throwLabel = generator.newLabel();</span><br><span class="line">                generator.emitEqualityOp(op_stricteq, condition.get(), generator.generatorResumeModeRegister(), generator.emitLoad(<span class="literal">nullptr</span>, jsNumber(<span class="keyword">static_cast</span>&lt;<span class="keyword">int32_t</span>&gt;(JSGeneratorFunction::GeneratorResumeMode::ThrowMode))));</span><br><span class="line">                generator.emitJumpIfTrue(condition.get(), throwLabel.get());</span><br><span class="line"></span><br><span class="line">                generator.emitReturn(generator.generatorValueRegister());</span><br><span class="line"></span><br><span class="line">                generator.emitLabel(throwLabel.get());</span><br><span class="line">                generator.emitThrow(generator.generatorValueRegister());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            generator.emitLabel(generatorBodyLabel.get());</span><br><span class="line"></span><br><span class="line">            emitStatementsBytecode(generator, generator.ignoredResult());</span><br><span class="line"></span><br><span class="line">            RefPtr&lt;Label&gt; done = generator.newLabel();</span><br><span class="line">            generator.emitLabel(done.get());</span><br><span class="line">            generator.emitReturn(generator.emitLoad(<span class="literal">nullptr</span>, jsUndefined()));</span><br><span class="line">            generator.endGenerator(done.get());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 再次走到了emitStatementsBytecode</span></span><br><span class="line">            emitStatementsBytecode(generator, generator.ignoredResult());</span><br><span class="line"></span><br><span class="line">            StatementNode* singleStatement = <span class="keyword">this</span>-&gt;singleStatement();</span><br><span class="line">            ReturnNode* returnNode = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Check for a return statement at the end of a function composed of a single block.</span></span><br><span class="line">            <span class="keyword">if</span> (singleStatement &amp;&amp; singleStatement-&gt;isBlock()) &#123;</span><br><span class="line">                StatementNode* lastStatementInBlock = <span class="keyword">static_cast</span>&lt;BlockNode*&gt;(singleStatement)-&gt;lastStatement();</span><br><span class="line">                <span class="keyword">if</span> (lastStatementInBlock &amp;&amp; lastStatementInBlock-&gt;isReturnNode())</span><br><span class="line">                    returnNode = <span class="keyword">static_cast</span>&lt;ReturnNode*&gt;(lastStatementInBlock);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// If there is no return we must automatically insert one.</span></span><br><span class="line">            <span class="keyword">if</span> (!returnNode) </span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">if</span> (generator.constructorKind() == ConstructorKind::Derived &amp;&amp; generator.needsToUpdateArrowFunctionContext() &amp;&amp; generator.isSuperCallUsedInInnerArrowFunction())</span><br><span class="line">                    generator.emitLoadThisFromArrowFunctionLexicalEnvironment(); <span class="comment">// Arrow function can invoke 'super' in constructor and before leave constructor we need load 'this' from lexical arrow function environment</span></span><br><span class="line">                </span><br><span class="line">                RegisterID* r0 = generator.isConstructor() ? generator.thisRegister() : generator.emitLoad(<span class="number">0</span>, jsUndefined());</span><br><span class="line">                generator.emitProfileType(r0, ProfileTypeBytecodeFunctionReturnStatement); <span class="comment">// Do not emit expression info for this profile because it's not in the user's source code.</span></span><br><span class="line">                </span><br><span class="line">                generator.emitReturn(r0);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>GeneratorWrapperFunctionMode</code>和<code>GeneratorBodyMode</code>都包含了<code>Generator</code>，推测应该和ES6推出的<a href="http://es6.ruanyifeng.com/#docs/generator" target="_blank" rel="noopener">Genetator</a> 函数有关，这里简单提一下：<br>形式上，Generator 函数是一个普通函数，但是有两个特征。一是，function关键字与函数名之间有一个星号；二是，函数体内部使用yield表达式，定义不同的内部状态.</p>
+<p><code>GeneratorBodyMode</code>样式如下：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span>* <span class="title">helloWorldGenerator</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">yield</span> <span class="string">'hello'</span>;</span><br><span class="line">  <span class="keyword">yield</span> <span class="string">'world'</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">'ending'</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> hw = helloWorldGenerator();</span><br></pre></td></tr></table></figure></p>
+<p><code>GeneratorWrapperFunctionMode</code>的样式如下：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> *<span class="title">gen</span>(<span class="params">a, b = hello(</span>))</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> </span><br><span class="line">    &#123;</span><br><span class="line">        @generatorNext: <span class="function"><span class="keyword">function</span> (<span class="params">@generator, @generatorState, @generatorValue, @generatorResumeMode</span>)</span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="built_in">arguments</span>;  <span class="comment">// This `arguments` should reference to the gen's arguments.</span></span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>简单认识一下，这里不会深究，因为最终关心的是字节码的生成。可以看到，不管是以上哪种Node的<code>emitBytecode</code>，最后都不可避免地走到了<code>emitStatementsBytecode</code>。毕竟不管是<code>ProgramNode</code>、<code>EvalNode</code>，还是<code>FunctionNode</code>，都是由一些基本的语句组成的，因此<code>Bytecode</code>的生成最终会和语法分析篇中提到的各种<code>Node</code>扯上关系。同时也可以合理推测到：<code>emitStatementsBytecode</code>只是一个起点，绝对不是终点，在里面可能会有各种递归循环调用在等待着我们。。。</p>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/">JavaScriptCore引擎深度解析5-字节码生成篇（上）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月10日 - 00:08</p>
+  <p><span>最后更新:</span>2019年04月12日 - 11:04</p>
+  <p><span>原始链接:</span><a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/" title="JavaScriptCore引擎深度解析5-字节码生成篇（上）">https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/">JavaScriptCore引擎深度解析5-字节码生成篇（上）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月10日 - 00:08</p>
+  <p><span>最后更新:</span>2019年04月12日 - 11:04</p>
+  <p><span>原始链接:</span><a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/" title="JavaScriptCore引擎深度解析5-字节码生成篇（上）">https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore-ByteCode/" rel="tag"># JavaScriptCore ByteCode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/" rel="next" title="JavaScriptCore引擎深度解析4-语法分析篇">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore引擎深度解析4-语法分析篇
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/" rel="prev" title="JavaScriptCore引擎深度解析5-字节码生成篇（中）">
+                JavaScriptCore引擎深度解析5-字节码生成篇（中） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CodeCache"><span class="nav-number">2.</span> <span class="nav-text">CodeCache</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BytecodeGenerator"><span class="nav-number">3.</span> <span class="nav-text">BytecodeGenerator</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参数分析"><span class="nav-number">3.1.</span> <span class="nav-text">参数分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#VM"><span class="nav-number">3.1.1.</span> <span class="nav-text">VM</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Node"><span class="nav-number">3.1.2.</span> <span class="nav-text">Node</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#UnlinkedCodeBlock"><span class="nav-number">3.1.3.</span> <span class="nav-text">UnlinkedCodeBlock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#VariableEnvironment"><span class="nav-number">3.1.4.</span> <span class="nav-text">VariableEnvironment</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#generate"><span class="nav-number">3.2.</span> <span class="nav-text">generate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#emitBytecode"><span class="nav-number">3.3.</span> <span class="nav-text">emitBytecode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ProgramNode"><span class="nav-number">3.3.1.</span> <span class="nav-text">ProgramNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ModuleProgramNode"><span class="nav-number">3.3.2.</span> <span class="nav-text">ModuleProgramNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#EvalNode"><span class="nav-number">3.3.3.</span> <span class="nav-text">EvalNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FunctionNode"><span class="nav-number">3.3.4.</span> <span class="nav-text">FunctionNode</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#未完待续"><span class="nav-number">4.</span> <span class="nav-text">未完待续</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

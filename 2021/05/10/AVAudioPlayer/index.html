@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="AVAudioPlayer," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv) f">
+<meta name="keywords" content="AVAudioPlayer">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一个AVAudioPlayer Crash修复">
+<meta property="og:url" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv) f">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/05.png">
+<meta property="og:updated_time" content="2021-05-10T06:26:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="记一个AVAudioPlayer Crash修复">
+<meta name="twitter:description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv) f">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/"/>
+
+
+
+
+
+  <title>记一个AVAudioPlayer Crash修复 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">记一个AVAudioPlayer Crash修复</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-05-10T13:34:26+08:00">
+                2021-05-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  937
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  4
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>之前曾经遇到过一个<code>AVAudioPlayer</code>的多线程crash，这里记录一下。</p>
+<p>crash堆栈如下所示<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Crashed: com.apple.main-thread</span><br><span class="line"><span class="number">0</span> libobjc.A.dylib <span class="number">0x1834fc910</span> objc_msgSend + <span class="number">16</span></span><br><span class="line"><span class="number">1</span> <span class="built_in">AVFAudio</span> <span class="number">0x189c814f4</span> -[<span class="built_in">AVAudioPlayer</span>(<span class="built_in">AVAudioPlayerPriv</span>) finishedPlaying:] + <span class="number">92</span></span><br><span class="line"><span class="number">2</span> Foundation <span class="number">0x184d7a0ec</span> __NSThreadPerformPerform + <span class="number">340</span></span><br><span class="line"><span class="number">3</span> CoreFoundation <span class="number">0x1842d7404</span> <span class="built_in">CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION</span> + <span class="number">24</span></span><br><span class="line"><span class="number">4</span> CoreFoundation <span class="number">0x1842d6c2c</span> __CFRunLoopDoSources0 + <span class="number">276</span></span><br><span class="line"><span class="number">5</span> CoreFoundation <span class="number">0x1842d479c</span> __CFRunLoopRun + <span class="number">1204</span></span><br><span class="line"><span class="number">6</span> CoreFoundation <span class="number">0x1841f4da8</span> <span class="built_in">CFRunLoopRunSpecific</span> + <span class="number">552</span></span><br><span class="line"><span class="number">7</span> GraphicsServices <span class="number">0x1861d9020</span> GSEventRunModal + <span class="number">100</span></span><br><span class="line"><span class="number">8</span> <span class="built_in">UIKit</span> <span class="number">0x18e211758</span> <span class="built_in">UIApplicationMain</span> + <span class="number">236</span></span><br></pre></td></tr></table></figure></p>
+<p>通过查询，发现也有其他同学遇到了这个问题：</p>
+<ul>
+<li><a href="https://github.com/mapbox/mapbox-navigation-ios/issues/1561" target="_blank" rel="noopener">Crash : AVAudioPlayer(AVAudioPlayerPriv) finishedPlaying</a></li>
+<li><a href="https://developer.apple.com/forums/thread/112837" target="_blank" rel="noopener">Crash with AVAudioPlayer</a></li>
+<li><a href="http://forum.giderosmobile.com/discussion/4311/some-ios-audio-crash" target="_blank" rel="noopener">Some iOS audio crash</a></li>
+</ul>
+<p>也尝试了一些网上的解决方案，发现并不奏效：</p>
+<ul>
+<li><a href="https://stackoverflow.com/questions/15324174/crash-report-ios-view-controller-related/15325328#15325328" target="_blank" rel="noopener">Crash Report - iOS - View Controller Related?
+</a></li>
+</ul>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>观察堆栈，应该是在<code>finishedPlaying:</code>方法中访问了非法地址，而<code>_objc_msgSend</code>则大概率预示着这是一个多线程问题。<br><code>AVAudioPlayer</code>播放声音是异步的，另起一个播放线程，并不在主线程。当声音播放完全之后，再切换到主线程调用<code>AVAudioPlayer的finishedPlaying:</code>方法，从而调用<code>delegate</code>的方法。而当从播放线程切换到主线程的过程当中，<code>AVAudioPlayer</code>会被引用，并不会被释放。这样当<code>AVAudioPlayer</code>的代理被释放后，<code>AVAudioPlayer</code>还是有可能调用了 delegate的方法。</p>
+<p>通过google，也可以发现类似的解释<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">The cause of this problem was that the AVAudioPlayer object was trying</span><br><span class="line">to invoke [avAudioPlayer.delegate audioPlayerDidFinishPlaying] but the</span><br><span class="line">avAudioPlayer.delegate ref was no longer valid because it had been</span><br><span class="line">deallocated when releasing the avAudioPlayer in my code</span><br></pre></td></tr></table></figure></p>
+<p>通过查看<code>AVAudioPlayer.h</code>头文件，发现其代理是weak的，同时该crash几乎通吃所有的系统版本和机型，这让人十分费解<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AVAudioPlayer.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">AVAudioPlayer</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line"> <span class="keyword">@private</span></span><br><span class="line">    <span class="keyword">id</span> _impl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// the delegate will be sent messages from the AVAudioPlayerDelegate protocol</span></span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">weak</span>, <span class="keyword">nullable</span>) <span class="keyword">id</span>&lt;<span class="built_in">AVAudioPlayerDelegate</span>&gt; delegate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><p>由于<code>finishedPlaying:</code>并没有暴露为共有方法，为了能看下堆栈，所以hook了<code>finishedPlaying:</code>方法<br><img src="/2021/05/10/AVAudioPlayer/03.png" width="100%"><br><img src="/2021/05/10/AVAudioPlayer/04.png" width="100%"></p>
+<p>通过调试，发现原AVAudioPlayer有一个内部实现类<code>AudioPlayerImpl</code>，这个内部实现类还有一个成员变量<code>_delegate</code></p>
+<p>进而详细查看了<code>AudioPlayerImpl</code>的头文件：<a href="https://github.com/ultramiraculous/iOS9-Runtime-Headers/blob/master/lib/libAVFAudio.dylib/AudioPlayerImpl.h" target="_blank" rel="noopener">AudioPlayerImpl的头文件</a><br><img src="/2021/05/10/AVAudioPlayer/05.png" width="100%"></p>
+<p>通过验证，发现这两个代理都指向同一个对象：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> (lldb) po <span class="keyword">self</span>.delegate</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br><span class="line"></span><br><span class="line">Printing description of <span class="keyword">self</span>-&gt;_impl-&gt;_delegate:</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br></pre></td></tr></table></figure></p>
+<p>我们不由地怀疑这个内部类<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>有问题，初步推断crash是这样产生的：</p>
+<p>假设<code>AVAudioPlayer</code>的<code>delegate</code>为A，内部类<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>为B</p>
+<p>正常设计上，外部代理释放的时候，weak的A会自动变为nil，同时也应该将B设置为nil，并且要保证原子性。但是可能有些情况下A和B的变化并没有保持绝对同步，导致A变为nil的时候，B仍然指向一个非法的地址，如果此时访问B，便会crash。</p>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p>朝着这个怀疑点，尝试修复一下，原理很简单：</p>
+<p>在执行方法<code>finishedPlaying</code>之前，先判断<code>AVAudioPlayer</code>的代理<code>delegate</code>是否为nil</p>
+<ul>
+<li>如果是nil，将<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>也设置为nil</li>
+<li>否则，强持有<code>AVAudioPlayer</code>的代理<code>delegate</code>，保证<code>finishedPlaying</code>方法执行期间不被释放；<br>代码如下：</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">AVAudioPlayer</span> (<span class="title">Extension</span>)</span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)load &#123;</span><br><span class="line"><span class="meta">#pragma clang diagnostic push</span></span><br><span class="line"><span class="meta">#pragma clang diagnostic ignored <span class="meta-string">"-Wundeclared-selector"</span></span></span><br><span class="line">    dm_swizzleSelector([<span class="keyword">self</span> <span class="keyword">class</span>], <span class="keyword">@selector</span>(finishedPlaying:), <span class="keyword">@selector</span>(dm_finishedPlaying:));</span><br><span class="line"><span class="meta">#pragma clang diagnostic pop</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)dm_finishedPlaying:(<span class="keyword">id</span>)success &#123;</span><br><span class="line"></span><br><span class="line">    Ivar ivar = class_getInstanceVariable([<span class="keyword">self</span> <span class="keyword">class</span>], <span class="string">"_impl"</span>);</span><br><span class="line">    <span class="keyword">id</span> impl = object_getIvar(<span class="keyword">self</span>, ivar);</span><br><span class="line">    <span class="built_in">NSString</span> *implClassName = [@[<span class="string">@"Aud"</span>, <span class="string">@"ioPl"</span>, <span class="string">@"aye"</span>, <span class="string">@"rIm"</span>, <span class="string">@"pl"</span>] componentsJoinedByString:<span class="string">@""</span>];</span><br><span class="line">    Ivar implDelegate = class_getInstanceVariable(<span class="built_in">NSClassFromString</span>(implClassName), <span class="string">"_delegate"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// if the weak delegate of AVAudioPlayer is nil, you should set the assign delegate of AudioPlayerImpl to nil too.</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>.delegate) &#123;</span><br><span class="line">        object_setIvar(impl, implDelegate, <span class="literal">nil</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// retain self.delegate to keep it alive during the execution of the finishedPlaying: method</span></span><br><span class="line">    <span class="keyword">id</span> __<span class="keyword">strong</span> strongDelegate = <span class="keyword">self</span>.delegate;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// call the original method finishedPlaying:</span></span><br><span class="line">    [<span class="keyword">self</span> dm_finishedPlaying:success];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// this line doesn't make sense, just to avoid warning and optimization by the complier</span></span><br><span class="line">    strongDelegate = <span class="literal">nil</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>通过上线验证后，该修复方法的确生效了</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2021/05/10/AVAudioPlayer/">记一个AVAudioPlayer Crash修复</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2021年05月10日 - 13:05</p>
+  <p><span>最后更新:</span>2021年05月10日 - 14:05</p>
+  <p><span>原始链接:</span><a href="/2021/05/10/AVAudioPlayer/" title="记一个AVAudioPlayer Crash修复">https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2021/05/10/AVAudioPlayer/">记一个AVAudioPlayer Crash修复</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2021年05月10日 - 13:05</p>
+  <p><span>最后更新:</span>2021年05月10日 - 14:05</p>
+  <p><span>原始链接:</span><a href="/2021/05/10/AVAudioPlayer/" title="记一个AVAudioPlayer Crash修复">https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/AVAudioPlayer/" rel="tag"># AVAudioPlayer</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/14/HumbleAssetCatalog/" rel="next" title="Humble Assets Catalog">
+                <i class="fa fa-chevron-left"></i> Humble Assets Catalog
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/02/14/深入理解-OC-C-闭包/" rel="prev" title="深入理解 OC/C++ 闭包">
+                深入理解 OC/C++ 闭包 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试"><span class="nav-number">3.</span> <span class="nav-text">调试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解决办法"><span class="nav-number">4.</span> <span class="nav-text">解决办法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证"><span class="nav-number">5.</span> <span class="nav-text">验证</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从JavaScriptCore的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新） JavaScriptCore简介JavaScriptCore是苹果开源项目WebKit中的默认JavaScript引擎，被用来解释和执行JavaScript代码。一开始它是基于">
+<meta name="keywords" content="JavaScriptCore">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析1—开篇">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从JavaScriptCore的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新） JavaScriptCore简介JavaScriptCore是苹果开源项目WebKit中的默认JavaScript引擎，被用来解释和执行JavaScript代码。一开始它是基于">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/04.png">
+<meta property="og:updated_time" content="2018-10-12T16:27:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析1—开篇">
+<meta name="twitter:description" content="前言不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从JavaScriptCore的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新） JavaScriptCore简介JavaScriptCore是苹果开源项目WebKit中的默认JavaScript引擎，被用来解释和执行JavaScript代码。一开始它是基于">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析1—开篇 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析1—开篇</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-19T00:22:57+08:00">
+                2018-07-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,131
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  8
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从<code>JavaScriptCore</code>的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新）</p>
+<h2 id="JavaScriptCore简介"><a href="#JavaScriptCore简介" class="headerlink" title="JavaScriptCore简介"></a>JavaScriptCore简介</h2><p><code>JavaScriptCore</code>是苹果开源项目WebKit中的默认<code>JavaScript</code>引擎，被用来解释和执行<code>JavaScript</code>代码。一开始它是基于KJS开发的，是基于抽象语法树的解释器，性能较差。2008年苹果重写了编译器和字节码解释器，叫<code>SquirrelFish</code>:</p>
+<blockquote>
+<p>SquirrelFish is a register-based, direct-threaded(bigger code and data, but fast), high-level bytecode engine, with a sliding register window calling convention. It lazily generates bytecodes from a syntax tree, using a simple one-pass compiler with built-in copy propagation.</p>
+</blockquote>
+<h2 id="源码目录结构"><a href="#源码目录结构" class="headerlink" title="源码目录结构"></a>源码目录结构</h2><blockquote>
+<ul>
+<li>API：各种JavaScriptCore对外的接口类</li>
+<li>assembler：汇编器，用于生成各个平台的汇编代码</li>
+<li>b3：ftl 里的 Backend</li>
+<li>bytecode：字节码的内容，比如类型和计算过程</li>
+<li>bytecompiler：编译字节码</li>
+<li>Configurations：Xcode 的相关配置</li>
+<li>Debugger：用于测试脚本的程序</li>
+<li>dfg：DFG JIT 编译器</li>
+<li>disassembler：反汇编</li>
+<li>heap：运行时的堆和垃圾回收机制</li>
+<li>ftl：第四层编译</li>
+<li>interpreter：解释器，负责解析执行 ByteCode</li>
+<li>jit：在运行时将 ByteCode 转成机器码，动态及时编译。</li>
+<li>llint：Low Level Interpreter，编译四层里的第一层，负责解释执行低效字节码</li>
+<li>parser：词法语法分析，构建语法树</li>
+<li>profiler：信息收集，能收集函数调用频率和消耗时间。</li>
+<li>runtime：运行时对于 js 的全套操作。</li>
+<li>wasm：对 WebAssembly 的实现。</li>
+<li>yarr：Yet Another Regex Runtime，运行时正则表达式的解析</li>
+</ul>
+</blockquote>
+<h2 id="核心模块"><a href="#核心模块" class="headerlink" title="核心模块"></a>核心模块</h2><p>该部分内容主要翻译自<a href="https://trac.webkit.org/wiki/JavaScriptCore" target="_blank" rel="noopener">官方文档</a></p>
+<p><code>JavaScriptCore</code>是一个高度优化的虚拟机，主要包括以下几个模块:</p>
+<blockquote>
+<ul>
+<li><p><strong>Lexer</strong> 词法分析器，将JavaScript源码分解成Tokens，代码文件：parser/Lexer.cpp.</p>
+</li>
+<li><p><strong>Parse</strong> 语法分析器，基于Lexer的Tokens生成语法分析树，手写了递归下降解析器，代码文件：parser/Parser.cpp.</p>
+</li>
+<li><p><strong>LLInt</strong> <code>Low Level Interpreter</code>，执行<code>Parser</code>生成的字节码。代码在 llint/ 里，应用一个可移植的汇编实现，也被为offlineasm (代码在offlineasm/目录下), 它可以编译为x86和ARMv7的汇编以及C代码。LLInt除了词法解析和语法解释外，JIT编译器所执行的调用、栈、以及寄存器转换都是基本没有启动开销<code>(start-up cost)</code>的。比如，调用一个LLInt函数就和调用一个已被编译原始代码的函数相似, 除非机器码的入口恰是一个共用的LLInt Prologue(公共函数头,shared LLInt prologue). LLInt还包括了一些优化，比如应用inline cacheing来加速属性访问.</p>
+</li>
+<li><p><strong>Baseline JIT</strong> 在函数被调用了6次，或者某段代码循环了100次后(也可能是一些组合，比如3次带有50次枚举的调用)就会触发<code>Baseline JIT</code>。这些数字只是大概的估计，实际上的启发(heuristics)过程是依赖于函数大小和当时内存状态的。当JIT卡在一个循环时，它会执行<code>On-Stack-Replace(OSR)</code>将函数的全部调用者从新指向新的编译代码。<code>Baseline JIT</code>同时也是函数进一步优化的后备，如果没法优化代码时，它还会通过OSR调整到<code>Baseline JIT</code>. BaseLine JIT的代码在 jit/ . 基线JIT也为inline caching执行几乎全部的堆访问</p>
+</li>
+<li><p><strong>DFG JIT</strong> 在函数被调用了至少60次，或者代码循环了1000次，就会触发DFG JIT。一样，这些都是近似数，整个过程也是趋向于启发式的。DFG积极地基于前面(baseline JIT&amp;Interpreter)收集的数据停止类型揣测，这样就可以尽早获得类型信息(forward-propagate type information)，从而减少了大批的类型检查。DFG也会自行停止揣测，比如为了启用inlining, 可能会将从heap中加载的内容识别出一个已知的函数对象。如果揣测失败，DFG取消优化(Deoptimization)，也称为”OSR exit”.  Deoptimization可能是同步的(某个类型检测分支正在执行)，也可能是异步的(比如runtime视察到某个值变化了，并且与DFG的假设是冲突的)，后者也被称为”watchpointing”。 <code>Baseline JIT</code>和<code>DFG</code> JIT共用一个双向的<code>OSR:Baseline</code>可以在一个函数被频繁调用时OSR进入DFG, 而DFG则会在deoptimization时OSR回到Baseline JIT. 反复的OSR退出(OSR exits)还有一个统计功能: DFG OSR退出会像记载发生频率一样记载下退出的理由(比如对值的类型揣测失败), 如果退出一定次数后，就会引发从新优化(reoptimization), 函数的调用者会从新被定位到Baseline JIT,然后会收集更多的统计信息，或许根据需要再次调用DFG。从新优化应用了指数式的回退策略(exponential back-off,会越来越来)来应对一些奇葩代码。DFG代码在dfg/.</p>
+</li>
+<li><p><strong>FTL</strong> 高吞吐量优化 JIT，全称 Faster Than Light，DFG 高层优化配合 B3 底层优化。以前全称是 Fourth Tier LLVM 底层优化使用的是 LLVM。B3 对 LLVM 做了裁剪，对 JavaScriptCore 做了特性处理，B3 IR 的接口和 LLVM IR 很类似。B3 对 LLVM 的替换主要是考虑减少内存开销，LLVM 主要是针对编译器，编译器在这方面优化动力必然没有 JIT 需求高。B3 IR 将指针改成了更紧凑的整数来表示引用关系。不可变的常用的信息使用固定大小的结构来表示，其它的都放到另外的地方。紧凑的数据放到数组中，更多的数组更少的链表。这样形成的 IR 更省内存</p>
+</li>
+</ul>
+</blockquote>
+<p>任何时候，函数, eval代码块，以及全局代码(global code)都可能会由<code>LLInt</code>, <code>Baseline JIT</code>和<code>DFG</code>三者同时运行。一个极端的例子是递归函数，因为有多个stack frames，就可能一个运行在<code>LLInt</code>下，另一个运行在<code>Baseline JIT</code>里，其它的可能正运行在<code>DFG</code>里。更为极端的情况是当从新优化在执行过程被触发时，就会出现一个stack frame正在执行本来旧的DFG编译，而另一个则正执行新的DFG编译。为此三者计划成维护雷同的执行语义(execution semantics), 它们的混合应用也是为了带来显著的效能提升。</p>
+<h2 id="工作流程图"><a href="#工作流程图" class="headerlink" title="工作流程图"></a>工作流程图</h2><p><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/01.png" width="85%"></p>
+<h2 id="执行的基础环境"><a href="#执行的基础环境" class="headerlink" title="执行的基础环境"></a>执行的基础环境</h2><p>JSC解析生成的代码放到一个虚拟机上来执行(广义上讲JSC主身就是一个虚拟机)。JSC使用的是一个基于寄存器的虚拟机(register-based VM)，另一种实现方式是基于栈的虚拟机(stack-based VM)。两者的差异可以简单的理解为指令集传递参数的方式，是使用寄存器，还是使用栈。<br>相对于基于栈的虚拟机,因为不需要频繁的压、出栈，以及对三元操作的支持，register-based VM的效率更高，但可移植性相对弱一些。</p>
+<p>所谓的三元操作符，其中add就是一个三元操作,add dst, src1, src2，功能是将src1与src2相加，将结果保存在dst中。dst, src1,src2都是寄存器。<br>参考<a href="https://webkit.org/specs/squirrelfish-bytecode.html" target="_blank" rel="noopener">JSC字节码规格</a>，给出两个示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">new_array</span><br><span class="line">Format: new_array dst(r) firstArg(r) argCount(n)</span><br><span class="line"></span><br><span class="line">Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add</span><br><span class="line">Format: add dst(r) src1(r) src2(r)</span><br><span class="line"></span><br><span class="line">Adds register src1 and register src2, and puts the result in register dst. (JS add may be string concatenation or numeric add, depending on the types of the operands.)</span><br></pre></td></tr></table></figure>
+<p>而基于栈的虚拟机的生成的字节码如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return</span><br></pre></td></tr></table></figure></p>
+<p>可以体会下这两种方式的不同</p>
+<h2 id="从JS-Script到Byte-Code"><a href="#从JS-Script到Byte-Code" class="headerlink" title="从JS Script到Byte Code"></a>从JS Script到Byte Code</h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/02.png" width="100%"><br>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/03.png" width="100%"><br>而Lexer则是在Parser过程中调用的，如下图:<br><img src="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/04.png" width="75%"></p>
+<p>更具体的细节会在随后会在对应的篇章中进行分析</p>
+<h2 id="更新中…"><a href="#更新中…" class="headerlink" title="更新中…"></a>更新中…</h2>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/">JavaScriptCore引擎深度解析1—开篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月19日 - 00:07</p>
+  <p><span>最后更新:</span>2018年10月13日 - 00:10</p>
+  <p><span>原始链接:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/" title="JavaScriptCore引擎深度解析1—开篇">https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/">JavaScriptCore引擎深度解析1—开篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月19日 - 00:07</p>
+  <p><span>最后更新:</span>2018年10月13日 - 00:10</p>
+  <p><span>原始链接:</span><a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/" title="JavaScriptCore引擎深度解析1—开篇">https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/15/如何实现一个简单的RunLoop（2）/" rel="next" title="如何去实现一个轻量级的Runloop（2）">
+                <i class="fa fa-chevron-left"></i> 如何去实现一个轻量级的Runloop（2）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/" rel="prev" title="JavaScriptCore引擎深度解析2—API篇">
+                JavaScriptCore引擎深度解析2—API篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JavaScriptCore简介"><span class="nav-number">2.</span> <span class="nav-text">JavaScriptCore简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#源码目录结构"><span class="nav-number">3.</span> <span class="nav-text">源码目录结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核心模块"><span class="nav-number">4.</span> <span class="nav-text">核心模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#工作流程图"><span class="nav-number">5.</span> <span class="nav-text">工作流程图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行的基础环境"><span class="nav-number">6.</span> <span class="nav-text">执行的基础环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从JS-Script到Byte-Code"><span class="nav-number">7.</span> <span class="nav-text">从JS Script到Byte Code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更新中…"><span class="nav-number">8.</span> <span class="nav-text">更新中…</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

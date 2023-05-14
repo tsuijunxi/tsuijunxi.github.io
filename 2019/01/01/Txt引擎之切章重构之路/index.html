@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Txt引擎 切章," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言由于诸多历史原因，QQ阅读iOS App目前的Txt引擎只能支持单个文件的加载、排版和渲染，所以在处理在线章节阅读的切换时，只能先把当前阅读的章节的引擎关闭掉，清理掉所有的业务数据，然后重新加载新的章节的引擎，重新拉取新章节的业务信息。在这种情况下，存在着2个严重的缺陷：   在两个章节的临界点来回翻页的时候，需要不停地执行打开关闭操作，会付出很大的性能代价 3D翻页的时候需要进行强制翻页，换">
+<meta name="keywords" content="Txt引擎 切章">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Txt引擎之切章重构之路">
+<meta property="og:url" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言由于诸多历史原因，QQ阅读iOS App目前的Txt引擎只能支持单个文件的加载、排版和渲染，所以在处理在线章节阅读的切换时，只能先把当前阅读的章节的引擎关闭掉，清理掉所有的业务数据，然后重新加载新的章节的引擎，重新拉取新章节的业务信息。在这种情况下，存在着2个严重的缺陷：   在两个章节的临界点来回翻页的时候，需要不停地执行打开关闭操作，会付出很大的性能代价 3D翻页的时候需要进行强制翻页，换">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/06.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/before.gif">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/after.gif">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/21.png">
+<meta property="og:updated_time" content="2020-12-27T04:28:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Txt引擎之切章重构之路">
+<meta name="twitter:description" content="前言由于诸多历史原因，QQ阅读iOS App目前的Txt引擎只能支持单个文件的加载、排版和渲染，所以在处理在线章节阅读的切换时，只能先把当前阅读的章节的引擎关闭掉，清理掉所有的业务数据，然后重新加载新的章节的引擎，重新拉取新章节的业务信息。在这种情况下，存在着2个严重的缺陷：   在两个章节的临界点来回翻页的时候，需要不停地执行打开关闭操作，会付出很大的性能代价 3D翻页的时候需要进行强制翻页，换">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/"/>
+
+
+
+
+
+  <title>Txt引擎之切章重构之路 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Txt引擎之切章重构之路</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-01T11:37:00+08:00">
+                2019-01-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  8,990
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  36
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>由于诸多历史原因，QQ阅读iOS App目前的Txt引擎只能支持单个文件的加载、排版和渲染，所以在处理在线章节阅读的切换时，只能先把当前阅读的章节的引擎关闭掉，清理掉所有的业务数据，然后重新加载新的章节的引擎，重新拉取新章节的业务信息。在这种情况下，存在着2个严重的缺陷：</p>
+<blockquote>
+<ul>
+<li>在两个章节的临界点来回翻页的时候，需要不停地执行打开关闭操作，会付出很大的性能代价</li>
+<li>3D翻页的时候需要进行强制翻页，换句话说，没办法通过手势控制3D效果，没有回翻的机会.</li>
+</ul>
+</blockquote>
+<p>因此需要重构Txt引擎多章节直接的切换流程，以最小的代价来支持多章节的无缝切换。<br>(实际上该重构工作的出发点是为了看看是否有可能去除RDM的top1 crash)</p>
+<p>———— 所有的痛苦源于对历史缺乏足够的认知和敬畏</p>
+<h2 id="现状分析"><a href="#现状分析" class="headerlink" title="现状分析"></a>现状分析</h2><h3 id="整体架构流程"><a href="#整体架构流程" class="headerlink" title="整体架构流程"></a>整体架构流程</h3><p><img src="/2019/01/01/Txt引擎之切章重构之路/01.png" width="100%"></p>
+<blockquote>
+<ul>
+<li><code>TextBaseViewController</code>持有<code>QRReadingDataSource</code>，<code>QRReadingDataSource</code>负责章节数据以及各种业务数据的加载；</li>
+<li><code>QRReadingDataSource</code>持有<code>ReaderRender</code>，同时也被<code>ReaderRender</code>反持有，<code>ReaderRender</code>负责页面的绘制，包括各种业务数据对应的视图；</li>
+<li>所有和引擎相关的都是通过Hub来操作，底层是<code>TextEngine</code>来负责具体章节文件的加载、排版和渲染</li>
+<li>3D翻页、平滑翻页、覆盖翻页的各种VC都是直接弱持有<code>TextBaseViewController</code>，并且要调用里面的方法，因此<code>TextBaseViewController</code>不得已需要开各种接口供其调用</li>
+</ul>
+</blockquote>
+<p>（各种持有和反持有操作，耦合的无法自拔）</p>
+<h3 id="打开文件流程"><a href="#打开文件流程" class="headerlink" title="打开文件流程"></a>打开文件流程</h3><p><img src="/2019/01/01/Txt引擎之切章重构之路/02.png" width="80%"></p>
+<blockquote>
+<ul>
+<li>打开文件调用层级太深，有的在OpenBookManager中，有的在<code>TextBaseViewController</code>中，逻辑有些分散，所以不得已采用通知的方式进行同步，这种到处弥漫的发散逻辑代码风格阅读起来十分费神；</li>
+<li>这里的章节加载中有预加载的逻辑，但是只涉及到章节的数据，对于付费预览页的信息没有做缓存处理，每次翻到新的章节，都要示意性的loading</li>
+<li>对于其它的业务逻辑，有的分布在<code>TextBaseViewController</code>，有的分布在<code>QRReadingDataSource</code>中，并且没有同步机制，每种业务数据都是单独请求，回来都可能不同程度地刷新阅读页面，增加了阅读页的刷新压力</li>
+</ul>
+</blockquote>
+<h3 id="Hub调用"><a href="#Hub调用" class="headerlink" title="Hub调用"></a>Hub调用</h3><p>Hub机制相当于将底层的引擎<code>TextEngine</code>做成了一个单例，所以到处都可以没有节制地加以调用，初步统计结果如下：</p>
+<table>
+<thead>
+<tr>
+<th>文件名</th>
+<th style="text-align:right">个数   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QRReadingDataSource</td>
+<td style="text-align:right">3</td>
+</tr>
+<tr>
+<td>ReaderRender</td>
+<td style="text-align:right">33</td>
+</tr>
+<tr>
+<td>TextBaseViewController</td>
+<td style="text-align:right">47</td>
+</tr>
+</tbody>
+</table>
+<h2 id="重构之路"><a href="#重构之路" class="headerlink" title="重构之路"></a>重构之路</h2><h3 id="缓存模型的确立"><a href="#缓存模型的确立" class="headerlink" title="缓存模型的确立"></a>缓存模型的确立</h3><p>为了在切到下一章的时候避免不必要的浪费，我们不能立刻将上一个章节的信息立刻关闭，而需要缓存下来，这样如果要回翻，就不用再次打开，而是直接利用缓存，同时也为了更好的翻页体验，因此缓存模型被提了出来</p>
+<h4 id="3引擎架构"><a href="#3引擎架构" class="headerlink" title="3引擎架构"></a>3引擎架构</h4><p>一开始想到的是用3引擎架构，即生成一个引擎壳<code>QRTextEngine</code>，内部持有3个<code>TextEngine</code>实例，来实现数据的预加载和章节的切换功能<br><img src="/2019/01/01/Txt引擎之切章重构之路/03.png" width="60%"><br>当前的章节快要翻到尾页的时候，例如进度是80%的时候，触发预加载逻辑，<code>nextTextEngine</code>在子线程异步加载下一章的数据，当真的要切到下一章的时候，直接将<code>curTextEngine</code>指向<code>nextTextEngine</code>就可以完成章节引擎的切换。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">QRTextEngine</span>()&lt;<span class="title">TextEngineDelegate</span>&gt;</span>&#123;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *preEngine;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *curEngine;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *nextEngine;</span><br><span class="line">...</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)switchToNextEngine</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> syncPerformBlockOnEngineQueue:^&#123;</span><br><span class="line">        <span class="keyword">self</span>.preEngine = <span class="keyword">self</span>.curEngine;</span><br><span class="line">        <span class="keyword">self</span>.curEngine = <span class="keyword">self</span>.nextEngine;</span><br><span class="line">        <span class="keyword">self</span>.nextEngine = <span class="literal">nil</span>;</span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然而实践中发现该缓存模型存在着一些问题：</p>
+<blockquote>
+<ul>
+<li>不是所有的章节都有章节数据，有的章节可能没有付费，自然不可能有文件，这个时候<code>TextEngine</code>是空的，切换就会失败；</li>
+<li>付费预览信息得不到缓存，每次都需要重新请求，极大的浪费了流量，loading的等待也令人极其不适</li>
+<li>有的情况下会出现这样的情况：[engine nil engine]、[nil engine nil]，如果切换逻辑控制不好，会造成一定的错乱，所以不得已执行一个假文件的打开操作；</li>
+<li>缓存的不够彻底，章节的各种业务缓存逻辑还得在别的地方进行处理，一个统一的行为被割裂了…</li>
+</ul>
+</blockquote>
+<h4 id="3模型架构"><a href="#3模型架构" class="headerlink" title="3模型架构"></a>3模型架构</h4><p>发掘了3引擎架构的一些不足之后，经过考虑，引入了3模型架构：<br><img src="/2019/01/01/Txt引擎之切章重构之路/04.png" width="60%"><br>模型不再仅仅是指引擎，它相当于是章节的一个模型<code>QRTextReaderChapterModel</code>，它不仅包括<code>TextEngine</code>，还可以包括付费预览等授权信息，甚至可以包括章节的各种业务数据（例如章评、段评等）</p>
+<p>前面3引擎碰到的问题都迎刃而解：</p>
+<blockquote>
+<ul>
+<li>所有的章节都有了数据，已下载的是章节渲染数据，未下载的是付费预览数据，可以实现页面之间的随意切换；</li>
+<li>付费预览信息得到了缓存，可以根据需求在一定的时间内可以只请求1次；</li>
+<li>各种业务数据的缓存逻辑得到统一处理，只有全部的业务数据都回来之后，再回去刷新阅读页，减少了阅读页的刷新压力；</li>
+</ul>
+</blockquote>
+<h3 id="重构类图"><a href="#重构类图" class="headerlink" title="重构类图"></a>重构类图</h3><p>确立了缓存模型之后，整个重构方案的架构基本上就确立下来了<br><img src="/2019/01/01/Txt引擎之切章重构之路/05.png" width="100%"><br><a href="https://www.processon.com/view/link/5ba1b3a1e4b08faf8c5b4022" target="_blank" rel="noopener">高清图传送门</a></p>
+<blockquote>
+<ul>
+<li>1、针对Txt书籍，不再直接调用OpenBookManager处理打开书的逻辑，它现在仅仅负责生成VC，把BookInfo传给VC，然后进行push操作；</li>
+<li>2、剔除原先的<code>QRReadingDataSource</code>和<code>ReaderRender</code>，由新的管理类<code>QRTextReaderManager</code>统一负责核心逻辑；</li>
+<li>3、各种翻页的VC不再直接弱持有<code>TextBaseViewController</code>，而是直接传递<code>QRTextReaderManager</code>，调用<code>QRTextReaderManager</code>的各种接口；</li>
+<li>4、3模型架构直接由<code>QRTextReaderManager</code>来管理，因此<code>QRTextReaderManager</code>负责这3个Model的生成、预加载、切换和销毁；</li>
+<li>5、<code>QRTextReaderChapterModel</code><br>（1）负责章节文件请求和加载，以及<code>TextEngine</code>的初始化；<br>（2）负责付费预览信息的请求、缓存管理；<br>（3）负责各种业务数据的请求和加载；<br>（4）调用<code>QRTextEngine</code>，负责各种页面的排版和渲染；</li>
+</ul>
+</blockquote>
+<h4 id="QRTextReaderManager"><a href="#QRTextReaderManager" class="headerlink" title="QRTextReaderManager"></a>QRTextReaderManager</h4><p>Txt阅读逻辑的各种统筹调度</p>
+<p>在最开始的设计中，采用的是“3引擎架构”，即<code>QRTextEngine</code>直接持有3个<code>TxtEngine</code>引擎，并且完成3个引擎的生成、预加载、切换和销毁，但是这不能很好地解决一些章节网络状态（付费、登录、下架）的处理，中间为了解决各种诡异问题，保证内部引擎切换的连续性，还一度引入了“打开一个假引擎”的概念，但是终究还是放弃了，因为这是整个结构设计上的缺陷，大方向就是有问题的，这种缝缝补补的后续措施只会越陷越深…</p>
+<p>这样原来都是“3引擎架构”就变成了“3模型架构”。原先的“3引擎架构”是由<code>QRTextEngine</code>管理的，而现在的“3 Model架构”则直接由<code>QRTextReaderManager</code>来管理，因此<code>QRTextReaderManager</code>需要负责这3个Model的生成、预加载、切换和销毁。</p>
+<p>原先在<code>TextBaseViewController</code>中存在着大量的字段，用于各种逻辑判断，但是因为现在<code>QRTextReaderManager</code>要承载各种逻辑，所以这部分字段需要进行下沉。</p>
+<h4 id="QRTextReaderChapterModel"><a href="#QRTextReaderChapterModel" class="headerlink" title="QRTextReaderChapterModel"></a>QRTextReaderChapterModel</h4><p>Txt阅读逻辑的各种统筹调度的核心逻辑支撑</p>
+<p>最后的方案：在QRTextEngine的基础上包装了一层QRTextReaderChapterModel<br>该类中既包含一个章节的网络状态信息<code>authorizeInfo</code>，也包含本地文件信息以及加载文件的<code>engine</code>引擎，当然这两者是互斥的，任何时刻只能存在一种，并且存在网络状态到本地状态的转换。</p>
+<blockquote>
+<ul>
+<li>如果是网络状态，<code>QRTextReaderChapterModel</code>利用<code>authorizeInfo</code>包含的信息生成一个View；</li>
+<li>如果是本地状态，<code>QRTextReaderChapterModel</code>利用<code>engine</code>引擎进行排版、渲染好页面图片，并添加页眉页脚，生成一个View；并且调用<code>QRTextBusinessManager</code>异步加载和管理各种业务数据信息，数据回来后统一刷新阅读页面；</li>
+</ul>
+</blockquote>
+<p>注意：所有章节的加载，包括预加载都应该经过<code>QRTextReaderChapterModel</code>，因为只有这样，才能搞清楚每个章节的一个状态，才能不至于重复加载，避免造成资源的浪费。</p>
+<p>当各种业务数据回来后，如何统一刷新呢？这里采用了一种简单的方案：<br>每一种业务数据都有一个专门的属性来标记它的状态，当它被标记为YES的时候，它会去尝试性地调用<br><code>handleBusinessDataIfNecessary</code>方法，在这个方法里回去判定是否所有的业务数据都已经就绪，进而统一回调刷新。这个方法的前提是各种业务数据的回调都在主线程上<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">@weakify(<span class="keyword">self</span>)</span><br><span class="line">[<span class="keyword">self</span>.businessMgr loadAllBusinessDataWithReadyCallback:^(<span class="built_in">NSError</span> *error, <span class="built_in">NSDictionary</span>* dic) &#123;</span><br><span class="line">            </span><br><span class="line">            @strongify(<span class="keyword">self</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 每个章节的数据全部回来统一处理</span></span><br><span class="line">            [<span class="keyword">self</span> handleTailPagePlaceholder];</span><br><span class="line">            [<span class="keyword">self</span> handleChapterCommentResponse:dic];</span><br><span class="line">            [<span class="keyword">self</span> handleExcellentParaComment];</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 引擎</span></span><br><span class="line">            <span class="keyword">if</span>(<span class="keyword">self</span>.loadPoint == QRChapterLoadPointType_End)&#123;</span><br><span class="line">                [<span class="keyword">self</span> turnToFinalPage];</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 业务数据回来之后，清除缓存</span></span><br><span class="line">            [<span class="keyword">self</span> flushPageCache];</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 业务数据全部回来之后，代理出去，看看阅读页是否需要刷新</span></span><br><span class="line">            <span class="built_in">NSDictionary</span>* result = @&#123;QROnlineReadingResultKeys.result:@(QRReadOnlineBookResult_Opened)&#125;;</span><br><span class="line">            [<span class="keyword">self</span>.delegate chapterModel:<span class="keyword">self</span> didFinishLoadWithResult:result];</span><br><span class="line">            </span><br><span class="line">        &#125;];</span><br></pre></td></tr></table></figure></p>
+<h4 id="QRTextBusinessManager"><a href="#QRTextBusinessManager" class="headerlink" title="QRTextBusinessManager"></a>QRTextBusinessManager</h4><p>承载Txt章节的所有业务逻辑，包括章评、段评、大神说QA、广告、投票、红包等，实际上它也是一层简单的封装，里面的每一个业务都有相应的类去做。</p>
+<p>每个章节的信息（可能是网络状态信息，也可能是本地文件）就绪之后，就利用<code>QRTextBusinessManager</code>进行业务数据的加载，同样要在<code>QRTextReaderChapterModel</code>记录业务数据状态（未请求、请求中、请求结束）</p>
+<blockquote>
+<ul>
+<li>QA(大神说问答|章节业务)</li>
+<li>Advertisements（广告数据|章节业务）</li>
+<li>InteractionBar（章节尾页底部（打赏、推荐票、月票、红包）|书的业务）</li>
+<li>Comments（章评|章节业务）</li>
+<li>ParagraphTailMark（段评|章节业务）</li>
+</ul>
+</blockquote>
+<p>git分支merge之后，尾页新增了一些业务：例如广点通广告和卡牌。其中卡牌数据是用的chapterall协议，跟随者其它的业务数据一起回来的，然后广点通的广告是独立的协议，并且其业务比较复杂，其逻辑被单独放置到了<code>QRChapterBusinessManager+GDTAd.h</code>文件中，并且和其它的业务数据一样，在回调回来的时候做了统一处理<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)setAlreadyGetGDTTailAd:(<span class="built_in">BOOL</span>)alreadyGetGDTTailAd</span><br><span class="line">&#123;</span><br><span class="line">    _alreadyGetGDTTailAd = alreadyGetGDTTailAd;</span><br><span class="line">    [<span class="keyword">self</span> handleBusinessDataIfNecessary];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="QRTextEngine封装"><a href="#QRTextEngine封装" class="headerlink" title="QRTextEngine封装"></a>QRTextEngine封装</h4><p>对TextEngine的简单封装，主要充当原有的<code>EngineModule</code>的功能，但是不再是单例</p>
+<h4 id="章节加载逻辑"><a href="#章节加载逻辑" class="headerlink" title="章节加载逻辑"></a>章节加载逻辑</h4><p>所有章节的加载和预加载的逻辑都应该从<code>QRTextReaderChapterModel</code>开始，相当于一个起点，一旦开始加载，需要随时更新<code>QRTextReaderChapterModel</code>的状态</p>
+<p>预加载的触发时机在最新的代码中只有1处：<strong>在章节id变化的时候或者onlineTag被修改的时候</strong><br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)setOnlineTag:(OnlineTag *)onlineTag</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(!onlineTag) &#123;  <span class="keyword">return</span>;  &#125;</span><br><span class="line">    _onlineTag = onlineTag;</span><br><span class="line">    </span><br><span class="line">    _chapterModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:onlineTag];</span><br><span class="line">    <span class="keyword">if</span>(_chapterModel.bookInfo != <span class="literal">nil</span>)&#123;</span><br><span class="line">        <span class="keyword">self</span>.bookInfo = _chapterModel.bookInfo;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 上报</span></span><br><span class="line">    [<span class="keyword">self</span> reportOnlineBookWithTag:_onlineTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 保存浏览历史。 lucas</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.onlineTag.onlineBookInfo) &#123;</span><br><span class="line">        [[QRScanHistoryService sharedScanHistoryService] recordScanHistoryItem:<span class="keyword">self</span>.onlineTag.onlineBookInfo];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">NSArray</span> *allKeys = [<span class="keyword">self</span>.chapterModels allKeys];</span><br><span class="line">    <span class="built_in">NSInteger</span> chapterId = [@(<span class="keyword">self</span>.chapterModel.chapterId) integerValue];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSNumber</span> *key <span class="keyword">in</span> allKeys)&#123;</span><br><span class="line">        <span class="built_in">NSInteger</span> keyValue = [key integerValue];</span><br><span class="line">        <span class="keyword">if</span> (ABS(keyValue - chapterId) &gt; <span class="number">1</span>)&#123;</span><br><span class="line">            [<span class="keyword">self</span>.chapterModels removeObjectForKey:key];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 异步预加载逻辑</span></span><br><span class="line">    [<span class="keyword">self</span> asyncPerformBlockOnChapterProloadQueue:^&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 切章后，当前章节的前后章节最多只保留1页的缓存</span></span><br><span class="line">        QRTextReaderChapterModel* preModel = [<span class="keyword">self</span>.chapterModels qr_safeObjectForKey:@(chapterId<span class="number">-1</span>)];</span><br><span class="line">        [preModel removeAllPageCacheExceptTheLastOne];</span><br><span class="line">        QRTextReaderChapterModel* nextModel = [<span class="keyword">self</span>.chapterModels qr_safeObjectForKey:@(chapterId+<span class="number">1</span>)];</span><br><span class="line">        [nextModel removeAllPageCacheExceptTheFirstOne];</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.onlineTag.onlineBookInfo.chapterid &lt; <span class="keyword">self</span>.onlineTag.onlineBookInfo.totalChapter)&#123;</span><br><span class="line">            OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">            [nextOnlineTag resetProgress];</span><br><span class="line">            nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            QRTextReaderChapterModel* nextModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            <span class="keyword">if</span>(<span class="literal">nil</span> == nextModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.onlineTag.toReadingCharpterId &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            OnlineTag* prevOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Prev];</span><br><span class="line">            [prevOnlineTag resetProgress];</span><br><span class="line">            prevOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            QRTextReaderChapterModel* preModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:prevOnlineTag];</span><br><span class="line">            <span class="keyword">if</span>(<span class="literal">nil</span> == preModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:prevOnlineTag];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里预加载的内容包括2个方面：</p>
+<blockquote>
+<ul>
+<li>章节的信息，可能是文件，也可能是付费预览等信息；</li>
+<li>章节相关的所有业务，当然业务种类还是比较复杂的，并且有些业务已经影响到页面的排版；<br><code>QRTextReaderChapterModel</code>会随时记录当前的预加载进度状态</li>
+</ul>
+</blockquote>
+<h3 id="打开文件流程重构"><a href="#打开文件流程重构" class="headerlink" title="打开文件流程重构"></a>打开文件流程重构</h3><p><img src="/2019/01/01/Txt引擎之切章重构之路/06.jpg" width="100%"><br><a href="https://www.processon.com/view/link/5ba4c96be4b075b9fe52fa9a" target="_blank" rel="noopener">高清图传送门</a></p>
+<p>1、去除一路走来的“通知”，通过回调来实现，聚合被通知分散到各处的逻辑；<br>2、去除QROnlineReadingModule中的preload逻辑（该逻辑负责免费章节的预下载），因为现在的预加载发起点都应该从<code>QRTextReaderChapterModel</code>开始，并经过<code>QRTextReaderChapterModel</code>记录章节的状态</p>
+<p>理论上来说，<code>QROnlineReadingModule</code>不应该知道当前阅读章节的<code>OnlineTag</code>；<br>应该发生的逻辑：给定一个<code>OnlineTag</code>，它只是负责该章节的缓存查询、启动下载，以及网络结果回调，而最后的结果都应该回调到<code>QRTextReaderChapterModel</code>中</p>
+<blockquote>
+<ul>
+<li>1、如果当前章节是第0章，代表这是一个封面，直接返回，结束；</li>
+<li>2、如果当前章节已下载，将章节文件路径返回到<code>QRTextReaderChapterModel</code>中，结束；</li>
+<li>3、进行网络请求，请求当前章节信息，等待结果：<blockquote>
+<ul>
+<li>3.1 如果结果是已下载的章节文件，走第2步骤；</li>
+<li>3.2 如果需要授权（付费、登录、下架），将结果返回<code>QRTextReaderChapterModel</code>中；</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+<h3 id="Hub去除"><a href="#Hub去除" class="headerlink" title="Hub去除"></a>Hub去除</h3><blockquote>
+<ul>
+<li><p>导入书的逻辑，新增类<code>QRTextEngineParser</code>来处理解析逻辑；</p>
+</li>
+<li><p>涉及到章节排版渲染逻辑，使用<code>QRTextReaderChapterModel</code>中的<code>QRTextEngine</code>类型成员<code>engine</code>来解决；原来的Hub相当于一个单例，它可以无限制地使用在工程的任意一个文件里，而<code>engine</code>是作为<code>curChapterModel</code>中的一个成员而存在的，所以需要在<code>QRTextReaderManager</code>里对引擎的操作做一层封装，让<code>QRTextReaderManager</code>负责对外的各种引擎操作，<code>engine</code>不再直接与外界打交道。</p>
+</li>
+<li><p>统计逻辑。Hub的统计逻辑原来在<code>StatisticModule</code>中，为了彻底消除<code>Hub</code>,新增了<code>QRStatisticManager</code>类，将原来<code>StatisticModule</code>的大部分逻辑全部改写到<code>QRStatisticManager</code>中，剩下的小部分逻辑有的直接调用<code>QRBookManager</code>，有的直接调用<code>AppPersist</code></p>
+</li>
+</ul>
+</blockquote>
+<p>注：在替换的过程中，需要注意Hub的传入参数<code>inputMessage</code>和传出参数<code>outputMessage</code>，有时候区分不是特别明显，<code>inputMessage</code>也可以当做传出参数，这里要小心</p>
+<h3 id="翻页"><a href="#翻页" class="headerlink" title="翻页"></a>翻页</h3><h4 id="翻页前逻辑判定"><a href="#翻页前逻辑判定" class="headerlink" title="翻页前逻辑判定"></a>翻页前逻辑判定</h4><p>不管是哪一种翻页方式，在翻页之前，都需要进行判断：</p>
+<blockquote>
+<ul>
+<li>当前的页面是否支持向前翻页，如果当前页面已经是封面或者第一页，那就不能继续往前翻页了；</li>
+<li>当前的页面是否支持向后翻页，如果当前的页面已经是最后一章的最后一页了，就不能继续往后翻页了；</li>
+<li>如果当前的页面正在加载中，会禁止翻页；</li>
+<li>翻页频率控制</li>
+</ul>
+</blockquote>
+<p>具体的细节可以参考如下方法<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TextBaseViewController+PageViewController.h</span></span><br><span class="line">- (<span class="built_in">BOOL</span>)gestureRecognizerShouldBegin:(<span class="built_in">UIGestureRecognizer</span> *)gestureRecognizer</span><br></pre></td></tr></table></figure></p>
+<h4 id="翻页逻辑"><a href="#翻页逻辑" class="headerlink" title="翻页逻辑"></a>翻页逻辑</h4><p>翻页的时候可能产生以下行为：<br>1、如果是章内翻页，引擎TextEngine切到对应的页码，然后进行实时渲染；<br>2、如果是章间翻页，分3种情况：<br>（1）如果章节数据已经就绪，那么引擎TextEngine切到对应的页码（也可能是提前加载好的付费预览等信息），然后进行实时渲染；<br>（2）如果章节尚未加载，先加载一个loading页，然后加载章节数据，并在完成后进行回调刷新页面；<br>（3）如果章节正在加载中，先加载一个loading页，设置需要刷新的标记，在加载完成后进行回刷；</p>
+<p>这里以 <strong>切到下一章</strong> 为例<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)gotoNextChapter</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(!<span class="keyword">self</span>.isOnlineRead) &#123; <span class="keyword">return</span>;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">@synchronized</span>(<span class="keyword">self</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 注意这里切换onlineTag，需要上锁</span></span><br><span class="line">        OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">        [nextOnlineTag resetProgress];</span><br><span class="line">        nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 注意这里会触发预加载的逻辑</span></span><br><span class="line">        <span class="keyword">self</span>.onlineTag = nextOnlineTag;</span><br><span class="line">        </span><br><span class="line">        QRTextReaderChapterModel* chapterModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">        <span class="keyword">if</span>(<span class="literal">nil</span> == chapterModel || chapterModel.type == QRChapterModelState_Failure)&#123;</span><br><span class="line">            <span class="keyword">if</span>(chapterModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span>.chapterModels qr_safeRemoveObjectForKey:@(chapterModel.chapterId)];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 生成ChapterModel</span></span><br><span class="line">            chapterModel = [<span class="keyword">self</span> createChapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">            chapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 需要去请求网络数据</span></span><br><span class="line">            [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            chapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            <span class="keyword">if</span>(chapterModel.type == QRChapterModelState_Loading)&#123;</span><br><span class="line">                <span class="comment">// 先去刷loading页</span></span><br><span class="line">                [<span class="keyword">self</span>.delegate refreshReadingPageIfNecessary];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="comment">// ChpaterModel已经提前缓存就绪</span></span><br><span class="line">                <span class="keyword">if</span>(chapterModel.type == QRChapterModelState_Rended)&#123;</span><br><span class="line">                    <span class="comment">// 存在章节文件，并且引擎已经准备就绪</span></span><br><span class="line">                    <span class="keyword">if</span>(![<span class="keyword">self</span>.chapterModel isPageTop])&#123;</span><br><span class="line">                        [<span class="keyword">self</span>.chapterModel turnToFirstPage];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;   </span><br><span class="line">        &#125;   </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="3D翻页"><a href="#3D翻页" class="headerlink" title="3D翻页"></a>3D翻页</h4><p>(1)手势翻页<br>手势翻页的处理比较简单，无需关心用户的滑动区域，<code>UIPageViewController</code>会自动识别是前翻页还是后翻页，最终都会调到以下几个比较重要的代理方法里进行逻辑处理：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UIPageViewControllerDelegate</span></span><br><span class="line">- (<span class="keyword">void</span>)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController didFinishAnimating:(<span class="built_in">BOOL</span>)finished previousViewControllers:(<span class="built_in">NSArray</span> *)previousViewControllers transitionCompleted:(<span class="built_in">BOOL</span>)completed</span><br><span class="line"></span><br><span class="line"><span class="comment">// UIPageViewControllerDataSource</span></span><br><span class="line">- (<span class="built_in">UIViewController</span> *)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController viewControllerBeforeViewController:(<span class="built_in">UIViewController</span> *)viewController;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">UIViewController</span> *)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController viewControllerAfterViewController:(<span class="built_in">UIViewController</span> *)viewController;</span><br></pre></td></tr></table></figure>
+<p>手势3D翻页有一个回翻的动作：3D动画进行到一半，又可以退回去，但是在3D动画开始的时候翻页逻辑已经发生了，所以回翻回去需要校正页码，其原因是在3D动画的开始，数据源已经发生了变化，所以在回翻回去的时候需要将数据源进行还原。<br>在新的架构下，需要分2种情况来讨论：<br>（1）如果回翻的动作发生在章节内，则需要在章节内调整页码；<br>（2）如果回翻的动作发生在章节之间，就涉及到章节之间的切换；</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 当preVC的章节Id和ReaderManager的章节Id不一致的时候，需要切换章节引擎，一致的时候切换章内页码即可</span></span><br><span class="line">- (<span class="keyword">void</span>)resumePageWithCurrentId:(<span class="built_in">NSInteger</span>)currentId</span><br><span class="line">                     previousId:(<span class="built_in">NSInteger</span>)previousId</span><br><span class="line">                  previousIndex:(<span class="built_in">NSInteger</span>)previousIndex</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(previousId &lt; currentId)&#123;</span><br><span class="line">        <span class="comment">// 引擎层切换回原有章节，页码不需要切换</span></span><br><span class="line">        [<span class="keyword">self</span> gotoLastChapter];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(previousId &gt; currentId)&#123;</span><br><span class="line">        <span class="comment">// 引擎层切换回原有章节，页码不需要切换</span></span><br><span class="line">        [<span class="keyword">self</span> gotoNextChapter];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="comment">// 章节内切换回原有页码</span></span><br><span class="line">        [<span class="keyword">self</span>.chapterModel resumePage];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3D手势翻页还有1个问题，就是很有可能在3D动画的过程中，收到网络结果的回调刷新，造成一定的诡异现象，解决办法是：此时不直接刷，而是把需要刷新的逻辑用block方式保存起来，等到翻页动画完成再进行刷新<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> (^refreshBlock)() = ^&#123;...&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(_pageViewControllerDelegate.pageAnimationFinished)&#123;</span><br><span class="line">    refreshBlock();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span>&#123;</span><br><span class="line">    <span class="comment">// 如果正在3D翻页过程中，直接刷新可能会造成逻辑错误，需要在动画结束后进行</span></span><br><span class="line">    [_pageViewControllerDelegate.callbackBlocks addObject:[refreshBlock <span class="keyword">copy</span>]];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController didFinishAnimating:(<span class="built_in">BOOL</span>)finished previousViewControllers:(<span class="built_in">NSArray</span> *)previousViewControllers transitionCompleted:(<span class="built_in">BOOL</span>)completed</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">self</span>.pageAnimationFinished = <span class="literal">YES</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span>(completed)&#123;</span><br><span class="line">        <span class="keyword">while</span>(<span class="keyword">self</span>.callbackBlocks.count &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">id</span> obj = [<span class="keyword">self</span>.callbackBlocks qr_safeObjectAtIndex:<span class="number">0</span>];</span><br><span class="line">            <span class="keyword">void</span> (^block)() = (<span class="keyword">void</span>(^)())(obj);</span><br><span class="line">            block();</span><br><span class="line">            [<span class="keyword">self</span>.callbackBlocks qr_safeRemoveObjectAtIndex:<span class="number">0</span>];</span><br><span class="line">            [block release];<span class="comment">// MRC</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(2)点击翻页<br>点击翻页的逻辑比较复杂，首先需要了解下<code>UIPageViewController</code>对点击区域的处理：<br><img src="/2019/01/01/Txt引擎之切章重构之路/07.png" width="50%"><br>如图，只有点击区域处于左右两边的天蓝色区域内，<code>UIPageViewController</code>才会进行和上面手势一样的逻辑处理，其它地方是没有响应的，所以其它的地方就需要自定义处理：根据需要，在合适的区域内进行响应，调用下面的方法来进行前翻页或后翻页<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)setViewControllers:(<span class="keyword">nullable</span> <span class="built_in">NSArray</span>&lt;<span class="built_in">UIViewController</span> *&gt; *)viewControllers direction:(<span class="built_in">UIPageViewControllerNavigationDirection</span>)direction animated:(<span class="built_in">BOOL</span>)animated completion:(<span class="keyword">void</span> (^ __<span class="keyword">nullable</span>)(<span class="built_in">BOOL</span> finished))completion;</span><br></pre></td></tr></table></figure></p>
+<p>这样就引入了 <strong>系统点击区域</strong> 和 <strong>自定义点击区域</strong> 两个概念：</p>
+<p>区域判定<br><img src="/2019/01/01/Txt引擎之切章重构之路/08.png" width="60%"></p>
+<p>具体的点击区域判定逻辑可以参考下面两个方法：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- (QRTurnDirection)system3DAreaDirectionWithRect:(<span class="built_in">CGRect</span>)rect point:(<span class="built_in">CGPoint</span>)point;</span><br><span class="line">- (QRTurnDirection)customAreaDirectionWithRect:(<span class="built_in">CGRect</span>)rect point:(<span class="built_in">CGPoint</span>)point;</span><br></pre></td></tr></table></figure></p>
+<h4 id="无动画翻页"><a href="#无动画翻页" class="headerlink" title="无动画翻页"></a>无动画翻页</h4><p>无动画翻页的逻辑是在3D翻页的基础上去除了动画实现的:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">self</span> loadPageViewControllerWithStyle:<span class="built_in">UIPageViewControllerTransitionStylePageCurl</span></span><br><span class="line">                                  orientation:<span class="built_in">UIPageViewControllerNavigationOrientationHorizontal</span>];</span><br><span class="line">_pageViewAnimateNone = <span class="literal">YES</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//无动画模式屏蔽滑动</span></span><br><span class="line"><span class="keyword">for</span> (<span class="built_in">UIGestureRecognizer</span> *gestureRecognizer <span class="keyword">in</span> _pageViewController.gestureRecognizers)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([gestureRecognizer isKindOfClass:[<span class="built_in">UIPanGestureRecognizer</span> <span class="keyword">class</span>]]) &#123;</span><br><span class="line">        gestureRecognizer.enabled = <span class="literal">NO</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 添加左右翻页手势</span></span><br><span class="line"><span class="built_in">UISwipeGestureRecognizer</span> *swipeLeft = [[[<span class="built_in">UISwipeGestureRecognizer</span> alloc] initWithTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(swipeTurnNextPage)] autorelease];</span><br><span class="line">swipeLeft.direction = <span class="built_in">UISwipeGestureRecognizerDirectionLeft</span>;</span><br><span class="line">swipeLeft.delegate = <span class="keyword">self</span>;</span><br><span class="line">[_pageViewController.view addGestureRecognizer:swipeLeft];</span><br><span class="line"></span><br><span class="line"><span class="built_in">UISwipeGestureRecognizer</span> *swipeRight = [[[<span class="built_in">UISwipeGestureRecognizer</span> alloc] initWithTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(swipeTurnPreviousPage)] autorelease];</span><br><span class="line">swipeRight.direction = <span class="built_in">UISwipeGestureRecognizerDirectionRight</span>;</span><br><span class="line">swipeRight.delegate = <span class="keyword">self</span>;</span><br><span class="line">[_pageViewController.view addGestureRecognizer:swipeRight];</span><br></pre></td></tr></table></figure>
+<p>点击翻页区域如下图所示：</p>
+<p><img src="/2019/01/01/Txt引擎之切章重构之路/09.png" width="60%"></p>
+<h4 id="平滑翻页"><a href="#平滑翻页" class="headerlink" title="平滑翻页"></a>平滑翻页</h4><p>平滑翻页主要用到了上下两个视图，并实时预加载前后两个页面，本次重构主要修改的是预加载的逻辑：</p>
+<p>原先通过<code>nextPageInfo</code>获取下一页的信息也仅仅局限在本章之内的，是无法跨章节的，现在由于引擎测已经可以支持多个章节打开，所以这里考虑跨章节获取下一章的信息。下一章如果已经下载好了，那么通过已经打开的引擎，可以进行排版渲染，返回结果，否则进行预加载，等待回调刷新</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">- (QRReadingPageInfo *)nextPageInfo</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>([<span class="keyword">self</span>.chapterModel hasNextPage])</span><br><span class="line">    &#123;</span><br><span class="line">        QRReadingPageInfo *pageInfo = [<span class="keyword">self</span>.chapterModel nextPageInfo];</span><br><span class="line">        </span><br><span class="line">        @weakify(<span class="keyword">self</span>)</span><br><span class="line">        [<span class="keyword">self</span> checkIfHitNextPageInsertLogic:<span class="keyword">self</span>.chapterModel.pageIndex</span><br><span class="line">                                  succBlock:^(<span class="built_in">NSInteger</span> hitPageIndex) &#123;</span><br><span class="line">                                      @strongify(<span class="keyword">self</span>)</span><br><span class="line">                                      pageInfo.pageDrawResultItem = [<span class="keyword">self</span> cachePageImageWithIndex:hitPageIndex];</span><br><span class="line">                                      </span><br><span class="line">                                  &#125;</span><br><span class="line">                                  failBlock:^(<span class="keyword">id</span>  _Nullable insertItem) &#123;</span><br><span class="line">                                      @strongify(<span class="keyword">self</span>)</span><br><span class="line">                                      <span class="keyword">if</span>(insertItem) &#123;</span><br><span class="line">                                          pageInfo.pageDrawResultItem = [<span class="keyword">self</span>.chapterModel imageForCoverPage];</span><br><span class="line">                                          pageInfo.insertItem = insertItem;</span><br><span class="line">                                      &#125;</span><br><span class="line">                                  &#125;];</span><br><span class="line">        <span class="keyword">return</span> pageInfo;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 获取下一章的ChapterModel(这里保证必须取到，如果取不到，立刻加载)</span></span><br><span class="line">        QRTextReaderChapterModel* nextChapterModel = [<span class="keyword">self</span> chapterModelWithChapterId:<span class="keyword">self</span>.chapterModel.chapterId+<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">if</span>(nextChapterModel)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>(![nextChapterModel isPageTop])&#123;</span><br><span class="line">                [nextChapterModel turnToFirstPage];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> [nextChapterModel curPageInfo];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">            [nextOnlineTag resetProgress];</span><br><span class="line">            nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            nextChapterModel = [<span class="keyword">self</span> createChapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            nextChapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            [nextChapterModel proloadChapterData];</span><br><span class="line">            <span class="keyword">return</span> [nextChapterModel curPageInfo];</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>和3D翻页不同的是：在章节之间翻页时，平滑翻页获取的下一页只是预加载的结果在动画的过程中并没有真正的切换到下一章，而3D翻页在动画过程中已经是切换章节了。（这也是3D翻页回翻回去需要重新调整页码，而平滑翻页不需要的原因）</p>
+<p>平滑翻页的真正切换章节的逻辑是在动画完成后触发的回调中完成的：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)dragAnimationFinished:(<span class="built_in">BOOL</span>)popSuccess toNext:(<span class="built_in">BOOL</span>)toNext</span><br><span class="line">&#123;</span><br><span class="line">    ... </span><br><span class="line">    <span class="keyword">if</span> (toNext)        <span class="comment">// 翻到下一页</span></span><br><span class="line">    &#123;</span><br><span class="line">        [<span class="keyword">self</span>.dataSource didTrunPageToNext];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        [<span class="keyword">self</span>.dataSource didTrunPageToPrev];</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="覆盖翻页"><a href="#覆盖翻页" class="headerlink" title="覆盖翻页"></a>覆盖翻页</h4><p>覆盖翻页的逻辑和平滑翻页的逻辑整体比较相似：动画过程中只是取了预加载数据，并没有执行真正的翻页，真正的翻页是在动画完成之后进行的：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)didCoverFinish&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    [<span class="keyword">self</span>.dataSource didTrunPageToNext];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>线上的覆盖翻页一直感觉有些视觉上的卡顿，为了提高用户体验，采取了小步快跑的策略：减小步伐，提高刷新频率<br>(左边为线上效果，右边为优化后的效果)</p>
+<div style="float:left;border:solid 1px 000;margin:10px;"><img src="/2019/01/01/Txt引擎之切章重构之路/before.gif" width="300" height="590"></div>
+
+<div style="float:left;border:solid 1px 000;margin:10px;"><img src="/2019/01/01/Txt引擎之切章重构之路/after.gif" width="300" height="590"></div><br><div style="float:none;clear:both;"><br></div>
+
+<h3 id="插页逻辑"><a href="#插页逻辑" class="headerlink" title="插页逻辑"></a>插页逻辑</h3><p>git版本merge之后，新增了插页逻辑：在原来的阅读页之间经常会插入一些广告业。但是这些插页逻辑和原来的翻页逻辑是耦合在一起的，所以首先针对这个问题做了逻辑分离：<strong>即把翻页逻辑和插页逻辑分开</strong><br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)didTrunPageToPrev</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> invokePrevPageInsertLogic:<span class="keyword">self</span>.chapterModel.pageIndex block:^&#123;</span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.isOnlineRead)&#123;</span><br><span class="line">            [<span class="keyword">self</span> didTrunPageToPrevInOnlineReadMode];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            [<span class="keyword">self</span> didTrunPageToPrevInLocalReadMode];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;];  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)invokePrevPageInsertLogic:(<span class="built_in">NSInteger</span>)pageIndex block:(<span class="keyword">void</span>(^)())block</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage.integerValue == pageIndex - <span class="number">1</span>) &#123;</span><br><span class="line">            QRSafelyDoBlock0(block);</span><br><span class="line">            [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">            <span class="keyword">self</span>.accumulatePageIndex--;</span><br><span class="line">            [<span class="keyword">self</span>.insertManager pageDirection:QRTurnPageDirectionToPrevious];</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage.integerValue == pageIndex) &#123;</span><br><span class="line">            [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">            [<span class="keyword">self</span>.insertManager pageDirection:QRTurnPageDirectionToPrevious];</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.nextPage = @(pageIndex);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.previousPage = @(pageIndex - <span class="number">1</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.nextPageAd = @(<span class="keyword">self</span>.accumulatePageIndex);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.previousPageAd = @(<span class="keyword">self</span>.accumulatePageIndex - <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.turnPageDirection = QRTurnPageDirectionToPrevious;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> canInsertAD] &amp;&amp; [<span class="keyword">self</span>.insertManager currentPageShouldInsertByTransitionInfo:<span class="keyword">self</span>.insertTransitionInfo]) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    QRSafelyDoBlock0(block);</span><br><span class="line">    [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样插页逻辑可以以一种插件的方式植入进来，而原先的翻页逻辑以block方式递给了插页manager，以后插页内部逻辑的修改不会影响到翻页逻辑，反之亦然</p>
+<p>关于更多的细节，可以参考这个文件：<code>QRTextReaderManager+Insert.m</code><br>同时，插页逻辑涉及到的顺延逻辑，会和斯雨同学协同重新设计实现</p>
+<h3 id="页面缓存"><a href="#页面缓存" class="headerlink" title="页面缓存"></a>页面缓存</h3><h4 id="全局缓存观"><a href="#全局缓存观" class="headerlink" title="全局缓存观"></a>全局缓存观</h4><p>在切章的版本中，提到最多的就是预加载、缓存这些字眼，然而这些缓存不是一成不变的，有的情况下是需要更新的，例如修改了选项，需要更新当前页面，那么包括当前看到的页面，以及已经预加载好的其它页面的缓存都必须得到更新，因此要有一个<br><strong>全局的缓存观念</strong><br><strong>全局的缓存观念</strong><br><strong>全局的缓存观念</strong></p>
+<p>接下来列举一些需要全局缓存观的地方：</p>
+<blockquote>
+<ul>
+<li><p>例如翻到了1个付费预览页，并且前一章和后一章都是付费预览页，这个时候点击了购买，那么需要把当前章节的model删掉，重新建立1个对应的model，重新加载，直到渲染完成。但是不巧的是，正好在点击购买的时候，打开了自动购买，那么这个时候其它的两个已经预加载好的付费预览页都应该处于无效状态，应该从缓存中清除；又比如说，购买的时候特意关闭了自动购买，那么其它的已经预加载好的付费预览页的自动购买标记也应该关掉</p>
+</li>
+<li><p>例如3个连着的章节，并且都是渲染页面，这个时候，修改了字体大小，或者进行了转屏，那么除了当前章节，其它两个缓存的章节的model也应该首先清除已经绘制好的页面，并随后去修改自己引擎的相关设置，否则会出现问题；</p>
+</li>
+</ul>
+</blockquote>
+<h4 id="模式变更"><a href="#模式变更" class="headerlink" title="模式变更"></a>模式变更</h4><p>（1）以下这些信息的变更都需要调用<code>relayoutReaderEngine</code>方法刷新阅读页</p>
+<blockquote>
+<ul>
+<li>阅读模式变更(3D、平滑、无效果、覆盖翻页、TTS)</li>
+<li>转屏</li>
+<li>字体变化、字体大小变化</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)relayoutReaderEngine    <span class="comment">//切换阅读模式时，阅读引擎需要重新布局</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:</span><br><span class="line">     ^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull model, <span class="built_in">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>(<span class="literal">nil</span> == model.engine) <span class="keyword">return</span>;</span><br><span class="line">        </span><br><span class="line">        QRTextEngine* engine = model.engine;</span><br><span class="line">        QRBookMarkInfo *bookMark = [engine getBookMark];</span><br><span class="line">        </span><br><span class="line">        <span class="built_in">BOOL</span> isLandscape = <span class="built_in">UIInterfaceOrientationIsLandscape</span>(<span class="keyword">self</span>.curOrientation);</span><br><span class="line">        <span class="built_in">CGRect</span> rect = [<span class="keyword">self</span> getBoundRect:isLandscape isFullScreen:<span class="literal">NO</span>];</span><br><span class="line">        <span class="built_in">CGRect</span> fullRect = [<span class="keyword">self</span> getBoundRect:isLandscape isFullScreen:<span class="literal">YES</span>];</span><br><span class="line">        </span><br><span class="line">        [engine setOwnRect:&amp;rect fullRect:&amp;fullRect];<span class="comment">// 更新绘制区域</span></span><br><span class="line">        [engine recalcPageSize];<span class="comment">// 更新页面大小</span></span><br><span class="line">        [engine relayout];<span class="comment">//重新排版</span></span><br><span class="line">        [engine goToBookMark:bookMark];<span class="comment">// 重新定位</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>(model.onlineTag &amp;&amp; model.onlineTag.onlineBookInfo.chapterid &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="comment">// 业务数据必须在relayout之后调用，否则会段落丢失</span></span><br><span class="line">            [model handleTailPagePlaceholder];</span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里需要格外注意的是：<br><strong>业务数据的处理<code>handleTailPagePlaceholder</code>必须在<code>relayout</code>之后调用，否则会段落丢失，这是因为<code>handleTailPagePlaceholder</code>是已经在建立好的段落链表中插入了自定义了业务段落，而<code>relayout</code>把所有的段落都扔掉，以章节数据为准重新建立段落</strong></p>
+<h4 id="排版设置变更"><a href="#排版设置变更" class="headerlink" title="排版设置变更"></a>排版设置变更</h4><p>QRSetting是作为<code>QRTextReadManager</code>的一个属性setting而存在的，如果用户改变了排版设置，导致其发生变化时，则需要作出相应的处理：</p>
+<p>（1）需要清理掉之前已排版好的页面缓存：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)flushPageCache</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull obj, <span class="built_in">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        [obj flushPageCache];</span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>（2）更新所有已经加载好的TextEngine<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)setSetting:(QRSetting *)setting</span><br><span class="line">&#123;</span><br><span class="line">    _setting = setting;</span><br><span class="line">    [<span class="keyword">self</span> updateEngineSetting:setting];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)updateEngineSetting:(QRSetting*)setting</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull obj, <span class="built_in">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        [obj flushPageCache];</span><br><span class="line">        [obj.engine setSetting:setting];</span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="屏幕旋转"><a href="#屏幕旋转" class="headerlink" title="屏幕旋转"></a>屏幕旋转</h4><p>转屏导致绘制区域发生变化，需要清理掉已渲染好的页面，重新绘制页面</p>
+<p>ps：线上一直有一个问题，就是在转屏的时候，段评会丢失，究其原因是在转屏的时候，会重新排版。<br>解决方案是做一个往返运动<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)resumeEngineState</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">self</span>.isPageTop)&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageTop];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">self</span>.isPageBottom)&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageBottom];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageUp:<span class="number">1</span>];</span><br><span class="line">        [<span class="keyword">self</span> scrollPageDown:<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>后来发现主线已经修复这个问题，所以这个修改可以撤销了</p>
+<h4 id="业务数据导致页面变化"><a href="#业务数据导致页面变化" class="headerlink" title="业务数据导致页面变化"></a>业务数据导致页面变化</h4><p>（1）需要清理掉已渲染好的页面缓存；<br>（2）更新业务占位<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 设置章节尾页占位符区域</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line">- (<span class="keyword">void</span>)handleTailPagePlaceholder</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 打赏</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="built_in">NSValue</span> *placeholderForInteraction =</span><br><span class="line">    [<span class="keyword">self</span> placeholderForInteraction:<span class="keyword">self</span>.bookInfo</span><br><span class="line">                          onlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 大神说</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="built_in">NSValue</span> *placeholderForQA =</span><br><span class="line">    [<span class="keyword">self</span> placeholderForQA:<span class="keyword">self</span>.bookInfo</span><br><span class="line">                 onlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="翻页清理缓存"><a href="#翻页清理缓存" class="headerlink" title="翻页清理缓存"></a>翻页清理缓存</h4><p><img src="/2019/01/01/Txt引擎之切章重构之路/10.png" width="80%"><br>(1)当前章节的页面缓存最多保留3个页面，一旦超过3个就会进行清理；<br>(2)预加载的前后章节最多保留1个页面（可能因为章节数据，所以引擎为nil，此时只有0个）</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Txt切章的重构工作断断续续已经进行了大半年，经历了2个版本。<br>第1个版本试验性第尝试开发，小打小闹，没有动核心架构，整体进度较快，但是也存在着各种问题；由于重构的不够彻底，遇到了一些性能瓶颈，任凭如何优化也改进不了这种设计上的缺陷，所以下狠心推翻了，开始了重构更加彻底的2.0版本，这中间和峰哥也讨论过很多次，尝试很多种方案，我自己也从中吸取了一些经验和教训。</p>
+<p>2.0版本经历了40多天的“编译红”、刚开始运行的“页面黑”和跌跌撞撞的crash，目前的工作进度大概在70%~80%，剩下的工作自从主线7.0开发开始就搁置了</p>
+<p>迁移到git之前，再次进行了代码合并，随后迁移到了git</p>
+<h2 id="备注"><a href="#备注" class="headerlink" title="备注"></a>备注</h2><p>1.0版本的svn地址（52次代码提交）<br><a href="http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_1.0" target="_blank" rel="noopener">http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_1.0</a></p>
+<p>2.0版本的svn代码地址：（22次代码提交）<br><a href="http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_3.0" target="_blank" rel="noopener">http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_3.0</a></p>
+<p>git版本地址：（34次代码提交）<br><a href="http://git.code.oa.com/qq_reader_mobile_tech_ios/QQReader_iPhone_Proj" target="_blank" rel="noopener">http://git.code.oa.com/qq_reader_mobile_tech_ios/QQReader_iPhone_Proj</a><br>branch: QQReaderTXTEngine</p>
+<h2 id="埋坑记"><a href="#埋坑记" class="headerlink" title="埋坑记"></a>埋坑记</h2><h3 id="1-神想法排版错乱"><a href="#1-神想法排版错乱" class="headerlink" title="(1) 神想法排版错乱"></a>(1) 神想法排版错乱</h3><p><img src="/2019/01/01/Txt引擎之切章重构之路/21.png" width="50%"></p>
+<p>通过定位，发现这里的代码逻辑有问题：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">- (TextPrgf_ptr_t)_paragraphWithIdentifier:(NSInteger)paraIdentifier</span><br><span class="line">                                  paraList:(NSArray&lt;NSNumber *&gt; *)paraList</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (paraList.count &lt;= paraIdentifier ||</span><br><span class="line">        paraIdentifier &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 找到paraIdentifier对应段落的偏移</span></span><br><span class="line">    NSInteger paraOffset = [paraList objectAtIndex:paraIdentifier].integerValue;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从_prgfGroup.head依次往后寻找</span></span><br><span class="line">    TextPrgf_ptr_t paragraph = _prgfGroup.head;</span><br><span class="line">    <span class="keyword">for</span> (; paragraph != <span class="literal">NULL</span>;) &#123;</span><br><span class="line">        <span class="keyword">if</span> (paragraph-&gt;offset &gt;= paraOffset &amp;&amp;</span><br><span class="line">            paraOffset &lt;= paragraph-&gt;offset + paragraph-&gt;size) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        paragraph = paragraph-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paragraph;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>paraIdentifier</code>代表段落序号，<code>paraList</code>从前往后有序地存储着当前章节每个段落的偏移值，但是如果打开书的时候从章节的中间进入，此时无法构建完整的段落链表，这意味着<code>_prgfGroup.head</code>从中间的某一个段落开始。按照上述代码的逻辑，如果<code>paraOffset</code>比<code>_prgfGroup.head</code>还小的话，那么就说明最后找到的<code>paragraph</code>是一个错误的段落，这个错误的段落后面并没有给神想法预留排版位置，所以产生了位置重叠，排版错乱的现象。<br>找到了原因，修复就比较简单了：在找到<code>paraIdentifier</code>对应的段落偏移后，先和<code>_prgfGroup.head</code>的偏移值做一些比较，如果小于，直接返回NULL<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 找到paraIdentifier对应段落的偏移</span></span><br><span class="line">NSInteger paraOffset = [paraList objectAtIndex:paraIdentifier].integerValue;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(paraOffset &lt; _prgfGroup.head-&gt;offset)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>但是这样的代码在主线上为什么没有问题发生呢？通过定位，发现主要是主线上的代码在渲染当前页面的时候，同时会预渲染上一页，这就会导致构建当前锚点之前的段落链表，而由于在线书的章节文件普遍较小，<code>_prgfGroup.head</code>此时会被构建为章节的开始段落，就不会出现上述问题。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (![<span class="keyword">self</span> isTopPage])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 在txtengine的parsePrgf:lineOffset:prgfSize:policy:prgfGroup:中有个潜规则</span></span><br><span class="line">    <span class="comment">// 认为会往前缓存一页内容</span></span><br><span class="line">    <span class="comment">// 故这里的缓存逻辑不能随意修改</span></span><br><span class="line">    <span class="comment">// add by zxf at 15/11/2017 for paragraph comment</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    [<span class="keyword">self</span> cachePageImageWithIndex:currentPageIndex - <span class="number">1</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="2-预加载假死问题"><a href="#2-预加载假死问题" class="headerlink" title="(2) 预加载假死问题"></a>(2) 预加载假死问题</h3><p>切章的时候，经常会间歇性地发生假死现象，通过打点调试，发现章节文件下载的 <strong>结束回调</strong>竟然跑到了 <strong>进度回调</strong>的前面：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-04-18 16:11:18.942489+0800 QQReaderUI[97099:5778241] end callback: 异常：0, 8192, &lt;NSHTTPURLResponse: 0x600003c3ccc0&gt;  &#123; Status Code: 200, Headers &#123;</span><br><span class="line">2019-04-18 16:11:18.947396+0800 QQReaderUI[97099:5777779] progress callback: 进度 8192, 8192 , &lt;NSMutableURLRequest: 0x600003f044f0&gt;</span><br></pre></td></tr></table></figure></p>
+<p>此时数据尚未接受完毕便发生了回调进行刷新，所以产生了假死现象，而正常的章节下载应该是这样的流程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-04-18 16:11:51.987733+0800 QQReaderUI[97099:5777779] progress callback: 进度 9216, 9216 , &lt;NSMutableURLRequest: 0x600003f3ab10&gt; </span><br><span class="line">2019-04-18 16:13:11.827501+0800 QQReaderUI[97099:5778430] end callback: 正常：9216, 9216, &lt;NSHTTPURLResponse: 0x600003dc10c0&gt;  &#123; Status Code: 200, Headers &#123;</span><br></pre></td></tr></table></figure></p>
+<p>通过定位发现和<code>QQHttpClient</code>的回调有关</p>
+<blockquote>
+<ul>
+<li>session实例可以设置completionQueue，回调block会在completionQueue队列执行。</li>
+<li>如不设置completionQueue，则：</li>
+<li>如调用[QQHttpClient enqueueRequestSession:session]线程为主线程，在主线程回调；</li>
+<li>如调用[QQHttpClient enqueueRequestSession:session]线程为子线程，在默认concurrentQueue队列执行</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!session.completionQueue)&#123;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="built_in">NSThread</span> isMainThread])&#123;</span><br><span class="line">        session.completionQueue = dispatch_get_main_queue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        session.completionQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里由于是预加载，所以网络发起是在子线程，事先没有设置<code>completionQueue</code>，所以回调默认也在子线程，然而<code>QQHttpClientSession</code>的进度回调却主动切到了主线程，从而导致进度回调发生在结束回调之后。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">self</span>.downloadProgress)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> totalRead = <span class="keyword">self</span>.totalBytesRead + _partialDownloadSize;</span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> expectedLength = <span class="keyword">self</span>.response.expectedContentLength + _partialDownloadSize;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 这里主动切到了主线程</span></span><br><span class="line">    <span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.downloadProgress)&#123;</span><br><span class="line">            <span class="keyword">self</span>.downloadProgress(length, totalRead, expectedLength);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>理论上来说这里不应该自动切换到主线程，不管是主线程，还是子线程，应该让进度回调和结束回调保持在同一个线程上，然后由于代码历史悠久，不宜改动，所以这里解决方案就是统一设置章节下载的网络回调为主线程</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 设置回调队列是主队列</span></span><br><span class="line">session.completionQueue = dispatch_get_main_queue();</span><br></pre></td></tr></table></figure>
+<p>(3) Heap corruption<br>最近的一段时间，阅读页经常发生崩溃现象，并且崩溃的时机和地点相当随机，每次都会输出下面的信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">QQReaderUI(1728,0x10ab9eb80) malloc: Heap corruption detected, free list is damaged at 0x282ecaac0</span><br><span class="line">*** Incorrect guard value: 10804049344</span><br><span class="line">QQReaderUI(1728,0x10ab9eb80) malloc: *** set a breakpoint in malloc_error_break to debug</span><br></pre></td></tr></table></figure></p>
+<p>通过设置异常捕获，也于事无补，找不到任何有价值的思路<br>终于通过1个死循环的巧合，定位了问题所在：<br><strong>TxtEngine引擎中的尾页逻辑包含着各种优先级，其中“作者的话”本来也是业务数据，但是它偏偏在章节数据中，每次章节排版完，都需要将解析出来的“作者的话”传递到外面的业务层，完成各种优先级排序，之后引擎会来要排好的数据。然而有的情况下，引擎需要重新排版，就会将之前递出去的“作者的话”释放掉，然而由于“作者的话”本身是一个C结构体指针，引擎释放的时候，外面的业务层完全无法感知到（终究是因为代码有漏洞），等下次引擎要数据的时候，外面的业务层将一个“已经被释放掉的非法指针”递给引擎，此时会非法操作内存，进而引发crash。</strong></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2019/01/01/Txt引擎之切章重构之路/">Txt引擎之切章重构之路</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2019年01月01日 - 11:01</p>
+  <p><span>最后更新:</span>2020年12月27日 - 12:12</p>
+  <p><span>原始链接:</span><a href="/2019/01/01/Txt引擎之切章重构之路/" title="Txt引擎之切章重构之路">https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2019/01/01/Txt引擎之切章重构之路/">Txt引擎之切章重构之路</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2019年01月01日 - 11:01</p>
+  <p><span>最后更新:</span>2020年12月27日 - 12:12</p>
+  <p><span>原始链接:</span><a href="/2019/01/01/Txt引擎之切章重构之路/" title="Txt引擎之切章重构之路">https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/01/01/Txt引擎之切章重构之路/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Txt引擎-切章/" rel="tag"># Txt引擎 切章</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/13/雪花飘飘/" rel="next" title="雪花飘飘">
+                <i class="fa fa-chevron-left"></i> 雪花飘飘
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/05/Txt引擎工作原理/" rel="prev" title="Txt引擎工作原理">
+                Txt引擎工作原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#现状分析"><span class="nav-number">2.</span> <span class="nav-text">现状分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#整体架构流程"><span class="nav-number">2.1.</span> <span class="nav-text">整体架构流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#打开文件流程"><span class="nav-number">2.2.</span> <span class="nav-text">打开文件流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hub调用"><span class="nav-number">2.3.</span> <span class="nav-text">Hub调用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重构之路"><span class="nav-number">3.</span> <span class="nav-text">重构之路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#缓存模型的确立"><span class="nav-number">3.1.</span> <span class="nav-text">缓存模型的确立</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3引擎架构"><span class="nav-number">3.1.1.</span> <span class="nav-text">3引擎架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3模型架构"><span class="nav-number">3.1.2.</span> <span class="nav-text">3模型架构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重构类图"><span class="nav-number">3.2.</span> <span class="nav-text">重构类图</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#QRTextReaderManager"><span class="nav-number">3.2.1.</span> <span class="nav-text">QRTextReaderManager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#QRTextReaderChapterModel"><span class="nav-number">3.2.2.</span> <span class="nav-text">QRTextReaderChapterModel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#QRTextBusinessManager"><span class="nav-number">3.2.3.</span> <span class="nav-text">QRTextBusinessManager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#QRTextEngine封装"><span class="nav-number">3.2.4.</span> <span class="nav-text">QRTextEngine封装</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#章节加载逻辑"><span class="nav-number">3.2.5.</span> <span class="nav-text">章节加载逻辑</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#打开文件流程重构"><span class="nav-number">3.3.</span> <span class="nav-text">打开文件流程重构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hub去除"><span class="nav-number">3.4.</span> <span class="nav-text">Hub去除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#翻页"><span class="nav-number">3.5.</span> <span class="nav-text">翻页</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#翻页前逻辑判定"><span class="nav-number">3.5.1.</span> <span class="nav-text">翻页前逻辑判定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#翻页逻辑"><span class="nav-number">3.5.2.</span> <span class="nav-text">翻页逻辑</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3D翻页"><span class="nav-number">3.5.3.</span> <span class="nav-text">3D翻页</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#无动画翻页"><span class="nav-number">3.5.4.</span> <span class="nav-text">无动画翻页</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#平滑翻页"><span class="nav-number">3.5.5.</span> <span class="nav-text">平滑翻页</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#覆盖翻页"><span class="nav-number">3.5.6.</span> <span class="nav-text">覆盖翻页</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插页逻辑"><span class="nav-number">3.6.</span> <span class="nav-text">插页逻辑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#页面缓存"><span class="nav-number">3.7.</span> <span class="nav-text">页面缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#全局缓存观"><span class="nav-number">3.7.1.</span> <span class="nav-text">全局缓存观</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#模式变更"><span class="nav-number">3.7.2.</span> <span class="nav-text">模式变更</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#排版设置变更"><span class="nav-number">3.7.3.</span> <span class="nav-text">排版设置变更</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#屏幕旋转"><span class="nav-number">3.7.4.</span> <span class="nav-text">屏幕旋转</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#业务数据导致页面变化"><span class="nav-number">3.7.5.</span> <span class="nav-text">业务数据导致页面变化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#翻页清理缓存"><span class="nav-number">3.7.6.</span> <span class="nav-text">翻页清理缓存</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#备注"><span class="nav-number">5.</span> <span class="nav-text">备注</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#埋坑记"><span class="nav-number">6.</span> <span class="nav-text">埋坑记</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-神想法排版错乱"><span class="nav-number">6.1.</span> <span class="nav-text">(1) 神想法排版错乱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-预加载假死问题"><span class="nav-number">6.2.</span> <span class="nav-text">(2) 预加载假死问题</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="RunLoop IO多路复用," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言接着上篇文章如何实现一个简单的RunLoop（1），我们来继续分析。 LWURLConnectionLWURLConnection也是这个框架中比较有意思的一部分，同时也比较复杂，相信看完之后对AFN的理解会有很大的帮助。直接上代码：12345678910- (void)performURLConnectionOnRunLoopThread&amp;#123;    NSMutableURLReque">
+<meta name="keywords" content="RunLoop IO多路复用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何去实现一个轻量级的Runloop（2）">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言接着上篇文章如何实现一个简单的RunLoop（1），我们来继续分析。 LWURLConnectionLWURLConnection也是这个框架中比较有意思的一部分，同时也比较复杂，相信看完之后对AFN的理解会有很大的帮助。直接上代码：12345678910- (void)performURLConnectionOnRunLoopThread&amp;#123;    NSMutableURLReque">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/01.jpg">
+<meta property="og:updated_time" content="2018-06-19T16:37:58.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何去实现一个轻量级的Runloop（2）">
+<meta name="twitter:description" content="前言接着上篇文章如何实现一个简单的RunLoop（1），我们来继续分析。 LWURLConnectionLWURLConnection也是这个框架中比较有意思的一部分，同时也比较复杂，相信看完之后对AFN的理解会有很大的帮助。直接上代码：12345678910- (void)performURLConnectionOnRunLoopThread&amp;#123;    NSMutableURLReque">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/01.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/"/>
+
+
+
+
+
+  <title>如何去实现一个轻量级的Runloop（2） | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">如何去实现一个轻量级的Runloop（2）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-15T21:12:10+08:00">
+                2018-06-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,205
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  17
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>接着上篇文章<a href="http://lingyuncxb.com/2018/06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/" target="_blank" rel="noopener">如何实现一个简单的RunLoop（1）</a>，我们来继续分析。</p>
+<h2 id="LWURLConnection"><a href="#LWURLConnection" class="headerlink" title="LWURLConnection"></a>LWURLConnection</h2><p>LWURLConnection也是这个框架中比较有意思的一部分，同时也比较复杂，相信看完之后对AFN的理解会有很大的帮助。直接上代码：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)performURLConnectionOnRunLoopThread</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSMutableURLRequest</span> *request = [<span class="built_in">NSMutableURLRequest</span> requestWithURL:[<span class="built_in">NSURL</span> URLWithString:<span class="string">@"http://192.168.1.11:8080/v1/list/post"</span>]];</span><br><span class="line">    request.HTTPMethod = <span class="string">@"POST"</span>;</span><br><span class="line">    <span class="built_in">NSString</span> *content = <span class="string">@"name=john&amp;address=beijing&amp;mobile=140005"</span>;</span><br><span class="line">    request.HTTPBody = [content dataUsingEncoding:<span class="built_in">NSUTF8StringEncoding</span>];</span><br><span class="line">    LWURLConnection *conn = [[LWURLConnection alloc] initWithRequest:request delegate:<span class="keyword">self</span> startImmediately:<span class="literal">NO</span>];</span><br><span class="line">    [conn scheduleInRunLoop:_lwRunLoopThread.looper];</span><br><span class="line">    [conn start];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="LWURLConnection的初始化"><a href="#LWURLConnection的初始化" class="headerlink" title="LWURLConnection的初始化"></a>LWURLConnection的初始化</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span> _Nonnull)initWithRequest:(<span class="built_in">NSMutableURLRequest</span> * _Nullable)request</span><br><span class="line">                                delegate:(<span class="keyword">nullable</span> <span class="keyword">id</span>)delegate</span><br><span class="line">                        startImmediately:(<span class="built_in">BOOL</span>)startImmediately</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</span><br><span class="line">        _internal = [[LWConnectionInternal alloc] initWithRequest:request];</span><br><span class="line">        _internal.delegate = <span class="keyword">self</span>;</span><br><span class="line">        _startImmediately = startImmediately;</span><br><span class="line">        _delegate = delegate;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)start</span><br><span class="line">&#123;</span><br><span class="line">    [_internal start];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到<code>LWURLConnection</code>内部持有一个<code>LWConnectionInternal</code>对象，并把<code>LWConnectionInternal</code>的代理设置为自己。</p>
+<h3 id="LWConnectionInternal初始化"><a href="#LWConnectionInternal初始化" class="headerlink" title="LWConnectionInternal初始化"></a>LWConnectionInternal初始化</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="keyword">super</span> init]) &#123;</span><br><span class="line">        _helper = new LWConnHelper();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)start</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 重启一个子线程</span></span><br><span class="line">    [<span class="built_in">NSThread</span> detachNewThreadSelector:<span class="keyword">@selector</span>(startInternal) toTarget:<span class="keyword">self</span> withObject:<span class="literal">nil</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)startInternal</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 设置上下文</span></span><br><span class="line">    LWConnHelperContext context = &#123;(__bridge <span class="keyword">void</span> *)<span class="keyword">self</span>,TimeOutCallBackRoutine, ReceiveCallBackRoutine, FinshCallBackRoutine, FailureCallBackRoutine&#125;;</span><br><span class="line">    _helper-&gt;setLWConnHelperContext(&amp;context);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 建立链接</span></span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> establishConnection]) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 设置请求头参数</span></span><br><span class="line">        [<span class="keyword">self</span> prepareHttpRequest];</span><br><span class="line">        <span class="keyword">if</span> ((strcasecmp(<span class="string">"post"</span>, [request.HTTPMethod UTF8String]) == <span class="number">0</span>) &amp;&amp; request.HTTPBody.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 设置请求体</span></span><br><span class="line">            [<span class="keyword">self</span> prepareHTTPBody];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (request.timeoutInterval &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            request.timeoutInterval = <span class="number">60</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        _helper-&gt;createHttpRequest(request.timeoutInterval);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        _helper-&gt;closeConn();</span><br><span class="line">        [<span class="keyword">self</span> failure];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，start方法时重启了一个子线程执行<code>startInternal</code>方法，在该方法里面进行了链接、请求参数准备，以及建立HttpRequest请求，接下来逐步拆解。</p>
+<h3 id="建立Socket链接"><a href="#建立Socket链接" class="headerlink" title="建立Socket链接"></a>建立Socket链接</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)establishConnection</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 获取IP和端口</span></span><br><span class="line">    <span class="built_in">NSURL</span> *targetURL = request.URL;</span><br><span class="line">    <span class="built_in">NSString</span> *host = targetURL.host;</span><br><span class="line">    <span class="built_in">NSInteger</span> port = [targetURL.port intValue];</span><br><span class="line">    <span class="keyword">char</span> *ip = _helper-&gt;resolveHostName([host UTF8String]);</span><br><span class="line">    <span class="keyword">if</span> (ip == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"resolve host name failure"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NO</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用LWConnHelper建立链接</span></span><br><span class="line">    <span class="keyword">return</span> _helper-&gt;establishSocket(ip, (<span class="keyword">int</span>)port);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> LWConnHelper::establishSocket(<span class="keyword">const</span> <span class="keyword">char</span> *ip, <span class="keyword">const</span> <span class="keyword">int</span> port)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// IP和端口转换</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">serverAddr</span>;</span></span><br><span class="line">    serverAddr.sin_len = <span class="keyword">sizeof</span>(struct sockaddr_in);</span><br><span class="line">    serverAddr.sin_family = AF_INET;</span><br><span class="line">    serverAddr.sin_port = htons(port);</span><br><span class="line">    <span class="keyword">if</span> (inet_aton(ip, &amp;serverAddr.sin_addr) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"address error\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    inet_aton(ip, &amp;serverAddr.sin_addr);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 建立套接字，用来打开一个网络连接，如果成功则返回一个网络文件描述符</span></span><br><span class="line">    <span class="keyword">this</span>-&gt;mSockFd = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置为套接字描述符为非阻塞式IO</span></span><br><span class="line">    <span class="keyword">int</span> flag = fcntl(<span class="keyword">this</span>-&gt;mSockFd, F_GETFL, <span class="literal">NULL</span>);</span><br><span class="line">    flag |= O_NONBLOCK;</span><br><span class="line">    fcntl(<span class="keyword">this</span>-&gt;mSockFd, F_SETFL, flag);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 通过connect函数与服务端连接，进行通信</span></span><br><span class="line">    <span class="keyword">int</span> ret = connect(<span class="keyword">this</span>-&gt;mSockFd, (struct sockaddr *)&amp;serverAddr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ret &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="准备请求头和请求体"><a href="#准备请求头和请求体" class="headerlink" title="准备请求头和请求体"></a>准备请求头和请求体</h3><p>负责一些请求参数的设置<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)prepareHttpRequest</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSURL</span> *targetURL = request.URL;</span><br><span class="line">    <span class="built_in">NSString</span> *httpMethod = request.HTTPMethod;</span><br><span class="line">    <span class="built_in">NSString</span> *path = targetURL.path;</span><br><span class="line">    <span class="built_in">NSString</span> *host = targetURL.host;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSMutableString</span> *httpRequestLineAndHeader = [[<span class="built_in">NSMutableString</span> alloc] init];</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *requestLine = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"%@ %@ HTTP/1.1 \r\n"</span>,httpMethod, path];</span><br><span class="line">    <span class="built_in">NSString</span> *hostHeader = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"HOST: %@ \r\n"</span>, host];</span><br><span class="line">    [httpRequestLineAndHeader appendString:requestLine];</span><br><span class="line">    [httpRequestLineAndHeader appendString:hostHeader];</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSMutableDictionary</span> *allHTTPHeaderFields = [[<span class="built_in">NSMutableDictionary</span> alloc] init];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"application/x-www-form-urlencoded"</span> forKey:<span class="string">@"Content-Type"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:@(request.HTTPBody.length) forKey:<span class="string">@"Content-Length"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"wuyunfeng@LWURLConnection"</span> forKey:<span class="string">@"Accept"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"gzip, deflate"</span> forKey:<span class="string">@"Accept-Encoding"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"utf-8"</span> forKey:<span class="string">@"Accept-Charset"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"LWRunLoopAgent"</span> forKey:<span class="string">@"User-Agent"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"no-cache"</span> forKey:<span class="string">@"Cache-Control"</span>];</span><br><span class="line">    [allHTTPHeaderFields setValue:<span class="string">@"close"</span> forKey:<span class="string">@"Connection"</span>];</span><br><span class="line">    [allHTTPHeaderFields addEntriesFromDictionary:request.allHTTPHeaderFields];</span><br><span class="line">    <span class="built_in">NSString</span> *httpHeaderAndValues = LWHeaderStringFromHTTPHeaderFieldsDictironary(allHTTPHeaderFields);</span><br><span class="line">    [httpRequestLineAndHeader appendString:httpHeaderAndValues];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 把请求行和请求头发送出去</span></span><br><span class="line">    _helper-&gt;sendMsg([httpRequestLineAndHeader UTF8String], (<span class="keyword">int</span>)httpRequestLineAndHeader.length);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)prepareHTTPBody</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">NSData</span> *data = request.HTTPBody;</span><br><span class="line">    _helper-&gt;sendMsg((<span class="keyword">const</span> <span class="keyword">char</span> *)([data bytes]), (<span class="keyword">int</span>)[data length]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> LWConnHelper::sendMsg(<span class="keyword">const</span> <span class="keyword">char</span> *content, <span class="keyword">int</span> length)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (content == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">ssize_t</span> mWrite;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        mWrite = write(<span class="keyword">this</span>-&gt;mSockFd, content, length);</span><br><span class="line">    &#125; <span class="keyword">while</span> (mWrite == <span class="number">-1</span> &amp;&amp; errno == EINTR);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="建立Http请求"><a href="#建立Http请求" class="headerlink" title="建立Http请求"></a>建立Http请求</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> LWConnHelper::createHttpRequest(<span class="keyword">int</span> timeoutMills)</span><br><span class="line">&#123;</span><br><span class="line">    fd_set readfds;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 时间戳转换</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">timeout</span>;</span></span><br><span class="line">    timeout.tv_sec = timeoutMills / <span class="number">1000</span>;</span><br><span class="line">    timeout.tv_usec = timeoutMills % <span class="number">1000</span> * <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置readset描述符</span></span><br><span class="line">    <span class="keyword">int</span> maxfd = <span class="number">-1</span>;</span><br><span class="line">    FD_ZERO(&amp;readfds);</span><br><span class="line">    maxfd = <span class="keyword">this</span>-&gt;mSockFd + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> ret;</span><br><span class="line">    <span class="keyword">do</span> </span><br><span class="line">    &#123;</span><br><span class="line">        FD_SET(<span class="keyword">this</span>-&gt;mSockFd, &amp;readfds);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 检测网络是否回应消息</span></span><br><span class="line">        ret = select(maxfd, &amp;readfds, <span class="literal">NULL</span>, <span class="literal">NULL</span>, &amp;timeout);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 如果超时</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="number">0</span> == ret) &#123;</span><br><span class="line">            <span class="comment">// 超时回调</span></span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionTimeOutCallBack != <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionTimeOutCallBack(<span class="keyword">this</span>-&gt;mContext-&gt;info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果this-&gt;mSockFd是否在返回的集合readfds中</span></span><br><span class="line">        <span class="keyword">if</span> (FD_ISSET(<span class="keyword">this</span>-&gt;mSockFd, &amp;readfds)) &#123;</span><br><span class="line">            <span class="keyword">char</span> buffer[<span class="number">4</span> * <span class="number">1024</span>];</span><br><span class="line">            <span class="keyword">ssize_t</span> nRead;</span><br><span class="line">            <span class="keyword">do</span> &#123;</span><br><span class="line">                <span class="comment">// 成功返回读取的字节数,出错返回-1, 并设置errno,如果在调read之前已到达文件末尾，则这次read返回0</span></span><br><span class="line">                nRead = read(<span class="keyword">this</span>-&gt;mSockFd, buffer, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 每读到一次数据都要进行回调</span></span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionReceiveCallBack != <span class="literal">NULL</span>) &#123;</span><br><span class="line">                    <span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionReceiveCallBack(<span class="keyword">this</span>-&gt;mContext-&gt;info, buffer, (<span class="keyword">int</span>)nRead);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">while</span> ((nRead == <span class="number">-1</span> &amp;&amp; errno == EINTR) || nRead == <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 成功回调</span></span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionFinishCallBack) &#123;</span><br><span class="line">                <span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionFinishCallBack(<span class="keyword">this</span>-&gt;mContext-&gt;info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (<span class="number">-1</span> == ret &amp;&amp; errno == EINTR);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果失败</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == ret) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 失败回调</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionFailureCallBack != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>-&gt;mContext-&gt;LWConnectionFailureCallBack(<span class="keyword">this</span>-&gt;mContext-&gt;info, <span class="number">-1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 关闭连接</span></span><br><span class="line">    closeConn();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实际上这个名字<code>createHttpRequest</code>稍微有点欠妥，因为在这个方法里面，已经是在通过IO多路复用技术select等待网络数据回来，请求实际上是在<code>prepareHttpRequest</code>的时候已经发出去了。</p>
+<h3 id="网络回调流程"><a href="#网络回调流程" class="headerlink" title="网络回调流程"></a>网络回调流程</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@class</span> <span class="title">LWConnectionInternal</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">LWConnectionInternalDelegate</span> &lt;<span class="title">NSObject</span>&gt;</span></span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internal_connection:(LWConnectionInternal * _Nonnull)connection didReceiveData:(<span class="built_in">NSData</span> * _Nullable)data;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internal_connection:(LWConnectionInternal * _Nonnull)connection didFailWithError:(<span class="built_in">NSError</span> * _Nullable)error;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internal_connectionDidFinishLoading:(LWConnectionInternal * _Nonnull)connection;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p><code>LWConnectionInternal</code>内部有个<code>LWConnectionInternalDelegate</code>，会把网络结果代理给<code>LWURLConnection</code>。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)internal_connection:(LWConnectionInternal * _Nonnull)connection didReceiveData:(<span class="built_in">NSData</span> * _Nullable)data</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//The new object must have its selector set with setSelector: and its arguments set with setArgument:atIndex: before it can be invoked. Do not use the alloc/init approach to create NSInvocation objects.</span></span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span>.delegate respondsToSelector:<span class="keyword">@selector</span>(lw_connection:didReceiveData:)]) &#123;</span><br><span class="line">        <span class="keyword">id</span> target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        <span class="built_in">NSMethodSignature</span> *sig = [target methodSignatureForSelector:<span class="keyword">@selector</span>(lw_connection:didReceiveData:)];</span><br><span class="line">        <span class="built_in">NSInvocation</span> *invocation = [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:sig];</span><br><span class="line">        invocation.target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        invocation.selector = <span class="keyword">@selector</span>(lw_connection:didReceiveData:);</span><br><span class="line">        <span class="keyword">id</span> argument = <span class="keyword">self</span>;</span><br><span class="line">        [invocation setArgument:&amp;argument atIndex:<span class="number">2</span>];</span><br><span class="line">        [invocation setArgument:&amp;data atIndex:<span class="number">3</span>];</span><br><span class="line">        [invocation retainArguments];</span><br><span class="line">        LWMessage *msg = [[LWMessage alloc] initWithTarget:invocation aSel:<span class="keyword">@selector</span>(invoke) withArgument:<span class="literal">nil</span> at:<span class="number">0</span>];</span><br><span class="line">        [_runloop postMessage:msg];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internal_connection:(LWConnectionInternal * _Nonnull)connection didFailWithError:(<span class="built_in">NSError</span> * _Nullable)error</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span>.delegate respondsToSelector:<span class="keyword">@selector</span>(lw_connection:didFailWithError:)]) &#123;</span><br><span class="line">        <span class="keyword">id</span> target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        <span class="built_in">NSMethodSignature</span> *sig = [target methodSignatureForSelector:<span class="keyword">@selector</span>(lw_connection:didFailWithError:)];</span><br><span class="line">        <span class="built_in">NSInvocation</span> *invocation = [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:sig];</span><br><span class="line">        invocation.target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        invocation.selector = <span class="keyword">@selector</span>(lw_connection:didFailWithError:);</span><br><span class="line">        <span class="keyword">id</span> argument = <span class="keyword">self</span>;</span><br><span class="line">        [invocation setArgument:&amp;argument atIndex:<span class="number">2</span>];</span><br><span class="line">        [invocation setArgument:&amp;error atIndex:<span class="number">3</span>];</span><br><span class="line">        [invocation retainArguments];</span><br><span class="line">        LWMessage *msg = [[LWMessage alloc] initWithTarget:invocation aSel:<span class="keyword">@selector</span>(invoke) withArgument:<span class="literal">nil</span> at:<span class="number">0</span>];</span><br><span class="line">        [_runloop postMessage:msg];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internal_connectionDidFinishLoading:(LWConnectionInternal * _Nonnull)connection</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span>.delegate respondsToSelector:<span class="keyword">@selector</span>(lw_connectionDidFinishLoading:)]) &#123;</span><br><span class="line">        <span class="keyword">id</span> target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        <span class="built_in">NSMethodSignature</span> *sig = [target methodSignatureForSelector:<span class="keyword">@selector</span>(lw_connectionDidFinishLoading:)];</span><br><span class="line">        <span class="built_in">NSInvocation</span> *invocation = [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:sig];</span><br><span class="line">        invocation.target = <span class="keyword">self</span>.delegate;</span><br><span class="line">        invocation.selector = <span class="keyword">@selector</span>(lw_connectionDidFinishLoading:);</span><br><span class="line">        <span class="keyword">id</span> argument = <span class="keyword">self</span>;</span><br><span class="line">        [invocation setArgument:&amp;argument atIndex:<span class="number">2</span>];</span><br><span class="line">        [invocation retainArguments];</span><br><span class="line">        LWMessage *msg = [[LWMessage alloc] initWithTarget:invocation aSel:<span class="keyword">@selector</span>(invoke) withArgument:<span class="literal">nil</span> at:<span class="number">0</span>];</span><br><span class="line">        [_runloop postMessage:msg];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>以<code>internal_connectionDidFinishLoading</code>为例，可以看到它将<code>LWURLConnection</code>的代理方法（就是最外面的业务层）包装为<code>LWMessage</code>，调用我们熟悉的<code>[_runloop postMessage:msg]</code>，进入Runloop的消息队列。</p>
+<p>可以看到，<code>LWURLConnection</code>本身的网络请求是基于Socket和select技术来实现的，然后其网络结果回来之后，就又再次和Runloop打上了交道：将代理方法封装为消息，进入Runloop的消息队列，接下来怎么处理就是Runloop本身的事情了。</p>
+<h2 id="LWPort"><a href="#LWPort" class="headerlink" title="LWPort"></a>LWPort</h2><p>Mach中最基本的概念是消息，消息在两个端口之间进行传递，从设计上看，任何两个端口之间都可以传递消息——不论是同一台机器上的端口还是远程主机上的端口（本文中讨论的源码是同一台机器上的端口）。消息从一个端口发送到另一个端口，像一个端口发送消息实际上是将消息放在一个队列中，直到消息能被接受者处理。<br>例如CFRunloop里面有两种CFRunLoopSource:<br>source0：处理如UIEvent，CFSocket这样的事件<br>source1：Mach port驱动，CFMachport，CFMessagePort<br>从字面上看，这里的source1和端口就脱不了干系。</p>
+<h3 id="Leader"><a href="#Leader" class="headerlink" title="Leader"></a>Leader</h3><p>首先创建一个线程，获取对应runloop，定义一个<code>LWSocketPort</code>对象_leaderPort，设置其端口为8082，并且把<code>_leaderPort</code>添加到runloop中。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">@autoreleasepool</span></span><br><span class="line">&#123;</span><br><span class="line">    LWRunLoop *looper = [LWRunLoop currentLWRunLoop];</span><br><span class="line">    _leaderPort = [[LWSocketPort alloc] initWithTCPPort:<span class="number">8082</span>];</span><br><span class="line">    _leaderPort.delegate = <span class="keyword">self</span>;</span><br><span class="line">    [looper addPort:_leaderPort forMode:LWDefaultRunLoop];</span><br><span class="line">    [looper runMode:LWDefaultRunLoop];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)addPort:(LWPort *)aPort forMode:(<span class="built_in">NSString</span> *)mode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (_allPorts) &#123;</span><br><span class="line">        _allPorts = [[<span class="built_in">NSMutableArray</span> alloc] init];</span><br><span class="line">    &#125;</span><br><span class="line">    [_allPorts addObject:aPort];</span><br><span class="line">    <span class="keyword">if</span> ([aPort isKindOfClass:[LWSocketPort <span class="keyword">class</span>]]) &#123;</span><br><span class="line">        LWSocketPort *socketTypePort = (LWSocketPort *)aPort;</span><br><span class="line">        <span class="keyword">int</span> fd = socketTypePort.socket;</span><br><span class="line">        LWSocketPortRoleType roleType = LWSocketPortRoleTypeLeader;</span><br><span class="line">        LWPortContext context = socketTypePort.context;</span><br><span class="line">        [_queue.nativeRunLoop addFd:fd type:LWNativeRunLoopFdSocketServerType filter:LWNativeRunLoopEventFilterRead callback:context.LWPortReceiveDataCallBack data:context.info];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Follow"><a href="#Follow" class="headerlink" title="Follow"></a>Follow</h3><p>同时，利用<code>detachNewThreadSelector</code>重新创建了一个线程，并定义了一个<code>WorkerClass</code>对象。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">_worker = [[WorkerClass alloc] init];</span><br><span class="line">[<span class="built_in">NSThread</span> detachNewThreadSelector:<span class="keyword">@selector</span>(launchThreadWithPort:) toTarget:_worker withObject:_leaderPort];</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)launchThreadWithPort:(LWPort *)port</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">@autoreleasepool</span> &#123;</span><br><span class="line">        [<span class="keyword">self</span> prepare:port];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)prepare:(LWPort *)port</span><br><span class="line">&#123;</span><br><span class="line">    _workPortRunLoopThread = [<span class="built_in">NSThread</span> currentThread];</span><br><span class="line">    [<span class="built_in">NSThread</span> currentThread].name = <span class="string">@"workerPortLoopThread"</span>;</span><br><span class="line">    _distantPort = (LWSocketPort *)port;</span><br><span class="line">    _localPort = [[LWSocketPort alloc] initWithTCPPort:<span class="number">8082</span>];</span><br><span class="line">    _localPort.delegate = <span class="keyword">self</span>;</span><br><span class="line">    [_localPort setType:LWSocketPortRoleTypeFollower];</span><br><span class="line">    LWRunLoop *_currentRunLoop = [LWRunLoop currentLWRunLoop];</span><br><span class="line">    [_currentRunLoop addPort:_localPort forMode:LWDefaultRunLoop];</span><br><span class="line">    [_currentRunLoop runMode:LWDefaultRunLoop];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)addPort:(LWPort *)aPort forMode:(<span class="built_in">NSString</span> *)mode</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (_allPorts) &#123;</span><br><span class="line">        _allPorts = [[<span class="built_in">NSMutableArray</span> alloc] init];</span><br><span class="line">    &#125;</span><br><span class="line">    [_allPorts addObject:aPort];</span><br><span class="line">    <span class="keyword">if</span> ([aPort isKindOfClass:[LWSocketPort <span class="keyword">class</span>]]) &#123;</span><br><span class="line">        LWSocketPort *socketTypePort = (LWSocketPort *)aPort;</span><br><span class="line">        <span class="keyword">int</span> fd = socketTypePort.socket;</span><br><span class="line">        LWSocketPortRoleType roleType = LWSocketPortRoleTypeFollower;</span><br><span class="line">        LWPortContext context = socketTypePort.context;</span><br><span class="line">        [_queue.nativeRunLoop addFd:fd type:LWNativeRunLoopFdSocketClientType filter:LWNativeRunLoopEventFilterRead callback:context.LWPortReceiveDataCallBack data:context.info];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="LWSocket"><a href="#LWSocket" class="headerlink" title="LWSocket"></a>LWSocket</h3><p>来看一下<code>LWSocket</code>的初始化<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)initInternalWithTCPPort:(<span class="keyword">unsigned</span> <span class="keyword">short</span>)port</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ((_sockFd = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>)) == <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NO</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    _context.info = (__bridge <span class="keyword">void</span> *)(<span class="keyword">self</span>);</span><br><span class="line">    _context.LWPortReceiveDataCallBack = PortBasedReceiveDataRoutine;</span><br><span class="line">    <span class="keyword">struct</span> sockaddr_in sockAddr;</span><br><span class="line">    memset(&amp;sockAddr, <span class="number">0</span>, <span class="keyword">sizeof</span>(sockAddr));</span><br><span class="line">    sockAddr.sin_family = AF_INET;</span><br><span class="line">    sockAddr.sin_addr.s_addr = htonl(INADDR_ANY);</span><br><span class="line">    sockAddr.sin_port = htons(port);</span><br><span class="line">    _roleType = LWSocketPortRoleTypeLeader;<span class="comment">//leader</span></span><br><span class="line">    <span class="keyword">int</span> option = <span class="number">1</span>;</span><br><span class="line">    setsockopt(_sockFd, SOL_SOCKET, SO_REUSEADDR, &amp;option, <span class="keyword">sizeof</span>(option));</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//if bind failure, the _sockFd become follower, othrewise leader</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == bind(_sockFd, (<span class="keyword">struct</span> sockaddr *)&amp;sockAddr, <span class="keyword">sizeof</span>(sockAddr))) &#123;</span><br><span class="line">        _roleType = LWSocketPortRoleTypeFollower;<span class="comment">//follower</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (_roleType == LWSocketPortRoleTypeLeader) &#123;</span><br><span class="line">        <span class="keyword">if</span> (listen(_sockFd, <span class="number">5</span>) == <span class="number">-1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NO</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        [<span class="keyword">self</span> setValid:<span class="literal">YES</span>];</span><br><span class="line">        _port = port;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//we can ignore the `connect` delay for the local TCP connect</span></span><br><span class="line">        <span class="keyword">int</span> flag = connect(_sockFd, (<span class="keyword">struct</span> sockaddr *)&amp;sockAddr, <span class="keyword">sizeof</span>(sockAddr));</span><br><span class="line">        <span class="keyword">if</span> (<span class="number">-1</span> == flag) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NO</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">struct</span> sockaddr_in name;</span><br><span class="line">        socklen_t namelen = <span class="keyword">sizeof</span>(name);</span><br><span class="line">        getsockname(_sockFd, (<span class="keyword">struct</span> sockaddr *)&amp;name, &amp;namelen);</span><br><span class="line">        _port = name.sin_port;</span><br><span class="line">        [<span class="keyword">self</span> setValid:<span class="literal">YES</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<ul>
+<li>对于Leader，其主要的功能是定义一个socket，打开一个网络通讯端口，用bind绑定一个固定的网络地址（127.0.0.1）和端口号（8082），然后调用listen监听请求</li>
+<li>对于Follow，其主要的功能是定义一个socket（其端口是默认分配的），并且调connect连接服务器，connect和bind的参数形式一致，区别在于bind的参数是自己的地址，而connect的参数是对方的地址</li>
+<li>非常典型的socket编程</li>
+</ul>
+</blockquote>
+<h3 id="消息发送"><a href="#消息发送" class="headerlink" title="消息发送"></a>消息发送</h3><p>到此时，FollowPort和LeaderPort都有各自的线程以及对应的runloop，<br>以Follow向Leader发送消息为例，先把消息打包为<code>LWPortMessage</code>，然后调用<code>sendBeforeDate</code>，随后进入<code>internalSendBeforDate</code><br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)actualSendContent:(<span class="keyword">id</span>)content</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> length = (<span class="keyword">int</span>)[content length];</span><br><span class="line">    <span class="built_in">NSMutableData</span> *data = [[<span class="built_in">NSMutableData</span> alloc] init];</span><br><span class="line">    [data appendBytes:&amp;length length:<span class="keyword">sizeof</span>(<span class="keyword">int</span>)];</span><br><span class="line">    [data appendData:[content dataUsingEncoding:<span class="built_in">NSUTF8StringEncoding</span>]];</span><br><span class="line">    LWPortMessage *message = [[LWPortMessage alloc] initWithSendPort:_localPort receivePort:_distantPort components:data];</span><br><span class="line">    [message sendBeforeDate:<span class="number">0</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">BOOL</span>)sendBeforeDate:(<span class="built_in">NSInteger</span>)delay</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> internalSendBeforDate:delay];</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">YES</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)internalSendBeforDate:(<span class="built_in">NSInteger</span>)delay</span><br><span class="line">&#123;</span><br><span class="line">    LWSocketPort *_sendSocketPort = (LWSocketPort *)_sendPort;</span><br><span class="line">    LWSocketPort *_receiveSocketPort = (LWSocketPort *)_receivePort;</span><br><span class="line">    LWRunLoop *runloop = [LWRunLoop currentLWRunLoop];</span><br><span class="line">    <span class="comment">//send `data` from `leader` to `follower`</span></span><br><span class="line">    <span class="keyword">if</span> (_sendSocketPort.roleType == LWSocketPortRoleTypeLeader) &#123;</span><br><span class="line">        <span class="keyword">short</span> port = _receiveSocketPort.port;</span><br><span class="line">        [runloop send:_components toPort:port];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;<span class="comment">//send `data` from `follower` to `leader`</span></span><br><span class="line">        <span class="keyword">int</span> fd = _sendSocketPort.socket;</span><br><span class="line">        [runloop send:_components toFd:fd];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，在<code>internalSendBeforDate</code>中，首先拿到目的地的port，然后调用runloop的send方法<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)send:(<span class="built_in">NSData</span> *)data toFd:(<span class="keyword">int</span>)fd</span><br><span class="line">&#123;</span><br><span class="line">    [_queue.nativeRunLoop send:data toFd:fd];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)send:(<span class="built_in">NSData</span> *)data toFd:(<span class="keyword">int</span>)fd</span><br><span class="line">&#123;</span><br><span class="line">    ssize_t nWrite;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        nWrite = write(fd, [data bytes], [data length]);</span><br><span class="line">    &#125; <span class="keyword">while</span> (nWrite == <span class="number">-1</span> &amp;&amp; errno == EINTR);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="消息接受"><a href="#消息接受" class="headerlink" title="消息接受"></a>消息接受</h3><p>Leader所在的runloop中kevent检测到了socket文件描述符的变化，然后唤醒该线程，随后调用方法<code>handleFollowerToLeader</code>进行处理，从中将前面发送的消息读出来，到此一次消息发送接收的流程就结束了<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)handleFollowerToLeader:(<span class="keyword">int</span>)event fd:(<span class="keyword">int</span>)fd</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (event &amp; EVFILT_READ) &#123;</span><br><span class="line">        <span class="keyword">int</span> length = <span class="number">0</span>;</span><br><span class="line">        ssize_t nRead;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            nRead = read(fd, &amp;length, <span class="keyword">sizeof</span>(<span class="keyword">int</span>));</span><br><span class="line">        &#125; <span class="keyword">while</span> (nRead == <span class="number">-1</span> &amp;&amp; EINTR == errno);</span><br><span class="line">        <span class="keyword">if</span> (nRead == <span class="number">-1</span> &amp;&amp; EAGAIN == errno) &#123;</span><br><span class="line">            <span class="comment">//The file was marked for non-blocking I/O, and no data were ready to be read.</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//buffer `follower` LWPort send `buffer` to `leader` LWPort</span></span><br><span class="line">        <span class="keyword">char</span> *buffer = malloc(length);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            nRead = read(fd, buffer, length);</span><br><span class="line">        &#125; <span class="keyword">while</span> (nRead == <span class="number">-1</span> &amp;&amp; EINTR == errno);</span><br><span class="line">        <span class="built_in">NSValue</span> *data = [_requests objectForKey:@(_leader)];</span><br><span class="line">        PortWrapper request;</span><br><span class="line">        [data getValue:&amp;request];</span><br><span class="line">        <span class="comment">//notify leader</span></span><br><span class="line">        <span class="keyword">if</span> (request.callback) &#123;</span><br><span class="line">            request.callback(fd, request.info, buffer, length);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//remember release malloc memory</span></span><br><span class="line">        free(buffer);</span><br><span class="line">        buffer = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">struct</span> sockaddr_in sockaddr;</span><br><span class="line">        socklen_t len;</span><br><span class="line">        <span class="keyword">int</span> ret = getpeername(fd, (<span class="keyword">struct</span> sockaddr *)&amp;sockaddr, &amp;len);</span><br><span class="line">        <span class="keyword">if</span> (ret &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        LWPortClientInfo *info = [_portClients valueForKey:[<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"%d"</span>, sockaddr.sin_port]];</span><br><span class="line">        <span class="keyword">if</span> (info.cacheSend &amp;&amp; info.cacheSend.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">//write cached on next event</span></span><br><span class="line">            [<span class="keyword">self</span> kevent:fd filter:EVFILT_WRITE action:EV_ADD];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (event &amp; EVFILT_WRITE) &#123;</span><br><span class="line">        <span class="keyword">struct</span> sockaddr_in sockaddr;</span><br><span class="line">        socklen_t len;</span><br><span class="line">        <span class="keyword">int</span> ret = getpeername(fd, (<span class="keyword">struct</span> sockaddr *)&amp;sockaddr, &amp;len);</span><br><span class="line">        <span class="keyword">if</span> (ret &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        LWPortClientInfo *info = [_portClients valueForKey:[<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"%d"</span>, sockaddr.sin_port]];</span><br><span class="line">        <span class="keyword">if</span> (info.cacheSend &amp;&amp; info.cacheSend.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            ssize_t nWrite;</span><br><span class="line">            <span class="keyword">do</span> &#123;</span><br><span class="line">                nWrite = write(fd, [info.cacheSend bytes], info.cacheSend.length);</span><br><span class="line">            &#125; <span class="keyword">while</span> (nWrite == <span class="number">-1</span> &amp;&amp; errno == EINTR);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (nWrite != <span class="number">1</span> &amp;&amp; errno != EAGAIN) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//clean the sending cache</span></span><br><span class="line">            info.cacheSend = <span class="literal">nil</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>分析完该源码，回头再仔细想想Runloop，如果有可能，再去深究一下，如果相对之前理解上能有或许提升，本文的目的就达到了。<br>最后再盗用下作者github中的另一张图，也再次感谢作者 <strong>wuyunfeng</strong> ！<br><img src="/2018/06/15/如何实现一个简单的RunLoop（2）/01.jpg" width="75%"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/06/15/如何实现一个简单的RunLoop（2）/">如何去实现一个轻量级的Runloop（2）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年06月15日 - 21:06</p>
+  <p><span>最后更新:</span>2018年06月20日 - 00:06</p>
+  <p><span>原始链接:</span><a href="/2018/06/15/如何实现一个简单的RunLoop（2）/" title="如何去实现一个轻量级的Runloop（2）">https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/06/15/如何实现一个简单的RunLoop（2）/">如何去实现一个轻量级的Runloop（2）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年06月15日 - 21:06</p>
+  <p><span>最后更新:</span>2018年06月20日 - 00:06</p>
+  <p><span>原始链接:</span><a href="/2018/06/15/如何实现一个简单的RunLoop（2）/" title="如何去实现一个轻量级的Runloop（2）">https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/06/15/如何实现一个简单的RunLoop（2）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RunLoop-IO多路复用/" rel="tag"># RunLoop IO多路复用</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/09/如何实现一个简单的RunLoop（1）/" rel="next" title="如何去实现一个轻量级的Runloop（1）">
+                <i class="fa fa-chevron-left"></i> 如何去实现一个轻量级的Runloop（1）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/" rel="prev" title="JavaScriptCore引擎深度解析1—开篇">
+                JavaScriptCore引擎深度解析1—开篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWURLConnection"><span class="nav-number">2.</span> <span class="nav-text">LWURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LWURLConnection的初始化"><span class="nav-number">2.1.</span> <span class="nav-text">LWURLConnection的初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWConnectionInternal初始化"><span class="nav-number">2.2.</span> <span class="nav-text">LWConnectionInternal初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立Socket链接"><span class="nav-number">2.3.</span> <span class="nav-text">建立Socket链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#准备请求头和请求体"><span class="nav-number">2.4.</span> <span class="nav-text">准备请求头和请求体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立Http请求"><span class="nav-number">2.5.</span> <span class="nav-text">建立Http请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#网络回调流程"><span class="nav-number">2.6.</span> <span class="nav-text">网络回调流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LWPort"><span class="nav-number">3.</span> <span class="nav-text">LWPort</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader"><span class="nav-number">3.1.</span> <span class="nav-text">Leader</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Follow"><span class="nav-number">3.2.</span> <span class="nav-text">Follow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LWSocket"><span class="nav-number">3.3.</span> <span class="nav-text">LWSocket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息发送"><span class="nav-number">3.4.</span> <span class="nav-text">消息发送</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息接受"><span class="nav-number">3.5.</span> <span class="nav-text">消息接受</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

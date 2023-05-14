@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore Lexer," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言词法分析是编译程序进行编译时第一个要进行的任务，主要是对源程序进行编译预处理（去除注释、无用的回车换行找到包含的文件等）之后，对整个源程序进行分解，分解成一个个单词，这些单词有且只有五类，分别是 标识符、关键字、常数、运算符、界符。以便为下面的语法分析和语义分析做准备。可以说词法分析面向的对象是单个的字符，目的是把它们组成有效的单词（字符串），那么该阶段的主要任务就是构造一个词法分析器。有以下">
+<meta name="keywords" content="JavaScriptCore Lexer">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析3—词法分析篇">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言词法分析是编译程序进行编译时第一个要进行的任务，主要是对源程序进行编译预处理（去除注释、无用的回车换行找到包含的文件等）之后，对整个源程序进行分解，分解成一个个单词，这些单词有且只有五类，分别是 标识符、关键字、常数、运算符、界符。以便为下面的语法分析和语义分析做准备。可以说词法分析面向的对象是单个的字符，目的是把它们组成有效的单词（字符串），那么该阶段的主要任务就是构造一个词法分析器。有以下">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/03.png">
+<meta property="og:updated_time" content="2018-11-06T16:45:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析3—词法分析篇">
+<meta name="twitter:description" content="前言词法分析是编译程序进行编译时第一个要进行的任务，主要是对源程序进行编译预处理（去除注释、无用的回车换行找到包含的文件等）之后，对整个源程序进行分解，分解成一个个单词，这些单词有且只有五类，分别是 标识符、关键字、常数、运算符、界符。以便为下面的语法分析和语义分析做准备。可以说词法分析面向的对象是单个的字符，目的是把它们组成有效的单词（字符串），那么该阶段的主要任务就是构造一个词法分析器。有以下">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析3—词法分析篇 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析3—词法分析篇</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-30T00:32:46+08:00">
+                2018-07-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,601
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  34
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>词法分析是编译程序进行编译时第一个要进行的任务，主要是对源程序进行编译预处理（去除注释、无用的回车换行找到包含的文件等）之后，对整个源程序进行分解，分解成一个个单词，这些单词有且只有五类，分别是 <strong>标识符、关键字、常数、运算符、界符</strong>。以便为下面的语法分析和语义分析做准备。可以说词法分析面向的对象是单个的字符，目的是把它们组成有效的单词（字符串），那么该阶段的主要任务就是构造一个词法分析器。有以下两种方法：</p>
+<blockquote>
+<ul>
+<li>手工写，就是对于一种特定的语言，例如<code>JavaScript</code>，我们手工敲代码根据该语言规则来模拟出这个转化过程，这种方法虽然复杂，并且容易出错，但这样对词法分析各个部分都有比较精确的控制，并且效率可能会比较高。</li>
+<li>自动生成一个词法分析器，过程就是：声明式的规范–&gt;自动生成–&gt;词法分析器，这里自动生成是一个工具，那么它所接受的输入是声明式的规范，输出是一个词法分析，我们先来看下输入声明式规范，声明式规范的意思是我们只需写出识别字符流的规则是什么，不需要指出怎么识别，然后放进自动生成器就行了，那么这个声明式的规范是什么？它就是我们所学的正则表达式，我们所学的C语言的关键字，标识符，整数都是正则表达式，也就是说我们将这些正则表达式放进自动生成器，那么就会生成词法分析器，这个词法分析器就是DFA，确定状态有限自动机。那么很明显这个自动生成器整个过程实际上是正则表达式转化为非确定的有限状态自动机（NFA），最后非确定的有限状态自动机转化为确定状态有限自动机，然后通过DFA的最小化，就生成了最后的DFA，也就是我们的输出词法分析器。如果输入的代码可以被有限自动机所接受，那么将会进入语法分析的阶段</li>
+</ul>
+</blockquote>
+<p>词法分析及语法分析，最著名的工具就是<code>lex/yacc</code>，以及后继者<code>flex/bison(The LEX &amp; YACC Page)</code>。它们为很多软件提供了语言或文本解析的功能，相当强大，也很有趣。</p>
+<p>虽然<code>JavaScriptCore</code>并没有使用它们，而是自行编写实现的，但基本思路是相似的。</p>
+<h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><p>按照惯例，还是从一些用到的基本数据类型说起.</p>
+<h3 id="CharacterType类型"><a href="#CharacterType类型" class="headerlink" title="CharacterType类型"></a>CharacterType类型</h3><p>JavaScript语言中有如下的字符类型，是针对每一个字符而言的<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JavaScriptCore/parser/Lexer.cpp</span></span><br><span class="line"><span class="keyword">enum</span> CharacterType &#123;</span><br><span class="line">    <span class="comment">// Types for the main switch</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// The first three types are fixed, and also used for identifying</span></span><br><span class="line">    <span class="comment">// ASCII alpha and alphanumeric characters (see isIdentStart and isIdentPart).</span></span><br><span class="line">    CharacterIdentifierStart,</span><br><span class="line">    CharacterZero,</span><br><span class="line">    CharacterNumber,</span><br><span class="line"></span><br><span class="line">    CharacterInvalid,</span><br><span class="line">    CharacterLineTerminator,</span><br><span class="line">    CharacterExclamationMark,</span><br><span class="line">    CharacterOpenParen,</span><br><span class="line">    CharacterCloseParen,</span><br><span class="line">    CharacterOpenBracket,</span><br><span class="line">    CharacterCloseBracket,</span><br><span class="line">    CharacterComma,</span><br><span class="line">    CharacterColon,</span><br><span class="line">    CharacterQuestion,</span><br><span class="line">    CharacterTilde,</span><br><span class="line">    CharacterQuote,</span><br><span class="line">    CharacterBackQuote,</span><br><span class="line">    CharacterDot,</span><br><span class="line">    CharacterSlash,</span><br><span class="line">    CharacterBackSlash,</span><br><span class="line">    CharacterSemicolon,</span><br><span class="line">    CharacterOpenBrace,</span><br><span class="line">    CharacterCloseBrace,</span><br><span class="line"></span><br><span class="line">    CharacterAdd,</span><br><span class="line">    CharacterSub,</span><br><span class="line">    CharacterMultiply,</span><br><span class="line">    CharacterModulo,</span><br><span class="line">    CharacterAnd,</span><br><span class="line">    CharacterXor,</span><br><span class="line">    CharacterOr,</span><br><span class="line">    CharacterLess,</span><br><span class="line">    CharacterGreater,</span><br><span class="line">    CharacterEqual,</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Other types (only one so far)</span></span><br><span class="line">    CharacterWhiteSpace,</span><br><span class="line">    CharacterPrivateIdentifierStart</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="JSTokenType类型"><a href="#JSTokenType类型" class="headerlink" title="JSTokenType类型"></a>JSTokenType类型</h3><p>JavaScript中的JSTokenType类型如下，可以看到JavaScript的每个关键字，算术运算符、逻辑运算符都被列为一种JSToken类型（由于JSTokenType较多，有一些尚未列出…）<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JavaScriptCore/parser/ParseTokens.h</span></span><br><span class="line"><span class="keyword">enum</span> JSTokenType &#123;</span><br><span class="line">    NULLTOKEN = KeywordTokenFlag,</span><br><span class="line">    TRUETOKEN,</span><br><span class="line">    FALSETOKEN,</span><br><span class="line">    BREAK,</span><br><span class="line">    CASE,</span><br><span class="line">    DEFAULT,</span><br><span class="line">    FOR,</span><br><span class="line">    NEW,</span><br><span class="line">    VAR,</span><br><span class="line">    LET,</span><br><span class="line">    CONSTTOKEN,</span><br><span class="line">    CONTINUE,</span><br><span class="line">    FUNCTION,</span><br><span class="line">    RETURN,</span><br><span class="line">    IF,</span><br><span class="line">    THISTOKEN,</span><br><span class="line">    DO,</span><br><span class="line">    WHILE,</span><br><span class="line">    SWITCH,</span><br><span class="line">    WITH,</span><br><span class="line">    RESERVED,</span><br><span class="line">    RESERVED_IF_STRICT,</span><br><span class="line">    THROW,</span><br><span class="line">    TRY,</span><br><span class="line">    CATCH,</span><br><span class="line">    FINALLY,</span><br><span class="line">    DEBUGGER,</span><br><span class="line">    ELSE,</span><br><span class="line">    IMPORT,</span><br><span class="line">    EXPORT,</span><br><span class="line">    YIELD,</span><br><span class="line">    CLASSTOKEN,</span><br><span class="line">    EXTENDS,</span><br><span class="line">    SUPER,</span><br><span class="line">    OPENBRACE = <span class="number">0</span>,</span><br><span class="line">    CLOSEBRACE,</span><br><span class="line">    OPENPAREN,</span><br><span class="line">    CLOSEPAREN,</span><br><span class="line">    OPENBRACKET,</span><br><span class="line">    CLOSEBRACKET,</span><br><span class="line">    COMMA,</span><br><span class="line">    QUESTION,</span><br><span class="line">    </span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></p>
+<p>在如下文件中可以看到上述枚举和关键词的映射关系(同样，由于篇幅关系，有些尚未列出)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">// JavaScriptCore/parser/Keywords.table</span><br><span class="line"># Types.</span><br><span class="line">null        NULLTOKEN</span><br><span class="line">true        TRUETOKEN</span><br><span class="line">false       FALSETOKEN</span><br><span class="line"></span><br><span class="line"># Keywords.</span><br><span class="line">break       BREAK</span><br><span class="line">case        CASE</span><br><span class="line">catch       CATCH</span><br><span class="line">class       CLASSTOKEN</span><br><span class="line">const       CONSTTOKEN</span><br><span class="line">default     DEFAULT</span><br><span class="line">extends     EXTENDS</span><br><span class="line">finally     FINALLY</span><br><span class="line">for         FOR</span><br><span class="line">instanceof  INSTANCEOF</span><br><span class="line">new         NEW</span><br><span class="line">var         VAR</span><br><span class="line">let         LET</span><br><span class="line">continue    CONTINUE</span><br><span class="line">function    FUNCTION</span><br><span class="line">return      RETURN</span><br><span class="line">void        VOIDTOKEN</span><br><span class="line">delete      DELETETOKEN</span><br><span class="line">if          IF</span><br><span class="line">this        THISTOKEN</span><br><span class="line">do          DO</span><br><span class="line">while       WHILE</span><br><span class="line">else        ELSE</span><br><span class="line">in          INTOKEN</span><br><span class="line">super       SUPER</span><br><span class="line">switch      SWITCH</span><br><span class="line">throw       THROW</span><br><span class="line">try         TRY</span><br><span class="line">typeof      TYPEOF</span><br><span class="line">with        WITH</span><br><span class="line">debugger    DEBUGGER</span><br><span class="line">yield       YIELD</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h3 id="Token类型"><a href="#Token类型" class="headerlink" title="Token类型"></a>Token类型</h3><p>同时在源码中还可以看到一个枚举TokenType类型，这个类型是专门针对json的解析定义的，不要和前面的JSTokenType混淆（本来不应该在这里讲的，但是为了避免看源码混淆，还是提一下）<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JavaScriptCore/runtime/LiteralParser.h</span></span><br><span class="line"><span class="keyword">enum</span> TokenType &#123;</span><br><span class="line">    TokLBracket,        <span class="comment">// [</span></span><br><span class="line">    TokRBracket,        <span class="comment">// ]</span></span><br><span class="line">    TokLBrace,          <span class="comment">// &#123;</span></span><br><span class="line">    TokRBrace,          <span class="comment">// &#125;</span></span><br><span class="line">    TokString,          <span class="comment">// string</span></span><br><span class="line">    TokIdentifier,      <span class="comment">// identifier</span></span><br><span class="line">    TokNumber,          <span class="comment">// number</span></span><br><span class="line">    TokColon,           <span class="comment">// :</span></span><br><span class="line">    TokLParen,          <span class="comment">// (</span></span><br><span class="line">    TokRParen,          <span class="comment">// )</span></span><br><span class="line">    TokComma,           <span class="comment">// ,</span></span><br><span class="line">    TokTrue,            <span class="comment">// true</span></span><br><span class="line">    TokFalse,           <span class="comment">// false</span></span><br><span class="line">    TokNull,            <span class="comment">// null</span></span><br><span class="line">    TokEnd,             <span class="comment">// end</span></span><br><span class="line">    TokDot,             <span class="comment">// .</span></span><br><span class="line">    TokAssign,          <span class="comment">// =</span></span><br><span class="line">    TokSemi,            <span class="comment">// ;</span></span><br><span class="line">    TokError            <span class="comment">// error</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="JSToken类型"><a href="#JSToken类型" class="headerlink" title="JSToken类型"></a>JSToken类型</h3><p>这个类型就比较重要了，将JavaScript源码通过词法分析过程之后，我们得到的就是一个个的JSToken了。可以看到它是一个复合类型</p>
+<p><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/01.png" width="100%"></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">JSToken</span> &#123;</span></span><br><span class="line">    JSTokenType m_type;             <span class="comment">// JSToken类型</span></span><br><span class="line">    JSTokenData m_data;             <span class="comment">// JSToken数据</span></span><br><span class="line">    JSTokenLocation m_location;     <span class="comment">// 定位</span></span><br><span class="line">    JSTextPosition m_startPosition; <span class="comment">// 起始位置</span></span><br><span class="line">    JSTextPosition m_endPosition;   <span class="comment">// 结束位置</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>JSTokenData是一个联合体，可以存放以下4种成员，每个Token的数据的表示方式可能是不同的，例如</p>
+<blockquote>
+<ul>
+<li>1、解析出来的数字字面值就可以用doubleValue来表示；</li>
+<li>2、如果是字符串，可能就需要用第一个结构体来表示；</li>
+<li>3、如果是方法名字或者变量名，需要Identifier来胜任；</li>
+</ul>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">union</span> JSTokenData &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">        <span class="keyword">uint32_t</span> line;</span><br><span class="line">        <span class="keyword">uint32_t</span> offset;</span><br><span class="line">        <span class="keyword">uint32_t</span> lineStartOffset;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">double</span> doubleValue;</span><br><span class="line">    <span class="keyword">const</span> Identifier* ident;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">        <span class="keyword">const</span> Identifier* cooked;</span><br><span class="line">        <span class="keyword">const</span> Identifier* raw;</span><br><span class="line">        <span class="keyword">bool</span> isTail;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>JSTokenLocation结构体包括行号、行起始位置、源文件起始位置、源文件结束位置<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">JSTokenLocation</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> line;</span><br><span class="line">    <span class="keyword">unsigned</span> lineStartOffset;</span><br><span class="line">    <span class="keyword">unsigned</span> startOffset;</span><br><span class="line">    <span class="keyword">unsigned</span> endOffset;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>JSTextPosition作为一个位置，有行号、源文件偏移、行偏移<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">JSTextPosition</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> line;</span><br><span class="line">    <span class="keyword">int</span> offset;</span><br><span class="line">    <span class="keyword">int</span> lineStartOffset;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h2 id="词法分析过程"><a href="#词法分析过程" class="headerlink" title="词法分析过程"></a>词法分析过程</h2><h3 id="Lexer初始化"><a href="#Lexer初始化" class="headerlink" title="Lexer初始化"></a>Lexer初始化</h3><p>项目工程中，词法分析类<code>Lexer</code>类是辅助<code>Parser</code>类的，在<code>Parser</code>类中有一个成员变量m_lexer，在构造函数中对m_lexer进行了初始化：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义</span></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;LexerType&gt; m_lexer;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 构造函数中的初始化</span></span><br><span class="line">m_lexer = <span class="built_in">std</span>::make_unique&lt;LexerType&gt;(vm, builtinMode);</span><br><span class="line">m_lexer-&gt;setCode(source, &amp;m_parserArena);</span><br><span class="line">m_token.m_location.line = source.firstLine();</span><br><span class="line">m_token.m_location.startOffset = source.startOffset();</span><br><span class="line">m_token.m_location.endOffset = source.startOffset();</span><br><span class="line">m_token.m_location.lineStartOffset = source.startOffset();</span><br></pre></td></tr></table></figure></p>
+<h3 id="标识符解析"><a href="#标识符解析" class="headerlink" title="标识符解析"></a>标识符解析</h3><p>然后在函数<code>Parser</code>类的方法<code>nextExpectIdentifier</code>中进行了调用，顾名思义，返回下一个期望的标识符<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ALWAYS_INLINE <span class="keyword">void</span> <span class="title">nextExpectIdentifier</span><span class="params">(<span class="keyword">unsigned</span> lexerFlags = <span class="number">0</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 保存上一个Token的结束位置</span></span><br><span class="line">    <span class="keyword">int</span> lastLine = m_token.m_location.line;</span><br><span class="line">    <span class="keyword">int</span> lastTokenEnd = m_token.m_location.endOffset;</span><br><span class="line">    <span class="keyword">int</span> lastTokenLineStart = m_token.m_location.lineStartOffset;</span><br><span class="line">    m_lastTokenEndPosition = JSTextPosition(lastLine, lastTokenEnd, lastTokenLineStart);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置行号</span></span><br><span class="line">    m_lexer-&gt;setLastLineNumber(lastLine);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分析JSToken类型</span></span><br><span class="line">    m_token.m_type = m_lexer-&gt;lexExpectIdentifier(&amp;m_token, lexerFlags, strictMode());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>逻辑在<code>lexExpectIdentifier</code>方法中（删除了其中的一些Alert，便于代码清晰）<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE JSTokenType Lexer&lt;T&gt;::lexExpectIdentifier(JSToken* tokenRecord, <span class="keyword">unsigned</span> lexerFlags, <span class="keyword">bool</span> strictMode)</span><br><span class="line">&#123;</span><br><span class="line">    JSTokenData* tokenData = &amp;tokenRecord-&gt;m_data;</span><br><span class="line">    JSTokenLocation* tokenLocation = &amp;tokenRecord-&gt;m_location;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">const</span> T* start = m_code;</span><br><span class="line">    <span class="keyword">const</span> T* ptr = start;</span><br><span class="line">    <span class="keyword">const</span> T* end = m_codeEnd;</span><br><span class="line">    JSTextPosition startPosition = currentPosition();</span><br><span class="line">    <span class="keyword">if</span> (ptr &gt;= end) &#123;</span><br><span class="line">        <span class="keyword">goto</span> slowCase;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 必须是ASCII字符</span></span><br><span class="line">    <span class="keyword">if</span> (!WTF::isASCIIAlpha(*ptr))</span><br><span class="line">        <span class="keyword">goto</span> slowCase;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 往后遍历，直到不是字母和数字，跳出循环</span></span><br><span class="line">    ++ptr;</span><br><span class="line">    <span class="keyword">while</span> (ptr &lt; end) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!WTF::isASCIIAlphanumeric(*ptr))</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        ++ptr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Here's the shift</span></span><br><span class="line">    <span class="keyword">if</span> (ptr &lt; end) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((!WTF::isASCII(*ptr)) || (*ptr == <span class="string">'\\'</span>) || (*ptr == <span class="string">'_'</span>) || (*ptr == <span class="string">'$'</span>))</span><br><span class="line">            <span class="keyword">goto</span> slowCase;</span><br><span class="line">        m_current = *ptr;</span><br><span class="line">    &#125; <span class="keyword">else</span></span><br><span class="line">        m_current = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    m_code = ptr;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 创建一个标识符，JSTokenType = IDENT</span></span><br><span class="line">    <span class="keyword">if</span> (lexerFlags &amp; LexexFlagsDontBuildKeywords)</span><br><span class="line">        tokenData-&gt;ident = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        tokenData-&gt;ident = makeLCharIdentifier(start, ptr - start);</span><br><span class="line"></span><br><span class="line">    tokenLocation-&gt;line = m_lineNumber;</span><br><span class="line">    tokenLocation-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">    tokenLocation-&gt;startOffset = offsetFromSourcePtr(start);</span><br><span class="line">    tokenLocation-&gt;endOffset = currentOffset();</span><br><span class="line">    tokenRecord-&gt;m_startPosition = startPosition;</span><br><span class="line">    tokenRecord-&gt;m_endPosition = currentPosition();</span><br><span class="line">    m_lastToken = IDENT;</span><br><span class="line">    <span class="keyword">return</span> IDENT;</span><br><span class="line">    </span><br><span class="line">slowCase:</span><br><span class="line">    <span class="comment">// 核心逻辑</span></span><br><span class="line">    <span class="keyword">return</span> lex(tokenRecord, lexerFlags, strictMode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>该方法存在的意义在于为标识符开了一条快速通道：因为源码中存在着大量的标识符，相对来说，关键字、常数、运算符、界符的数量就少一些，从概率角度来说，源码中每解析一个JSToken，结果是标识符的概率是比较大的，这样就可以节省时间，正如方法名所示，下一个期望的标识符。</p>
+<h3 id="核心逻辑"><a href="#核心逻辑" class="headerlink" title="核心逻辑"></a>核心逻辑</h3><p>除了标识符的解析外，剩下的词法分析核心逻辑在<code>lex</code>方法中，具体逻辑请看代码以及注释（代码较长）<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br><span class="line">426</span><br><span class="line">427</span><br><span class="line">428</span><br><span class="line">429</span><br><span class="line">430</span><br><span class="line">431</span><br><span class="line">432</span><br><span class="line">433</span><br><span class="line">434</span><br><span class="line">435</span><br><span class="line">436</span><br><span class="line">437</span><br><span class="line">438</span><br><span class="line">439</span><br><span class="line">440</span><br><span class="line">441</span><br><span class="line">442</span><br><span class="line">443</span><br><span class="line">444</span><br><span class="line">445</span><br><span class="line">446</span><br><span class="line">447</span><br><span class="line">448</span><br><span class="line">449</span><br><span class="line">450</span><br><span class="line">451</span><br><span class="line">452</span><br><span class="line">453</span><br><span class="line">454</span><br><span class="line">455</span><br><span class="line">456</span><br><span class="line">457</span><br><span class="line">458</span><br><span class="line">459</span><br><span class="line">460</span><br><span class="line">461</span><br><span class="line">462</span><br><span class="line">463</span><br><span class="line">464</span><br><span class="line">465</span><br><span class="line">466</span><br><span class="line">467</span><br><span class="line">468</span><br><span class="line">469</span><br><span class="line">470</span><br><span class="line">471</span><br><span class="line">472</span><br><span class="line">473</span><br><span class="line">474</span><br><span class="line">475</span><br><span class="line">476</span><br><span class="line">477</span><br><span class="line">478</span><br><span class="line">479</span><br><span class="line">480</span><br><span class="line">481</span><br><span class="line">482</span><br><span class="line">483</span><br><span class="line">484</span><br><span class="line">485</span><br><span class="line">486</span><br><span class="line">487</span><br><span class="line">488</span><br><span class="line">489</span><br><span class="line">490</span><br><span class="line">491</span><br><span class="line">492</span><br><span class="line">493</span><br><span class="line">494</span><br><span class="line">495</span><br><span class="line">496</span><br><span class="line">497</span><br><span class="line">498</span><br><span class="line">499</span><br><span class="line">500</span><br><span class="line">501</span><br><span class="line">502</span><br><span class="line">503</span><br><span class="line">504</span><br><span class="line">505</span><br><span class="line">506</span><br><span class="line">507</span><br><span class="line">508</span><br><span class="line">509</span><br><span class="line">510</span><br><span class="line">511</span><br><span class="line">512</span><br><span class="line">513</span><br><span class="line">514</span><br><span class="line">515</span><br><span class="line">516</span><br><span class="line">517</span><br><span class="line">518</span><br><span class="line">519</span><br><span class="line">520</span><br><span class="line">521</span><br><span class="line">522</span><br><span class="line">523</span><br><span class="line">524</span><br><span class="line">525</span><br><span class="line">526</span><br><span class="line">527</span><br><span class="line">528</span><br><span class="line">529</span><br><span class="line">530</span><br><span class="line">531</span><br><span class="line">532</span><br><span class="line">533</span><br><span class="line">534</span><br><span class="line">535</span><br><span class="line">536</span><br><span class="line">537</span><br><span class="line">538</span><br><span class="line">539</span><br><span class="line">540</span><br><span class="line">541</span><br><span class="line">542</span><br><span class="line">543</span><br><span class="line">544</span><br><span class="line">545</span><br><span class="line">546</span><br><span class="line">547</span><br><span class="line">548</span><br><span class="line">549</span><br><span class="line">550</span><br><span class="line">551</span><br><span class="line">552</span><br><span class="line">553</span><br><span class="line">554</span><br><span class="line">555</span><br><span class="line">556</span><br><span class="line">557</span><br><span class="line">558</span><br><span class="line">559</span><br><span class="line">560</span><br><span class="line">561</span><br><span class="line">562</span><br><span class="line">563</span><br><span class="line">564</span><br><span class="line">565</span><br><span class="line">566</span><br><span class="line">567</span><br><span class="line">568</span><br><span class="line">569</span><br><span class="line">570</span><br><span class="line">571</span><br><span class="line">572</span><br><span class="line">573</span><br><span class="line">574</span><br><span class="line">575</span><br><span class="line">576</span><br><span class="line">577</span><br><span class="line">578</span><br><span class="line">579</span><br><span class="line">580</span><br><span class="line">581</span><br><span class="line">582</span><br><span class="line">583</span><br><span class="line">584</span><br><span class="line">585</span><br><span class="line">586</span><br><span class="line">587</span><br><span class="line">588</span><br><span class="line">589</span><br><span class="line">590</span><br><span class="line">591</span><br><span class="line">592</span><br><span class="line">593</span><br><span class="line">594</span><br><span class="line">595</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">JSTokenType Lexer&lt;T&gt;::lex(JSToken* tokenRecord, <span class="keyword">unsigned</span> lexerFlags, <span class="keyword">bool</span> strictMode)</span><br><span class="line">&#123;</span><br><span class="line">    JSTokenData* tokenData = &amp;tokenRecord-&gt;m_data;</span><br><span class="line">    JSTokenLocation* tokenLocation = &amp;tokenRecord-&gt;m_location;</span><br><span class="line">    m_lastTokenLocation = JSTokenLocation(tokenRecord-&gt;m_location);</span><br><span class="line">    </span><br><span class="line">    JSTokenType token = ERRORTOK;</span><br><span class="line">    m_terminator = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">start:</span><br><span class="line">    <span class="comment">// 跳过空格</span></span><br><span class="line">    skipWhitespace();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是结尾，返回EOFTOK类型</span></span><br><span class="line">    <span class="keyword">if</span> (atEnd()) <span class="keyword">return</span> EOFTOK;</span><br><span class="line">    </span><br><span class="line">    tokenLocation-&gt;startOffset = currentOffset();</span><br><span class="line">    ASSERT(currentOffset() &gt;= currentLineStartOffset());</span><br><span class="line">    tokenRecord-&gt;m_startPosition = currentPosition();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 判断JSToken的首字符类型</span></span><br><span class="line">    CharacterType type;</span><br><span class="line">    <span class="keyword">if</span> (LIKELY(isLatin1(m_current)))</span><br><span class="line">        <span class="comment">// typesOfLatin1Characters是一个ASCII字符到CharacterType的映射表</span></span><br><span class="line">        type = <span class="keyword">static_cast</span>&lt;CharacterType&gt;(typesOfLatin1Characters[m_current]);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (isNonLatin1IdentStart(m_current))</span><br><span class="line">        type = CharacterIdentifierStart;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (isLineTerminator(m_current))</span><br><span class="line">        type = CharacterLineTerminator;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        type = CharacterInvalid;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">    <span class="keyword">case</span> CharacterGreater:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'&gt;'</span>) </span><br><span class="line">        &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'&gt;'</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">                    shift();</span><br><span class="line">                    <span class="comment">// &gt;&gt;&gt;= 符号</span></span><br><span class="line">                    token = URSHIFTEQUAL;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// &gt;&gt;&gt; 无符号逻辑右移</span></span><br><span class="line">                token = URSHIFT;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">// &gt;&gt;= 符号</span></span><br><span class="line">                token = RSHIFTEQUAL;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// &gt;&gt;逻辑右移</span></span><br><span class="line">            token = RSHIFT;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// &gt;= 大于等于符号</span></span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            token = GE;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// &gt; 大于符号</span></span><br><span class="line">        token = GT;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> CharacterEqual: </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (peek(<span class="number">1</span>) == <span class="string">'&gt;'</span>) &#123;</span><br><span class="line">            <span class="comment">// Arrow Function（箭头函数）: x =&gt; x * x</span></span><br><span class="line">            token = ARROWFUNCTION;</span><br><span class="line">            tokenData-&gt;line = lineNumber();</span><br><span class="line">            tokenData-&gt;offset = currentOffset();</span><br><span class="line">            tokenData-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">            ASSERT(tokenData-&gt;offset &gt;= tokenData-&gt;lineStartOffset);</span><br><span class="line">            shift();</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">// ===符号，全等（值和类型）</span></span><br><span class="line">                token = STREQ;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// ==符号，判断是否相等</span></span><br><span class="line">            token = EQEQ;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 等于符号，赋值</span></span><br><span class="line">        token = EQUAL;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> CharacterLess:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'!'</span> &amp;&amp; peek(<span class="number">1</span>) == <span class="string">'-'</span> &amp;&amp; peek(<span class="number">2</span>) == <span class="string">'-'</span>) &#123;</span><br><span class="line">            <span class="comment">// &lt;!-- 单行注释</span></span><br><span class="line">            <span class="keyword">goto</span> inSingleLineComment;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'&lt;'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">// &lt;&lt;= </span></span><br><span class="line">                token = LSHIFTEQUAL;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// &lt;&lt; 左移操作</span></span><br><span class="line">            token = LSHIFT;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// &lt;= 小于等于</span></span><br><span class="line">            token = LE;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// &lt; 小于号</span></span><br><span class="line">        token = LT;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterExclamationMark:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">// !== 字符串不等于</span></span><br><span class="line">                token = STRNEQ;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// != 不等于</span></span><br><span class="line">            token = NE;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// ! 非操作</span></span><br><span class="line">        token = EXCLAMATION;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterAdd:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'+'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            token = (!m_terminator) ? PLUSPLUS : AUTOPLUSPLUS;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// += </span></span><br><span class="line">            token = PLUSEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// +操作</span></span><br><span class="line">        token = PLUS;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> CharacterSub:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'-'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_atLineStart &amp;&amp; m_current == <span class="string">'&gt;'</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">// 单行注释</span></span><br><span class="line">                <span class="keyword">goto</span> inSingleLineComment;</span><br><span class="line">            &#125;</span><br><span class="line">            token = (!m_terminator) ? MINUSMINUS : AUTOMINUSMINUS;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// -=操作</span></span><br><span class="line">            token = MINUSEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        token = MINUS;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterMultiply:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// *=</span></span><br><span class="line">            token = MULTEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// *</span></span><br><span class="line">        token = TIMES;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterSlash:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'/'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// 单行注释</span></span><br><span class="line">            <span class="keyword">goto</span> inSingleLineCommentCheckForDirectives;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'*'</span>) &#123;</span><br><span class="line">            <span class="comment">// 多行注释</span></span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (parseMultilineComment())</span><br><span class="line">                <span class="keyword">goto</span> start;</span><br><span class="line">            m_lexErrorMessage = ASCIILiteral(<span class="string">"Multiline comment was not closed properly"</span>);</span><br><span class="line">            token = UNTERMINATED_MULTILINE_COMMENT_ERRORTOK;</span><br><span class="line">            <span class="keyword">goto</span> returnError;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// /= </span></span><br><span class="line">            token = DIVEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// / 除操作</span></span><br><span class="line">        token = DIVIDE;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterAnd:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'&amp;'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// &amp;&amp; 逻辑与</span></span><br><span class="line">            token = AND;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// &amp;= 与等于</span></span><br><span class="line">            token = ANDEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 与操作</span></span><br><span class="line">        token = BITAND;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterXor:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            token = XOREQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        token = BITXOR;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterModulo:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            token = MODEQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        token = MOD;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterOr:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'='</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// |= 操作</span></span><br><span class="line">            token = OREQUAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (m_current == <span class="string">'|'</span>) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="comment">// || 逻辑或</span></span><br><span class="line">            token = OR;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 或操作</span></span><br><span class="line">        token = BITOR;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> CharacterOpenParen:</span><br><span class="line">        <span class="comment">// 左括号(</span></span><br><span class="line">        token = OPENPAREN;</span><br><span class="line">        tokenData-&gt;line = lineNumber();</span><br><span class="line">        tokenData-&gt;offset = currentOffset();</span><br><span class="line">        tokenData-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterCloseParen:</span><br><span class="line">        <span class="comment">// 右括号)</span></span><br><span class="line">        token = CLOSEPAREN;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterOpenBracket:</span><br><span class="line">        <span class="comment">// 左中括号[</span></span><br><span class="line">        token = OPENBRACKET;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterCloseBracket:</span><br><span class="line">        <span class="comment">// 右中括号]</span></span><br><span class="line">        token = CLOSEBRACKET;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterComma:</span><br><span class="line">        <span class="comment">// 逗号，</span></span><br><span class="line">        token = COMMA;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterColon:</span><br><span class="line">        <span class="comment">// 冒号:</span></span><br><span class="line">        token = COLON;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterQuestion:</span><br><span class="line">        <span class="comment">// 问号?</span></span><br><span class="line">        token = QUESTION;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterTilde:</span><br><span class="line">        <span class="comment">// ~符号</span></span><br><span class="line">        token = TILDE;</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterSemicolon:</span><br><span class="line">        <span class="comment">// ;分号</span></span><br><span class="line">        shift();</span><br><span class="line">        token = SEMICOLON;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterOpenBrace:</span><br><span class="line">        tokenData-&gt;line = lineNumber();</span><br><span class="line">        tokenData-&gt;offset = currentOffset();</span><br><span class="line">        tokenData-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">        shift();</span><br><span class="line">        <span class="comment">// &#123; 左大括号</span></span><br><span class="line">        token = OPENBRACE;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterCloseBrace:</span><br><span class="line">        tokenData-&gt;line = lineNumber();</span><br><span class="line">        tokenData-&gt;offset = currentOffset();</span><br><span class="line">        tokenData-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">        shift();</span><br><span class="line">        <span class="comment">// &#125; 右大括号</span></span><br><span class="line">        token = CLOSEBRACE;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterDot:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="keyword">if</span> (!isASCIIDigit(m_current)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (UNLIKELY((m_current == <span class="string">'.'</span>) &amp;&amp; (peek(<span class="number">1</span>) == <span class="string">'.'</span>))) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                shift();</span><br><span class="line">                <span class="comment">/// ...符号</span></span><br><span class="line">                token = DOTDOTDOT;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// .符号</span></span><br><span class="line">            token = DOT;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">goto</span> inNumberAfterDecimalPoint;</span><br><span class="line">    <span class="keyword">case</span> CharacterZero:</span><br><span class="line">        shift();</span><br><span class="line">        <span class="comment">// 16进制的数字</span></span><br><span class="line">        <span class="keyword">if</span> ((m_current | <span class="number">0x20</span>) == <span class="string">'x'</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!isASCIIHexDigit(peek(<span class="number">1</span>))) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No hexadecimal digits after '0x'"</span>);</span><br><span class="line">                token = UNTERMINATED_HEX_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Shift out the 'x' prefix.</span></span><br><span class="line">            shift();</span><br><span class="line"></span><br><span class="line">            parseHex(tokenData-&gt;doubleValue);</span><br><span class="line">            <span class="keyword">if</span> (isIdentStart(m_current)) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No space between hexadecimal literal and identifier"</span>);</span><br><span class="line">                token = UNTERMINATED_HEX_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line">            token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">            m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 2进制数字</span></span><br><span class="line">        <span class="keyword">if</span> ((m_current | <span class="number">0x20</span>) == <span class="string">'b'</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!isASCIIBinaryDigit(peek(<span class="number">1</span>))) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No binary digits after '0b'"</span>);</span><br><span class="line">                token = UNTERMINATED_BINARY_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Shift out the 'b' prefix.</span></span><br><span class="line">            shift();</span><br><span class="line"></span><br><span class="line">            parseBinary(tokenData-&gt;doubleValue);</span><br><span class="line">            <span class="keyword">if</span> (isIdentStart(m_current)) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No space between binary literal and identifier"</span>);</span><br><span class="line">                token = UNTERMINATED_BINARY_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line">            token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">            m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 8进制数字</span></span><br><span class="line">        <span class="keyword">if</span> ((m_current | <span class="number">0x20</span>) == <span class="string">'o'</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!isASCIIOctalDigit(peek(<span class="number">1</span>))) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No octal digits after '0o'"</span>);</span><br><span class="line">                token = UNTERMINATED_OCTAL_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Shift out the 'o' prefix.</span></span><br><span class="line">            shift();</span><br><span class="line"></span><br><span class="line">            parseOctal(tokenData-&gt;doubleValue);</span><br><span class="line">            <span class="keyword">if</span> (isIdentStart(m_current)) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"No space between octal literal and identifier"</span>);</span><br><span class="line">                token = UNTERMINATED_OCTAL_NUMBER_ERRORTOK;</span><br><span class="line">                <span class="keyword">goto</span> returnError;</span><br><span class="line">            &#125;</span><br><span class="line">            token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">            m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        record8(<span class="string">'0'</span>);</span><br><span class="line">        <span class="keyword">if</span> (strictMode &amp;&amp; isASCIIDigit(m_current)) &#123;</span><br><span class="line">            m_lexErrorMessage = ASCIILiteral(<span class="string">"Decimal integer literals with a leading zero are forbidden in strict mode"</span>);</span><br><span class="line">            token = UNTERMINATED_OCTAL_NUMBER_ERRORTOK;</span><br><span class="line">            <span class="keyword">goto</span> returnError;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (isASCIIOctalDigit(m_current)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (parseOctal(tokenData-&gt;doubleValue)) &#123;</span><br><span class="line">                token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        FALLTHROUGH;</span><br><span class="line">    <span class="keyword">case</span> CharacterNumber:</span><br><span class="line">        <span class="keyword">if</span> (LIKELY(token != INTEGER &amp;&amp; token != DOUBLE)) </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!parseDecimal(tokenData-&gt;doubleValue)) &#123;</span><br><span class="line">                token = INTEGER;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 解析小数部分</span></span><br><span class="line">                <span class="keyword">if</span> (m_current == <span class="string">'.'</span>) &#123;</span><br><span class="line">                    shift();</span><br><span class="line">inNumberAfterDecimalPoint:</span><br><span class="line">                    parseNumberAfterDecimalPoint();</span><br><span class="line">                    <span class="comment">// 可以肯定是一个小数，类型DOUBLE</span></span><br><span class="line">                    token = DOUBLE;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 解析指数部分</span></span><br><span class="line">                <span class="keyword">if</span> ((m_current | <span class="number">0x20</span>) == <span class="string">'e'</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!parseNumberAfterExponentIndicator()) &#123;</span><br><span class="line">                        m_lexErrorMessage = ASCIILiteral(<span class="string">"Non-number found after exponent indicator"</span>);</span><br><span class="line">                        token = atEnd() ? UNTERMINATED_NUMERIC_LITERAL_ERRORTOK : INVALID_NUMERIC_LITERAL_ERRORTOK;</span><br><span class="line">                        <span class="keyword">goto</span> returnError;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">size_t</span> parsedLength;</span><br><span class="line">                tokenData-&gt;doubleValue = parseDouble(m_buffer8.data(), m_buffer8.size(), parsedLength);</span><br><span class="line">                <span class="keyword">if</span> (token == INTEGER)</span><br><span class="line">                    token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">            &#125; <span class="keyword">else</span></span><br><span class="line">                token = tokenTypeForIntegerLikeToken(tokenData-&gt;doubleValue);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(isIdentStart(m_current))) &#123;</span><br><span class="line">            m_lexErrorMessage = ASCIILiteral(<span class="string">"No identifiers allowed directly after numeric literal"</span>);</span><br><span class="line">            token = atEnd() ? UNTERMINATED_NUMERIC_LITERAL_ERRORTOK : INVALID_NUMERIC_LITERAL_ERRORTOK;</span><br><span class="line">            <span class="keyword">goto</span> returnError;</span><br><span class="line">        &#125;</span><br><span class="line">        m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> CharacterQuote: &#123;</span><br><span class="line">        <span class="comment">// 引号"，解析字符串</span></span><br><span class="line">        StringParseResult result = StringCannotBeParsed;</span><br><span class="line">        <span class="keyword">if</span> (lexerFlags &amp; LexerFlagsDontBuildStrings)</span><br><span class="line">            result = parseString&lt;<span class="literal">false</span>&gt;(tokenData, strictMode);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            result = parseString&lt;<span class="literal">true</span>&gt;(tokenData, strictMode);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(result != StringParsedSuccessfully)) &#123;</span><br><span class="line">            token = result == StringUnterminated ? UNTERMINATED_STRING_LITERAL_ERRORTOK : INVALID_STRING_LITERAL_ERRORTOK;</span><br><span class="line">            <span class="keyword">goto</span> returnError;</span><br><span class="line">        &#125;</span><br><span class="line">        shift();</span><br><span class="line">        token = STRING;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">case</span> CharacterBackQuote: &#123;</span><br><span class="line">        <span class="comment">// Skip backquote.</span></span><br><span class="line">        shift();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 解析模板</span></span><br><span class="line">        StringParseResult result = StringCannotBeParsed;</span><br><span class="line">        <span class="keyword">if</span> (lexerFlags &amp; LexerFlagsDontBuildStrings)</span><br><span class="line">            result = parseTemplateLiteral&lt;<span class="literal">false</span>&gt;(tokenData, RawStringsBuildMode::BuildRawStrings);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            result = parseTemplateLiteral&lt;<span class="literal">true</span>&gt;(tokenData, RawStringsBuildMode::BuildRawStrings);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(result != StringParsedSuccessfully)) &#123;</span><br><span class="line">            token = result == StringUnterminated ? UNTERMINATED_TEMPLATE_LITERAL_ERRORTOK : INVALID_TEMPLATE_LITERAL_ERRORTOK;</span><br><span class="line">            <span class="keyword">goto</span> returnError;</span><br><span class="line">        &#125;</span><br><span class="line">        token = TEMPLATE;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">case</span> CharacterIdentifierStart:</span><br><span class="line">        ASSERT(isIdentStart(m_current));</span><br><span class="line">        FALLTHROUGH;</span><br><span class="line">    <span class="keyword">case</span> CharacterBackSlash:</span><br><span class="line">        <span class="comment">// 反斜杠 \</span></span><br><span class="line"></span><br><span class="line">        parseIdent:</span><br><span class="line">        <span class="keyword">if</span> (lexerFlags &amp; LexexFlagsDontBuildKeywords)</span><br><span class="line">            token = parseIdentifier&lt;<span class="literal">false</span>&gt;(tokenData, lexerFlags, strictMode);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            token = parseIdentifier&lt;<span class="literal">true</span>&gt;(tokenData, lexerFlags, strictMode);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> CharacterLineTerminator:</span><br><span class="line">        <span class="comment">// ASCII 10和13</span></span><br><span class="line">        ASSERT(isLineTerminator(m_current));</span><br><span class="line">        shiftLineTerminator();</span><br><span class="line">        m_atLineStart = <span class="literal">true</span>;</span><br><span class="line">        m_terminator = <span class="literal">true</span>;</span><br><span class="line">        m_lineStart = m_code;</span><br><span class="line">        <span class="keyword">goto</span> start;</span><br><span class="line">    <span class="keyword">case</span> CharacterPrivateIdentifierStart:</span><br><span class="line">        <span class="keyword">if</span> (m_parsingBuiltinFunction)</span><br><span class="line">            <span class="keyword">goto</span> parseIdent;</span><br><span class="line">        FALLTHROUGH;</span><br><span class="line">    <span class="keyword">case</span> CharacterInvalid:</span><br><span class="line">        m_lexErrorMessage = invalidCharacterMessage();</span><br><span class="line">        token = ERRORTOK;</span><br><span class="line">        <span class="keyword">goto</span> returnError;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        RELEASE_ASSERT_NOT_REACHED();</span><br><span class="line">        m_lexErrorMessage = ASCIILiteral(<span class="string">"Internal Error"</span>);</span><br><span class="line">        token = ERRORTOK;</span><br><span class="line">        <span class="keyword">goto</span> returnError;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    m_atLineStart = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">goto</span> returnToken;</span><br><span class="line"></span><br><span class="line">inSingleLineCommentCheckForDirectives:</span><br><span class="line">    <span class="comment">// Script comment directives like "//# sourceURL=test.js".</span></span><br><span class="line">    <span class="keyword">if</span> (UNLIKELY((m_current == <span class="string">'#'</span> || m_current == <span class="string">'@'</span>) &amp;&amp; isWhiteSpace(peek(<span class="number">1</span>)))) &#123;</span><br><span class="line">        shift();</span><br><span class="line">        shift();</span><br><span class="line">        parseCommentDirective();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Fall through to complete single line comment parsing.</span></span><br><span class="line"></span><br><span class="line">inSingleLineComment:</span><br><span class="line">    <span class="keyword">while</span> (!isLineTerminator(m_current)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (atEnd())</span><br><span class="line">            <span class="keyword">return</span> EOFTOK;</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line">    shiftLineTerminator();</span><br><span class="line">    m_atLineStart = <span class="literal">true</span>;</span><br><span class="line">    m_terminator = <span class="literal">true</span>;</span><br><span class="line">    m_lineStart = m_code;</span><br><span class="line">    <span class="keyword">if</span> (!lastTokenWasRestrKeyword())</span><br><span class="line">        <span class="keyword">goto</span> start;</span><br><span class="line"></span><br><span class="line">    token = SEMICOLON;</span><br><span class="line">    <span class="comment">// Fall through into returnToken.</span></span><br><span class="line"></span><br><span class="line">returnToken:</span><br><span class="line">    <span class="comment">// 返回正常解析结果</span></span><br><span class="line">    tokenLocation-&gt;line = m_lineNumber;</span><br><span class="line">    tokenLocation-&gt;endOffset = currentOffset();</span><br><span class="line">    tokenLocation-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">    ASSERT(tokenLocation-&gt;endOffset &gt;= tokenLocation-&gt;lineStartOffset);</span><br><span class="line">    tokenRecord-&gt;m_endPosition = currentPosition();</span><br><span class="line">    m_lastToken = token;</span><br><span class="line">    <span class="keyword">return</span> token;</span><br><span class="line"></span><br><span class="line">returnError:</span><br><span class="line">    <span class="comment">// 异常结果</span></span><br><span class="line">    m_error = <span class="literal">true</span>;</span><br><span class="line">    tokenLocation-&gt;line = m_lineNumber;</span><br><span class="line">    tokenLocation-&gt;endOffset = currentOffset();</span><br><span class="line">    tokenLocation-&gt;lineStartOffset = currentLineStartOffset();</span><br><span class="line">    ASSERT(tokenLocation-&gt;endOffset &gt;= tokenLocation-&gt;lineStartOffset);</span><br><span class="line">    tokenRecord-&gt;m_endPosition = currentPosition();</span><br><span class="line">    RELEASE_ASSERT(token &amp; ErrorTokenFlag);</span><br><span class="line">    <span class="keyword">return</span> token;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>代码篇幅有些长，但是这是本篇最重要的一个函数，所以未作任何篇幅省略或缩减。<br>不过换一种方式看下，就会觉得比较清晰了，不妨结合来看。</p>
+<p><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/02.png" width="100%"></p>
+<p>上述的switch语句过后，就产生了一个JSToken，其中大部分case都简单明了，易于理解，不过其中有几个重要的方法值得细看一下</p>
+<h3 id="字符串解析"><a href="#字符串解析" class="headerlink" title="字符串解析"></a>字符串解析</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">bool</span> shouldBuildStrings&gt; ALWAYS_INLINE <span class="keyword">typename</span> Lexer&lt;T&gt;::StringParseResult Lexer&lt;T&gt;::parseString(JSTokenData* tokenData, <span class="keyword">bool</span> strictMode)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> startingOffset = currentOffset();</span><br><span class="line">    <span class="keyword">int</span> startingLineStartOffset = currentLineStartOffset();</span><br><span class="line">    <span class="keyword">int</span> startingLineNumber = lineNumber();</span><br><span class="line">    T stringQuoteCharacter = m_current;</span><br><span class="line">    shift();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> T* stringStart = currentSourcePtr();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在碰到下一个引号之前，循环遍历</span></span><br><span class="line">    <span class="keyword">while</span> (m_current != stringQuoteCharacter) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(m_current == <span class="string">'\\'</span>)) &#123;</span><br><span class="line">            <span class="comment">// 如果是转义符号</span></span><br><span class="line">            <span class="keyword">if</span> (stringStart != currentSourcePtr() &amp;&amp; shouldBuildStrings)</span><br><span class="line">                append8(stringStart, currentSourcePtr() - stringStart);</span><br><span class="line">            shift();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// ASCII 0~127</span></span><br><span class="line">            LChar escape = singleEscape(m_current);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Most common escape sequences first.</span></span><br><span class="line">            <span class="keyword">if</span> (escape) &#123;</span><br><span class="line">                <span class="comment">// 如果是常见的ASCII码，直接右移</span></span><br><span class="line">                <span class="keyword">if</span> (shouldBuildStrings)record8(escape);</span><br><span class="line">                shift();</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (UNLIKELY(isLineTerminator(m_current)))</span><br><span class="line">                <span class="comment">// 跳过换行符 \n \r</span></span><br><span class="line">                shiftLineTerminator();</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (m_current == <span class="string">'x'</span>) </span><br><span class="line">            &#123;</span><br><span class="line">                <span class="comment">// 字符串中的16进制数字解析</span></span><br><span class="line">                <span class="comment">// \x之后跟2位十六进制数。取值范围：\x00 到 \xff</span></span><br><span class="line">                shift();</span><br><span class="line">                <span class="keyword">if</span> (!isASCIIHexDigit(m_current) || !isASCIIHexDigit(peek(<span class="number">1</span>))) &#123;</span><br><span class="line">                    <span class="comment">// 并不是一个16进制数字</span></span><br><span class="line">                    m_lexErrorMessage = ASCIILiteral(<span class="string">"\\x can only be followed by a hex character sequence"</span>);</span><br><span class="line">                    <span class="keyword">return</span> (atEnd() || (isASCIIHexDigit(m_current) &amp;&amp; (m_code + <span class="number">1</span> == m_codeEnd))) ? StringUnterminated : StringCannotBeParsed;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 正常的16进制数字：\x00 ~ \xff</span></span><br><span class="line">                T prev = m_current;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="keyword">if</span> (shouldBuildStrings)</span><br><span class="line">                    record8(convertHex(prev, m_current));</span><br><span class="line">                shift();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="comment">// 剩下的情况走慢路径解析：parseStringSlowCase</span></span><br><span class="line">                setOffset(startingOffset, startingLineStartOffset);</span><br><span class="line">                setLineNumber(startingLineNumber);</span><br><span class="line">                m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">                <span class="keyword">return</span> parseStringSlowCase&lt;shouldBuildStrings&gt;(tokenData, strictMode);</span><br><span class="line">            &#125;</span><br><span class="line">            stringStart = currentSourcePtr();</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 走字符串的慢解析路径</span></span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(characterRequiresParseStringSlowCase(m_current))) &#123;</span><br><span class="line">            setOffset(startingOffset, startingLineStartOffset);</span><br><span class="line">            setLineNumber(startingLineNumber);</span><br><span class="line">            m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">return</span> parseStringSlowCase&lt;shouldBuildStrings&gt;(tokenData, strictMode);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确认开始字符串的区域，存放到m_buffer8中</span></span><br><span class="line">    <span class="keyword">if</span> (currentSourcePtr() != stringStart &amp;&amp; shouldBuildStrings)</span><br><span class="line">        append8(stringStart, currentSourcePtr() - stringStart);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (shouldBuildStrings) &#123;</span><br><span class="line">        <span class="comment">// 创建标识符</span></span><br><span class="line">        tokenData-&gt;ident = makeIdentifier(m_buffer8.data(), m_buffer8.size());</span><br><span class="line">        m_buffer8.shrink(<span class="number">0</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span></span><br><span class="line">        tokenData-&gt;ident = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> StringParsedSuccessfully;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>parseStringSlowCase的流程和</code>和<code>parseString</code>的流程非常相似，都有转义字符、换行符的处理，以及最后的标识符的创建，不同的是<code>parseStringSlowCase</code>用的容器是<code>m_buffer16</code>，而<code>parseString</code>用的是<code>m_buffer8</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">typedef unsigned char LChar;</span><br><span class="line">typedef uint16_t UChar;</span><br><span class="line"></span><br><span class="line">Vector&lt;LChar&gt; m_buffer8;</span><br><span class="line">Vector&lt;UChar&gt; m_buffer16;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">bool</span> shouldBuildStrings&gt; <span class="keyword">auto</span> Lexer&lt;T&gt;::parseStringSlowCase(JSTokenData* tokenData, <span class="keyword">bool</span> strictMode) -&gt; StringParseResult</span><br><span class="line">&#123;</span><br><span class="line">    T stringQuoteCharacter = m_current;</span><br><span class="line">    shift();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> T* stringStart = currentSourcePtr();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (m_current != stringQuoteCharacter) &#123;</span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(m_current == <span class="string">'\\'</span>)) &#123;</span><br><span class="line">            <span class="comment">// 转义符号的特殊处理</span></span><br><span class="line">            <span class="keyword">if</span> (stringStart != currentSourcePtr() &amp;&amp; shouldBuildStrings)</span><br><span class="line">                append16(stringStart, currentSourcePtr() - stringStart);</span><br><span class="line">            shift();</span><br><span class="line"></span><br><span class="line">            LChar escape = singleEscape(m_current);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Most common escape sequences first</span></span><br><span class="line">            <span class="keyword">if</span> (escape) &#123;</span><br><span class="line">                <span class="keyword">if</span> (shouldBuildStrings)</span><br><span class="line">                    record16(escape);</span><br><span class="line">                shift();</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (UNLIKELY(isLineTerminator(m_current)))</span><br><span class="line">                shiftLineTerminator();</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                StringParseResult result = parseComplexEscape&lt;shouldBuildStrings&gt;(EscapeParseMode::String, strictMode, stringQuoteCharacter);</span><br><span class="line">                <span class="keyword">if</span> (result != StringParsedSuccessfully)</span><br><span class="line">                    <span class="keyword">return</span> result;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            stringStart = currentSourcePtr();</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 需要特殊处理的字符</span></span><br><span class="line">        <span class="comment">// Fast check for characters that require special handling.</span></span><br><span class="line">        <span class="comment">// Catches 0, \n, \r, 0x2028, and 0x2029 as efficiently</span></span><br><span class="line">        <span class="comment">// as possible, and lets through all common ASCII characters.</span></span><br><span class="line">        <span class="keyword">if</span> (UNLIKELY(((<span class="keyword">static_cast</span>&lt;<span class="keyword">unsigned</span>&gt;(m_current) - <span class="number">0xE</span>) &amp; <span class="number">0x2000</span>))) &#123;</span><br><span class="line">            <span class="comment">// New-line or end of input is not allowed</span></span><br><span class="line">            <span class="keyword">if</span> (atEnd() || isLineTerminator(m_current)) &#123;</span><br><span class="line">                m_lexErrorMessage = ASCIILiteral(<span class="string">"Unexpected EOF"</span>);</span><br><span class="line">                <span class="keyword">return</span> atEnd() ? StringUnterminated : StringCannotBeParsed;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// Anything else is just a normal character</span></span><br><span class="line">        &#125;</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 正常的逻辑会走到这里</span></span><br><span class="line">    <span class="keyword">if</span> (currentSourcePtr() != stringStart &amp;&amp; shouldBuildStrings)</span><br><span class="line">        append16(stringStart, currentSourcePtr() - stringStart);</span><br><span class="line">    <span class="keyword">if</span> (shouldBuildStrings)</span><br><span class="line">        tokenData-&gt;ident = makeIdentifier(m_buffer16.data(), m_buffer16.size());</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        tokenData-&gt;ident = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    m_buffer16.shrink(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> StringParsedSuccessfully;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>确定好了字符串的起始位置、长度和内容后，再来看下标识符的创建逻辑</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> CharType&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">const</span> Identifier LiteralParser&lt;CharType&gt;::makeIdentifier(<span class="keyword">const</span> LChar* characters, <span class="keyword">size_t</span> length)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 长度为0，返回emptyIdentifier</span></span><br><span class="line">    <span class="keyword">if</span> (!length)</span><br><span class="line">        <span class="keyword">return</span> m_exec-&gt;vm().propertyNames-&gt;emptyIdentifier;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// static const int MaximumCachableCharacter = 128;</span></span><br><span class="line">    <span class="keyword">if</span> (characters[<span class="number">0</span>] &gt;= MaximumCachableCharacter)</span><br><span class="line">        <span class="keyword">return</span> Identifier::fromString(&amp;m_exec-&gt;vm(), characters, length);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 长度为1的字符的处理，可以看到m_shortIdentifiers做内存缓存</span></span><br><span class="line">    <span class="keyword">if</span> (length == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!m_shortIdentifiers[characters[<span class="number">0</span>]].isNull())</span><br><span class="line">            <span class="keyword">return</span> m_shortIdentifiers[characters[<span class="number">0</span>]];</span><br><span class="line">        m_shortIdentifiers[characters[<span class="number">0</span>]] = Identifier::fromString(&amp;m_exec-&gt;vm(), characters, length);</span><br><span class="line">        <span class="keyword">return</span> m_shortIdentifiers[characters[<span class="number">0</span>]];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// characters[0]&lt;128 &amp;&amp; length &gt; 1，用m_recentIdentifiers作内存缓存</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!m_recentIdentifiers[characters[<span class="number">0</span>]].isNull() &amp;&amp; Identifier::equal(m_recentIdentifiers[characters[<span class="number">0</span>]].impl(), characters, length))</span><br><span class="line">        <span class="keyword">return</span> m_recentIdentifiers[characters[<span class="number">0</span>]];</span><br><span class="line">    m_recentIdentifiers[characters[<span class="number">0</span>]] = Identifier::fromString(&amp;m_exec-&gt;vm(), characters, length);</span><br><span class="line">    <span class="keyword">return</span> m_recentIdentifiers[characters[<span class="number">0</span>]];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>无论上述哪条路径，都离不开<code>Identifier::fromString</code>这个方法，这个方法已经涉及到了虚拟机，想一下：创建标识符肯定得经过虚拟机的记录，以便后续访问或者重复性的处理。这里不太适合分析下去，要不然泥潭就就出不去了，感兴趣的同学可以去看看。</p>
+<h3 id="10进制解析"><a href="#10进制解析" class="headerlink" title="10进制解析"></a>10进制解析</h3><p>先看下10进制数字的DFA图<br><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/06.png" width="65%"></p>
+<p>之后对解析到的10进制字符串进行求值，并将结果存放到returnValue中。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">bool</span> Lexer&lt;T&gt;::parseDecimal(<span class="keyword">double</span>&amp; returnValue)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Optimization: most decimal values fit into 4 bytes.</span></span><br><span class="line">    <span class="keyword">uint32_t</span> decimalValue = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Since parseOctal may be executed before parseDecimal,</span></span><br><span class="line">    <span class="comment">// the m_buffer8 may hold ascii digits.</span></span><br><span class="line">    <span class="keyword">if</span> (!m_buffer8.size()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">unsigned</span> maximumDigits = <span class="number">10</span>;</span><br><span class="line">        <span class="keyword">int</span> digit = maximumDigits - <span class="number">1</span>;</span><br><span class="line">        <span class="comment">// Temporary buffer for the digits. Makes easier</span></span><br><span class="line">        <span class="comment">// to reconstruct the input characters when needed.</span></span><br><span class="line">        LChar digits[maximumDigits];</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 逐个遍历，每向右偏移一个字符，就将当前的decimalValue乘以10，</span></span><br><span class="line">        <span class="comment">// 并加上（m_current - '0'）</span></span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            decimalValue = decimalValue * <span class="number">10</span> + (m_current - <span class="string">'0'</span>);</span><br><span class="line">            digits[digit] = m_current;</span><br><span class="line">            shift();</span><br><span class="line">            --digit;</span><br><span class="line">        &#125; <span class="keyword">while</span> (isASCIIDigit(m_current) &amp;&amp; digit &gt;= <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (digit &gt;= <span class="number">0</span> &amp;&amp; m_current != <span class="string">'.'</span> &amp;&amp; (m_current | <span class="number">0x20</span>) != <span class="string">'e'</span>) &#123;</span><br><span class="line">            <span class="comment">// 如果没有小数点，也没有指数符号e，直接将decimalValue返回</span></span><br><span class="line">            returnValue = decimalValue;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = maximumDigits - <span class="number">1</span>; i &gt; digit; --i)</span><br><span class="line">            record8(digits[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 出现了非数字字符，解析结果异常</span></span><br><span class="line">    <span class="keyword">while</span> (isASCIIDigit(m_current)) &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="16进制解析"><a href="#16进制解析" class="headerlink" title="16进制解析"></a>16进制解析</h3><p>首先看下如何去分析出一个16进制数字<br><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/04.png" width="100%"></p>
+<p>然后计算该16进制的数字的值<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">void</span> Lexer&lt;T&gt;::parseHex(<span class="keyword">double</span>&amp; returnValue)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Optimization: 大部分的16进制数据，4个字节就可以存放下了</span></span><br><span class="line">    <span class="keyword">uint32_t</span> hexValue = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> maximumDigits = <span class="number">7</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// toASCIIHexValue : character &lt; 'A' ? character - '0' : (character - 'A' + 10) &amp; 0xF</span></span><br><span class="line">    <span class="comment">// 将结果hexValue左移4bit，计算当前的16进制字符对应的10进制值，加到hexValue中</span></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        hexValue = (hexValue &lt;&lt; <span class="number">4</span>) + toASCIIHexValue(m_current);</span><br><span class="line">        shift();</span><br><span class="line">        --maximumDigits;</span><br><span class="line">    &#125; <span class="keyword">while</span> (isASCIIHexDigit(m_current) &amp;&amp; maximumDigits &gt;= <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (maximumDigits &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        returnValue = hexValue;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// maximumDigits如果小于0，说明4个字节存放不下了</span></span><br><span class="line">    <span class="comment">// No more place in the hexValue buffer.</span></span><br><span class="line">    <span class="comment">// The values are shifted out and placed into the m_buffer8 vector.</span></span><br><span class="line">    <span class="comment">// 将前面解析好的部分16进制字符存放到m_buffer8中</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">8</span>; ++i) &#123;</span><br><span class="line">         <span class="keyword">int</span> digit = hexValue &gt;&gt; <span class="number">28</span>;</span><br><span class="line">         <span class="keyword">if</span> (digit &lt; <span class="number">10</span>)</span><br><span class="line">             record8(digit + <span class="string">'0'</span>);</span><br><span class="line">         <span class="keyword">else</span></span><br><span class="line">             record8(digit - <span class="number">10</span> + <span class="string">'a'</span>);</span><br><span class="line">         hexValue &lt;&lt;= <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 继续将后面的16进制字符添加到m_buffer8中</span></span><br><span class="line">    <span class="keyword">while</span> (isASCIIHexDigit(m_current)) &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用parseIntOverflow解析16进制</span></span><br><span class="line">    returnValue = parseIntOverflow(m_buffer8.data(), m_buffer8.size(), <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="8进制解析"><a href="#8进制解析" class="headerlink" title="8进制解析"></a>8进制解析</h3><p>一样的套路，不再赘言<br><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/05.png" width="65%"><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">bool</span> Lexer&lt;T&gt;::parseOctal(<span class="keyword">double</span>&amp; returnValue)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Optimization: most octal values fit into 4 bytes.</span></span><br><span class="line">    <span class="keyword">uint32_t</span> octalValue = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">unsigned</span> maximumDigits = <span class="number">10</span>;</span><br><span class="line">    <span class="keyword">int</span> digit = maximumDigits - <span class="number">1</span>;</span><br><span class="line">    <span class="comment">// Temporary buffer for the digits. Makes easier</span></span><br><span class="line">    <span class="comment">// to reconstruct the input characters when needed.</span></span><br><span class="line">    LChar digits[maximumDigits];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        octalValue = octalValue * <span class="number">8</span> + (m_current - <span class="string">'0'</span>);</span><br><span class="line">        digits[digit] = m_current;</span><br><span class="line">        shift();</span><br><span class="line">        --digit;</span><br><span class="line">    &#125; <span class="keyword">while</span> (isASCIIOctalDigit(m_current) &amp;&amp; digit &gt;= <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!isASCIIDigit(m_current) &amp;&amp; digit &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        returnValue = octalValue;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = maximumDigits - <span class="number">1</span>; i &gt; digit; --i)</span><br><span class="line">         record8(digits[i]);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (isASCIIOctalDigit(m_current)) &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isASCIIDigit(m_current))</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    returnValue = parseIntOverflow(m_buffer8.data(), m_buffer8.size(), <span class="number">8</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="N进制整数溢出解析"><a href="#N进制整数溢出解析" class="headerlink" title="N进制整数溢出解析"></a>N进制整数溢出解析</h3><p>接下来就是标准的整数解析过程了，2进制、8进制、10进制和16进制的整数，都可以通过此函数进行解析，radix代表进制<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">parseIntOverflow</span><span class="params">(<span class="keyword">const</span> LChar* s, <span class="keyword">unsigned</span> length, <span class="keyword">int</span> radix)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">double</span> number = <span class="number">0.0</span>;</span><br><span class="line">    <span class="keyword">double</span> radixMultiplier = <span class="number">1.0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> LChar* p = s + length - <span class="number">1</span>; p &gt;= s; p--) &#123;</span><br><span class="line">        <span class="keyword">if</span> (radixMultiplier == <span class="built_in">std</span>::numeric_limits&lt;<span class="keyword">double</span>&gt;::infinity()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (*p != <span class="string">'0'</span>) &#123;</span><br><span class="line">                number = <span class="built_in">std</span>::numeric_limits&lt;<span class="keyword">double</span>&gt;::infinity();</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">int</span> digit = parseDigit(*p, radix);</span><br><span class="line">            number += digit * radixMultiplier;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        radixMultiplier *= radix;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> number;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="小数点和指数解析"><a href="#小数点和指数解析" class="headerlink" title="小数点和指数解析"></a>小数点和指数解析</h3><p>用DFA转移图来表示下浮点数的解析：<br><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/07.png" width="100%"></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">void</span> Lexer&lt;T&gt;::parseNumberAfterDecimalPoint()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// record8：Vector&lt;LChar&gt; m_buffer8，将当前字符添加到m_buffer8中</span></span><br><span class="line">    record8(<span class="string">'.'</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 小数点之后，只要是数字，就添加到m_buffer8中</span></span><br><span class="line">    <span class="keyword">while</span> (isASCIIDigit(m_current)) &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">bool</span> Lexer&lt;T&gt;::parseNumberAfterExponentIndicator()</span><br><span class="line">&#123;</span><br><span class="line">    record8(<span class="string">'e'</span>);</span><br><span class="line">    shift();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确定指数部分的符号</span></span><br><span class="line">    <span class="keyword">if</span> (m_current == <span class="string">'+'</span> || m_current == <span class="string">'-'</span>) &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是非数字，解析异常</span></span><br><span class="line">    <span class="keyword">if</span> (!isASCIIDigit(m_current))</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 只要是数字，就添加到m_buffer8中</span></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        record8(m_current);</span><br><span class="line">        shift();</span><br><span class="line">    &#125; <span class="keyword">while</span> (isASCIIDigit(m_current));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="多行注释解析"><a href="#多行注释解析" class="headerlink" title="多行注释解析"></a>多行注释解析</h3><p>多行注释的DFA转移图：<br><img src="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/03.png" width="100%"><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">ALWAYS_INLINE <span class="keyword">bool</span> Lexer&lt;T&gt;::parseMultilineComment()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 寻找离开始的/*最近的*/(*和/必须紧挨着)</span></span><br><span class="line">        <span class="keyword">while</span> (UNLIKELY(m_current == <span class="string">'*'</span>)) &#123;</span><br><span class="line">            shift();</span><br><span class="line">            <span class="keyword">if</span> (m_current == <span class="string">'/'</span>) &#123;</span><br><span class="line">                shift();</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 偏移结束位置，异常</span></span><br><span class="line">        <span class="keyword">if</span> (atEnd()) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (isLineTerminator(m_current)) &#123;</span><br><span class="line">            <span class="comment">// 行末，跳过</span></span><br><span class="line">            shiftLineTerminator();</span><br><span class="line">            m_terminator = <span class="literal">true</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="comment">// 直接跳过当前字符</span></span><br><span class="line">            shift();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="示例（更新）"><a href="#示例（更新）" class="headerlink" title="示例（更新）"></a>示例（更新）</h2><p>例如有这么一段js代码，包含一个函数、一个变量以及函数的调用<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">test</span>(<span class="params">age</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(age &gt; <span class="number">10</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(age);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> age = <span class="number">6</span> * <span class="number">7</span>;</span><br><span class="line">test(age);</span><br></pre></td></tr></table></figure></p>
+<p>在经过<a href="http://esprima.org/demo/parse.html#" target="_blank" rel="noopener">Esprima</a>词法分析后，会得到下面的结果：<br><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Keyword"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"function"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"test"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"("</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"age"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">")"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"&#123;"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Keyword"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"if"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"("</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"age"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"&gt;"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Numeric"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"10"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">")"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"&#123;"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"console"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"."</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"log"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"("</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"age"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">")"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">";"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"&#125;"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"&#125;"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Keyword"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"var"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"age"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"="</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Numeric"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"6"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"*"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Numeric"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"7"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">";"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"test"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"("</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Identifier"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">"age"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">")"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">"type"</span>: <span class="string">"Punctuator"</span>,</span><br><span class="line">        <span class="attr">"value"</span>: <span class="string">";"</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>经过此过程，一个完整的JSC世界的Token就生成了，整个世界清静了…</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/">JavaScriptCore引擎深度解析3—词法分析篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月30日 - 00:07</p>
+  <p><span>最后更新:</span>2018年11月07日 - 00:11</p>
+  <p><span>原始链接:</span><a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/" title="JavaScriptCore引擎深度解析3—词法分析篇">https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/">JavaScriptCore引擎深度解析3—词法分析篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月30日 - 00:07</p>
+  <p><span>最后更新:</span>2018年11月07日 - 00:11</p>
+  <p><span>原始链接:</span><a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/" title="JavaScriptCore引擎深度解析3—词法分析篇">https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore-Lexer/" rel="tag"># JavaScriptCore Lexer</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/" rel="next" title="JavaScriptCore引擎深度解析2—API篇">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore引擎深度解析2—API篇
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/02/JavaScriptCore引擎深度解析-4-语法分析篇/" rel="prev" title="JavaScriptCore引擎深度解析4-语法分析篇">
+                JavaScriptCore引擎深度解析4-语法分析篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据类型"><span class="nav-number">2.</span> <span class="nav-text">数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CharacterType类型"><span class="nav-number">2.1.</span> <span class="nav-text">CharacterType类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSTokenType类型"><span class="nav-number">2.2.</span> <span class="nav-text">JSTokenType类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Token类型"><span class="nav-number">2.3.</span> <span class="nav-text">Token类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSToken类型"><span class="nav-number">2.4.</span> <span class="nav-text">JSToken类型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#词法分析过程"><span class="nav-number">3.</span> <span class="nav-text">词法分析过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Lexer初始化"><span class="nav-number">3.1.</span> <span class="nav-text">Lexer初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#标识符解析"><span class="nav-number">3.2.</span> <span class="nav-text">标识符解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#核心逻辑"><span class="nav-number">3.3.</span> <span class="nav-text">核心逻辑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字符串解析"><span class="nav-number">3.4.</span> <span class="nav-text">字符串解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10进制解析"><span class="nav-number">3.5.</span> <span class="nav-text">10进制解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#16进制解析"><span class="nav-number">3.6.</span> <span class="nav-text">16进制解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8进制解析"><span class="nav-number">3.7.</span> <span class="nav-text">8进制解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#N进制整数溢出解析"><span class="nav-number">3.8.</span> <span class="nav-text">N进制整数溢出解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小数点和指数解析"><span class="nav-number">3.9.</span> <span class="nav-text">小数点和指数解析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#多行注释解析"><span class="nav-number">3.10.</span> <span class="nav-text">多行注释解析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例（更新）"><span class="nav-number">4.</span> <span class="nav-text">示例（更新）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="GCD," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言在iOS的日常编码中，GCD很好地隔离了我们与线程(pthread)之间的直接交流，跟我们打交道的只有队列和Block，时间久了甚至感觉不到线程的存在。一直想找机会好好研究一下GCD底层，领略下其博大精深之要义.经过初期调研发现：GCD源码分析资料稀少，且比较零散，很难全面地对GCD进行了解，原因可能是这方面的业务需求驱动不是特别强烈，现有GCD的API足够解决所有的业务需求。但是这仍然阻止不">
+<meta name="keywords" content="GCD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCD源码分析1 —— 开篇">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言在iOS的日常编码中，GCD很好地隔离了我们与线程(pthread)之间的直接交流，跟我们打交道的只有队列和Block，时间久了甚至感觉不到线程的存在。一直想找机会好好研究一下GCD底层，领略下其博大精深之要义.经过初期调研发现：GCD源码分析资料稀少，且比较零散，很难全面地对GCD进行了解，原因可能是这方面的业务需求驱动不是特别强烈，现有GCD的API足够解决所有的业务需求。但是这仍然阻止不">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1%20——%20开篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1%20——%20开篇/02.png">
+<meta property="og:updated_time" content="2018-02-08T15:56:13.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCD源码分析1 —— 开篇">
+<meta name="twitter:description" content="前言在iOS的日常编码中，GCD很好地隔离了我们与线程(pthread)之间的直接交流，跟我们打交道的只有队列和Block，时间久了甚至感觉不到线程的存在。一直想找机会好好研究一下GCD底层，领略下其博大精深之要义.经过初期调研发现：GCD源码分析资料稀少，且比较零散，很难全面地对GCD进行了解，原因可能是这方面的业务需求驱动不是特别强烈，现有GCD的API足够解决所有的业务需求。但是这仍然阻止不">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1%20——%20开篇/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/"/>
+
+
+
+
+
+  <title>GCD源码分析1 —— 开篇 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD源码分析1 —— 开篇</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-31T22:05:43+08:00">
+                2018-01-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3,090
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  13
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在iOS的日常编码中，GCD很好地隔离了我们与线程(pthread)之间的直接交流，跟我们打交道的只有队列和Block，时间久了甚至感觉不到线程的存在。一直想找机会好好研究一下GCD底层，领略下其博大精深之要义.经过初期调研发现：GCD源码分析资料稀少，且比较零散，很难全面地对GCD进行了解，原因可能是这方面的业务需求驱动不是特别强烈，现有GCD的API足够解决所有的业务需求。但是这仍然阻止不了我对GCD底层原理了解的一腔热血，冲动之下决定给自己挖个坑，写一个<strong>GCD源码分析系列</strong>，阐述下自己对GCD底层原理的了解和理解。</p>
+<h2 id="GCD版本选择"><a href="#GCD版本选择" class="headerlink" title="GCD版本选择"></a>GCD版本选择</h2><p>接下来就是选择要分析的GCD源码版本，纵向对比了下，发现越到后期的版本，工程越庞大，文件数激增，并且源码风格越来越不友好，里面充斥了大量的宏编译选项，阅读起来很费神，这对了解底层机制十分不利。通过各个版本对比之下，最终选定了版本 <strong>libdispatch-84.5.5</strong>。</p>
+<p></p><p align="left"><img src="/2018/01/31/GCD源码分析1 —— 开篇/01.png" width="400"></p><br>这就是这个版本的所有工程文件！但是麻雀虽小，五脏俱全，它仍然包含了所有的GCD的所有内容。<p></p>
+<h2 id="前期准备"><a href="#前期准备" class="headerlink" title="前期准备"></a>前期准备</h2><p>在阅读GCD源码之前，需要对一些相关的基础知识做下了解</p>
+<h3 id="原子操作"><a href="#原子操作" class="headerlink" title="原子操作"></a>原子操作</h3><p>在分析源码之前，先来了解一些关于原子操作的代码，不需要记住，只需要有个印象，回头查询<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_xchg(p, n)  __sync_lock_test_and_set((p), (n))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_cmpxchg(p, o, n)    __sync_bool_compare_and_swap((p), (o), (n))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_inc(p)              __sync_add_and_fetch((p), 1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_dec(p)              __sync_sub_and_fetch((p), 1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_add(p, v)       __sync_add_and_fetch((p), (v))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_sub(p, v)       __sync_sub_and_fetch((p), (v))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_or(p, v)        __sync_fetch_and_or((p), (v))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dispatch_atomic_and(p, v)       __sync_fetch_and_and((p), (v))</span></span><br></pre></td></tr></table></figure></p>
+<ul>
+<li><code>__sync_lock_test_and_set((p), (n))</code> 将*p设为value并返回*p操作之前的值。</li>
+<li><code>__sync_bool_compare_and_swap((p), (o), (n))</code>这两个函数提供原子的比较和交换：如果*p == o,就将n写入*p(p代表地址，o代表oldValue，n代表newValue)</li>
+<li><code>__sync_add_and_fetch((p), 1)</code> 先自加1，再返回</li>
+<li><code>__sync_sub_and_fetch((p), 1)</code> 先自减1，再返回</li>
+<li><code>__sync_add_and_fetch((p), (v))</code> 先自加v，再返回</li>
+<li><code>__sync_sub_and_fetch((p), (v))</code> 先自减v，再返回</li>
+<li><code>__sync_fetch_and_or((p), (v))</code> 先返回，再进行或运算</li>
+<li><code>__sync_fetch_and_and((p), (v))</code>先返回，再进行与运算</li>
+</ul>
+<h3 id="builtin-expect"><a href="#builtin-expect" class="headerlink" title="__builtin_expect"></a>__builtin_expect</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">long</span> __builtin_expect (<span class="keyword">long</span> EXP, <span class="keyword">long</span> C)</span><br></pre></td></tr></table></figure>
+<p>处理器一般采用流水线模式，有些里面有多个逻辑运算单元，系统可以提前取多条指令进行并行处理，但遇到跳转时，则需要重新取指令，这相对于不用重新去指令就降低了速度。然而由于程序员在分支预测方面做得很糟糕，所以用这个内建函数<code>__builtin_expect</code>来帮助程序员处理分支预测，优化程序。其第一个参数EXP为一个整型表达式，这个内建函数的返回值也是这个EXP,而C为一个编译期常量，这个函数的语义是：<strong>我期望EXP表达式的值等于常量C，编译器应当根据我提供的期望值进行优化</strong>。例如：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (__builtin_expect(x, <span class="number">0</span>))  </span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure></p>
+<p>很明显，x的期望值为0，也就是x有很大的概率为0，所以走if分支的可能性较小，所以编译器会这样编译：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!x)  </span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line"><span class="keyword">else</span>  </span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure></p>
+<p>这样，每次CPU都能大概率地执行到预取的<strong>编译后的if分支</strong>，从而提高了分支预测的准确性，进而提升了CPU指令的执行速度。</p>
+<h3 id="fastpath-amp-amp-slowpath"><a href="#fastpath-amp-amp-slowpath" class="headerlink" title="fastpath &amp;&amp; slowpath"></a>fastpath &amp;&amp; slowpath</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> fastpath(x) ((typeof(x))__builtin_expect((long)(x), ~0l))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> slowpath(x) ((typeof(x))__builtin_expect((long)(x), 0l))</span></span><br></pre></td></tr></table></figure>
+<p>有了<code>__builtin_expect</code>基础，苹果引入的<code>fastpath</code>和<code>slowpath</code>这两个宏就不难理解了：</p>
+<ul>
+<li>fastpath 表示该条件多数情况下会发生。</li>
+<li>slowpath 表示你可以确认该条件是极少发生的。</li>
+</ul>
+<h3 id="DISPATCH-DECL"><a href="#DISPATCH-DECL" class="headerlink" title="DISPATCH_DECL"></a>DISPATCH_DECL</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_DECL(name) typedef struct name##_s *name##_t</span></span><br></pre></td></tr></table></figure>
+<p>GCD源码中很多地方都可以看到这个宏，举个栗子：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_DECL(dispatch_queue);</span><br></pre></td></tr></table></figure></p>
+<p>宏展开为：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *<span class="title">dispatch_queue_t</span></span></span><br></pre></td></tr></table></figure></p>
+<p>dispatch_queue_t就可以用来定义一个dispatch_queue_s结构体的指针。</p>
+<h2 id="基本数据结构"><a href="#基本数据结构" class="headerlink" title="基本数据结构"></a>基本数据结构</h2><h3 id="dispatch-object-t"><a href="#dispatch-object-t" class="headerlink" title="dispatch_object_t"></a>dispatch_object_t</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">union</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *_<span class="title">do</span>;</span>          <span class="comment">// dispatch_object_s结构体，这个是 GCD 的基类</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_continuation_s</span> *_<span class="title">dc</span>;</span>    <span class="comment">// 任务类型，通常 dispatch_async内的block最终都会封装成这个数据类型</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *_<span class="title">dq</span>;</span>           <span class="comment">// 任务队列，我们创建的对列都是这个类型的，不管是串行队列还是并发队列</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_attr_s</span> *_<span class="title">dqa</span>;</span>     <span class="comment">// 任务队列的属性，任务队列的属性里面包含了任务队列里面的一些操作函数，可以表明这个任务队列是串行还是并发队列</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_group_s</span> *_<span class="title">dg</span>;</span>           <span class="comment">// GCD的group</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_s</span> *_<span class="title">ds</span>;</span>          <span class="comment">// GCD的sourece ，可以监测内核事件，文件读写事件和 socket 通信事件等</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_attr_s</span> *_<span class="title">dsa</span>;</span>    <span class="comment">// sourece的属性。</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_semaphore_s</span> *_<span class="title">dsema</span>;</span>    <span class="comment">// 信号量，如果了解过 pthread 都知道，信号量可以用来调度线程</span></span><br><span class="line">&#125; <span class="keyword">dispatch_object_t</span> __attribute__((transparent_union));</span><br></pre></td></tr></table></figure>
+<p>可以看出，dispatch_object_t是一个联合体，所以当用dispatch_object_t 可以代表这个联合体内的所有数据类型。</p>
+<p><strong>注意<code>__attribute__((transparent_union))</code></strong>是一种典型的 <strong>透明联合体</strong>，<br>透明联合类型削弱了C语言的类型检测机制。起到了类似强制类型转换的效果，通过透明联合体，使得<code>dispatch_object_s</code>就像C++中的基类，在函数参数类型的转换上，给C语言的参数传递带来极大的方便。<br>考虑到在底层，类型实质上是不存在的，因此所谓的透明联合类型，也就是在一定程度上打破了类型对我们的束缚，使数据以一种更底层的角度呈现在我们面前。不过这样也弱化了C语言对类型的检测，由此也可能带来一些很严重的错误。</p>
+<h3 id="dispatch-object-s"><a href="#dispatch-object-s" class="headerlink" title="dispatch_object_s"></a>dispatch_object_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_object_s, dispatch_object_vtable_s);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_STRUCT_HEADER(x, y)        \</span></span><br><span class="line">    <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">y</span> *<span class="title">do_vtable</span>;</span>      \   <span class="comment">// 这个结构体内包含了这个 dispatch_object_s 的操作函数</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">x</span> *<span class="title">volatile</span> <span class="title">do_next</span>;</span>     \   <span class="comment">// 链表的 next</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> do_ref_cnt;        \   <span class="comment">// 引用计数</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> do_xref_cnt;       \   <span class="comment">// 外部引用计数</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> do_suspend_cnt;        \   <span class="comment">// suspend计数，用作暂停标志，比如延时处理的任务，设置该引用计数之后；在任务到时后，计时器处理将会将该标志位修改，然后唤醒队列调度</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *<span class="title">do_targetq</span>;</span>\   <span class="comment">// 目标队列，就是当前这个struct x在哪个队列运行</span></span><br><span class="line">    <span class="keyword">void</span> *do_ctxt;                      \   <span class="comment">// 上下文，我们要传递的参数</span></span><br><span class="line">    <span class="keyword">void</span> *do_finalizer</span><br></pre></td></tr></table></figure>
+<p><code>dispatch_object_s</code>结构体是整个GCD的基类，地位十分重要，里面的一些成员已经在注释中做了基本的解释，随着剖析的逐步深入，我们会逐步了解这些成员存在的意义。</p>
+<p>可以看出 do_vtable 的类型是<code>dispatch_object_vtable_s</code>：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_vtable_s</span> &#123;</span></span><br><span class="line">    DISPATCH_VTABLE_HEADER(dispatch_object_s);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_VTABLE_HEADER(x)   \</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">const</span> do_type;    \                           <span class="comment">// 数据的具体类型</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *<span class="keyword">const</span> do_kind; \                                <span class="comment">// 数据的类型描述字符串</span></span><br><span class="line">    <span class="keyword">size_t</span> (*<span class="keyword">const</span> do_debug)(struct x *, <span class="keyword">char</span> *, <span class="keyword">size_t</span>);   \   <span class="comment">// 用来获取调试时需要的变量信息</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *(*<span class="title">const</span> <span class="title">do_invoke</span>)(<span class="title">struct</span> <span class="title">x</span> *);</span>\   <span class="comment">// 唤醒队列的方法，全局队列和主队列此项为NULL</span></span><br><span class="line">    <span class="keyword">bool</span> (*<span class="keyword">const</span> do_probe)(struct x *); \                       <span class="comment">// 用于检测传入对象中的一些值是否满足条件</span></span><br><span class="line">    <span class="keyword">void</span> (*<span class="keyword">const</span> do_dispose)(struct x *)                        <span class="comment">// 销毁队列的方法，通常内部会调用 这个对象的 finalizer 函数</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_type(x) (x)-&gt;do_vtable-&gt;do_type</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_kind(x) (x)-&gt;do_vtable-&gt;do_kind</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_debug(x, y, z) (x)-&gt;do_vtable-&gt;do_debug((x), (y), (z))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_dispose(x) (x)-&gt;do_vtable-&gt;do_dispose(x)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_invoke(x) (x)-&gt;do_vtable-&gt;do_invoke(x)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> dx_probe(x) (x)-&gt;do_vtable-&gt;do_probe(x)</span></span><br></pre></td></tr></table></figure></p>
+<p>这个结构体内包含了这个<code>dispatch_object_s</code> 的操作函数，而且针对这些操作函数，定义了相对简短的宏，方便调用</p>
+<h3 id="dispatch-continuation-s"><a href="#dispatch-continuation-s" class="headerlink" title="dispatch_continuation_s"></a>dispatch_continuation_s</h3><p>该结构体主要用来封装block和function<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_continuation_s</span> &#123;</span></span><br><span class="line">    DISPATCH_CONTINUATION_HEADER(dispatch_continuation_s);</span><br><span class="line">    <span class="keyword">dispatch_group_t</span>    dc_group;</span><br><span class="line">    <span class="keyword">void</span> *              dc_data[<span class="number">3</span>];</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_CONTINUATION_HEADER(x) \</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">void</span> *        do_vtable;  \</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">x</span> *<span class="title">volatile</span>  <span class="title">do_next</span>;</span>    \</span><br><span class="line">    <span class="keyword">dispatch_function_t</span> dc_func;    \</span><br><span class="line">    <span class="keyword">void</span> *          dc_ctxt</span><br></pre></td></tr></table></figure></p>
+<p><code>dispatch_continuation_s</code> 代表任务类型，通常 <code>dispatch_async</code>内的block最终都会封装成这个数据类型</p>
+<blockquote>
+<p>If dc_vtable is less than 127, then the object is a continuation.<br>Otherwise, the object has a private layout and memory management rules. The<br>first two words must align with normal objects.</p>
+</blockquote>
+<h3 id="dispatch-queue-s"><a href="#dispatch-queue-s" class="headerlink" title="dispatch_queue_s"></a>dispatch_queue_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_QUEUE_MIN_LABEL_SIZE   64</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_QUEUE_HEADER \</span></span><br><span class="line">    <span class="keyword">uint32_t</span> dq_running; \</span><br><span class="line">    <span class="keyword">uint32_t</span> dq_width; \</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *<span class="title">dq_items_tail</span>;</span> \</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *<span class="title">volatile</span> <span class="title">dq_items_head</span>;</span> \</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> dq_serialnum; \</span><br><span class="line">    <span class="keyword">void</span> *dq_finalizer_ctxt; \</span><br><span class="line">    <span class="keyword">dispatch_queue_finalizer_function_t</span> dq_finalizer_func</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_queue_s, dispatch_queue_vtable_s);</span><br><span class="line">    DISPATCH_QUEUE_HEADER;</span><br><span class="line">    <span class="keyword">char</span> dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE];   <span class="comment">// must be last</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看出，<code>dispatch_queue_s</code> 和 <code>dispatch_object_s</code> 差别在于 <code>dispatch_queue_s</code> 多了<code>DISPATCH_QUEUE_HEADER</code> 和 <code>dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE]</code>，我们从中也可以看出，我们队列起名要少于64个字符</p>
+<h3 id="dispatch-group-s"><a href="#dispatch-group-s" class="headerlink" title="dispatch_group_s"></a>dispatch_group_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_DECL(dispatch_group);</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DISPATCH_DECL(name) typedef struct name##_s *name##_t;</span></span><br></pre></td></tr></table></figure>
+<p>可以看出，<code>dispatch_group_t</code> 等效于 <code>dispatch_group_s</code>*，那么<code>dispatch_group_s</code>究竟本质是什么呢？当我去找<code>dispatch_group_s</code>的定义时，无论如何也找不到，终究还是不能获悉<code>dispatch_group_s</code>的真正结构，看来只有另辟蹊径。</p>
+<p>在看源码的过程中，在<code>semaphore.c</code>文件中的<code>dispatch_group_create</code>函数定义中发现了一些端倪<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">dispatch_group_t</span></span><br><span class="line">dispatch_group_create(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">dispatch_group_t</span>)dispatch_semaphore_create(LONG_MAX);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果令人十分诧异：<br><code>dispatch_group_t</code>本质上竟然是一个value为LONG_MAX的semaphore ！！！</p>
+<h3 id="dispatch-source-s"><a href="#dispatch-source-s" class="headerlink" title="dispatch_source_s"></a>dispatch_source_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_source_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_source_s, dispatch_source_vtable_s);</span><br><span class="line">    DISPATCH_QUEUE_HEADER;</span><br><span class="line">    <span class="comment">// Instruments always copies DISPATCH_QUEUE_MIN_LABEL_SIZE, which is 64,</span></span><br><span class="line">    <span class="comment">// so the remainder of the structure must be big enough</span></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">char</span> _ds_pad[DISPATCH_QUEUE_MIN_LABEL_SIZE];</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">            <span class="keyword">char</span> dq_label[<span class="number">8</span>];</span><br><span class="line">            <span class="keyword">dispatch_kevent_t</span> ds_dkev;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">dispatch_source_handler_function_t</span> ds_handler_func;</span><br><span class="line">            <span class="keyword">void</span> *ds_handler_ctxt;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">void</span> *ds_cancel_handler;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> ds_is_level:<span class="number">1</span>,</span><br><span class="line">            ds_is_adder:<span class="number">1</span>,</span><br><span class="line">            ds_is_installed:<span class="number">1</span>,</span><br><span class="line">            ds_needs_rearm:<span class="number">1</span>,</span><br><span class="line">            ds_is_armed:<span class="number">1</span>,</span><br><span class="line">            ds_is_legacy:<span class="number">1</span>,</span><br><span class="line">            ds_cancel_is_block:<span class="number">1</span>,</span><br><span class="line">            ds_handler_is_block:<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> ds_atomic_flags;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_data;</span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_pending_data;</span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_pending_data_mask;</span><br><span class="line">            </span><br><span class="line">            TAILQ_ENTRY(dispatch_source_s) ds_list;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">unsigned</span> <span class="keyword">long</span> ds_ident_hack;</span><br><span class="line">            </span><br><span class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_timer_source_s</span> <span class="title">ds_timer</span>;</span></span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="dispatch-semaphore-s"><a href="#dispatch-semaphore-s" class="headerlink" title="dispatch_semaphore_s"></a>dispatch_semaphore_s</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_semaphore_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_semaphore_s, dispatch_semaphore_vtable_s);</span><br><span class="line">    <span class="keyword">long</span> dsema_value;   <span class="comment">// 信号值</span></span><br><span class="line">    <span class="keyword">long</span> dsema_orig;    <span class="comment">// 记录其初始值，或者成为原始值，这是创建信号时设置的</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 只是一个防止信号量被意外唤醒的变量，这个变量，在signal过程中+1，然后wait的时候如果发现这个值不是1，</span></span><br><span class="line">    <span class="comment">// 那么直接就返回了，而不会进入接下来的sim_wait</span></span><br><span class="line">    <span class="keyword">size_t</span> dsema_sent_ksignals;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">semaphore_t</span> dsema_port;</span><br><span class="line">    <span class="keyword">semaphore_t</span> dsema_waiter_port;</span><br><span class="line">    <span class="keyword">size_t</span> dsema_group_waiters;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sema_notify_s</span> *<span class="title">dsema_notify_head</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sema_notify_s</span> *<span class="title">dsema_notify_tail</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="UML图"><a href="#UML图" class="headerlink" title="UML图"></a>UML图</h2><p><img src="/2018/01/31/GCD源码分析1 —— 开篇/02.png"></p>
+<h2 id="libdispatch初始化"><a href="#libdispatch初始化" class="headerlink" title="libdispatch初始化"></a>libdispatch初始化</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">libdispatch_init</span><span class="params">(<span class="keyword">void</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 这些assert就不说了，保证定义的宏不出问题</span></span><br><span class="line">    dispatch_assert(DISPATCH_QUEUE_PRIORITY_COUNT == <span class="number">3</span>);</span><br><span class="line">    dispatch_assert(DISPATCH_ROOT_QUEUE_COUNT == <span class="number">6</span>);</span><br><span class="line"></span><br><span class="line">    dispatch_assert(DISPATCH_QUEUE_PRIORITY_LOW == -DISPATCH_QUEUE_PRIORITY_HIGH);</span><br><span class="line">    dispatch_assert(countof(_dispatch_root_queues) == DISPATCH_ROOT_QUEUE_COUNT);</span><br><span class="line">    dispatch_assert(countof(_dispatch_thread_mediator) == DISPATCH_ROOT_QUEUE_COUNT);</span><br><span class="line">    dispatch_assert(countof(_dispatch_root_queue_contexts) == DISPATCH_ROOT_QUEUE_COUNT);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// TSD池分配</span></span><br><span class="line">    _dispatch_thread_key_init_np(dispatch_queue_key, _dispatch_queue_cleanup);</span><br><span class="line">    _dispatch_thread_key_init_np(dispatch_sema4_key, (<span class="keyword">void</span> (*)(<span class="keyword">void</span> *))dispatch_release);   <span class="comment">// use the extern release</span></span><br><span class="line">    _dispatch_thread_key_init_np(dispatch_cache_key, _dispatch_cache_cleanup2);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> DISPATCH_PERF_MON</span></span><br><span class="line">    _dispatch_thread_key_init_np(dispatch_bcounter_key, <span class="literal">NULL</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 主线程设置TSD</span></span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, &amp;_dispatch_main_q);</span><br><span class="line"></span><br><span class="line">    _dispatch_queue_set_width_init();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="pthread-key-t"><a href="#pthread-key-t" class="headerlink" title="pthread_key_t"></a>pthread_key_t</h3><p>在多线程环境下，由于数据空间是共享的，因此全局变量也为所有线程所共有。但有时应用程序设计中有必要提供线程私有的全局变量，仅在某个线程中有效，但却可以跨多个函数访问，比如程序可能需要每个线程维护一个链表，而使用相同的函数操作，最简单的办法就是使用同名而不同变量地址的线程相关数据结构，这样的数据结构称为 <strong>线程私有数据（Thread-specific Data，或TSD）</strong>。<br>GCD一共定义了4个key：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> dispatch_queue_key = __PTK_LIBDISPATCH_KEY0;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> dispatch_sema4_key = __PTK_LIBDISPATCH_KEY1;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> dispatch_cache_key = __PTK_LIBDISPATCH_KEY2;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> dispatch_bcounter_key = __PTK_LIBDISPATCH_KEY3;</span><br></pre></td></tr></table></figure></p>
+<h3 id="pthread-key-create"><a href="#pthread-key-create" class="headerlink" title="pthread_key_create"></a>pthread_key_create</h3><p><code>_dispatch_thread_key_init_np</code>调用<code>pthread_key_create</code><br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int pthread_key_create(pthread_key_t *key, void (*destr_function) (void *))</span><br></pre></td></tr></table></figure></p>
+<p>该函数从TSD池中分配一项，将其值赋给key供以后访问使用。如果destr_function不为空，在线程退出（pthread_exit()）时将以key所关联的数据为参数调用destr_function()，以释放分配的缓冲区。<br>不论哪个线程调用pthread_key_create()，所创建的key都是所有线程可访问的，但各个线程可根据自己的需要往key中填入不同的值，这些值特定于线程并且针对每个线程单独维护。这就相当于提供了一个同名而不同值的全局变量。</p>
+<h3 id="pthread-setspecific-amp-pthread-getspecific"><a href="#pthread-setspecific-amp-pthread-getspecific" class="headerlink" title="pthread_setspecific &amp; pthread_getspecific"></a>pthread_setspecific &amp; pthread_getspecific</h3><p>这里主线程将自己的TSD设置为<code>_dispatch_main_q</code>函数的地址<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_dispatch_thread_setspecific(dispatch_queue_key, &amp;_dispatch_main_q);</span><br></pre></td></tr></table></figure></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文涉及到的基本数据结构只是为了跟大家混个脸熟，实际上为了讲数据结构而讲数据结构，也并非能讲清楚，在后续的GCD源码分析系列中将会逐步阐明。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/01/31/GCD源码分析1 —— 开篇/">GCD源码分析1 —— 开篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年01月31日 - 22:01</p>
+  <p><span>最后更新:</span>2018年02月08日 - 23:02</p>
+  <p><span>原始链接:</span><a href="/2018/01/31/GCD源码分析1 —— 开篇/" title="GCD源码分析1 —— 开篇">https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/01/31/GCD源码分析1 —— 开篇/">GCD源码分析1 —— 开篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年01月31日 - 22:01</p>
+  <p><span>最后更新:</span>2018年02月08日 - 23:02</p>
+  <p><span>原始链接:</span><a href="/2018/01/31/GCD源码分析1 —— 开篇/" title="GCD源码分析1 —— 开篇">https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/01/31/GCD源码分析1 —— 开篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/30/iOS启动优化/" rel="next" title="iOS启动优化">
+                <i class="fa fa-chevron-left"></i> iOS启动优化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/01/GCD源码分析2 —— dispatch-once篇/" rel="prev" title="GCD源码分析2 —— dispatch_once篇">
+                GCD源码分析2 —— dispatch_once篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GCD版本选择"><span class="nav-number">2.</span> <span class="nav-text">GCD版本选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#前期准备"><span class="nav-number">3.</span> <span class="nav-text">前期准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#原子操作"><span class="nav-number">3.1.</span> <span class="nav-text">原子操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#builtin-expect"><span class="nav-number">3.2.</span> <span class="nav-text">__builtin_expect</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fastpath-amp-amp-slowpath"><span class="nav-number">3.3.</span> <span class="nav-text">fastpath &amp;&amp; slowpath</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DISPATCH-DECL"><span class="nav-number">3.4.</span> <span class="nav-text">DISPATCH_DECL</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基本数据结构"><span class="nav-number">4.</span> <span class="nav-text">基本数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-object-t"><span class="nav-number">4.1.</span> <span class="nav-text">dispatch_object_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-object-s"><span class="nav-number">4.2.</span> <span class="nav-text">dispatch_object_s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-continuation-s"><span class="nav-number">4.3.</span> <span class="nav-text">dispatch_continuation_s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-queue-s"><span class="nav-number">4.4.</span> <span class="nav-text">dispatch_queue_s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-group-s"><span class="nav-number">4.5.</span> <span class="nav-text">dispatch_group_s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-source-s"><span class="nav-number">4.6.</span> <span class="nav-text">dispatch_source_s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-semaphore-s"><span class="nav-number">4.7.</span> <span class="nav-text">dispatch_semaphore_s</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UML图"><span class="nav-number">5.</span> <span class="nav-text">UML图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#libdispatch初始化"><span class="nav-number">6.</span> <span class="nav-text">libdispatch初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-key-t"><span class="nav-number">6.1.</span> <span class="nav-text">pthread_key_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-key-create"><span class="nav-number">6.2.</span> <span class="nav-text">pthread_key_create</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-setspecific-amp-pthread-getspecific"><span class="nav-number">6.3.</span> <span class="nav-text">pthread_setspecific &amp; pthread_getspecific</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

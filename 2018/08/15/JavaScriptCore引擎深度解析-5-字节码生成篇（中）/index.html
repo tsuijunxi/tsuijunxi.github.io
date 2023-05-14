@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore ByteCode," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言上一节讲到继承自ScopeNode的4种Node：ProgramNode、EvalNode、FunctionNode和ModuleProgramNode，它们的字节码生成最终均走到了emitStatementsBytecode方法中。 字节码指令集在分析之前，先大概了解下字节码的长相：123456789101112131415161718192021&amp;#123;        &quot;section">
+<meta name="keywords" content="JavaScriptCore ByteCode">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（中）">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言上一节讲到继承自ScopeNode的4种Node：ProgramNode、EvalNode、FunctionNode和ModuleProgramNode，它们的字节码生成最终均走到了emitStatementsBytecode方法中。 字节码指令集在分析之前，先大概了解下字节码的长相：123456789101112131415161718192021&amp;#123;        &quot;section">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/09.png">
+<meta property="og:updated_time" content="2019-04-25T15:40:25.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（中）">
+<meta name="twitter:description" content="前言上一节讲到继承自ScopeNode的4种Node：ProgramNode、EvalNode、FunctionNode和ModuleProgramNode，它们的字节码生成最终均走到了emitStatementsBytecode方法中。 字节码指令集在分析之前，先大概了解下字节码的长相：123456789101112131415161718192021&amp;#123;        &quot;section">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/04.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析5-字节码生成篇（中） | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析5-字节码生成篇（中）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-15T00:34:33+08:00">
+                2018-08-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,813
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  13
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一节讲到继承自<code>ScopeNode</code>的4种<code>Node</code>：<code>ProgramNode</code>、<code>EvalNode</code>、<code>FunctionNode</code>和<code>ModuleProgramNode</code>，它们的字节码生成最终均走到了<code>emitStatementsBytecode</code>方法中。</p>
+<h2 id="字节码指令集"><a href="#字节码指令集" class="headerlink" title="字节码指令集"></a>字节码指令集</h2><p>在分析之前，先大概了解下字节码的长相：<br><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        <span class="attr">"section"</span> : <span class="string">"Bytecodes"</span>, <span class="attr">"emitInHFile"</span> : <span class="literal">true</span>, <span class="attr">"emitInASMFile"</span> : <span class="literal">true</span>, </span><br><span class="line">        <span class="attr">"macroNameComponent"</span> : <span class="string">"BYTECODE"</span>, <span class="attr">"asmPrefix"</span> : <span class="string">"llint_"</span>, </span><br><span class="line">        <span class="attr">"bytecodes"</span> : [</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_enter"</span>, <span class="attr">"length"</span> : <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_get_scope"</span>, <span class="attr">"length"</span> : <span class="number">2</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_create_direct_arguments"</span>, <span class="attr">"length"</span> : <span class="number">2</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_create_scoped_arguments"</span>, <span class="attr">"length"</span> : <span class="number">3</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_create_cloned_arguments"</span>, <span class="attr">"length"</span> : <span class="number">2</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_create_this"</span>, <span class="attr">"length"</span> : <span class="number">5</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_to_this"</span>, <span class="attr">"length"</span> : <span class="number">4</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_check_tdz"</span>, <span class="attr">"length"</span> : <span class="number">2</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_new_object"</span>, <span class="attr">"length"</span> : <span class="number">4</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_new_array"</span>, <span class="attr">"length"</span> : <span class="number">5</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_new_array_with_size"</span>, <span class="attr">"length"</span> : <span class="number">4</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_new_array_buffer"</span>, <span class="attr">"length"</span> : <span class="number">5</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_new_regexp"</span>, <span class="attr">"length"</span> : <span class="number">3</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_mov"</span>, <span class="attr">"length"</span> : <span class="number">3</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_not"</span>, <span class="attr">"length"</span> : <span class="number">3</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">"name"</span> : <span class="string">"op_eq"</span>, <span class="attr">"length"</span> : <span class="number">4</span> &#125;,</span><br><span class="line">            ...</span><br></pre></td></tr></table></figure></p>
+<p>可以看到指令的名字和长度，最后生成的字节码就是这样的指令集合。在<code>JavaScriptCore/bytecode/BytecodeList.json</code>可以看到完整的指令集</p>
+<h2 id="emitStatementsBytecode"><a href="#emitStatementsBytecode" class="headerlink" title="emitStatementsBytecode"></a>emitStatementsBytecode</h2><p>来看下我们期待很久的<code>emitStatementsBytecode</code>吧，它是<code>ScopeNode</code>的一个方法<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span> ScopeNode::emitStatementsBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!m_statements) <span class="keyword">return</span>;</span><br><span class="line">    m_statements-&gt;emitBytecode(generator, dst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>m_statements</code>的类型为<code>SourceElements</code>，定义如下面的代码所示：它是一个单向链表，里面的节点类型为<code>StatementNode</code>，这意味着存储的节点可以是<code>StatementNode</code>类型，也可以是<code>StatementNode</code>子类型。同时也说明，<code>ScopeNode</code>由一个个串起来的<code>StatementNode</code>组成：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SourceElements</span> <span class="title">final</span> :</span> <span class="keyword">public</span> ParserArenaFreeable &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        SourceElements();</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">append</span><span class="params">(StatementNode*)</span></span>;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* destination)</span></span>;</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        StatementNode* m_head;</span><br><span class="line">        StatementNode* m_tail;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，循环遍历该链表，对其中的每一个节点，生成其对应的字节码<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span> SourceElements::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (StatementNode* statement = m_head; statement; statement = statement-&gt;next())</span><br><span class="line">        generator.emitNodeInTailPosition(dst, statement);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">emitNodeInTailPosition</span><span class="params">(RegisterID* dst, StatementNode* statementNode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Node::emitCode assumes that dst, if provided, is either a local or a referenced temporary.</span></span><br><span class="line">    statementNode-&gt;emitBytecode(*<span class="keyword">this</span>, dst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里的<code>statementNode</code>的类型可以是下面<code>Node</code>中的任意一种，这些<code>Node</code>均继承自<code>StatementNode</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">IfElseNode</span><br><span class="line">DoWhileNode</span><br><span class="line">WhileNode</span><br><span class="line">ForNode</span><br><span class="line">SwitchNode</span><br><span class="line">ClassDecNode</span><br><span class="line">DeclarationStatement</span><br><span class="line">ForInNode</span><br><span class="line">ForOfNode</span><br><span class="line">ContinueNode</span><br><span class="line">BreakNode</span><br><span class="line">ReturnNode</span><br><span class="line">FuncDeclNode</span><br><span class="line">BlockNode</span><br><span class="line">ModuleDeclarationNode</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h2 id="StatementNode"><a href="#StatementNode" class="headerlink" title="StatementNode"></a>StatementNode</h2><p><img src="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/04.png" width="60%"><br><code>StatementNode</code>主要是用来描述语言结构：<br>(1)顺序结构：<code>ClassDeclNode</code>、<code>DeclarationStateMentNode</code>等<br>(2)条件结构：<code>IFElseNode</code>、<code>SwitchNode</code>等<br>(3)循环结构：<code>WhileNode</code>、<code>ForNode</code>、<code>DoWhileNode</code>等</p>
+<p>接下里将挑选一些<code>Node</code>作为代表来进行分析字节码的生成</p>
+<p><strong>回填思想</strong><br>除了顺序结构，条件结构和循环结构本身不会产生具体的逻辑指令，它们主要生成一些跳转指令，来控制程序流的走向，从而达到一定的目的。然而生成一个跳转指令时，可能并不能立刻知晓跳转的目的地，所以暂时不指定该跳转指令的目标标号，等到能够确定正确的目标标号时，才去填充这些指令的目标标号，这种技术叫做回填技术。</p>
+<h3 id="条件结构"><a href="#条件结构" class="headerlink" title="条件结构"></a>条件结构</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// Returns the next available temporary register. Registers returned by</span><br><span class="line">// newTemporary require a modified form of reference counting: any</span><br><span class="line">// register with a refcount of 0 is considered &quot;available&quot;, meaning that</span><br><span class="line">// the next instruction may overwrite it.</span><br></pre></td></tr></table></figure>
+<h4 id="IfElseNode"><a href="#IfElseNode" class="headerlink" title="IfElseNode"></a>IfElseNode</h4><p>在语法分析篇中提到：语法分析在<code>parseIfStatement</code>中对<code>IfStatement</code>做了规范化处理，这里看下它是如何生成字节码的。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> IfElseNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// generator.newLabel 生成一个用于存放标号的 新的临时变量L，返回变量地址</span></span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">    RefPtr&lt;Label&gt; beforeThen = generator.newLabel();</span><br><span class="line">    RefPtr&lt;Label&gt; beforeElse = generator.newLabel();</span><br><span class="line">    RefPtr&lt;Label&gt; afterElse = generator.newLabel();</span><br><span class="line"></span><br><span class="line">    Label* trueTarget = beforeThen.get();</span><br><span class="line">    Label* falseTarget = beforeElse.get();</span><br><span class="line">    FallThroughMode fallThroughMode = FallThroughMeansTrue;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是break和continue</span></span><br><span class="line">    <span class="keyword">bool</span> didFoldIfBlock = tryFoldBreakAndContinue(generator, m_ifBlock, trueTarget, fallThroughMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成条件表达式m_condition的字节码，可能会生成类似goto的指令</span></span><br><span class="line">    <span class="comment">// 如果m_condition为真，goto trueTarget；否则 goto falseTarget</span></span><br><span class="line">    <span class="comment">// 然而此时trueTarget和falseTarget的值还未能明确知道，需要等到整个</span></span><br><span class="line">    <span class="comment">// if-else模块完毕，才可能得到明确的值，这里就会用到回填技术</span></span><br><span class="line">    generator.emitNodeInConditionContext(m_condition, trueTarget, falseTarget, fallThroughMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填beforeThen的地址，标记m_condition为真的跳转指令</span></span><br><span class="line">    <span class="comment">// 注意：这里只是修改beforeThen的值，并没有添加任何指令</span></span><br><span class="line">    generator.emitLabel(beforeThen.get());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是正常的if-else</span></span><br><span class="line">    <span class="keyword">if</span> (!didFoldIfBlock) &#123;</span><br><span class="line">        <span class="comment">// 生成if-block的字节码</span></span><br><span class="line">        generator.emitNodeInTailPosition(dst, m_ifBlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// if模块执行完毕，跳转到afterElse，也就是整个if-else模块的下一条指令</span></span><br><span class="line">        <span class="comment">// ** 注意：这里是一条跳转指令（goto afterElse）**</span></span><br><span class="line">        <span class="keyword">if</span> (m_elseBlock)</span><br><span class="line">            generator.emitJump(afterElse.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 填写beforeElse的地址，标记m_condition为假的跳转指令，也就是else模块的第一条指令</span></span><br><span class="line">    generator.emitLabel(beforeElse.get());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果有else-block，生成其字节码</span></span><br><span class="line">    <span class="keyword">if</span> (m_elseBlock) &#123;</span><br><span class="line">        generator.emitNodeInTailPosition(dst, m_elseBlock);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填afterElse的地址，就是整个if-else模块的下一条指令</span></span><br><span class="line">    generator.emitLabel(afterElse.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看下<code>IfElseNode</code>的SDT：<br><img src="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/08.png" width="60%"></p>
+<h4 id="SwitchNode"><a href="#SwitchNode" class="headerlink" title="SwitchNode"></a>SwitchNode</h4><p><code>SwitchNode</code>肯定都比较熟悉了，来看下它是如何生成字节码的：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> SwitchNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    LabelScopePtr scope = generator.newLabelScope(LabelScope::Switch);</span><br><span class="line"></span><br><span class="line">    RefPtr&lt;RegisterID&gt; r0 = generator.emitNode(m_expr);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 把自己作为一个scope进行push</span></span><br><span class="line">    generator.pushLexicalScope(<span class="keyword">this</span>, BytecodeGenerator::TDZCheckOptimization::DoNotOptimize, BytecodeGenerator::NestedScopeType::IsNested);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成switch&#123;&#125;里面的字节码</span></span><br><span class="line">    m_block-&gt;emitBytecodeForBlock(generator, r0.get(), dst);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// pop scope</span></span><br><span class="line">    generator.popLexicalScope(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填scope的地址，因为switch中的break的跳转地址就是switch模块的下一个地址</span></span><br><span class="line">    <span class="comment">// 这里SwitchNode已经分析完毕，所以就可以回填其地址</span></span><br><span class="line">    generator.emitLabel(scope-&gt;breakTarget());</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>switch{}中包含了若干case语句和defalut语句<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> SwitchType </span><br><span class="line">&#123; </span><br><span class="line">    SwitchNone,</span><br><span class="line">    SwitchImmediate, </span><br><span class="line">    SwitchCharacter, </span><br><span class="line">    SwitchString </span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> CaseBlockNode::emitBytecodeForBlock(BytecodeGenerator&amp; generator, RegisterID* switchExpression, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    RefPtr&lt;Label&gt; defaultLabel;</span><br><span class="line">    Vector&lt;RefPtr&lt;Label&gt;, <span class="number">8</span>&gt; labelVector;</span><br><span class="line">    Vector&lt;ExpressionNode*, <span class="number">8</span>&gt; literalVector;</span><br><span class="line">    <span class="keyword">int32_t</span> min_num = <span class="built_in">std</span>::numeric_limits&lt;<span class="keyword">int32_t</span>&gt;::max();</span><br><span class="line">    <span class="keyword">int32_t</span> max_num = <span class="built_in">std</span>::numeric_limits&lt;<span class="keyword">int32_t</span>&gt;::min();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确认switchType</span></span><br><span class="line">    SwitchInfo::SwitchType switchType = tryTableSwitch(literalVector, min_num, max_num);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (switchType != SwitchInfo::SwitchNone) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果是SwitchImmediate, SwitchCharacter, SwitchString，生成对应的case跳转标签和defalut标签</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">uint32_t</span> i = <span class="number">0</span>; i &lt; literalVector.size(); i++)</span><br><span class="line">            labelVector.append(generator.newLabel());</span><br><span class="line">        defaultLabel = generator.newLabel();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 生成op_switch_imm、op_switch_char、op_switch_string指令，用于比较</span></span><br><span class="line">        generator.beginSwitch(switchExpression, switchType);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 如果是SwitchNone，设置各种跳转</span></span><br><span class="line">        <span class="keyword">for</span> (ClauseListNode* <span class="built_in">list</span> = m_list1; <span class="built_in">list</span>; <span class="built_in">list</span> = <span class="built_in">list</span>-&gt;getNext()) </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; clauseVal = generator.newTemporary();</span><br><span class="line">            <span class="comment">// 生成常量表达式的字节码</span></span><br><span class="line">            generator.emitNode(clauseVal.get(), <span class="built_in">list</span>-&gt;getClause()-&gt;expr());</span><br><span class="line">            <span class="comment">// 比较参数和常量表达式的字节码</span></span><br><span class="line">            generator.emitBinaryOp(op_stricteq, clauseVal.get(), clauseVal.get(), switchExpression, OperandTypes());</span><br><span class="line">            <span class="comment">// 生成一个标签，用于跳转</span></span><br><span class="line">            labelVector.append(generator.newLabel());</span><br><span class="line">            <span class="comment">// 如果比较结果，跳转到对应的标签</span></span><br><span class="line">            generator.emitJumpIfTrue(clauseVal.get(), labelVector[labelVector.size() - <span class="number">1</span>].get());</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 同上</span></span><br><span class="line">        <span class="keyword">for</span> (ClauseListNode* <span class="built_in">list</span> = m_list2; <span class="built_in">list</span>; <span class="built_in">list</span> = <span class="built_in">list</span>-&gt;getNext()) &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; clauseVal = generator.newTemporary();</span><br><span class="line">            generator.emitNode(clauseVal.get(), <span class="built_in">list</span>-&gt;getClause()-&gt;expr());</span><br><span class="line">            generator.emitBinaryOp(op_stricteq, clauseVal.get(), clauseVal.get(), switchExpression, OperandTypes());</span><br><span class="line">            labelVector.append(generator.newLabel());</span><br><span class="line">            generator.emitJumpIfTrue(clauseVal.get(), labelVector[labelVector.size() - <span class="number">1</span>].get());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 为defalut标签设置跳转</span></span><br><span class="line">        defaultLabel = generator.newLabel();</span><br><span class="line">        generator.emitJump(defaultLabel.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">size_t</span> i = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// default前面的case</span></span><br><span class="line">    <span class="keyword">for</span> (ClauseListNode* <span class="built_in">list</span> = m_list1; <span class="built_in">list</span>; <span class="built_in">list</span> = <span class="built_in">list</span>-&gt;getNext()) &#123;</span><br><span class="line">        <span class="comment">// 回填case标签地址</span></span><br><span class="line">        generator.emitLabel(labelVector[i++].get());</span><br><span class="line">        <span class="comment">// case语句生成字节码</span></span><br><span class="line">        <span class="built_in">list</span>-&gt;getClause()-&gt;emitBytecode(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (m_defaultClause) &#123;</span><br><span class="line">        <span class="comment">// 回填default标签地址</span></span><br><span class="line">        generator.emitLabel(defaultLabel.get());</span><br><span class="line">        <span class="comment">// default语句生成字节码</span></span><br><span class="line">        m_defaultClause-&gt;emitBytecode(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// default后面的case</span></span><br><span class="line">    <span class="keyword">for</span> (ClauseListNode* <span class="built_in">list</span> = m_list2; <span class="built_in">list</span>; <span class="built_in">list</span> = <span class="built_in">list</span>-&gt;getNext()) &#123;</span><br><span class="line">        generator.emitLabel(labelVector[i++].get());</span><br><span class="line">        <span class="built_in">list</span>-&gt;getClause()-&gt;emitBytecode(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有defalut，设置其跳转地址为switch结束的地址</span></span><br><span class="line">    <span class="keyword">if</span> (!m_defaultClause)</span><br><span class="line">        generator.emitLabel(defaultLabel.get());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (switchType != SwitchInfo::SwitchNone) &#123;</span><br><span class="line">        generator.endSwitch(labelVector.size(), labelVector.data(), literalVector.data(), defaultLabel.get(), min_num, max_num);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">swtich E</span><br><span class="line">    begin</span><br><span class="line">        case V1 : S1</span><br><span class="line">        case V2: S2</span><br><span class="line">        ...</span><br><span class="line">        case Vn-1 : Sn-1</span><br><span class="line">        default : Sn</span><br><span class="line">    End</span><br></pre></td></tr></table></figure>
+<p>普通情况下，可能都会像这样按照顺序翻译<code>SwitchNode</code>(这种方式比较低效)<br><img src="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/07.png" width="50%"></p>
+<p><code>JavaScriptCore</code>的<code>SwitchNode</code>采取了另一种翻译方式：在代码生成阶段，如果分支的个数在一个较小的范围内，那么这种条件跳转 指令序列可以被翻译成最高效的n路分支。<br><img src="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/06.png" width="100%"><br>可以看到<code>SwitchNone</code>的跳转表不同于其它的3种方式，跳转表提前了，不过这并没有什么本质上的不同</p>
+<h3 id="循环结构"><a href="#循环结构" class="headerlink" title="循环结构"></a>循环结构</h3><h4 id="WhileNode"><a href="#WhileNode" class="headerlink" title="WhileNode"></a>WhileNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> WhileNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 生成一个scope标签，用于continue和break</span></span><br><span class="line">    LabelScopePtr scope = generator.newLabelScope(LabelScope::Loop);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成循环体的起始地址标签</span></span><br><span class="line">    RefPtr&lt;Label&gt; topOfLoop = generator.newLabel();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成条件表达式的字节码，如果为真，跳转到topOfLoop，否则跳转到breakTarget</span></span><br><span class="line">    generator.emitNodeInConditionContext(m_expr, topOfLoop.get(), scope-&gt;breakTarget(), FallThroughMeansTrue);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填起始地址</span></span><br><span class="line">    generator.emitLabel(topOfLoop.get());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 插入op_loop_hint循环指令</span></span><br><span class="line">    generator.emitLoopHint();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 生成循环体的字节码</span></span><br><span class="line">    generator.emitNodeInTailPosition(dst, m_statement);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填continueTarget的地址</span></span><br><span class="line">    generator.emitLabel(scope-&gt;continueTarget());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成条件表达式的字节码，如果为真，跳转到topOfLoop，否则跳转到breakTarget</span></span><br><span class="line">    generator.emitNodeInConditionContext(m_expr, topOfLoop.get(), scope-&gt;breakTarget(), FallThroughMeansFalse);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 回填breakTarget的地址</span></span><br><span class="line">    generator.emitLabel(scope-&gt;breakTarget());</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>来看下<code>WhileNode</code>的SDT<br><img src="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/09.png" width="75%"></p>
+<p>在循环中经常会看到break和continue，来看看他们的字节码如何生成</p>
+<h4 id="BreakNode"><a href="#BreakNode" class="headerlink" title="BreakNode"></a>BreakNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> BreakNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    LabelScopePtr scope = generator.breakTarget(m_ident);</span><br><span class="line">    generator.emitPopScopes(generator.scopeRegister(), scope-&gt;scopeDepth());</span><br><span class="line">    generator.emitJump(scope-&gt;breakTarget());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="ContinueNode"><a href="#ContinueNode" class="headerlink" title="ContinueNode"></a>ContinueNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ContinueNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    LabelScopePtr scope = generator.continueTarget(m_ident);</span><br><span class="line">    generator.emitPopScopes(generator.scopeRegister(), scope-&gt;scopeDepth());</span><br><span class="line">    generator.emitJump(scope-&gt;continueTarget());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这两者最后都是加了跳转指令，跳转到其所属的scope的breakTarget或continueTarget。<br>另外还可以看到对区域进行了pop，这也容易理解，毕竟break和continue在一定的场合下（循环结构和switch条件结构中）才能被使用，如果触发这二者，可能会跳出当前的一个switch区域或者循环区域，直接离开了当前区域。</p>
+<h3 id="顺序结构"><a href="#顺序结构" class="headerlink" title="顺序结构"></a>顺序结构</h3><p>不同于前两种结构，顺序结构将会明显地看到更多更详细的字节码</p>
+<h4 id="ClassDeclNode"><a href="#ClassDeclNode" class="headerlink" title="ClassDeclNode"></a>ClassDeclNode</h4><p>类的声明节点<code>ClassDeclNode</code>的字节码生成语句仅仅只有一行熟悉的代码：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ClassDeclNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    generator.emitNode(dst, m_classDeclaration);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中<code>m_classDeclaration</code>的类型是<code>ClassExprNode</code>，它是<code>ExpressionNode</code>的一个子类，该表达式的字节码生成在后文中将会作详细的分析。</p>
+<h4 id="ReturnNode"><a href="#ReturnNode" class="headerlink" title="ReturnNode"></a>ReturnNode</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ReturnNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 方法忽略返回值</span></span><br><span class="line">    <span class="keyword">if</span> (dst == generator.ignoredResult()) dst = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成return后的表达式的字节码</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; returnRegister = m_value ? </span><br><span class="line">    generator.emitNodeInTailPosition(dst, m_value) : </span><br><span class="line">    generator.emitLoad(dst, jsUndefined());</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">    generator.emitReturn(returnRegister.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">RegisterID* BytecodeGenerator::emitReturn(RegisterID* src)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 实际上这里还有对构造函数的特殊处理</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成一元操作符字节码</span></span><br><span class="line">    <span class="keyword">return</span> emitUnaryNoDstOp(op_ret, src);</span><br><span class="line">&#125;</span><br><span class="line">RegisterID* BytecodeGenerator::emitUnaryNoDstOp(OpcodeID opcodeID, RegisterID* src)</span><br><span class="line">&#123;</span><br><span class="line">    emitOpcode(opcodeID);</span><br><span class="line">    instructions().append(src-&gt;index());</span><br><span class="line">    <span class="keyword">return</span> src;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，在<code>instructions</code>插入了一条<code>op_ret</code>指令，后面的<code>src-&gt;index()</code>是<code>src</code>在虚拟寄存器<code>VirtualRegister</code>的偏移值</p>
+<h4 id="LabelNode"><a href="#LabelNode" class="headerlink" title="LabelNode"></a>LabelNode</h4><p><code>LabelNode</code>的字节码比较简单，主要是生成一个跳转标签<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> LabelNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID* dst)</span><br><span class="line">&#123;</span><br><span class="line">    LabelScopePtr scope = generator.newLabelScope(LabelScope::NamedLabel, &amp;m_name);</span><br><span class="line">    generator.emitNodeInTailPosition(dst, m_statement);</span><br><span class="line">    generator.emitLabel(scope-&gt;breakTarget());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="FuncDeclNode"><a href="#FuncDeclNode" class="headerlink" title="FuncDeclNode"></a>FuncDeclNode</h4><p>函数的声明实际上就是要进行一个函数的注册<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> FuncDeclNode::emitBytecode(BytecodeGenerator&amp; generator, RegisterID*)</span><br><span class="line">&#123;</span><br><span class="line">    generator.hoistSloppyModeFunctionIfNecessary(metadata()-&gt;ident());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> BytecodeGenerator::hoistSloppyModeFunctionIfNecessary(<span class="keyword">const</span> Identifier&amp; functionName)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (m_scopeNode-&gt;hasSloppyModeHoistedFunction(functionName.impl()))</span><br><span class="line">    &#123;</span><br><span class="line">        Variable currentFunctionVariable = variable(functionName);</span><br><span class="line">        RefPtr&lt;RegisterID&gt; currentValue;</span><br><span class="line">        <span class="keyword">if</span> (RegisterID* local = currentFunctionVariable.local())</span><br><span class="line">            currentValue = local;</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; scope = emitResolveScope(<span class="literal">nullptr</span>, currentFunctionVariable);</span><br><span class="line">            currentValue = emitGetFromScope(newTemporary(), scope.get(), currentFunctionVariable, DoNotThrowIfNotFound);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 找到符号表</span></span><br><span class="line">        SymbolTableStackEntry&amp; varScope = m_symbolTableStack[*m_varScopeSymbolTableIndex];</span><br><span class="line">        SymbolTable* varSymbolTable = varScope.m_symbolTable;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 上锁</span></span><br><span class="line">        <span class="function">ConcurrentJITLocker <span class="title">locker</span><span class="params">(ConcurrentJITLocker::NoLockingNecessary)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 寻找函数的符号项</span></span><br><span class="line">        SymbolTableEntry entry = varSymbolTable-&gt;get(locker, functionName.impl());</span><br><span class="line">        <span class="keyword">bool</span> isLexicallyScoped = <span class="literal">false</span>;</span><br><span class="line">        </span><br><span class="line">        emitPutToScope(varScope.m_scope, variableForLocalEntry(functionName, entry, varScope.m_symbolTableConstantIndex, isLexicallyScoped), currentValue.get(), DoNotThrowIfNotFound, InitializationMode::NotInitialization);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/">JavaScriptCore引擎深度解析5-字节码生成篇（中）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月15日 - 00:08</p>
+  <p><span>最后更新:</span>2019年04月25日 - 23:04</p>
+  <p><span>原始链接:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/" title="JavaScriptCore引擎深度解析5-字节码生成篇（中）">https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/">JavaScriptCore引擎深度解析5-字节码生成篇（中）</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年08月15日 - 00:08</p>
+  <p><span>最后更新:</span>2019年04月25日 - 23:04</p>
+  <p><span>原始链接:</span><a href="/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/" title="JavaScriptCore引擎深度解析5-字节码生成篇（中）">https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/15/JavaScriptCore引擎深度解析-5-字节码生成篇（中）/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore-ByteCode/" rel="tag"># JavaScriptCore ByteCode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/" rel="next" title="JavaScriptCore引擎深度解析5-字节码生成篇（上）">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore引擎深度解析5-字节码生成篇（上）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/" rel="prev" title="JavaScriptCore引擎深度解析5-字节码生成篇（下）">
+                JavaScriptCore引擎深度解析5-字节码生成篇（下） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#字节码指令集"><span class="nav-number">2.</span> <span class="nav-text">字节码指令集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#emitStatementsBytecode"><span class="nav-number">3.</span> <span class="nav-text">emitStatementsBytecode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StatementNode"><span class="nav-number">4.</span> <span class="nav-text">StatementNode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#条件结构"><span class="nav-number">4.1.</span> <span class="nav-text">条件结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#IfElseNode"><span class="nav-number">4.1.1.</span> <span class="nav-text">IfElseNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SwitchNode"><span class="nav-number">4.1.2.</span> <span class="nav-text">SwitchNode</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#循环结构"><span class="nav-number">4.2.</span> <span class="nav-text">循环结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#WhileNode"><span class="nav-number">4.2.1.</span> <span class="nav-text">WhileNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#BreakNode"><span class="nav-number">4.2.2.</span> <span class="nav-text">BreakNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ContinueNode"><span class="nav-number">4.2.3.</span> <span class="nav-text">ContinueNode</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顺序结构"><span class="nav-number">4.3.</span> <span class="nav-text">顺序结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ClassDeclNode"><span class="nav-number">4.3.1.</span> <span class="nav-text">ClassDeclNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ReturnNode"><span class="nav-number">4.3.2.</span> <span class="nav-text">ReturnNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LabelNode"><span class="nav-number">4.3.3.</span> <span class="nav-text">LabelNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FuncDeclNode"><span class="nav-number">4.3.4.</span> <span class="nav-text">FuncDeclNode</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#未完待续"><span class="nav-number">5.</span> <span class="nav-text">未完待续</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

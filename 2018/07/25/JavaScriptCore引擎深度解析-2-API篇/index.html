@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。 在JavaScriptCore.h文件中可以看到：1234567891011121314151617#ifndef JavaScriptCore_h#define JavaScriptCore_h#include &amp;lt;JavaScriptCore/JavaScri">
+<meta name="keywords" content="JavaScriptCore">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScriptCore引擎深度解析2—API篇">
+<meta property="og:url" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="前言相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。 在JavaScriptCore.h文件中可以看到：1234567891011121314151617#ifndef JavaScriptCore_h#define JavaScriptCore_h#include &amp;lt;JavaScriptCore/JavaScri">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/04.png">
+<meta property="og:updated_time" content="2018-10-09T15:51:10.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaScriptCore引擎深度解析2—API篇">
+<meta name="twitter:description" content="前言相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。 在JavaScriptCore.h文件中可以看到：1234567891011121314151617#ifndef JavaScriptCore_h#define JavaScriptCore_h#include &amp;lt;JavaScriptCore/JavaScri">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/"/>
+
+
+
+
+
+  <title>JavaScriptCore引擎深度解析2—API篇 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore引擎深度解析2—API篇</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-25T00:27:58+08:00">
+                2018-07-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/iOS-C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6,255
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  30
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。</p>
+<p>在JavaScriptCore.h文件中可以看到：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#ifndef JavaScriptCore_h</span></span><br><span class="line"><span class="meta">#define JavaScriptCore_h</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#include <span class="meta-string">&lt;JavaScriptCore/JavaScript.h&gt;</span></span></span><br><span class="line"><span class="meta">#include <span class="meta-string">&lt;JavaScriptCore/JSStringRefCF.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#if defined(__OBJC__) &amp;&amp; JSC_OBJC_API_ENABLED</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="meta-string">"JSContext.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"JSValue.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"JSManagedValue.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"JSVirtualMachine.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"JSExport.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#endif</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#endif /* JavaScriptCore_h */</span></span><br></pre></td></tr></table></figure></p>
+<p>JavaScriptCore一共向我们暴露了这几个主要的头文件，先看一张全局关系图<br><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/01.png" width="100%"></p>
+<p>接下来逐个阐述，阅读的时候，可能需要回翻，因为有些就好像鸡生蛋、蛋生鸡的哲学问题，无法分清楚先后…</p>
+<h2 id="JSVirtualMachine"><a href="#JSVirtualMachine" class="headerlink" title="JSVirtualMachine"></a>JSVirtualMachine</h2><p>一个JSVirtualMachine的实例就是一个完整独立的JavaScript的执行环境，为JavaScript的执行提供底层资源。</p>
+<p>这个类主要用来做两件事情：</p>
+<blockquote>
+<ul>
+<li>实现JavaScript的并发执行</li>
+<li>JavaScript和Objective-C桥接对象的内存管理</li>
+</ul>
+</blockquote>
+<p>每一个JSContext对象都归属于一个JSVirtualMachine虚拟机。每个虚拟机可以包含多个不同的上下文，并允许在这些不同的上下文之间传值（JSValue对象）。</p>
+<p>然而，每个虚拟机都是完整且独立的，有其独立的堆空间和垃圾回收器，GC无法处理别的虚拟机堆中的对象，因此不能把一个虚拟机中创建的值传给另一个虚拟机。</p>
+<p>接下来来窥探一下源码，先看下<code>JSVirtualMachine</code>的头文件<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">JSVirtualMachine</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="keyword">instancetype</span>)init;</span><br><span class="line">- (<span class="keyword">void</span>)addManagedReference:(<span class="keyword">id</span>)object withOwner:(<span class="keyword">id</span>)owner;</span><br><span class="line">- (<span class="keyword">void</span>)removeManagedReference:(<span class="keyword">id</span>)object withOwner:(<span class="keyword">id</span>)owner;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<p>接下来看下<code>JSVirtualMachine</code>的mm文件<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JSVirtualMachine</span> </span>&#123;</span><br><span class="line">    JSContextGroupRef m_group;<span class="comment">// JSContext集合</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_contextCache;</span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_externalObjectGraph;</span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_externalRememberedSet;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init</span><br><span class="line">&#123;</span><br><span class="line">    JSContextGroupRef group = JSContextGroupCreate();</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">self</span> initWithContextGroupRef:group];</span><br><span class="line">    <span class="comment">// The extra JSContextGroupRetain is balanced here.</span></span><br><span class="line">    JSContextGroupRelease(group);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 主要逻辑在`initWithContextGroupRef:`方法中，这里做了精简</span></span><br><span class="line">- (<span class="keyword">instancetype</span>)initWithContextGroupRef:(JSContextGroupRef)group</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Retain操作</span></span><br><span class="line">    m_group = JSContextGroupRetain(group);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 实际上这3个属性都是NSMapTable哈希表</span></span><br><span class="line">    m_contextCache = [[<span class="built_in">NSMapTable</span> alloc] initWith...];</span><br><span class="line">    m_externalObjectGraph = [[<span class="built_in">NSMapTable</span> alloc] initWith...];</span><br><span class="line">    m_externalRememberedSet = [[<span class="built_in">NSMapTable</span> alloc] initWith...;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// 建立JSContextGroupRef和JSVirtualMachine的映射</span></span><br><span class="line">    [JSVMWrapperCache addWrapper:<span class="keyword">self</span> forJSContextGroupRef:group];</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>倒数第二行代码的映射，实际上也是放到一个全局的NSMapTable表中，JSContextGroupRef为key，JSVirtualMachine为value，这样给定一个<code>JSContextGroupRef</code>，就可以比较方便地定位到其所属的<code>JSVirtualMachine</code>。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// globalWrapperCache = [[NSMapTable alloc] initWithKeyOptions:keyOptions valueOptions:valueOptions capacity:0];</span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)addWrapper:(JSVirtualMachine *)wrapper forJSContextGroupRef:(JSContextGroupRef)group</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">std</span>::lock_guard&lt;StaticLock&gt; lock(wrapperCacheMutex);</span><br><span class="line">    NSMapInsert(globalWrapperCache, group, wrapper);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="addManagedReference"><a href="#addManagedReference" class="headerlink" title="addManagedReference"></a>addManagedReference</h3><p>实际上，我们更想关注的是它的两个方法，因为这两个方法涉及到了JS对象和OC对象的内存管理，为了看的更为清晰一点，先看下该方法如何被调用的。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)testDemo</span><br><span class="line">&#123;</span><br><span class="line">    JSContext *context = [[JSContext alloc] init];</span><br><span class="line">    JSValue *message = [JSValue valueWithObject:<span class="string">@"hello"</span> inContext:context];</span><br><span class="line">    JSCollection *collection = [[JSCollection alloc] init];</span><br><span class="line">    JSValue *jsCollection = [JSValue valueWithObject:collection inContext:context];</span><br><span class="line">    JSManagedValue *weakCollection = [JSManagedValue managedValueWithValue:jsCollection andOwner:rootObject];</span><br><span class="line">    [context.virtualMachine addManagedReference:weakCollection withOwner:message];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到<code>addManagedReference</code>的第一个参数是一个<code>JSManagedValue</code>对象，第二个参数是一个<code>JSValue</code>。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)addManagedReference:(<span class="keyword">id</span>)object withOwner:(<span class="keyword">id</span>)owner</span><br><span class="line">&#123;    </span><br><span class="line">    <span class="comment">// 增加owner的引用计数</span></span><br><span class="line">    <span class="keyword">if</span> ([object isKindOfClass:[JSManagedValue <span class="keyword">class</span>]])</span><br><span class="line">        [object didAddOwner:owner];</span><br><span class="line">        </span><br><span class="line">    <span class="comment">// unwrap对象，请参考getInternalObjcObject方法</span></span><br><span class="line">    object = getInternalObjcObject(object);</span><br><span class="line">    owner = getInternalObjcObject(owner);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!object || !owner) <span class="keyword">return</span>;</span><br><span class="line">    </span><br><span class="line">    JSC::JSLockHolder locker(toJS(m_group));</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> isOldExternalObject:owner] &amp;&amp; ![<span class="keyword">self</span> isOldExternalObject:object])</span><br><span class="line">        [<span class="keyword">self</span> addExternalRememberedObject:owner];</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// m_externalObjectGraph存放ownedObjects</span></span><br><span class="line">    <span class="comment">// ownedObjects存放object的引用计数</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *ownedObjects = [m_externalObjectGraph objectForKey:owner];</span><br><span class="line">    <span class="keyword">if</span> (!ownedObjects) &#123;</span><br><span class="line">        <span class="built_in">NSPointerFunctionsOptions</span> weakIDOptions = <span class="built_in">NSPointerFunctionsWeakMemory</span> | <span class="built_in">NSPointerFunctionsObjectPersonality</span>;</span><br><span class="line">        <span class="built_in">NSPointerFunctionsOptions</span> integerOptions = <span class="built_in">NSPointerFunctionsOpaqueMemory</span> | <span class="built_in">NSPointerFunctionsIntegerPersonality</span>;</span><br><span class="line">        ownedObjects = [[<span class="built_in">NSMapTable</span> alloc] initWithKeyOptions:weakIDOptions valueOptions:integerOptions capacity:<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">        [m_externalObjectGraph setObject:ownedObjects forKey:owner];</span><br><span class="line">        [ownedObjects release];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    size_t count = reinterpret_cast&lt;size_t&gt;(<span class="built_in">NSMapGet</span>(ownedObjects, object));</span><br><span class="line">    <span class="built_in">NSMapInsert</span>(ownedObjects, object, reinterpret_cast&lt;<span class="keyword">void</span>*&gt;(count + <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="didAddOwner"><a href="#didAddOwner" class="headerlink" title="didAddOwner"></a>didAddOwner</h4><p>可以看到，方法的一开始逻辑<code>didAddOwner</code>，就是为JSValue增加引用计数，并存放到<code>m_owners</code>中，<code>m_owners</code>是<code>JSManagedValue</code>的一个属性：<code>NSMapTable *m_owners;</code>。<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)didAddOwner:(id)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">size_t</span> count = <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">size_t</span>&gt;(NSMapGet(m_owners, owner));</span><br><span class="line">    NSMapInsert(m_owners, owner, <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">void</span>*&gt;(count + <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="getInternalObjcObject"><a href="#getInternalObjcObject" class="headerlink" title="getInternalObjcObject"></a>getInternalObjcObject</h4><p>接下来的<code>getInternalObjcObject</code>的代码如下，用一个字来解释：unwrap<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> id <span class="title">getInternalObjcObject</span><span class="params">(id object)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> ([object isKindOfClass:[JSManagedValue class]]) &#123;</span><br><span class="line">        <span class="comment">// static_cast编译时类型检查，必须人工保证</span></span><br><span class="line">        JSValue* value = [<span class="keyword">static_cast</span>&lt;JSManagedValue *&gt;(object) value];</span><br><span class="line">        id temp = tryUnwrapObjcObject([value.context JSGlobalContextRef], [value JSValueRef]);</span><br><span class="line">        <span class="keyword">if</span> (temp)</span><br><span class="line">            <span class="keyword">return</span> temp;</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ([object isKindOfClass:[JSValue class]]) &#123;</span><br><span class="line">        JSValue *value = <span class="keyword">static_cast</span>&lt;JSValue *&gt;(object);</span><br><span class="line">        object = tryUnwrapObjcObject([value.context JSGlobalContextRef], [value JSValueRef]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> object;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="removeManagedReference"><a href="#removeManagedReference" class="headerlink" title="removeManagedReference"></a>removeManagedReference</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)removeManagedReference:(<span class="keyword">id</span>)object withOwner:(<span class="keyword">id</span>)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// JSManageredValue减少owner引用计数</span></span><br><span class="line">    <span class="keyword">if</span> ([object isKindOfClass:[JSManagedValue <span class="keyword">class</span>]])</span><br><span class="line">        [object didRemoveOwner:owner];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// unwrap</span></span><br><span class="line">    object = getInternalObjcObject(object);</span><br><span class="line">    owner = getInternalObjcObject(owner);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!object || !owner) <span class="keyword">return</span>;</span><br><span class="line">    </span><br><span class="line">    JSC::JSLockHolder locker(toJS(m_group));</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 查找owner对应的ownedObjects</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *ownedObjects = [m_externalObjectGraph objectForKey:owner];</span><br><span class="line">    <span class="keyword">if</span> (!ownedObjects) <span class="keyword">return</span>;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// 从ownedObjects查找object对应的引用计数，并减一</span></span><br><span class="line">    size_t count = reinterpret_cast&lt;size_t&gt;(<span class="built_in">NSMapGet</span>(ownedObjects, object));</span><br><span class="line">    <span class="keyword">if</span> (count &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">NSMapInsert</span>(ownedObjects, object, reinterpret_cast&lt;<span class="keyword">void</span>*&gt;(count - <span class="number">1</span>));</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (count == <span class="number">1</span>)</span><br><span class="line">        <span class="built_in">NSMapRemove</span>(ownedObjects, object);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (![ownedObjects count]) &#123;</span><br><span class="line">        [m_externalObjectGraph removeObjectForKey:owner];</span><br><span class="line">        [m_externalRememberedSet removeObjectForKey:owner];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="didRemoveOwner"><a href="#didRemoveOwner" class="headerlink" title="didRemoveOwner"></a>didRemoveOwner</h4><p><code>didRemoveOwner</code>是<code>didAddOwner</code>的逆过程，减少引用计数，如果减少之后为0，就将owner从<code>m_owners</code>中移除<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)didRemoveOwner:(id)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">size_t</span> count = <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">size_t</span>&gt;(NSMapGet(m_owners, owner));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!count) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (count == <span class="number">1</span>) &#123;</span><br><span class="line">        NSMapRemove(m_owners, owner);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    NSMapInsert(m_owners, owner, <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">void</span>*&gt;(count - <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>是不是已经感觉凌乱了？我们先看一下图：<br><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/08.png" width="100%"></p>
+<p><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/09.png" width="100%"></p>
+<p>实际上到这里，我们也没讲明白，JSVirturlMachine和JSManagedValue是怎么做到有条件强持有的，并且没有循环引用。</p>
+<p>以下是我的一点推理：<br><strong>我们知道Objective-C的内存管理是ARC，而JavaScript的是GC，我们这里已经研究到JavaScriptCore的源码层面，GC的实现也必然在这里。不管怎样，一个JavaScript的对象要想真正的释放，对应到JavaScriptCore源码层级，必然对应到某一个C++对象的析构函数的调用，否则这个GC就无法实现。有了这个前提，上面的代码就派上用处了：当我们使用<code>JSManagedValue</code>对象JMV去包裹了一个<code>JSValue</code>对象JV的时候（JMV对象并没有强持有JV对象，而是弱引用），只要JMV对象的生命周期还在，我们就能在<code>m_externalObjectGraph</code>寻找到至少一个JV对象对应的JMV对象，那么就可以在GC回收内存的时候告诉它，不要释放JV对象，尽管该JV对象的引用计数已经可能为0，可能已经成为孤岛。这样，只要<code>JSValue</code>的内存块没有被释放掉，它就可以一直被我们访问。如果到了某一个时刻，我们在<code>m_externalObjectGraph</code>找不到任何JV对应的JMV对象，GC就可以把JV的内存收回了。并且在这整个过程中，没有产生循环引用。</strong></p>
+<p>实际上这部分内容在<code>scanExternalObjectGraph</code>方法中可以看到一些端倪，感兴趣的童鞋可以看一下。</p>
+<h2 id="JSContext"><a href="#JSContext" class="headerlink" title="JSContext"></a>JSContext</h2><p>一个JSContext对象代表一个JavaScript执行环境。在native代码中，使用JSContext去执行JS代码，访问JS中定义或者计算的值，并使JavaScript可以访问native的对象、方法、函数，它就好像是OC和JS语言之间的一座桥梁。</p>
+<p><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/02.png" width="100%"></p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SValue *value = [context evaluateScript:<span class="string">@"var a = 1+2*3;"</span>];</span><br><span class="line"></span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"a = %@"</span>, [context objectForKeyedSubscript:<span class="string">@"a"</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"a = %@"</span>, [context.globalObject objectForKeyedSubscript:<span class="string">@"a"</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"a = %@"</span>, context[<span class="string">@"a"</span>]);</span><br></pre></td></tr></table></figure>
+<h3 id="JSContext初始化"><a href="#JSContext初始化" class="headerlink" title="JSContext初始化"></a>JSContext初始化</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)initWithVirtualMachine:(JSVirtualMachine *)virtualMachine</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 可以看到，JSContext对JSVirtualMachine做了强持有</span></span><br><span class="line">    m_virtualMachine = [virtualMachine <span class="keyword">retain</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从virtualMachine获取group，并在group中创建m_context</span></span><br><span class="line">    m_context = JSGlobalContextCreateInGroup(getGroupFromVirtualMachine(virtualMachine), <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建m_wrapperMap集合，用来存放JSValue对象</span></span><br><span class="line">    m_wrapperMap = [[JSWrapperMap alloc] initWithContext:<span class="keyword">self</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将自己添加到virtualMachine中的m_context字典中，一个JSVirtualMachine可以对应多个JSContext</span></span><br><span class="line">    [m_virtualMachine addContext:<span class="keyword">self</span> forGlobalContextRef:m_context];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="全局对象"><a href="#全局对象" class="headerlink" title="全局对象"></a>全局对象</h3><p>肤浅地看下全局对象（因为这个方法深究下去，非常复杂），简而言之，一个JSContext对应着一个全局对象<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- (JSValue *)globalObject</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> [JSValue valueWithJSValueRef:JSContextGetGlobalObject(m_context) inContext:<span class="keyword">self</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">JSObjectRef <span class="title">JSContextGetGlobalObject</span><span class="params">(JSContextRef ctx)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!ctx) &#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取当前脚本执行状态</span></span><br><span class="line">    ExecState* exec = toJS(ctx);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 上锁</span></span><br><span class="line">    <span class="function">JSLockHolder <span class="title">locker</span><span class="params">(exec)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里就相当复杂了，后续篇章可能会涉及到</span></span><br><span class="line">    <span class="keyword">return</span> toRef(jsCast&lt;JSObject*&gt;(exec-&gt;lexicalGlobalObject()-&gt;methodTable()-&gt;toThis(exec-&gt;lexicalGlobalObject(), exec, NotStrictMode)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="执行脚本"><a href="#执行脚本" class="headerlink" title="执行脚本"></a>执行脚本</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (JSValue *)evaluateScript:(<span class="built_in">NSString</span> *)script withSourceURL:(<span class="built_in">NSURL</span> *)sourceURL</span><br><span class="line">&#123;</span><br><span class="line">    JSStringRef scriptJS = JSStringCreateWithCFString((<span class="built_in">CFStringRef</span>)script);</span><br><span class="line">    JSStringRef sourceURLJS = sourceURL ? JSStringCreateWithCFString((<span class="built_in">CFStringRef</span>)[sourceURL absoluteString]) : nullptr;</span><br><span class="line">    JSValueRef result = JSEvaluateScript(m_context, scriptJS, nullptr, sourceURLJS, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">if</span> (sourceURLJS) JSStringRelease(sourceURLJS);</span><br><span class="line">    JSStringRelease(scriptJS);</span><br><span class="line">    <span class="keyword">return</span> [JSValue valueWithJSValueRef:result inContext:<span class="keyword">self</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到核心逻辑在<code>JSEvaluateScript</code>中<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">JSValueRef <span class="title">JSEvaluateScript</span><span class="params">(JSContextRef ctx, JSStringRef script, JSObjectRef thisObject, JSStringRef sourceURL, <span class="keyword">int</span> startingLineNumber, JSValueRef* exception)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 再次碰到了ExecState，当前脚本执行状态</span></span><br><span class="line">    ExecState* exec = toJS(ctx);</span><br><span class="line">    <span class="function">JSLockHolder <span class="title">locker</span><span class="params">(exec)</span></span>;</span><br><span class="line"></span><br><span class="line">    JSObject* jsThisObject = toJS(thisObject);</span><br><span class="line"></span><br><span class="line">    startingLineNumber = <span class="built_in">std</span>::max(<span class="number">1</span>, startingLineNumber);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// evaluate sets "this" to the global object if it is NULL</span></span><br><span class="line">    JSGlobalObject* globalObject = exec-&gt;vmEntryGlobalObject();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 加载源码</span></span><br><span class="line">    SourceCode source = makeSource(script-&gt;<span class="built_in">string</span>(), sourceURL ? sourceURL-&gt;<span class="built_in">string</span>() : String(), TextPosition(OrdinalNumber::fromOneBasedInt(startingLineNumber), OrdinalNumber::first()));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 执行JS代码，这里是我们要分析的核心入口</span></span><br><span class="line">    JSValue returnValue = profiledEvaluate(globalObject-&gt;globalExec(), ProfilingReason::API, source, jsThisObject, evaluationException);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 转换为Ref形式</span></span><br><span class="line">    <span class="keyword">if</span> (returnValue) <span class="keyword">return</span> toRef(exec, returnValue);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> toRef(exec, jsUndefined());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="JSValue"><a href="#JSValue" class="headerlink" title="JSValue"></a>JSValue</h2><p>一个JSValue实例就是一个JavaScript值的引用。使用JSValue类在JavaScript和native代码之间转换一些基本类型的数据（比如数值和字符串）。你也可以使用这个类去创建包装了自定义类的native对象的JavaScript对象，或者创建由native方法或者block实现的JavaScript函数。</p>
+<p>每个JSValue实例都来源于一个代表JavaScript执行环境JSContext的对象，这个执行环境就包含了这个JSValue对应的值。每个JSValue对象都持有其JSContext对象的强引用，只要有任何一个与特定JSContext关联的JSValue被持有（retain），这个JSContext就会一直存活。通过调用JSValue的实例方法返回的其他的JSValue对象都属于与最始的JSValue相同的JSContext。</p>
+<p>每个JSValue都通过其JSContext间接关联了一个特定的代表执行资源基础的JSVirtualMachine对象。你只能将一个JSValue对象传给由相同虚拟机管理（host）的JSValue或者JSContext的实例方法。如果尝试把一个虚拟机的JSValue传给另一个虚拟机，将会触发一个Objective-C异常</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (JSValue *)initWithValue:(JSValueRef)value inContext:(JSContext *)context</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!value || !context) <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注意：强持有context</span></span><br><span class="line">    _context = [context <span class="keyword">retain</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将value值保存下来，但是并没有强持有</span></span><br><span class="line">    m_value = value;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里相当于GC计数</span></span><br><span class="line">    JSValueProtect([_context JSGlobalContextRef], m_value);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>倒数第二句相当于GC做一个强引用，该方法一直追溯下去，发现是一个ProtectCountSet集合，它在添加元素的时候，会增加元素的引用计数，导致元素不会被释放<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ProtectCountSet m_protectedValues;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> Heap::protect(JSValue k)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!k.isCell()) <span class="keyword">return</span>;</span><br><span class="line">    m_protectedValues.add(k.asCell());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h3><p>OC对象和JS对象或者值的转换对应图如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">  Objective-C type  |   JavaScript type</span><br><span class="line">--------------------+---------------------</span><br><span class="line">        nil         |     undefined</span><br><span class="line">       NSNull       |        null</span><br><span class="line">      NSString      |       string</span><br><span class="line">      NSNumber      |   number, boolean</span><br><span class="line">    NSDictionary    |   Object object</span><br><span class="line">      NSArray       |    Array object</span><br><span class="line">       NSDate       |     Date object</span><br><span class="line">      NSBlock (1)   |   Function object (1)</span><br><span class="line">         id (2)     |   Wrapper object (2)</span><br><span class="line">       Class (3)    | Constructor object (3)</span><br></pre></td></tr></table></figure></p>
+<h3 id="OC-gt-JS"><a href="#OC-gt-JS" class="headerlink" title="OC-&gt;JS"></a>OC-&gt;JS</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将OC对象转换为JSValue</span></span><br><span class="line">+ (JSValue *)valueWithObject:(<span class="keyword">id</span>)value inContext:(JSContext *)context</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> [JSValue valueWithJSValueRef:objectToValue(context, value) inContext:context];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">JSValueRef <span class="title">objectToValue</span><span class="params">(JSContext *context, id object)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSGlobalContextRef contextRef = [context JSGlobalContextRef];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是简单的对象</span></span><br><span class="line">    ObjcContainerConvertor::Task task = objectToValueWithoutCopy(context, object);</span><br><span class="line">    <span class="keyword">if</span> (task.type == ContainerNone) <span class="keyword">return</span> task.js;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果是一个集合类的对象，里面可能包含别的简单对象或者集合</span></span><br><span class="line">    JSC::JSLockHolder locker(toJS(contextRef));</span><br><span class="line">    <span class="function">ObjcContainerConvertor <span class="title">convertor</span><span class="params">(context)</span></span>;</span><br><span class="line">    convertor.add(task);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        ObjcContainerConvertor::Task current = convertor.take();</span><br><span class="line">        JSObjectRef js = JSValueToObject(contextRef, current.js, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (current.type == ContainerArray) &#123;</span><br><span class="line">            <span class="comment">// 如果是数组</span></span><br><span class="line">            NSArray *<span class="built_in">array</span> = (NSArray *)current.objc;</span><br><span class="line">            NSUInteger count = [<span class="built_in">array</span> count];</span><br><span class="line">            <span class="keyword">for</span> (NSUInteger index = <span class="number">0</span>; index &lt; count; ++index)</span><br><span class="line">                JSObjectSetPropertyAtIndex(contextRef, js, index, convertor.convert([<span class="built_in">array</span> objectAtIndex:index]), <span class="number">0</span>);</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// 如果是字典</span></span><br><span class="line">            NSDictionary *dictionary = (NSDictionary *)current.objc;</span><br><span class="line">            <span class="keyword">for</span> (id key in [dictionary keyEnumerator]) &#123;</span><br><span class="line">                <span class="keyword">if</span> ([key isKindOfClass:[NSString class]]) &#123;</span><br><span class="line">                    JSStringRef propertyName = JSStringCreateWithCFString((CFStringRef)key);</span><br><span class="line">                    JSObjectSetProperty(contextRef, js, propertyName, convertor.convert([dictionary objectForKey:key]), <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">                    JSStringRelease(propertyName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!convertor.isWorkListEmpty());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> task.js;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">+ (JSValue *)valueWithJSValueRef:(JSValueRef)value inContext:(JSContext *)context</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// context对JSValueRef进行了打包，所以JSValue离不开JSContext</span></span><br><span class="line">    <span class="keyword">return</span> [context wrapperForJSObject:value];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="JS-gt-OC"><a href="#JS-gt-OC" class="headerlink" title="JS-&gt;OC"></a>JS-&gt;OC</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">- (id)toObject</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> valueToObject(_context, m_value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">id <span class="title">valueToObject</span><span class="params">(JSContext *context, JSValueRef value)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSContainerConvertor::Task result = valueToObjectWithoutCopy([context JSGlobalContextRef], value);</span><br><span class="line">    <span class="keyword">if</span> (result.type == ContainerNone)  <span class="keyword">return</span> result.objc;</span><br><span class="line">    <span class="keyword">return</span> containerValueToObject([context JSGlobalContextRef], result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> id <span class="title">containerValueToObject</span><span class="params">(JSGlobalContextRef context, JSContainerConvertor::Task task)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSC::JSLockHolder locker(toJS(context));</span><br><span class="line">    <span class="function">JSContainerConvertor <span class="title">convertor</span><span class="params">(context)</span></span>;</span><br><span class="line">    convertor.add(task);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        JSContainerConvertor::Task current = convertor.take();</span><br><span class="line">        JSObjectRef js = JSValueToObject(context, current.js, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (current.type == ContainerArray) &#123;</span><br><span class="line">            ASSERT([current.objc isKindOfClass:[NSMutableArray class]]);</span><br><span class="line">            NSMutableArray *<span class="built_in">array</span> = (NSMutableArray *)current.objc;</span><br><span class="line">        </span><br><span class="line">            JSStringRef lengthString = JSStringCreateWithUTF8CString(<span class="string">"length"</span>);</span><br><span class="line">            <span class="keyword">unsigned</span> length = JSC::toUInt32(JSValueToNumber(context, JSObjectGetProperty(context, js, lengthString, <span class="number">0</span>), <span class="number">0</span>));</span><br><span class="line">            JSStringRelease(lengthString);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">unsigned</span> i = <span class="number">0</span>; i &lt; length; ++i) &#123;</span><br><span class="line">                id objc = convertor.convert(JSObjectGetPropertyAtIndex(context, js, i, <span class="number">0</span>));</span><br><span class="line">                [<span class="built_in">array</span> addObject:objc ? objc : [NSNull null]];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            NSMutableDictionary *dictionary = (NSMutableDictionary *)current.objc;</span><br><span class="line">            JSC::JSLockHolder locker(toJS(context));</span><br><span class="line"></span><br><span class="line">            JSPropertyNameArrayRef propertyNameArray = JSObjectCopyPropertyNames(context, js);</span><br><span class="line">            <span class="keyword">size_t</span> length = JSPropertyNameArrayGetCount(propertyNameArray);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; length; ++i) &#123;</span><br><span class="line">                JSStringRef propertyName = JSPropertyNameArrayGetNameAtIndex(propertyNameArray, i);</span><br><span class="line">                <span class="keyword">if</span> (id objc = convertor.convert(JSObjectGetProperty(context, js, propertyName, <span class="number">0</span>)))</span><br><span class="line">                    dictionary[[(NSString *)JSStringCopyCFString(kCFAllocatorDefault, propertyName) autorelease]] = objc;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            JSPropertyNameArrayRelease(propertyNameArray);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (!convertor.isWorkListEmpty());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> task.objc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="辅助类JSContainerConvertor"><a href="#辅助类JSContainerConvertor" class="headerlink" title="辅助类JSContainerConvertor"></a>辅助类JSContainerConvertor</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">JSContainerConvertor</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Task</span> &#123;</span></span><br><span class="line">        JSValueRef js;</span><br><span class="line">        id objc;</span><br><span class="line">        ConversionType type;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    JSContainerConvertor(JSGlobalContextRef context): m_context(context)&#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">id <span class="title">convert</span><span class="params">(JSValueRef property)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(Task)</span></span>;</span><br><span class="line">    <span class="function">Task <span class="title">take</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">isWorkListEmpty</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> !m_worklist.size(); &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    JSGlobalContextRef m_context;</span><br><span class="line">    HashMap&lt;JSValueRef, id&gt; m_objectMap;</span><br><span class="line">    Vector&lt;Task&gt; m_worklist;</span><br><span class="line">    Vector&lt;JSC::Strong&lt;JSC::Unknown&gt;&gt; m_jsValues;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="JSManagedValue"><a href="#JSManagedValue" class="headerlink" title="JSManagedValue"></a>JSManagedValue</h2><p>Objective-C 用的是ARC，不能自动解决循环引用问题，需要程序员手动处理，而JavaScript 用的是GC，所有的引用都是强引用，但是垃圾回收器会解决循环引用问题，JavaScriptCore 也一样，一般来说，大多数时候不需要我们去手动管理内存，但是有些情况需要注意：</p>
+<blockquote>
+<ul>
+<li>不要在在一个导出到JavaScript的native对象中持有JSValue对象。因为每个JSValue对象都包含了一个JSContext对象，这种关系将会导致循环引用，因而可能造成内存泄漏。</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">JSValue *value = [JSValue valueWithObject:<span class="string">@"test"</span> inContext:context];</span><br><span class="line">context[<span class="string">@"block"</span>] = ^()&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, value);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/05.png" width="75%"></p>
+<p>通常我们使用weak来修饰block内需要使用的外部引用以避免循环引用，由于JSValue对应的JS对象内存由虚拟机进行管理并负责回收，这种方法不能准确地控制block内的引用JSValue的生命周期，可能在block内需要使用JSValue的时候，其已经被虚拟机回收。<br><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/06.png" width="75%"><br>因为JSValue的引用计数为0，所以早早就被释放了，不能达到我们的预期。</p>
+<p>Apple引入了有条件的强引用:<code>conditional retain</code>，而对应的类就叫<code>JSManagedValue</code><br>一个JSManagedValue对象包含了一个JSValue对象，“有条件地持有（conditional retain）”的特性使其可以自动管理内存。<br>最基本的用法就是用来在导入到JavaScript的native对象中存储JSValue。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">JSValue *value = [JSValue valueWithObject:<span class="string">@"test"</span> inContext:context];</span><br><span class="line">JSManagedValue *managedValue = [JSManagedValue managedValueWithValue:value     andOwner:<span class="keyword">self</span>];</span><br><span class="line">context[<span class="string">@"block"</span>] = ^()&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, [managedValue value]);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<ul>
+<li>所谓“有条件地持有（conditional retain）”，是指在以下两种情况任何一个满足的情况下保证其管理的JSValue被持有：可以通过JavaScript的对象图找到该JSValue。可以通过native对象图找到该JSManagedValue。使用addManagedReference:withOwner:方法可向虚拟机记录该关系反之，如果以上条件都不满足，JSManagedValue对象就会将其value置为nil并释放该JSValue。<br><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/07.png" width="75%"></li>
+</ul>
+</blockquote>
+<h3 id="初始化-1"><a href="#初始化-1" class="headerlink" title="初始化"></a>初始化</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JSManagedValue</span> </span>&#123;</span><br><span class="line">    JSC::Weak&lt;JSC::JSGlobalObject&gt; m_globalObject;</span><br><span class="line">    RefPtr&lt;JSC::JSLock&gt; m_lock;</span><br><span class="line">    WeakValueRef m_weakValue;<span class="comment">//注意这里的m_weakValue</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_owners;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">+ (JSManagedValue *)managedValueWithValue:(JSValue *)value andOwner:(<span class="keyword">id</span>)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 这里的JSManagedValue并没有对JSValue进行强引用</span></span><br><span class="line">    JSManagedValue *managedValue = [[<span class="keyword">self</span> alloc] initWithValue:value];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// context对应的virtualMachine对value进行了强持有</span></span><br><span class="line">    [value.context.virtualMachine addManagedReference:managedValue withOwner:owner];</span><br><span class="line">    <span class="keyword">return</span> [managedValue autorelease];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)initWithValue:(JSValue *)value</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!value)</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line"></span><br><span class="line">    JSC::ExecState* exec = toJS([value.context JSGlobalContextRef]);</span><br><span class="line">    JSC::JSGlobalObject* globalObject = exec-&gt;lexicalGlobalObject();</span><br><span class="line">    JSC::Weak&lt;JSC::JSGlobalObject&gt; <span class="keyword">weak</span>(globalObject, managedValueHandleOwner(), <span class="keyword">self</span>);</span><br><span class="line">    m_globalObject.swap(<span class="keyword">weak</span>);</span><br><span class="line"></span><br><span class="line">    m_lock = &amp;exec-&gt;vm().apiLock();</span><br><span class="line"></span><br><span class="line">    <span class="built_in">NSPointerFunctionsOptions</span> weakIDOptions = <span class="built_in">NSPointerFunctionsWeakMemory</span> | <span class="built_in">NSPointerFunctionsObjectPersonality</span>;</span><br><span class="line">    <span class="built_in">NSPointerFunctionsOptions</span> integerOptions = <span class="built_in">NSPointerFunctionsOpaqueMemory</span> | <span class="built_in">NSPointerFunctionsIntegerPersonality</span>;</span><br><span class="line">    m_owners = [[<span class="built_in">NSMapTable</span> alloc] initWithKeyOptions:weakIDOptions valueOptions:integerOptions capacity:<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 可以看出JSManagedValue并没有对JSValue进行强引用</span></span><br><span class="line">    JSC::JSValue jsValue = toJS(exec, [value JSValueRef]);</span><br><span class="line">    <span class="keyword">if</span> (jsValue.isObject())</span><br><span class="line">        m_weakValue.setObject(JSC::jsCast&lt;JSC::JSObject*&gt;(jsValue.asCell()), <span class="keyword">self</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (jsValue.isString())</span><br><span class="line">        m_weakValue.setString(JSC::jsCast&lt;JSC::JSString*&gt;(jsValue.asCell()), <span class="keyword">self</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        m_weakValue.setPrimitive(jsValue);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)dealloc</span><br><span class="line">&#123;</span><br><span class="line">    JSVirtualMachine *virtualMachine = [[[<span class="keyword">self</span> value] context] virtualMachine];</span><br><span class="line">    <span class="keyword">if</span> (virtualMachine) &#123;</span><br><span class="line">        <span class="built_in">NSMapTable</span> *<span class="keyword">copy</span> = [m_owners <span class="keyword">copy</span>];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">id</span> owner <span class="keyword">in</span> [<span class="keyword">copy</span> keyEnumerator]) &#123;</span><br><span class="line">            size_t count = reinterpret_cast&lt;size_t&gt;(<span class="built_in">NSMapGet</span>(m_owners, owner));</span><br><span class="line">            <span class="keyword">while</span> (count--)</span><br><span class="line">                [virtualMachine removeManagedReference:<span class="keyword">self</span> withOwner:owner];</span><br><span class="line">        &#125;</span><br><span class="line">        [<span class="keyword">copy</span> release];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="keyword">self</span> disconnectValue];</span><br><span class="line">    [m_owners release];</span><br><span class="line">    [<span class="keyword">super</span> dealloc];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这部分的内容可以和<code>JSVirtualMachine</code>结合看，可能有助于理解，因为这二者的联系比较紧密</p>
+<h2 id="JSExport"><a href="#JSExport" class="headerlink" title="JSExport"></a>JSExport</h2><p>JSExport协议提供了一种声明式的方法去向JavaScript代码导出Objective-C的实例类及其实例方法，类方法和属性。</p>
+<h3 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@class</span> <span class="title">MySize</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">MySizeExports</span> &lt;<span class="title">JSExport</span>&gt;</span></span><br><span class="line"><span class="keyword">@property</span> <span class="keyword">double</span> w;</span><br><span class="line"><span class="keyword">@property</span> <span class="keyword">double</span> h;</span><br><span class="line">- (<span class="built_in">NSString</span> *)description;</span><br><span class="line">- (<span class="keyword">instancetype</span>)initWithW:(<span class="keyword">double</span>)w h:(<span class="keyword">double</span>)h;</span><br><span class="line">+ (MySize *)makeSizeWithW:(<span class="keyword">double</span>)w h:(<span class="keyword">double</span>)h;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MySize</span> : <span class="title">NSObject</span> &lt;<span class="title">MySizeExports</span>&gt;</span></span><br><span class="line"><span class="comment">// 这两个方法不在MySizeExports协议中，所以在js代码中是不可见的</span></span><br><span class="line">- (<span class="keyword">void</span>)instanceTest; </span><br><span class="line">+ (<span class="keyword">void</span>)classTest;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>在js代码中可以这样调用：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Objective-C initializers can be called with constructor syntax. </span></span><br><span class="line"><span class="keyword">var</span> size = MySize(<span class="number">1</span>, <span class="number">2</span>); </span><br><span class="line"></span><br><span class="line"><span class="comment">// Objective-C properties become fields. </span></span><br><span class="line">size.w; </span><br><span class="line"></span><br><span class="line">size.h = <span class="number">10</span>; </span><br><span class="line"></span><br><span class="line"><span class="comment">// Objective-C instance methods become functions. </span></span><br><span class="line">size.description(); </span><br><span class="line"></span><br><span class="line"><span class="comment">// Objective-C class methods become functions on the constructor object. </span></span><br><span class="line"><span class="keyword">var</span> q = MySize.makeSizeWithWH(<span class="number">0</span>, <span class="number">0</span>);</span><br></pre></td></tr></table></figure></p>
+<h3 id="JSExport实现原理"><a href="#JSExport实现原理" class="headerlink" title="JSExport实现原理"></a>JSExport实现原理</h3><p>对于一个class实现的每个协议，如果这个协议继承了JSExport协议，JavaScriptCore就将这个协议的方法和属性列表导出给JavaScript。</p>
+<blockquote>
+<ul>
+<li>对于每一个导出的实例方法，JavaScriptCore都会在prototype中创建一个对应的方法；</li>
+<li>对于么一个导出的实例属性，JavaScriptCore都会在prototype中创建一个对应一个存取器属性；</li>
+<li>对于每一个导出的类方法，JavaScriptCore会在constructor对象中创建一个对应的JavaScript function.</li>
+</ul>
+</blockquote>
+<p>说起来，JavaScript一直是让人很费解的一门语言，它是动态的，本身没有类的概念，尽管ES6引入了关键字class，但是这种语法糖仍然改变不了JavaScript是基于原型的这一事实，掌握原型和原型链的本质是JavaScript进阶的非常重要一环。</p>
+<p>引用一章非常经典的原型链和构造函数的关系图<br><img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/04.png" width="100%"></p>
+<p>但是这里我们不打算细究JavaScript的原型链，感兴趣的同学可以参考这里:<br><a href="https://www.cnblogs.com/chuaWeb/p/5039232.html" target="_blank" rel="noopener">js基础篇——原型与原型链的详细理解</a><br><a href="https://blog.csdn.net/qq_29999249/article/details/62218387" target="_blank" rel="noopener">javascript的原型与原型链</a></p>
+<p>我们来看下<code>JavaScriptCore</code>的<code>JSExport</code>实现原理，在分析之前，得做一些铺垫，从<code>JSWrapperMap</code>说起，而后者正是作为<code>JSContext</code>的一个成员而存在的：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">JSWrapperMap *m_wrapperMap;</span><br></pre></td></tr></table></figure></p>
+<h3 id="JSWrapperMap"><a href="#JSWrapperMap" class="headerlink" title="JSWrapperMap"></a>JSWrapperMap</h3><p>JSWrapperMap，顾名思义，这是一个包装容器，它的初始化方法中有一个参数JSContext，看来他本身也是离不开JSContext而存在的。<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">JSWrapperMap</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="keyword">id</span>)initWithContext:(JSContext *)context;</span><br><span class="line">- (JSValue *)jsWrapperForObject:(<span class="keyword">id</span>)object;</span><br><span class="line">- (JSValue *)objcWrapperForJSValueRef:(JSValueRef)value;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JSWrapperMap</span> </span>&#123;</span><br><span class="line">    JSContext *m_context;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Class -&gt; JSObjCClassInfo</span></span><br><span class="line">    <span class="built_in">NSMutableDictionary</span> *m_classMap;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// OC对象 -&gt; JSObject</span></span><br><span class="line">    std::unique_ptr&lt;JSC::WeakGCMap&lt;<span class="keyword">id</span>, JSC::JSObject&gt;&gt; m_cachedJSWrappers;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_cachedObjCWrappers;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>对于一个OC对象，其jsWrapper的生成如下：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">- (JSValue *)jsWrapperForObject:(<span class="keyword">id</span>)object</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 先从m_cachedJSWrappers容器中查找</span></span><br><span class="line">    JSC::JSObject* jsWrapper = m_cachedJSWrappers-&gt;get(object);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果找到，封装为JSValue返回</span></span><br><span class="line">    <span class="keyword">if</span> (jsWrapper)</span><br><span class="line">        <span class="keyword">return</span> [JSValue valueWithJSValueRef:toRef(jsWrapper) inContext:m_context];</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (class_isMetaClass(object_getClass(object)))</span><br><span class="line">        <span class="comment">// 如果是object的类是元类，即object本身是一个Class，构建原型对象</span></span><br><span class="line">        jsWrapper = [[<span class="keyword">self</span> classInfoForClass:(Class)object] constructor];</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 如果object是对象，先生成JSObjCClassInfo类信息，然后包装object对象</span></span><br><span class="line">        JSObjCClassInfo* classInfo = [<span class="keyword">self</span> classInfoForClass:[object <span class="keyword">class</span>]];</span><br><span class="line">        jsWrapper = [classInfo wrapperForObject:object];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置key-value</span></span><br><span class="line">    m_cachedJSWrappers-&gt;set(object, jsWrapper);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将生成的jsWrapper，封装为JSValue返回</span></span><br><span class="line">    <span class="keyword">return</span> [JSValue valueWithJSValueRef:toRef(jsWrapper) inContext:m_context];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="classInfoForClass"><a href="#classInfoForClass" class="headerlink" title="classInfoForClass"></a>classInfoForClass</h3><p>下来看下怎么通过一个Class生成JSObjCClassInfo信息<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (JSObjCClassInfo*)classInfoForClass:(Class)cls</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!cls)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果已经有缓存好的JSObjCClassInfo信息，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (JSObjCClassInfo* classInfo = (JSObjCClassInfo*)m_classMap[cls])</span><br><span class="line">        <span class="keyword">return</span> classInfo;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 跳过一些以下划线开头的内部中间类，直接获取其父类信息</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="string">'_'</span> == *class_getName(cls))</span><br><span class="line">        <span class="keyword">return</span> m_classMap[cls] = [<span class="keyword">self</span> classInfoForClass:class_getSuperclass(cls)];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 通过cls类信息生成JSObjCClassInfo信息，并存入m_classMap</span></span><br><span class="line">    <span class="keyword">return</span> m_classMap[cls] = [[[JSObjCClassInfo alloc] initWithContext:m_context forClass:cls] autorelease];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="JSObjCClassInfo"><a href="#JSObjCClassInfo" class="headerlink" title="JSObjCClassInfo"></a>JSObjCClassInfo</h3><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">JSObjCClassInfo</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line">    JSContext *m_context;</span><br><span class="line">    Class m_class;</span><br><span class="line">    <span class="keyword">bool</span> m_block;</span><br><span class="line">    JSClassRef m_classRef;</span><br><span class="line">    JSC::Weak&lt;JSC::JSObject&gt; m_prototype;</span><br><span class="line">    JSC::Weak&lt;JSC::JSObject&gt; m_constructor;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">id</span>)initWithContext:(JSContext *)context forClass:(Class)cls;</span><br><span class="line">- (JSC::JSObject *)wrapperForObject:(<span class="keyword">id</span>)object;</span><br><span class="line">- (JSC::JSObject *)constructor;</span><br><span class="line">- (JSC::JSObject *)prototype;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>重点来了，JavaScript中很重要的两个概念：constructor和prototype</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (JSC::JSObject*)constructor</span><br><span class="line">&#123;</span><br><span class="line">    JSC::JSObject* constructor = m_constructor.get();</span><br><span class="line">    <span class="keyword">if</span> (!constructor)</span><br><span class="line">        constructor = [self allocateConstructorAndPrototype].first;</span><br><span class="line">    ASSERT(!!constructor);</span><br><span class="line">    <span class="keyword">return</span> constructor;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (JSC::JSObject*)prototype</span><br><span class="line">&#123;</span><br><span class="line">    JSC::JSObject* prototype = m_prototype.get();</span><br><span class="line">    <span class="keyword">if</span> (!prototype)</span><br><span class="line">        prototype = [self allocateConstructorAndPrototype].second;</span><br><span class="line">    ASSERT(!!prototype);</span><br><span class="line">    <span class="keyword">return</span> prototype;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这两个方法都不约而同的调到了<code>allocateConstructorAndPrototype</code>:</p>
+<h3 id="allocateConstructorAndPrototype"><a href="#allocateConstructorAndPrototype" class="headerlink" title="allocateConstructorAndPrototype"></a>allocateConstructorAndPrototype</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">- (ConstructorPrototypePair)allocateConstructorAndPrototype</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 获取父类的JSObjCClassInfo信息</span></span><br><span class="line">    JSObjCClassInfo* superClassInfo = [m_context.wrapperMap classInfoForClass:class_getSuperclass(m_class)];</span><br><span class="line"></span><br><span class="line">    JSC::JSObject* jsPrototype = m_prototype.get();</span><br><span class="line">    JSC::JSObject* jsConstructor = m_constructor.get();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!superClassInfo) &#123;</span><br><span class="line">        <span class="comment">// 如果父类为空，返回js中的根类Object的contructor和prototype</span></span><br><span class="line">        JSContextRef cContext = [m_context JSGlobalContextRef];</span><br><span class="line">        JSValue *constructor = m_context[@<span class="string">"Object"</span>];</span><br><span class="line">        <span class="keyword">if</span> (!jsConstructor)</span><br><span class="line">            jsConstructor = toJS(JSValueToObject(cContext, valueInternalValue(constructor), <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!jsPrototype) &#123;</span><br><span class="line">            JSValue *prototype = constructor[@<span class="string">"prototype"</span>];</span><br><span class="line">            jsPrototype = toJS(JSValueToObject(cContext, valueInternalValue(prototype), <span class="number">0</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 获取该类名字</span></span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">char</span>* className = class_getName(m_class);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 生成 prototype/constructor 对.</span></span><br><span class="line">        <span class="keyword">if</span> (!jsPrototype)</span><br><span class="line">            <span class="comment">// 生成js对象的原型(重点方法)</span></span><br><span class="line">            jsPrototype = objectWithCustomBrand(m_context, [NSString stringWithFormat:@<span class="string">"%sPrototype"</span>, className]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!jsConstructor)</span><br><span class="line">            <span class="comment">// 生成js对象的构造器（重点方法）</span></span><br><span class="line">            jsConstructor = allocateConstructorForCustomClass(m_context, className, m_class);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 类型转换</span></span><br><span class="line">        JSValue* prototype = [JSValue valueWithJSValueRef:toRef(jsPrototype) inContext:m_context];</span><br><span class="line">        JSValue* constructor = [JSValue valueWithJSValueRef:toRef(jsConstructor) inContext:m_context];</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 为JS对象定义constructor和prototype这两个属性</span></span><br><span class="line">        putNonEnumerable(prototype, @<span class="string">"constructor"</span>, constructor);</span><br><span class="line">        putNonEnumerable(constructor, @<span class="string">"prototype"</span>, prototype);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 遍历该类实现的协议方法，如果包含JSExport中的方法</span></span><br><span class="line">        Protocol *exportProtocol = getJSExportProtocol();</span><br><span class="line">        forEachProtocolImplementingProtocol(m_class, exportProtocol, ^(Protocol *protocol)&#123;</span><br><span class="line">            <span class="comment">// 拷贝属性和方法到JS对象的原型中</span></span><br><span class="line">            copyPrototypeProperties(m_context, m_class, protocol, prototype);</span><br><span class="line">            copyMethodsToObject(m_context, m_class, protocol, NO, constructor);</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 设置原型</span></span><br><span class="line">        JSC::JSObject* superClassPrototype = [superClassInfo prototype];</span><br><span class="line">        JSObjectSetPrototype([m_context JSGlobalContextRef], toRef(jsPrototype), toRef(superClassPrototype));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    m_prototype = jsPrototype;</span><br><span class="line">    m_constructor = jsConstructor;</span><br><span class="line">    <span class="keyword">return</span> ConstructorPrototypePair(jsConstructor, jsPrototype);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="更新"><a href="#更新" class="headerlink" title="更新"></a>更新</h3><p>这里看到了<code>getJSExportProtocol</code>，我们的神经是不是应该敏感一下？<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Protocol *<span class="title">getJSExportProtocol</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">static</span> Protocol *protocol = objc_getProtocol(<span class="string">"JSExport"</span>);</span><br><span class="line">    <span class="keyword">return</span> protocol;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>实际上它仅仅返回<code>JSExport</code>这个<code>Protocol</code>，关键的是接下来的遍历:<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">inline void forEachProtocolImplementingProtocol(Class cls, Protocol *target, void (^callback)(Protocol *))</span><br><span class="line">&#123;</span><br><span class="line">    Vector&lt;Protocol *&gt; worklist;</span><br><span class="line">    HashSet&lt;<span class="keyword">void</span>*&gt; visited;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Initially fill the worklist with the Class's protocols.</span></span><br><span class="line">    <span class="keyword">unsigned</span> protocolsCount;</span><br><span class="line">    Protocol ** protocols = class_copyProtocolList(cls, &amp;protocolsCount);</span><br><span class="line">    worklist.append(protocols, protocolsCount);</span><br><span class="line">    <span class="built_in">free</span>(protocols);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (!worklist.isEmpty()) &#123;</span><br><span class="line">        Protocol *protocol = worklist.last();</span><br><span class="line">        worklist.removeLast();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Are we encountering this Protocol for the first time?</span></span><br><span class="line">        <span class="keyword">if</span> (!visited.add(protocol).isNewEntry)</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// If it implements the protocol, make the callback.</span></span><br><span class="line">        <span class="keyword">if</span> (protocolImplementsProtocol(protocol, target))</span><br><span class="line">            callback(protocol);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Add incorporated protocols to the worklist.</span></span><br><span class="line">        protocols = protocol_copyProtocolList(protocol, &amp;protocolsCount);</span><br><span class="line">        worklist.append(protocols, protocolsCount);</span><br><span class="line">        <span class="built_in">free</span>(protocols);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>对于每个声明在JSExport里的属性和方法，classInfo会在prototype和constructor里面存入对应的property和method。之后我们就可以通过具体的methodName和PropertyName生成的setter和getter方法，来获取实际的SEL。最后就可以让JSExport中的方法和属性得到正确的访问。所以简单点讲，JSExport就是负责把这些方法打个标，以methodName为key，SEL为value，存入一个map（prototype和constructor本质上就是一个Map）中去，之后就可以通过methodName拿到对应的SEL进行调用。</p>
+<h3 id="生成prototype"><a href="#生成prototype" class="headerlink" title="生成prototype"></a>生成prototype</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Make an object that is in all ways a completely vanilla JavaScript object,</span></span><br><span class="line"><span class="comment">// other than that it has a native brand set that will be displayed by the default</span></span><br><span class="line"><span class="comment">// Object.prototype.toString conversion.</span></span><br><span class="line"><span class="keyword">static</span> JSC::<span class="function">JSObject *<span class="title">objectWithCustomBrand</span><span class="params">(JSContext *context, NSString *brand, Class cls = <span class="number">0</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSClassDefinition definition;</span><br><span class="line">    definition = kJSClassDefinitionEmpty;</span><br><span class="line">    definition.className = [brand UTF8String];</span><br><span class="line">    JSClassRef classRef = JSClassCreate(&amp;definition);</span><br><span class="line">    JSC::JSObject* result = makeWrapper([context JSGlobalContextRef], classRef, cls);</span><br><span class="line">    JSClassRelease(classRef);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="生成contructor"><a href="#生成contructor" class="headerlink" title="生成contructor"></a>生成contructor</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> JSC::<span class="function">JSObject* <span class="title">allocateConstructorForCustomClass</span><span class="params">(JSContext *context, <span class="keyword">const</span> <span class="keyword">char</span>* className, Class cls)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!supportsInitMethodConstructors())</span><br><span class="line">        <span class="keyword">return</span> constructorWithCustomBrand(context, [NSString stringWithFormat:@<span class="string">"%sConstructor"</span>, className], cls);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// For each protocol that the class implements, gather all of the init </span></span><br><span class="line">    <span class="comment">// 对于class以及其父类遵守的每一个协议，收集其初始化方法到一个哈希表中</span></span><br><span class="line">    __block HashMap&lt;String, Protocol *&gt; initTable;</span><br><span class="line">    Protocol *exportProtocol = getJSExportProtocol();</span><br><span class="line">    <span class="keyword">for</span> (Class currentClass = cls; currentClass; currentClass = class_getSuperclass(currentClass)) &#123;</span><br><span class="line">        forEachProtocolImplementingProtocol(currentClass, exportProtocol, ^(Protocol *protocol) &#123;</span><br><span class="line">            forEachMethodInProtocol(protocol, YES, YES, ^(SEL selector, <span class="keyword">const</span> <span class="keyword">char</span>*) &#123;</span><br><span class="line">                <span class="keyword">const</span> <span class="keyword">char</span>* name = sel_getName(selector);</span><br><span class="line">                <span class="keyword">if</span> (!isInitFamilyMethod(@(name)))<span class="keyword">return</span>;                    </span><br><span class="line">                initTable.<span class="built_in">set</span>(name, protocol);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 循环遍历class以及其父类的方法列表，如果能在哈希表中找到，将其进行标识</span></span><br><span class="line">    <span class="keyword">for</span> (Class currentClass = cls; currentClass; currentClass = class_getSuperclass(currentClass)) &#123;</span><br><span class="line">        __block <span class="keyword">unsigned</span> numberOfInitsFound = <span class="number">0</span>;</span><br><span class="line">        __block SEL initMethod = <span class="number">0</span>;</span><br><span class="line">        __block Protocol *initProtocol = <span class="number">0</span>;</span><br><span class="line">        __block <span class="keyword">const</span> <span class="keyword">char</span>* types = <span class="number">0</span>;</span><br><span class="line">        forEachMethodInClass(currentClass, ^(Method method) &#123;</span><br><span class="line">            SEL selector = method_getName(method);</span><br><span class="line">            <span class="keyword">const</span> <span class="keyword">char</span>* name = sel_getName(selector);</span><br><span class="line">            <span class="keyword">auto</span> iter = initTable.find(name);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (iter == initTable.end())</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">            numberOfInitsFound++;</span><br><span class="line">            initMethod = selector;</span><br><span class="line">            initProtocol = iter-&gt;value;</span><br><span class="line">            types = method_getTypeEncoding(method);</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!numberOfInitsFound)</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (numberOfInitsFound &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 找到就返回</span></span><br><span class="line">        JSObjectRef method = objCCallbackFunctionForInit(context, cls, initProtocol, initMethod, types);</span><br><span class="line">        <span class="keyword">return</span> toJS(method);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> constructorWithCustomBrand(context, [NSString stringWithFormat:@<span class="string">"%sConstructor"</span>, className], cls);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> JSC::<span class="function">JSObject *<span class="title">constructorWithCustomBrand</span><span class="params">(JSContext *context, NSString *brand, Class cls)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSClassDefinition definition;</span><br><span class="line">    definition = kJSClassDefinitionEmpty;</span><br><span class="line">    definition.className = [brand UTF8String];</span><br><span class="line">    definition.hasInstance = constructorHasInstance;</span><br><span class="line">    JSClassRef classRef = JSClassCreate(&amp;definition);</span><br><span class="line">    JSC::JSObject* result = makeWrapper([context JSGlobalContextRef], classRef, cls);</span><br><span class="line">    JSClassRelease(classRef);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本篇是对JavaScriptCore的API的分析总结，由于源码过于庞大，为了避免掉进泥潭不能自拔，很多地方都是浅尝辄止，后续篇章将会逐步深入进行分析。<br>但是总的来说，JavaScriptCore隐藏了很多实现细节，API的接口也非常简洁</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/">JavaScriptCore引擎深度解析2—API篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月25日 - 00:07</p>
+  <p><span>最后更新:</span>2018年10月09日 - 23:10</p>
+  <p><span>原始链接:</span><a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/" title="JavaScriptCore引擎深度解析2—API篇">https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="lingyun 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="lingyun 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/">JavaScriptCore引擎深度解析2—API篇</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问 lingyun 的个人博客">lingyun</a></p>
+  <p><span>发布时间:</span>2018年07月25日 - 00:07</p>
+  <p><span>最后更新:</span>2018年10月09日 - 23:10</p>
+  <p><span>原始链接:</span><a href="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/" title="JavaScriptCore引擎深度解析2—API篇">https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/19/JavaScriptCore引擎深度解析-1-开篇/" rel="next" title="JavaScriptCore引擎深度解析1—开篇">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore引擎深度解析1—开篇
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/30/JavaScriptCore引擎深度解析-3-词法分析篇/" rel="prev" title="JavaScriptCore引擎深度解析3—词法分析篇">
+                JavaScriptCore引擎深度解析3—词法分析篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description">Stay Hungry, Stay Foolish</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JSVirtualMachine"><span class="nav-number">2.</span> <span class="nav-text">JSVirtualMachine</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#addManagedReference"><span class="nav-number">2.1.</span> <span class="nav-text">addManagedReference</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#didAddOwner"><span class="nav-number">2.1.1.</span> <span class="nav-text">didAddOwner</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#getInternalObjcObject"><span class="nav-number">2.1.2.</span> <span class="nav-text">getInternalObjcObject</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#removeManagedReference"><span class="nav-number">2.2.</span> <span class="nav-text">removeManagedReference</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#didRemoveOwner"><span class="nav-number">2.2.1.</span> <span class="nav-text">didRemoveOwner</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JSContext"><span class="nav-number">3.</span> <span class="nav-text">JSContext</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JSContext初始化"><span class="nav-number">3.1.</span> <span class="nav-text">JSContext初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全局对象"><span class="nav-number">3.2.</span> <span class="nav-text">全局对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#执行脚本"><span class="nav-number">3.3.</span> <span class="nav-text">执行脚本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JSValue"><span class="nav-number">4.</span> <span class="nav-text">JSValue</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#初始化"><span class="nav-number">4.1.</span> <span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类型转换"><span class="nav-number">4.2.</span> <span class="nav-text">类型转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OC-gt-JS"><span class="nav-number">4.3.</span> <span class="nav-text">OC-&gt;JS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JS-gt-OC"><span class="nav-number">4.4.</span> <span class="nav-text">JS-&gt;OC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#辅助类JSContainerConvertor"><span class="nav-number">4.5.</span> <span class="nav-text">辅助类JSContainerConvertor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JSManagedValue"><span class="nav-number">5.</span> <span class="nav-text">JSManagedValue</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#初始化-1"><span class="nav-number">5.1.</span> <span class="nav-text">初始化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JSExport"><span class="nav-number">6.</span> <span class="nav-text">JSExport</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用示例"><span class="nav-number">6.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSExport实现原理"><span class="nav-number">6.2.</span> <span class="nav-text">JSExport实现原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSWrapperMap"><span class="nav-number">6.3.</span> <span class="nav-text">JSWrapperMap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#classInfoForClass"><span class="nav-number">6.4.</span> <span class="nav-text">classInfoForClass</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JSObjCClassInfo"><span class="nav-number">6.5.</span> <span class="nav-text">JSObjCClassInfo</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#allocateConstructorAndPrototype"><span class="nav-number">6.6.</span> <span class="nav-text">allocateConstructorAndPrototype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更新"><span class="nav-number">6.7.</span> <span class="nav-text">更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成prototype"><span class="nav-number">6.8.</span> <span class="nav-text">生成prototype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成contructor"><span class="nav-number">6.9.</span> <span class="nav-text">生成contructor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">133.0k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
