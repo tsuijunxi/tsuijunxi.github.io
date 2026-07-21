@@ -106,16 +106,16 @@
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="前言不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从JavaScriptCore的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新） JavaScriptCore简介JavaScriptCore是苹果开源项目WebKit中的默认JavaScript引擎，被用来解释和执行JavaScript代码。一开始它是基于">
 <meta property="og:locale">
-<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png">
 <meta property="article:published_time" content="2018-07-18T16:22:57.000Z">
 <meta property="article:modified_time" content="2018-10-12T16:27:15.000Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="JavaScriptCore">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png">
 
 
 
@@ -469,7 +469,7 @@
 </ul>
 </blockquote>
 <p>任何时候，函数, eval代码块，以及全局代码(global code)都可能会由<code>LLInt</code>, <code>Baseline JIT</code>和<code>DFG</code>三者同时运行。一个极端的例子是递归函数，因为有多个stack frames，就可能一个运行在<code>LLInt</code>下，另一个运行在<code>Baseline JIT</code>里，其它的可能正运行在<code>DFG</code>里。更为极端的情况是当从新优化在执行过程被触发时，就会出现一个stack frame正在执行本来旧的DFG编译，而另一个则正执行新的DFG编译。为此三者计划成维护雷同的执行语义(execution semantics), 它们的混合应用也是为了带来显著的效能提升。</p>
-<h2 id="工作流程图"><a href="#工作流程图" class="headerlink" title="工作流程图"></a>工作流程图</h2><img src="JavaScriptCore引擎深度解析-1-开篇/01.png" width="85%"/>
+<h2 id="工作流程图"><a href="#工作流程图" class="headerlink" title="工作流程图"></a>工作流程图</h2><style>.cwkrfyqsorao{}</style><img src="/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png" class="cwkrfyqsorao">
 
 
 
@@ -482,7 +482,13 @@
 <p>而基于栈的虚拟机的生成的字节码如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return  </span><br></pre></td></tr></table></figure>
 <p>可以体会下这两种方式的不同</p>
-<h2 id="从JS-Script到Byte-Code"><a href="#从JS-Script到Byte-Code" class="headerlink" title="从JS Script到Byte Code"></a>从JS Script到Byte Code</h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。<br><img src="JavaScriptCore引擎深度解析-1-开篇/02.png" width="100%"/><br>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:<br><img src="JavaScriptCore引擎深度解析-1-开篇/03.png" width="100%"/><br>而Lexer则是在Parser过程中调用的，如下图:<br><img src="JavaScriptCore引擎深度解析-1-开篇/04.png" width="75%"/></p>
+<h2 id="从JS-Script到Byte-Code"><a href="#从JS-Script到Byte-Code" class="headerlink" title="从JS Script到Byte Code"></a>从JS Script到Byte Code</h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。</p>
+<style>.xqifmbjqbpwp{}</style><img src="/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png" class="xqifmbjqbpwp">
+<p>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:</p>
+<style>.pghuywbdgnfo{}</style><img src="/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png" class="pghuywbdgnfo">
+<p>而Lexer则是在Parser过程中调用的，如下图:</p>
+<style>.iecbaofwppxr{}</style><img src="/.io//07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png" class="iecbaofwppxr">
+
 <p>更具体的细节会在随后会在对应的篇章中进行分析</p>
 <h2 id="更新中…"><a href="#更新中…" class="headerlink" title="更新中…"></a>更新中…</h2>
       
