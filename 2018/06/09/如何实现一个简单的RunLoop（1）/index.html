@@ -106,13 +106,13 @@
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="前言说起Runloop，似乎也是一个被讲的烂大街的概念，很多大神都在自己的博客中阐述自己的理解，我自己也拜读了好多大神关于Runloop的杰作，深感敬佩，例如：   Runloop知识树 深入理解RunLoop   然而我总感觉我对Runloop的理解似乎还是有些模糊，总觉得在我的理解中，Runloop的神秘面纱没有完全被揭开，毕竟好多东西都是听别人这么说的。 Runloop就是事件驱动的一个大循">
 <meta property="og:locale">
-<meta property="og:image" content="https://tsuijunxi.github.io/.io//06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg">
 <meta property="article:published_time" content="2018-06-09T08:49:22.000Z">
 <meta property="article:modified_time" content="2018-06-19T16:29:10.000Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="iOS Runloop IO多路复用">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://tsuijunxi.github.io/.io//06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg">
 
 
 
@@ -428,7 +428,7 @@
 <p>收集资料的过程中，无意中发现了一位大神写的<a href="https://github.com/wuyunfeng/LightWeightRunLoop-A-Reactor-Style-NSRunLoop">LightWeightRunLoop-A-Reactor-Style-NSRunLoop</a>，真是踏破铁鞋无觅处，仔细拜读之后，发现和自己的构思还整体比较吻合，这里借花献佛，借源码分析一下如何去实现一个轻量级的Runloop，这里首先感谢一下作者 <strong>wuyunfeng</strong>。</p>
 <h2 id="整体框架"><a href="#整体框架" class="headerlink" title="整体框架"></a>整体框架</h2><p><code>LightWeightRunLoop</code>主要实现了和Runloop相关的一些API，例如：PerformSelector、Timer、URLConnection、LWStream和LWPort等，但是本文的目的不是为了怎么去使用这些API，而是去理解这些API的内部实现，从而加深对Runloop的理解。</p>
 <p>借用下作者的图</p>
-<style>.yjniajcgosyl{}</style><img src="/.io//06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg" class="yjniajcgosyl">
+<style>.wvmpdrqwnghr{}</style><img src="/2018/06/09/%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RunLoop%EF%BC%881%EF%BC%89/01.jpg" class="wvmpdrqwnghr">
 
 <h2 id="LWRunloop"><a href="#LWRunloop" class="headerlink" title="LWRunloop"></a>LWRunloop</h2><h3 id="线程如果获取LWRunLoop对象"><a href="#线程如果获取LWRunLoop对象" class="headerlink" title="线程如果获取LWRunLoop对象"></a>线程如果获取LWRunLoop对象</h3><p>每一个线程（除了主线程），都可以拥有一个<code>LWRunLoop</code>对象，可以通过以下方式获取：在运行的线程中调用<code>[LWRunLoop currentLWRunLoop]</code></p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSThread</span> *_lwRunLoopThread = [[<span class="built_in">NSThread</span> alloc] initWithTarget:<span class="keyword">self</span> selector:<span class="keyword">@selector</span>(lightWeightRunloopThreadEntryPoint:) object:<span class="literal">nil</span>];</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)lightWeightRunloopThreadEntryPoint:(<span class="type">id</span>)data</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">@autoreleasepool</span> &#123;</span><br><span class="line">        [[LWRunLoop currentLWRunLoop] run];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>

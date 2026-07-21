@@ -106,15 +106,15 @@
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示 12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv)">
 <meta property="og:locale">
-<meta property="og:image" content="https://tsuijunxi.github.io/.io//05/10/AVAudioPlayer/03.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/.io//05/10/AVAudioPlayer/04.png">
-<meta property="og:image" content="https://tsuijunxi.github.io/.io//05/10/AVAudioPlayer/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/05.png">
 <meta property="article:published_time" content="2021-05-10T05:34:26.000Z">
 <meta property="article:modified_time" content="2021-05-10T06:26:50.000Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="AVAudioPlayer">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://tsuijunxi.github.io/.io//05/10/AVAudioPlayer/03.png">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
 
 
 
@@ -430,12 +430,12 @@
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AVAudioPlayer.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">AVAudioPlayer</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line"> <span class="keyword">@private</span></span><br><span class="line">    <span class="type">id</span> _impl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// the delegate will be sent messages from the AVAudioPlayerDelegate protocol</span></span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">weak</span>, <span class="keyword">nullable</span>) <span class="type">id</span>&lt;<span class="built_in">AVAudioPlayerDelegate</span>&gt; delegate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><p>由于<code>finishedPlaying:</code>并没有暴露为共有方法，为了能看下堆栈，所以hook了<code>finishedPlaying:</code>方法</p>
-<style>.uduohrhzishq{}</style><img src="/.io//05/10/AVAudioPlayer/03.png" class="uduohrhzishq">
-<style>.eefafdxyetnz{}</style><img src="/.io//05/10/AVAudioPlayer/04.png" class="eefafdxyetnz">
+<style>.tnrxcpplpqdg{}</style><img src="/2021/05/10/AVAudioPlayer/03.png" class="tnrxcpplpqdg">
+<style>.ccnpoatobwff{}</style><img src="/2021/05/10/AVAudioPlayer/04.png" class="ccnpoatobwff">
 
 <p>通过调试，发现原AVAudioPlayer有一个内部实现类<code>AudioPlayerImpl</code>，这个内部实现类还有一个成员变量<code>_delegate</code></p>
 <p>进而详细查看了<code>AudioPlayerImpl</code>的头文件：<a href="https://github.com/ultramiraculous/iOS9-Runtime-Headers/blob/master/lib/libAVFAudio.dylib/AudioPlayerImpl.h">AudioPlayerImpl的头文件</a></p>
-<style>.dxqqjuixwnue{}</style><img src="/.io//05/10/AVAudioPlayer/05.png" class="dxqqjuixwnue">
+<style>.impxszzflhjb{}</style><img src="/2021/05/10/AVAudioPlayer/05.png" class="impxszzflhjb">
 
 
 <p>通过验证，发现这两个代理都指向同一个对象：</p>
