@@ -207,7 +207,7 @@
       
         
         <li class="menu-item menu-item-home">
-          <a href="/%20" rel="section">
+          <a href="/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
             
@@ -217,7 +217,7 @@
       
         
         <li class="menu-item menu-item-tags">
-          <a href="/tags/%20" rel="section">
+          <a href="/tags/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
             
@@ -227,7 +227,7 @@
       
         
         <li class="menu-item menu-item-categories">
-          <a href="/categories/%20" rel="section">
+          <a href="/categories/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
             
@@ -237,7 +237,7 @@
       
         
         <li class="menu-item menu-item-archives">
-          <a href="/archives/%20" rel="section">
+          <a href="/archives/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
             
@@ -247,7 +247,7 @@
       
         
         <li class="menu-item menu-item-about">
-          <a href="/about/%20" rel="section">
+          <a href="/about/" rel="section">
             
               <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
             
@@ -408,12 +408,12 @@
       
 
       
-        <h2><span id="前言">前言</span></h2><p>不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从<code>JavaScriptCore</code>的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新）</p>
-<h2><span id="javascriptcore简介">JavaScriptCore简介</span></h2><p><code>JavaScriptCore</code>是苹果开源项目WebKit中的默认<code>JavaScript</code>引擎，被用来解释和执行<code>JavaScript</code>代码。一开始它是基于KJS开发的，是基于抽象语法树的解释器，性能较差。2008年苹果重写了编译器和字节码解释器，叫<code>SquirrelFish</code>:</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从<code>JavaScriptCore</code>的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新）</p>
+<h2 id="JavaScriptCore简介"><a href="#JavaScriptCore简介" class="headerlink" title="JavaScriptCore简介"></a>JavaScriptCore简介</h2><p><code>JavaScriptCore</code>是苹果开源项目WebKit中的默认<code>JavaScript</code>引擎，被用来解释和执行<code>JavaScript</code>代码。一开始它是基于KJS开发的，是基于抽象语法树的解释器，性能较差。2008年苹果重写了编译器和字节码解释器，叫<code>SquirrelFish</code>:</p>
 <blockquote>
 <p>SquirrelFish is a register-based, direct-threaded(bigger code and data, but fast), high-level bytecode engine, with a sliding register window calling convention. It lazily generates bytecodes from a syntax tree, using a simple one-pass compiler with built-in copy propagation.</p>
 </blockquote>
-<h2><span id="源码目录结构">源码目录结构</span></h2><blockquote>
+<h2 id="源码目录结构"><a href="#源码目录结构" class="headerlink" title="源码目录结构"></a>源码目录结构</h2><blockquote>
 <ul>
 <li>API：各种JavaScriptCore对外的接口类</li>
 <li>assembler：汇编器，用于生成各个平台的汇编代码</li>
@@ -436,7 +436,7 @@
 <li>yarr：Yet Another Regex Runtime，运行时正则表达式的解析</li>
 </ul>
 </blockquote>
-<h2><span id="核心模块">核心模块</span></h2><p>该部分内容主要翻译自<a href="https://trac.webkit.org/wiki/JavaScriptCore">官方文档</a></p>
+<h2 id="核心模块"><a href="#核心模块" class="headerlink" title="核心模块"></a>核心模块</h2><p>该部分内容主要翻译自<a href="https://trac.webkit.org/wiki/JavaScriptCore">官方文档</a></p>
 <p><code>JavaScriptCore</code>是一个高度优化的虚拟机，主要包括以下几个模块:</p>
 <blockquote>
 <ul>
@@ -469,11 +469,11 @@
 </ul>
 </blockquote>
 <p>任何时候，函数, eval代码块，以及全局代码(global code)都可能会由<code>LLInt</code>, <code>Baseline JIT</code>和<code>DFG</code>三者同时运行。一个极端的例子是递归函数，因为有多个stack frames，就可能一个运行在<code>LLInt</code>下，另一个运行在<code>Baseline JIT</code>里，其它的可能正运行在<code>DFG</code>里。更为极端的情况是当从新优化在执行过程被触发时，就会出现一个stack frame正在执行本来旧的DFG编译，而另一个则正执行新的DFG编译。为此三者计划成维护雷同的执行语义(execution semantics), 它们的混合应用也是为了带来显著的效能提升。</p>
-<h2><span id="工作流程图">工作流程图</span></h2><style>.dguvleocypep{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png" class="dguvleocypep">
+<h2 id="工作流程图"><a href="#工作流程图" class="headerlink" title="工作流程图"></a>工作流程图</h2><style>.stehltehogku{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png" class="stehltehogku">
 
 
 
-<h2><span id="执行的基础环境">执行的基础环境</span></h2><p>JSC解析生成的代码放到一个虚拟机上来执行(广义上讲JSC主身就是一个虚拟机)。JSC使用的是一个基于寄存器的虚拟机(register-based VM)，另一种实现方式是基于栈的虚拟机(stack-based VM)。两者的差异可以简单的理解为指令集传递参数的方式，是使用寄存器，还是使用栈。<br>相对于基于栈的虚拟机,因为不需要频繁的压、出栈，以及对三元操作的支持，register-based VM的效率更高，但可移植性相对弱一些。</p>
+<h2 id="执行的基础环境"><a href="#执行的基础环境" class="headerlink" title="执行的基础环境"></a>执行的基础环境</h2><p>JSC解析生成的代码放到一个虚拟机上来执行(广义上讲JSC主身就是一个虚拟机)。JSC使用的是一个基于寄存器的虚拟机(register-based VM)，另一种实现方式是基于栈的虚拟机(stack-based VM)。两者的差异可以简单的理解为指令集传递参数的方式，是使用寄存器，还是使用栈。<br>相对于基于栈的虚拟机,因为不需要频繁的压、出栈，以及对三元操作的支持，register-based VM的效率更高，但可移植性相对弱一些。</p>
 <p>所谓的三元操作符，其中add就是一个三元操作,add dst, src1, src2，功能是将src1与src2相加，将结果保存在dst中。dst, src1,src2都是寄存器。<br>参考<a href="https://webkit.org/specs/squirrelfish-bytecode.html">JSC字节码规格</a>，给出两个示例：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">new_array</span><br><span class="line">Format: new_array dst(r) firstArg(r) argCount(n)</span><br><span class="line"></span><br><span class="line">Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.</span><br></pre></td></tr></table></figure>
 
@@ -482,15 +482,15 @@
 <p>而基于栈的虚拟机的生成的字节码如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return  </span><br></pre></td></tr></table></figure>
 <p>可以体会下这两种方式的不同</p>
-<h2><span id="从js-script到byte-code">从JS Script到Byte Code</span></h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。</p>
-<style>.joyrmmsmmsqd{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png" class="joyrmmsmmsqd">
+<h2 id="从JS-Script到Byte-Code"><a href="#从JS-Script到Byte-Code" class="headerlink" title="从JS Script到Byte Code"></a>从JS Script到Byte Code</h2><p>首先说明<code>Lexer</code>, <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。</p>
+<style>.ixtqsngfdfgv{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png" class="ixtqsngfdfgv">
 <p>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:</p>
-<style>.zifhgwipvtom{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png" class="zifhgwipvtom">
+<style>.nfycifbwxihm{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png" class="nfycifbwxihm">
 <p>而Lexer则是在Parser过程中调用的，如下图:</p>
-<style>.mjplijwurryh{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png" class="mjplijwurryh">
+<style>.ofixmileyfie{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png" class="ofixmileyfie">
 
 <p>更具体的细节会在随后会在对应的篇章中进行分析</p>
-<h2><span id="更新中">更新中…</span></h2>
+<h2 id="更新中…"><a href="#更新中…" class="headerlink" title="更新中…"></a>更新中…</h2>
       
     </div>
     
@@ -725,7 +725,7 @@
             
               <div class="site-state-item site-state-posts">
               
-                <a href="/archives/%20%7C%7C%20archive">
+                <a href="/archives/%7C%7C%20archive">
               
                   <span class="site-state-item-count">31</span>
                   <span class="site-state-item-name">日志</span>
@@ -782,7 +782,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">2.</span> <span class="nav-text">JavaScriptCore简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">3.</span> <span class="nav-text">源码目录结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">4.</span> <span class="nav-text">核心模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">5.</span> <span class="nav-text">工作流程图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">6.</span> <span class="nav-text">执行的基础环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">7.</span> <span class="nav-text">从JS Script到Byte Code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">8.</span> <span class="nav-text">更新中…</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JavaScriptCore%E7%AE%80%E4%BB%8B"><span class="nav-number">2.</span> <span class="nav-text">JavaScriptCore简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">源码目录结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97"><span class="nav-number">4.</span> <span class="nav-text">核心模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">5.</span> <span class="nav-text">工作流程图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E7%9A%84%E5%9F%BA%E7%A1%80%E7%8E%AF%E5%A2%83"><span class="nav-number">6.</span> <span class="nav-text">执行的基础环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8EJS-Script%E5%88%B0Byte-Code"><span class="nav-number">7.</span> <span class="nav-text">从JS Script到Byte Code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0%E4%B8%AD%E2%80%A6"><span class="nav-number">8.</span> <span class="nav-text">更新中…</span></a></li></ol></div>
             
 
           </div>
