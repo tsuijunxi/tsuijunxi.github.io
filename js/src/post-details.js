@@ -73,14 +73,16 @@ $(document).ready(function () {
   $('.post-toc a').on('click', function (e) {
     e.preventDefault();
     var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+    // 对获取到的url进行重编码
+    targetSelector = decodeURI(this.getAttribute('href'));
     var offset = $(targetSelector).offset().top;
 
-    hasVelocity ?
-      html.velocity('stop').velocity('scroll', {
-        offset: offset  + 'px',
+    hasVelocity
+      ? html.velocity('stop').velocity('scroll', {
+        offset  : offset + 'px',
         mobileHA: false
-      }) :
-      $('html, body').stop().animate({
+      })
+      : $('html, body').stop().animate({
         scrollTop: offset
       }, 500);
   });
