@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="简述什么是 C++ 异常机制？如代码所示，你是否比较好奇：  当 try 代码块中触发了 throw，它是如何寻找到对应的 catch 代码块的，尤其是调用层级很深的情况？ 由于 throw 改变了代码流程，try 块中的对象 r 是否能得到正常释放？ 如果方法调用层级包含了不同的语言，例如 C -&gt; C++ -&gt; C -&gt; C++，但 C 语言并不支持异常处理，那么上面的代码是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从源码看 C++ 异常">
+<meta property="og:url" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="简述什么是 C++ 异常机制？如代码所示，你是否比较好奇：  当 try 代码块中触发了 throw，它是如何寻找到对应的 catch 代码块的，尤其是调用层级很深的情况？ 由于 throw 改变了代码流程，try 块中的对象 r 是否能得到正常释放？ 如果方法调用层级包含了不同的语言，例如 C -&gt; C++ -&gt; C -&gt; C++，但 C 语言并不支持异常处理，那么上面的代码是">
+<meta property="og:locale">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/11.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
+<meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
+<meta property="article:modified_time" content="2026-08-01T18:52:24.012Z">
+<meta property="article:author" content="lingyun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2026/03/07/从源码看 C++ 异常/"/>
+
+
+
+
+
+  <title>从源码看 C++ 异常 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">从源码看 C++ 异常</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-03-07T23:06:59+08:00">
+                2026-03-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C-%E5%BC%82%E5%B8%B8/" itemprop="url" rel="index">
+                    <span itemprop="name">C++  异常</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="简述"><a href="#简述" class="headerlink" title="简述"></a>简述</h2><h3 id="什么是-C-异常机制？"><a href="#什么是-C-异常机制？" class="headerlink" title="什么是 C++ 异常机制？"></a>什么是 C++ 异常机制？</h3><p>如代码所示，你是否比较好奇：</p>
+<ul>
+<li>当 try 代码块中触发了 throw，它是如何寻找到对应的 catch 代码块的，尤其是调用层级很深的情况？</li>
+<li>由于 throw 改变了代码流程，try 块中的对象 r 是否能得到正常释放？</li>
+<li>如果方法调用层级包含了不同的语言，例如 C -&gt; C++ -&gt; C -&gt; C++，但 C 语言并不支持异常处理，那么上面的代码是否还能正常执行？</li>
+<li>你在平时的开发过程中是否遇到过无法 catch 的情况？</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">RAII</span> &#123;</span><br><span class="line">    ~<span class="built_in">RAII</span>() &#123; <span class="built_in">printf</span>(<span class="string">&quot;RAII object has been destroyed\n&quot;</span>); &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">catchit</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        RAII r;</span><br><span class="line">        <span class="keyword">throw</span> <span class="built_in">Exception</span>();</span><br><span class="line">    &#125; <span class="built_in">catch</span>(Exception&amp;) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Caught an Exception!\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// output</span></span><br><span class="line">RAII object has been destroyed</span><br><span class="line">Caught an Exception!</span><br></pre></td></tr></table></figure>
+
+<p>本文将从源码角度来逐步阐述这些问题</p>
+<h3 id="C-异常机制的设计理念"><a href="#C-异常机制的设计理念" class="headerlink" title="C++ 异常机制的设计理念"></a>C++ 异常机制的设计理念</h3><p>异常处理是许多高级语言都具有的特性，它可以直接中断当前函数并将控制权转交给能够处理异常的函数。C++ 之父 Bjarne Stroustrup 在《The C++ Programming Language》中讲到：一个库的作者可以检测出发生了运行时错误，但一般不知道怎样去处理它们（因为和用户具体的应用有关）；另一方面，库的用户知道怎样处理这些错误，但却无法检查它们何时发生。提供异常的基本目的就是为了处理上面的问题，其基本思想是：<strong>让一个函数在发现了自己无法处理的错误时抛出（throw）一个异常，然后它的（直接或者间接）调用者能够处理这个问题，核心就是将问题检测和问题处理相分离</strong>。所以，<strong>异常处理的核心不在异常，而在处理</strong>。不管抛出的是什么异常，它只是一个信息承载的方式，异常处理最关键的是如何把这个异常传递给能够处理它的人。还有最重要的一点，在这个过程中把现场“清理干净”</p>
+<h3 id="有哪些-C-异常实现机制？"><a href="#有哪些-C-异常实现机制？" class="headerlink" title="有哪些 C++ 异常实现机制？"></a>有哪些 C++ 异常实现机制？</h3><p>到目前为止，有<a href="https://www.gricad-gitlab.univ-grenoble-alpes.fr/tracing-llvm/llvm/-/tree/d2298e74235598f15594fe2c99bbac870a507c59/libunwind/docs#:~:text=libunwind%20is%20a%20production%2Dquality,%2C%20SjLj%2C%20and%20ARM%20EHABI.">多种 C++ 异常实现机制</a>。</p>
+<style>.qwtyjozipevd{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="qwtyjozipevd">
+
+<ul>
+<li>SJLJ 主要用于较老的系统或者嵌入式系统，其优点是实现简单，但效率较低；</li>
+<li>EHABI 则主要用于 ARM32 架构，其特点是与 ARM32 架构紧密结合，性能较好。</li>
+<li><strong>DWARF CFI 则是目前应用最广泛的机制，其效率和功能都比较均衡（本文重点）</strong></li>
+<li>除此之外，Compact Unwind（表格比较老，无该项）是苹果平台的专属优化，只能做简单的栈展开，不能处理异常匹配、清理代码等复杂场景，遇到复杂情况时，系统会自动回退到功能完整的 DWARF CFI</li>
+</ul>
+<h3 id="C-异常机制分层"><a href="#C-异常机制分层" class="headerlink" title="C++ 异常机制分层"></a>C++ 异常机制分层</h3><p>Itanium C++ ABI：异常处理分为<strong>一级基础 ABI</strong> 和<strong>二级 C++ ABI</strong>。</p>
+<p><strong>一级基础 ABI</strong> 用于堆栈展开、异常处理和回调的库，提供了一种<strong>跨平台</strong>的 API 来处理堆栈展开，其 API 形式 <code>Unwind*</code>。常见实现 libgcc 和 <strong>libunwind</strong>。</p>
+<ul>
+<li>允许捕获和恢复程序执行上下文，并支持函数调用栈的展开。</li>
+<li>在异常处理和调试过程中，能够访问调用栈信息</li>
+</ul>
+<p><strong>二级 C++ ABI</strong> 主要负责为 C++ 标准库提供应用二进制接口（ABI）支持，特别是在异常处理和运行时类型识别 (RTTI) 方面。其 API 形式是<code>__cxa_*</code>常见的实现方式有：libsupc++ 和 <strong>libc++abi</strong></p>
+<ul>
+<li>实现了 C++ 异常处理中的关键功能，如 __cxa_throw、__cxa_rethrow、__gxx_personality_v0 等。</li>
+<li>提供动态类型信息的支持，例如 typeinfo 和 dynamic_cast。</li>
+</ul>
+<blockquote>
+<p><strong>关于 C++ Itanium ABI，主要分为四大板块（本文讨论的就是板块三）</strong><br>内存布局（Data Layout）<br>调用约定（Calling Convention）<br><strong>异常处理机制（Exception Handling）</strong><br>定义输入到链接器的对象文件的格式（Linkage &amp; Object Files）</p>
+</blockquote>
+<h2 id="异常机制概览"><a href="#异常机制概览" class="headerlink" title="异常机制概览"></a>异常机制概览</h2><style>.etoulmvjcexy{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png" class="etoulmvjcexy">
+<p>该图简要地描述了 C++ 异常机制的处理流程的流转，例如 __cxa_throw、 _Unwind_RaiseException、unwind_phase1、unwind_phase2、landingpad 等，以及所依赖的各种数据信息，例如 eh_frame、unw_proc_info_t、CIE、FDE、exceptiontable、callsitetable、actiontable 等。接下来将从<strong>抛出异常</strong>、<strong>栈回溯</strong>、**捕获异常 **3 个阶段详细阐述 C++ 异常的实现机制，期间会对这里的各种概念进行阐述。</p>
+<blockquote>
+<p>1.为了突出重点，本文的很多参考源码（来自llvm-project）都有一定程度的代码删减<br>2.和平台相关的，本文主要针对 ARM64 架构，例如一些汇编代码</p>
+</blockquote>
+<h2 id="抛出异常"><a href="#抛出异常" class="headerlink" title="抛出异常"></a>抛出异常</h2><h3 id="cxa-allocate-exception"><a href="#cxa-allocate-exception" class="headerlink" title="__cxa_allocate_exception"></a>__cxa_allocate_exception</h3><p>当用户代码使用 throw 抛出一个异常时，代码首先流转到 __cxa_allocate_exception。该方法负责申请一块内存，该空间会包含一个 exception header，用来存储一些 C++ ABI 需要的信息，偏移后的空间用来存储用户数据。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *__cxa_allocate_exception(<span class="type">size_t</span> thrown_size) <span class="keyword">throw</span>() &#123;</span><br><span class="line">    <span class="type">size_t</span> actual_size = <span class="built_in">cxa_exception_size_from_exception_thrown_size</span>(thrown_size);</span><br><span class="line">    <span class="comment">// Allocate extra space before the __cxa_exception header to ensure the</span></span><br><span class="line">    <span class="comment">// start of the thrown object is sufficiently aligned.</span></span><br><span class="line">    <span class="type">size_t</span> header_offset = <span class="built_in">get_cxa_exception_offset</span>();</span><br><span class="line">    <span class="type">char</span> *raw_buffer = (<span class="type">char</span> *)__aligned_malloc_with_fallback(header_offset + actual_size);</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == raw_buffer) std::<span class="built_in">terminate</span>();</span><br><span class="line">    __cxa_exception *exception_header = <span class="built_in">static_cast</span>&lt;__cxa_exception *&gt;((<span class="type">void</span> *)(raw_buffer + header_offset));</span><br><span class="line">    <span class="comment">// We warn on memset to a non-trivially castable type. We might want to</span></span><br><span class="line">    <span class="comment">// change that diagnostic to not fire on a trivially obvious zero fill.</span></span><br><span class="line">    ::<span class="built_in">memset</span>(<span class="built_in">static_cast</span>&lt;<span class="type">void</span>*&gt;(exception_header), <span class="number">0</span>, actual_size);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">thrown_object_from_cxa_exception</span>(exception_header);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里看起来是一个简单的内存分配，但其中的机制远比想象的复杂：当一个异常被抛出时，会对栈进行一些操作，所以在栈上进行分配可能不是个好主意。同时，在堆上分配内存可能也不是个好主意，因为可能需要在内存耗尽的情况下抛出异常。静态分配也不是一个好主意，因为我们需要这个操作是线程安全的（否则，如果两个线程同时抛出异常，那就麻烦了）。考虑到这些限制，大多数实现似乎都是在本地线程存储（堆）上分配内存，但如果内存耗尽，就会使用紧急存储（可能是静态的）</p>
+<h3 id="cxa-throw"><a href="#cxa-throw" class="headerlink" title="__cxa_throw"></a>__cxa_throw</h3><p>当完成异常内存申请后，代码流转到 __cxa_throw，它首先完成 __cxa_exception 结构体的初始化，然后将异常压入异常管理栈 __cxa_eh_globals 中，最后调用 _Unwind_RaiseException。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line">__cxa_throw(<span class="type">void</span> *thrown_object, std::type_info *tinfo, <span class="built_in">void</span> (_LIBCXXABI_DTOR_FUNC *dest)(<span class="type">void</span> *)) &#123;</span><br><span class="line">  __cxa_eh_globals* globals = __cxa_get_globals();</span><br><span class="line">  globals-&gt;uncaughtExceptions += <span class="number">1</span>; <span class="comment">// Not atomically, since globals are thread-local</span></span><br><span class="line">  __cxa_exception* exception_header = __cxa_init_primary_exception(thrown_object, tinfo, dest);</span><br><span class="line">  exception_header-&gt;referenceCount = <span class="number">1</span>; <span class="comment">// This is a newly allocated exception, no need for thread safety.</span></span><br><span class="line">  _Unwind_RaiseException(&amp;exception_header-&gt;unwindHeader);</span><br><span class="line">  <span class="comment">//  This only happens when there is no handler, or some unexpected unwinding</span></span><br><span class="line">  <span class="comment">//  error happens.</span></span><br><span class="line">  <span class="built_in">failed_throw</span>(exception_header);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意下 __cxa_exception、_Unwind_Exception 和 exception_obj 的内存分布，后文中将会看到一些指针转换的操作，例如：__cxa_exception* exception_header &#x3D; (__cxa_exception*)(unwind_exception + 1) - 1，将一个unwind_exception 类型的指针转换为一个 __cxa_exception 类型的指针。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__cxa_exception</span> &#123; </span><br><span class="line">    std::type_info *    exceptionType;</span><br><span class="line">    <span class="built_in">void</span> (*exceptionDestructor) (<span class="type">void</span> *); </span><br><span class="line">    unexpected_handler  unexpectedHandler;</span><br><span class="line">    terminate_handler   terminateHandler;</span><br><span class="line">    __cxa_exception *   nextException;</span><br><span class="line">    <span class="type">int</span>         handlerCount;</span><br><span class="line">    <span class="type">int</span>         handlerSwitchValue;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *        actionRecord;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *        languageSpecificData;</span><br><span class="line">    <span class="type">void</span> *          catchTemp;</span><br><span class="line">    <span class="type">void</span> *          adjustedPtr;</span><br><span class="line">    _Unwind_Exception   unwindHeader;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">_Unwind_Exception</span> &#123;</span><br><span class="line">  _Unwind_Exception_Class exception_class;</span><br><span class="line">  <span class="built_in">void</span> (*exception_cleanup)(_Unwind_Reason_Code reason, _Unwind_Exception *exc);</span><br><span class="line">  <span class="type">uintptr_t</span> private_1; <span class="comment">// non-zero means forced unwind</span></span><br><span class="line">  <span class="type">uintptr_t</span> private_2; <span class="comment">// holds sp that phase1 found for phase2 to use</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此外这里还有个异常管理栈 __cxa_eh_globals</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__cxa_eh_globals</span> &#123;</span><br><span class="line">    __cxa_exception *   caughtExceptions;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span>        uncaughtExceptions;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>__cxa_eh_globals 里面保存了栈顶的 exception，以及未处理的 exception 数量。每次有新的 exception 时，当前exception 的 header 中的 nextException 会指向当前的 caughtException，然后更新 __cxa_eh_globals 里面的exception header为这个新的 exception 的 header。</p>
+<p>异常处理过程优先处理最新的 exception，处理完后会处理之前一个旧的 exception，按照处理顺序来说也就是下一个。简单总结下，begin_catch 的时候减少计数并且把 cxa_exception 放到栈上，而在 end_catch 的时候将对象从globals 中取出，而在 catch 以及 throw 的过程中通过增减 uncaughtExceptions 来管理当前未处理异常对象的数量。</p>
+<h2 id="栈回溯"><a href="#栈回溯" class="headerlink" title="栈回溯"></a>栈回溯</h2><h3 id="Unwind-RaiseException"><a href="#Unwind-RaiseException" class="headerlink" title="_Unwind_RaiseException"></a>_Unwind_RaiseException</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">_LIBUNWIND_EXPORT _Unwind_Reason_Code</span><br><span class="line">_Unwind_RaiseException(_Unwind_Exception *exception_object) &#123;</span><br><span class="line">  <span class="type">unw_context_t</span> uc;</span><br><span class="line">  <span class="type">unw_cursor_t</span> cursor;</span><br><span class="line">  __unw_getcontext(&amp;uc);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Mark that this is a non-forced unwind, so _Unwind_Resume() can do the right thing.</span></span><br><span class="line">  exception_object-&gt;private_1 = <span class="number">0</span>;</span><br><span class="line">  exception_object-&gt;private_2 = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// phase 1: the search phase</span></span><br><span class="line">  _Unwind_Reason_Code phase1 = <span class="built_in">unwind_phase1</span>(&amp;uc, &amp;cursor, exception_object);</span><br><span class="line">  <span class="keyword">if</span> (phase1 != _URC_NO_REASON) <span class="keyword">return</span> phase1;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// phase 2: the clean up phase</span></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">unwind_phase2</span>(&amp;uc, &amp;cursor, exception_object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如代码所示，_Unwind_RaiseException 采用了经典的两段式回溯：unwind_phase1 与 unwind_phase2。</p>
+<p>**unwind_phase1（Search）**会遍历整个栈以查找 Exception Handler。如果没有找到 Exception Handler，则应当终止程序。不过 libunwind 本身不会直接调用 std::terminate()，而是返回 _URC_END_OF_STACK 并由调用者决定如何终止程序。</p>
+<p>**unwind_phase2（Clean）**会逐帧回溯并清理栈，直到最后的 Exception Handler。从代码中也可以看到，如果unwind_phase1 阶段没有找到 Exception Handler，那么根本就不会进入到第二阶段，也就是不会进行栈回溯，栈上对象的析构函数不会被执行。</p>
+<h3 id="unwind-phase1"><a href="#unwind-phase1" class="headerlink" title="unwind_phase1"></a>unwind_phase1</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Reason_Code</span></span><br><span class="line"><span class="function"><span class="title">unwind_phase1</span><span class="params">(<span class="type">unw_context_t</span> *uc, <span class="type">unw_cursor_t</span> *cursor, _Unwind_Exception *exception_object)</span> </span>&#123;</span><br><span class="line">  __unw_init_local(cursor, uc);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Walk each frame looking for a place to stop.</span></span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    <span class="comment">// Ask libunwind to get next frame (skip over first which is</span></span><br><span class="line">    <span class="comment">// _Unwind_RaiseException).</span></span><br><span class="line">    <span class="type">int</span> stepResult = __unw_step(cursor);</span><br><span class="line">    <span class="keyword">if</span> (stepResult == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_END_OF_STACK;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (stepResult &lt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// See if frame has code to run (has personality routine).</span></span><br><span class="line">    <span class="type">unw_proc_info_t</span> frameInfo;</span><br><span class="line">    <span class="type">unw_word_t</span> sp;</span><br><span class="line">    <span class="keyword">if</span> (__unw_get_proc_info(cursor, &amp;frameInfo) != UNW_ESUCCESS) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If there is a personality routine, ask it if it will want to stop at</span></span><br><span class="line">    <span class="comment">// this frame.</span></span><br><span class="line">    <span class="keyword">if</span> (frameInfo.handler != <span class="number">0</span>) &#123;</span><br><span class="line">      _Unwind_Personality_Fn p = <span class="built_in">get_handler_function</span>(&amp;frameInfo);</span><br><span class="line">      _Unwind_Reason_Code personalityResult =</span><br><span class="line">          (*p)(<span class="number">1</span>, _UA_SEARCH_PHASE, exception_object-&gt;exception_class,</span><br><span class="line">               exception_object, (<span class="keyword">struct</span> _Unwind_Context *)(cursor));</span><br><span class="line">      <span class="keyword">switch</span> (personalityResult) &#123;</span><br><span class="line">      <span class="keyword">case</span> _URC_HANDLER_FOUND:</span><br><span class="line">        <span class="comment">// found a catch clause or locals that need destructing in this frame</span></span><br><span class="line">        <span class="comment">// stop search and remember stack pointer at the frame</span></span><br><span class="line">        __unw_get_reg(cursor, UNW_REG_SP, &amp;sp);</span><br><span class="line">        exception_object-&gt;private_2 = (<span class="type">uintptr_t</span>)sp;</span><br><span class="line">        <span class="keyword">return</span> _URC_NO_REASON;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">case</span> _URC_CONTINUE_UNWIND:</span><br><span class="line">        <span class="comment">// continue unwinding</span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> _URC_NO_REASON;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 unwind_phase1 中，代码会不断循环查找 Exception Handler，直到找到 Exception Handler 或者到达栈底：</p>
+<ol>
+<li>使用 __unw_step 函数，使 cursor 指向下一个栈帧；</li>
+<li>使用 __unw_get_proc_info 函数，检查当前栈帧是否有需要执行的代码；<ul>
+<li>如果找到了要执行的代码，则检查是否要停在当前栈帧（可能找到了 Exception Handler）；<ul>
+<li>如果找到了Exception Handler，标记当前栈帧并返回；</li>
+<li>否则继续循环。</li>
+</ul>
+</li>
+<li>如果没有找到要执行的代码，则继续循环。<br>在检查 catch 块是否与当前异常对象所匹配时，会对比 RTTI 信息等，所以如果回滚过程中找到了很多 catch，会对 unwind_phase1 的性能有较大的影响。</li>
+</ul>
+</li>
+</ol>
+<h3 id="unwind-phase2"><a href="#unwind-phase2" class="headerlink" title="unwind_phase2"></a>unwind_phase2</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Reason_Code</span></span><br><span class="line"><span class="function"><span class="title">unwind_phase2</span><span class="params">(<span class="type">unw_context_t</span> *uc, <span class="type">unw_cursor_t</span> *cursor,</span></span></span><br><span class="line"><span class="params"><span class="function">              _Unwind_Exception *exception_object)</span> </span>&#123;</span><br><span class="line">  __unw_init_local(cursor, uc);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// uc is initialized by __unw_getcontext in the parent frame. The first stack</span></span><br><span class="line">  <span class="comment">// frame walked is unwind_phase2.</span></span><br><span class="line">  <span class="type">unsigned</span> framesWalked = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Walk each frame until we reach where search phase said to stop.</span></span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Ask libunwind to get next frame (skip over first which is</span></span><br><span class="line">    <span class="comment">// _Unwind_RaiseException).</span></span><br><span class="line">    <span class="type">int</span> stepResult = __unw_step_stage2(cursor);</span><br><span class="line">    <span class="keyword">if</span> (stepResult == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_END_OF_STACK;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (stepResult &lt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Get info about this frame.</span></span><br><span class="line">    <span class="type">unw_word_t</span> sp;</span><br><span class="line">    <span class="type">unw_proc_info_t</span> frameInfo;</span><br><span class="line">    __unw_get_reg(cursor, UNW_REG_SP, &amp;sp);</span><br><span class="line">    <span class="keyword">if</span> (__unw_get_proc_info(cursor, &amp;frameInfo) != UNW_ESUCCESS) &#123;</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ++framesWalked;</span><br><span class="line">    <span class="comment">// If there is a personality routine, tell it we are unwinding.</span></span><br><span class="line">    <span class="keyword">if</span> (frameInfo.handler != <span class="number">0</span>) &#123;</span><br><span class="line">      _Unwind_Personality_Fn p = <span class="built_in">get_handler_function</span>(&amp;frameInfo);</span><br><span class="line">      _Unwind_Action action = _UA_CLEANUP_PHASE;</span><br><span class="line">      <span class="keyword">if</span> (sp == exception_object-&gt;private_2) &#123;</span><br><span class="line">        <span class="comment">// Tell personality this was the frame it marked in phase 1.</span></span><br><span class="line">        action = (_Unwind_Action)(_UA_CLEANUP_PHASE | _UA_HANDLER_FRAME);</span><br><span class="line">      &#125;</span><br><span class="line">      _Unwind_Reason_Code personalityResult =</span><br><span class="line">          (*p)(<span class="number">1</span>, action, exception_object-&gt;exception_class, exception_object,</span><br><span class="line">               (<span class="keyword">struct</span> _Unwind_Context *)(cursor));</span><br><span class="line">      <span class="keyword">switch</span> (personalityResult) &#123;</span><br><span class="line">      <span class="keyword">case</span> _URC_CONTINUE_UNWIND:</span><br><span class="line">        <span class="comment">// Continue unwinding</span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> _URC_INSTALL_CONTEXT:</span><br><span class="line">        <span class="comment">// Personality routine says to transfer control to landing pad.</span></span><br><span class="line">        <span class="comment">// We may get control back if landing pad calls _Unwind_Resume().</span></span><br><span class="line">        __unw_phase2_resume(cursor, framesWalked);</span><br><span class="line">        <span class="comment">// __unw_phase2_resume() only returns if there was an error.</span></span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="comment">// Personality routine returned an unknown result code.</span></span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Clean up phase did not resume at the frame that the search phase</span></span><br><span class="line">  <span class="comment">// said it would...</span></span><br><span class="line">  <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>unwind_phase2</code>与<code>unwind_phase1</code>的代码非常类似，也是在循环中回溯栈，只不过它所做的事情要多一点：</p>
+<ol>
+<li><p>使用<code>__unw_step_stage2</code>函数，使 cursor 指向下一个栈帧；</p>
+</li>
+<li><p>使用<code>__unw_get_reg</code>获取当前栈帧的<code>sp</code>寄存器；</p>
+</li>
+<li><p>使用<code>__unw_get_proc_info</code>函数，获取当前栈帧的信息；</p>
+</li>
+<li><p>如果当前栈帧有要执行的代码，则告诉它目前正在进行 _UA_CLEANUP_PHASE | _UA_HANDLER_FRAME</p>
+<ul>
+<li><p>如果这段代码执行后应当继续回溯，则继续循环；</p>
+</li>
+<li><p>如果这段代码执行后回溯到此为止，则尝试 resume 控制权</p>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="Others"><a href="#Others" class="headerlink" title="Others"></a>Others</h3><h4 id="unw-step-退栈"><a href="#unw-step-退栈" class="headerlink" title="__unw_step 退栈"></a>__unw_step 退栈</h4><p>unwind_phase1 和 unwind_phase2 都调用到了__unw_step 或者 __unw_step_stage2 进行 1 次或者多次栈回退。栈回退操作，就需要改变当前的 PC 指针。<code>__unw_step</code> 函数会改变备份在 cursor 中的寄存器信息，完成一层退栈操作。发生退栈操作时，需要解决两个问题：</p>
+<ol>
+<li><p>恢复 callee saved register</p>
+</li>
+<li><p>正确设置四个重要寄存器 pc、lr、fp、sp</p>
+</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __unw_step(<span class="type">unw_cursor_t</span> *cursor) &#123;</span><br><span class="line">  AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;</span><br><span class="line">  <span class="keyword">return</span> co-&gt;<span class="built_in">step</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> __unw_step_stage2(<span class="type">unw_cursor_t</span> *cursor) &#123;</span><br><span class="line">  AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;</span><br><span class="line">  <span class="keyword">return</span> co-&gt;<span class="built_in">step</span>(<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A = libunwind::LocalAddressSpace, R = libunwind::Registers_arm64</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> A, <span class="keyword">typename</span> R&gt; <span class="type">int</span> UnwindCursor&lt;A, R&gt;::<span class="built_in">step</span>(<span class="type">bool</span> stage2) &#123;</span><br><span class="line">  (<span class="type">void</span>)stage2;</span><br><span class="line">  <span class="comment">// Bottom of stack is defined when unwind info cannot be found.</span></span><br><span class="line">  <span class="keyword">if</span> (_unwindInfoMissing)</span><br><span class="line">    <span class="keyword">return</span> UNW_STEP_END;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Use unwinding info to modify register set as if function returned.</span></span><br><span class="line">  <span class="type">int</span> result;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(_LIBUNWIND_SUPPORT_COMPACT_UNWIND)</span></span><br><span class="line">  result = <span class="keyword">this</span>-&gt;<span class="built_in">stepWithCompactEncoding</span>(stage2);</span><br><span class="line"><span class="meta">#<span class="keyword">elif</span> defined(_LIBUNWIND_SUPPORT_DWARF_UNWIND)</span></span><br><span class="line">  result = <span class="keyword">this</span>-&gt;<span class="built_in">stepWithDwarfFDE</span>(stage2);</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// update info based on new PC</span></span><br><span class="line">  <span class="keyword">if</span> (result == UNW_STEP_SUCCESS) &#123;</span><br><span class="line">    <span class="keyword">this</span>-&gt;<span class="built_in">setInfoBasedOnIPRegister</span>(<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span> (_unwindInfoMissing)</span><br><span class="line">      <span class="keyword">return</span> UNW_STEP_END;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>_unw_step 这个函数的实际逻辑最后定位到了 libunwind 的 stepWithDwarfFDE</p>
+<ul>
+<li><p>首先会从栈帧上拿到保存的 ip (instruction pointer，即函数的返回地址)</p>
+</li>
+<li><p>然后调用 DwarfInstructions::stepWithDwarf</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">stepWithDwarfFDE</span><span class="params">(<span class="type">bool</span> stage2)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">typename</span> R::<span class="type">link_reg_t</span> pc = <span class="keyword">this</span>-&gt;<span class="built_in">getReg</span>(UNW_REG_IP);</span><br><span class="line">    <span class="keyword">return</span> DwarfInstructions&lt;A, R&gt;::<span class="built_in">stepWithDwarf</span>(</span><br><span class="line">        _addressSpace, pc, (<span class="type">pint_t</span>)_info.unwind_info, _registers,</span><br><span class="line">        _isSignalFrame, stage2);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>来到了 DwarfInstructions::stepWithDwarf 方法，<strong>该方法会解码 CIE 和 FDE 信息，并依赖这些信息可以还原 x19 - x28，d8 - d15 这些 callee saved register</strong>（关于 CIE 和 FDE 这个后文会有描述）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DwarfInstructions.hpp in libunwind</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> A, <span class="keyword">typename</span> R&gt;</span><br><span class="line"><span class="type">int</span> DwarfInstructions&lt;A, R&gt;::<span class="built_in">stepWithDwarf</span>(</span><br><span class="line">    A &amp;addressSpace, <span class="keyword">typename</span> R::<span class="type">link_hardened_reg_arg_t</span> pc, <span class="type">pint_t</span> fdeStart,</span><br><span class="line">    R &amp;registers, <span class="type">bool</span> &amp;isSignalFrame, <span class="type">bool</span> stage2) &#123;</span><br><span class="line">  FDE_Info fdeInfo;</span><br><span class="line">  CIE_Info cieInfo;</span><br><span class="line">  <span class="keyword">if</span> (CFI_Parser&lt;A&gt;::<span class="built_in">decodeFDE</span>(addressSpace, fdeStart, &amp;fdeInfo,</span><br><span class="line">                               &amp;cieInfo) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    PrologInfo prolog;</span><br><span class="line">    <span class="keyword">if</span> (CFI_Parser&lt;A&gt;::<span class="keyword">template</span> <span class="built_in">parseFDEInstructions</span>&lt;R&gt;(</span><br><span class="line">            addressSpace, fdeInfo, cieInfo, pc, R::<span class="built_in">getArch</span>(), &amp;prolog)) &#123;</span><br><span class="line">      <span class="comment">// get pointer to cfa (architecture specific)</span></span><br><span class="line">      <span class="type">pint_t</span> cfa = <span class="built_in">getCFA</span>(addressSpace, prolog, registers);</span><br><span class="line"></span><br><span class="line">      (<span class="type">void</span>)stage2;</span><br><span class="line">      <span class="comment">// __unw_step_stage2 is not used for cross unwinding, so we use</span></span><br><span class="line">      <span class="comment">// __aarch64__ rather than LIBUNWIND_TARGET_AARCH64 to make sure we are</span></span><br><span class="line">      <span class="comment">// building for AArch64 natively.</span></span><br><span class="line"></span><br><span class="line">      <span class="comment">// restore registers that DWARF says were saved</span></span><br><span class="line">      R newRegisters = registers;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Typically, the CFA is the stack pointer at the call site in</span></span><br><span class="line">      <span class="comment">// the previous frame. However, there are scenarios in which this is not</span></span><br><span class="line">      <span class="comment">// true. For example, if we switched to a new stack. In that case, the</span></span><br><span class="line">      <span class="comment">// value of the previous SP might be indicated by a CFI directive.</span></span><br><span class="line">      <span class="comment">//</span></span><br><span class="line">      <span class="comment">// We set the SP here to the CFA, allowing for it to be overridden</span></span><br><span class="line">      <span class="comment">// by a CFI directive later on.</span></span><br><span class="line">      newRegisters.<span class="built_in">setSP</span>(cfa);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">typename</span> R::<span class="type">reg_t</span> returnAddress = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">constexpr</span> <span class="type">int</span> lastReg = R::<span class="built_in">lastDwarfRegNum</span>();</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt;= lastReg; ++i) &#123;</span><br><span class="line">        <span class="keyword">if</span> (prolog.savedRegisters[i].location != CFI_Parser&lt;A&gt;::kRegisterUnused) &#123;</span><br><span class="line">          <span class="keyword">if</span> (registers.<span class="built_in">validFloatRegister</span>(i))</span><br><span class="line">            newRegisters.<span class="built_in">setFloatRegister</span>(i, <span class="built_in">getSavedFloatRegister</span>(addressSpace, registers, cfa, prolog.savedRegisters[i]));</span><br><span class="line">          <span class="keyword">else</span> <span class="keyword">if</span> (i == (<span class="type">int</span>)cieInfo.returnAddressRegister)</span><br><span class="line">            returnAddress = <span class="built_in">getSavedRegister</span>(addressSpace, registers, cfa, prolog.savedRegisters[i]);</span><br><span class="line">          <span class="keyword">else</span> <span class="keyword">if</span> (registers.<span class="built_in">validRegister</span>(i))</span><br><span class="line">            newRegisters.<span class="built_in">setRegister</span>(i, <span class="built_in">getSavedRegister</span>(addressSpace, registers, cfa, prolog.savedRegisters[i]));</span><br><span class="line">          <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> UNW_EBADREG;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (i == (<span class="type">int</span>)cieInfo.returnAddressRegister) &#123;</span><br><span class="line">            <span class="comment">// Leaf function keeps the return address in register and there is no</span></span><br><span class="line">            <span class="comment">// explicit instructions how to restore it.</span></span><br><span class="line">            returnAddress = registers.<span class="built_in">getRegister</span>(cieInfo.returnAddressRegister);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      isSignalFrame = cieInfo.isSignalFrame;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Return address is address after call site instruction, so setting IP to</span></span><br><span class="line">      <span class="comment">// that does simulates a return.</span></span><br><span class="line">      newRegisters.<span class="built_in">setIP</span>(returnAddress);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Simulate the step by replacing the register set with the new ones.</span></span><br><span class="line">      registers = newRegisters;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">return</span> UNW_STEP_SUCCESS;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> UNW_EBADFRAME;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>CFI_Parser&lt;A&gt;::decodeFDE</code> 负责解码 FDE （Frame Description Entry），<code>CFI_Parser&lt;A&gt;::parseFDEInstructions</code>负责解释执行 FDE 中的 DWARF 字节码，得到指定 PC 位置对应栈上保存的值的位置偏移量表</p>
+<ul>
+<li>拿到栈底基准地址 CFA</li>
+<li>根据位置偏移量表获取到栈上保存的寄存器的所有值，恢复到拷贝的寄存器状态中</li>
+<li>设置 IP 为 returnAddress（跳到上一层函数）</li>
+<li>切换寄存器状态 register 为 newRegisters</li>
+</ul>
+<blockquote>
+<p>其中 <strong>CFA (Canonical Frame Address)</strong> 指的是<strong>上一级调用函数的栈指针（SP）在进入当前函数时的值</strong>。简单说，<strong>它是当前函数的调用者的栈顶位置</strong></p>
+</blockquote>
+<blockquote>
+<p>需要留意的是：这里的寄存器并不是真正意义上的寄存器，而是一块内存，等真正需要的时候将这块内存里面的值加载到真正的寄存器中进行跳转</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">_LIBUNWIND_HIDDEN</span> Registers_arm64 &#123;</span><br><span class="line">  ......</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">GPRs</span> &#123;</span><br><span class="line">    <span class="type">uint64_t</span> __x[<span class="number">29</span>] = &#123;&#125;;        <span class="comment">// x0-x28</span></span><br><span class="line">    <span class="type">uint64_t</span> __fp = <span class="number">0</span>;            <span class="comment">// Frame pointer x29</span></span><br><span class="line">    <span class="type">uint64_t</span> __lr = <span class="number">0</span>;            <span class="comment">// Link register x30</span></span><br><span class="line">    <span class="type">uint64_t</span> __sp = <span class="number">0</span>;            <span class="comment">// Stack pointer x31</span></span><br><span class="line">    <span class="type">uint64_t</span> __pc = <span class="number">0</span>;            <span class="comment">// Program counter</span></span><br><span class="line">    <span class="type">uint64_t</span> __ra_sign_state = <span class="number">0</span>; <span class="comment">// RA sign state register</span></span><br><span class="line">  &#125;;</span><br><span class="line">  GPRs _registers = &#123;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</blockquote>
+<h4 id="unw-get-proc-info-获取栈帧信息"><a href="#unw-get-proc-info-获取栈帧信息" class="headerlink" title="__unw_get_proc_info 获取栈帧信息"></a><code>__unw_get_proc_info</code> 获取栈帧信息</h4><p>unwind_phase1 和 unwind_phase2 都调用到 <code>__unw_get_proc_info</code>函数，获取当前栈帧的信息<code>unw_proc_info_t</code>。<code>unw_proc_info_t</code> 结构体包含函数的起始与结束地址、lsda、personality_routine 函数指针（用于寻找异常对应的 landing pad），还有包含了如何恢复 callee saved register 的信息。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">unw_proc_info_t</span> &#123;</span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_startip start_ip; <span class="comment">/* start address of function */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_endip end_ip;     <span class="comment">/* address after end of function */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_lsda lsda;        <span class="comment">/* address of language specific data area, or zero if not used */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_handler_intptr handler;</span><br><span class="line">  <span class="type">unw_word_t</span>  gp;                                   <span class="comment">/* not used */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_flags flags;      <span class="comment">/* not used */</span></span><br><span class="line">  <span class="type">uint32_t</span>   format;                                <span class="comment">/* compact unwind encoding, or zero if none */</span></span><br><span class="line">  <span class="type">uint32_t</span>   unwind_info_size;                      <span class="comment">/* size of DWARF unwind info, or zero if none */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_info unwind_info; <span class="comment">/* address of DWARF unwind info, or zero */</span></span><br><span class="line">  <span class="type">unw_word_t</span> __ptrauth_unwind_upi_extra extra;      <span class="comment">/* mach_header of mach-o image containing func */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>那么这些信息是从哪里获取到的呢？追踪一下代码，可以看到 __unw_get_proc_info 信息需要依赖到 CIE 和 FDE 获取</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">_LIBUNWIND_HIDDEN <span class="type">int</span> __unw_get_proc_info(<span class="type">unw_cursor_t</span> *cursor, <span class="type">unw_proc_info_t</span> *info) &#123;</span><br><span class="line">    AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;</span><br><span class="line">    co-&gt;<span class="built_in">getInfo</span>(info);</span><br><span class="line">    <span class="keyword">if</span> (info-&gt;end_ip == <span class="number">0</span>) <span class="keyword">return</span> UNW_ENOINFO;</span><br><span class="line">    <span class="keyword">return</span> UNW_ESUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> A, <span class="keyword">typename</span> R&gt;</span><br><span class="line"><span class="type">bool</span> UnwindCursor&lt;A, R&gt;::<span class="built_in">getInfoFromFdeCie</span>(</span><br><span class="line">    <span class="type">const</span> <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::FDE_Info &amp;fdeInfo,</span><br><span class="line">    <span class="type">const</span> <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::CIE_Info &amp;cieInfo,</span><br><span class="line">    <span class="keyword">typename</span> R::<span class="type">link_hardened_reg_arg_t</span> pc, <span class="type">uintptr_t</span> dso_base) &#123;</span><br><span class="line">  <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::PrologInfo prolog;</span><br><span class="line">  <span class="keyword">if</span> (CFI_Parser&lt;A&gt;::<span class="keyword">template</span> <span class="built_in">parseFDEInstructions</span>&lt;R&gt;(</span><br><span class="line">          _addressSpace, fdeInfo, cieInfo, pc, R::<span class="built_in">getArch</span>(), &amp;prolog)) &#123;</span><br><span class="line">    <span class="comment">// Save off parsed FDE info</span></span><br><span class="line">    _info.start_ip          = fdeInfo.pcStart;</span><br><span class="line">    _info.end_ip            = fdeInfo.pcEnd;</span><br><span class="line">    _info.lsda              = fdeInfo.lsda;</span><br><span class="line">    _info.handler           = cieInfo.personality;</span><br><span class="line">    <span class="comment">// Some frameless functions need SP altered when resuming in function, so</span></span><br><span class="line">    <span class="comment">// propagate spExtraArgSize.</span></span><br><span class="line">    _info.gp                = prolog.spExtraArgSize;</span><br><span class="line">    _info.flags             = <span class="number">0</span>;</span><br><span class="line">    _info.format            = <span class="built_in">dwarfEncoding</span>();</span><br><span class="line">    _info.unwind_info       = fdeInfo.fdeStart;</span><br><span class="line">    _info.unwind_info_size  = <span class="built_in">static_cast</span>&lt;<span class="type">uint32_t</span>&gt;(fdeInfo.fdeLength);</span><br><span class="line">    _info.extra             = <span class="built_in">static_cast</span>&lt;<span class="type">unw_word_t</span>&gt;(dso_base);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="捕获和处理异常"><a href="#捕获和处理异常" class="headerlink" title="捕获和处理异常"></a>捕获和处理异常</h2><h3 id="Personality-Routine"><a href="#Personality-Routine" class="headerlink" title="Personality Routine"></a>Personality Routine</h3><p>在 unwind_phase1 和 unwind_phase2 过程中，libc++ 使用 get_handler_function 方法获取 personality routine：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Personality_Fn <span class="title">get_handler_function</span><span class="params">(<span class="type">unw_proc_info_t</span> *frameInfo)</span> </span>&#123;</span><br><span class="line">  <span class="type">uintptr_t</span> __unwind_ptrauth_restricted_intptr(ptrauth_key_function_pointer,</span><br><span class="line">                                               <span class="number">0</span>,</span><br><span class="line">                                               <span class="built_in">ptrauth_function_pointer_type_discriminator</span>(_Unwind_Personality_Fn))</span><br><span class="line">  reauthenticatedIntegerHandler = frameInfo-&gt;handler;</span><br><span class="line">  _Unwind_Personality_Fn handler;</span><br><span class="line">  <span class="built_in">memmove</span>(&amp;handler, (<span class="type">void</span> *)&amp;reauthenticatedIntegerHandler, <span class="built_in">sizeof</span>(_Unwind_Personality_Fn));</span><br><span class="line">  <span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中 Personality Routine 的声明如下。libunwind 使用函数指针的回调函数来具体实现栈清理等功能，这保证了它能够做到语言无关**。**</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> _Unwind_Reason_Code (*_Unwind_Personality_Fn)(<span class="type">int</span>, _Unwind_Action,</span><br><span class="line">                                                      _Unwind_Exception_Class,</span><br><span class="line">                                                      _Unwind_Exception *,</span><br><span class="line">                                                      <span class="keyword">struct</span> _Unwind_Context *);</span><br><span class="line"><span class="keyword">typedef</span> _Unwind_Personality_Fn __personality_routine;</span><br></pre></td></tr></table></figure>
+
+<p>由于在处理异常时，不同编程语言会存在不同的处理行为，例如：</p>
+<ul>
+<li><code>__gxx_personality_v0</code>: C++</li>
+<li><code>__gxx_personality_sj0</code>: sjlj</li>
+<li><code>__gcc_personality_v0</code>: C <code>-fexceptions</code> for <code>attribute((cleanup(...)))</code></li>
+<li><code>__CxxFrameHandler3</code>: Windows MSVC</li>
+<li><code>__gxx_personality_seh0</code>: MinGW-w64 <code>-fseh-exceptions</code></li>
+<li><code>__objc_personality_v0</code>: ObjC in the macOS environment</li>
+</ul>
+<p>其中 libc++ 的 Personality Routine 是 <code>__gxx_personality_v0</code>，它会接收异常的上下文，一个异常结构体包含有异常对象的类型和值，以及指向当前函数的异常表(exception table)的引用。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cxa_personality.cpp in libcxxabi</span></span><br><span class="line">_Unwind_Reason_Code __gxx_personality_v0</span><br><span class="line">                    (<span class="type">int</span> version, _Unwind_Action actions, <span class="type">uint64_t</span> exceptionClass,</span><br><span class="line">                     _Unwind_Exception* unwind_exception, _Unwind_Context* context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (version != <span class="number">1</span> || unwind_exception == <span class="number">0</span> || context == <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="type">bool</span> native_exception = (exceptionClass     &amp; get_vendor_and_language) ==</span><br><span class="line">                            (kOurExceptionClass &amp; get_vendor_and_language);</span><br><span class="line">    scan_results results;</span><br><span class="line">    <span class="keyword">if</span> (actions == (_UA_CLEANUP_PHASE | _UA_HANDLER_FRAME) &amp;&amp; native_exception) &#123;</span><br><span class="line">        <span class="comment">// Reload the results from the phase 1 cache.</span></span><br><span class="line">        __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception + <span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">        results.ttypeIndex = exception_header-&gt;handlerSwitchValue;</span><br><span class="line">        results.actionRecord = exception_header-&gt;actionRecord;</span><br><span class="line">        results.languageSpecificData = exception_header-&gt;languageSpecificData;</span><br><span class="line">        results.landingPad = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">uintptr_t</span>&gt;(exception_header-&gt;catchTemp);</span><br><span class="line">        results.adjustedPtr = exception_header-&gt;adjustedPtr;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Jump to the handler.</span></span><br><span class="line">        <span class="built_in">set_registers</span>(unwind_exception, context, results);</span><br><span class="line">        <span class="comment">// Cache base for calculating the address of ttype in</span></span><br><span class="line">        <span class="comment">// __cxa_call_unexpected.</span></span><br><span class="line">        <span class="keyword">if</span> (results.ttypeIndex &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            exception_header-&gt;catchTemp = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _URC_INSTALL_CONTEXT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// In other cases we need to scan LSDA.</span></span><br><span class="line">    <span class="built_in">scan_eh_tab</span>(results, actions, native_exception, unwind_exception, context);</span><br><span class="line">    <span class="keyword">if</span> (results.reason == _URC_CONTINUE_UNWIND ||</span><br><span class="line">        results.reason == _URC_FATAL_PHASE1_ERROR)</span><br><span class="line">        <span class="keyword">return</span> results.reason;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (actions &amp; _UA_SEARCH_PHASE)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Phase 1 search:  All we&#x27;re looking for in phase 1 is a handler that</span></span><br><span class="line">        <span class="comment">// halts unwinding</span></span><br><span class="line">        <span class="built_in">assert</span>(results.reason == _URC_HANDLER_FOUND);</span><br><span class="line">        <span class="keyword">if</span> (native_exception) &#123;</span><br><span class="line">            <span class="comment">// For a native exception, cache the LSDA result.</span></span><br><span class="line">            __cxa_exception* exc = (__cxa_exception*)(unwind_exception + <span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">            exc-&gt;handlerSwitchValue = <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(results.ttypeIndex);</span><br><span class="line">            exc-&gt;actionRecord = results.actionRecord;</span><br><span class="line">            exc-&gt;languageSpecificData = results.languageSpecificData;</span><br><span class="line">            exc-&gt;catchTemp = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">void</span>*&gt;(results.landingPad);</span><br><span class="line">            exc-&gt;adjustedPtr = results.adjustedPtr;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _URC_HANDLER_FOUND;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">assert</span>(actions &amp; _UA_CLEANUP_PHASE);</span><br><span class="line">    <span class="built_in">assert</span>(results.reason == _URC_HANDLER_FOUND);</span><br><span class="line">    <span class="built_in">set_registers</span>(unwind_exception, context, results);</span><br><span class="line">    <span class="comment">// Cache base for calculating the address of ttype in __cxa_call_unexpected.</span></span><br><span class="line">    <span class="keyword">if</span> (results.ttypeIndex &lt; <span class="number">0</span>) &#123;</span><br><span class="line">      __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception + <span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">      exception_header-&gt;catchTemp = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _URC_INSTALL_CONTEXT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Search 阶段主要用于寻找对应栈的异常处理信息，因此在此之前需要先扫描 eh_frame 来获取 lsda。</p>
+<ul>
+<li>如果找不到对应处理信息那么会返回 continue unwind，在libunwind中继续 step 到下一个栈，直到找到对应的栈帧或者scan出错为止。</li>
+<li>如果找到异常处理信息，那么会保存在 __cxa_exception 中，供 unwind_phase2 读取使用。</li>
+</ul>
+<p>Clearup 阶段有 2 种情况：</p>
+<ul>
+<li>一类是在 unwind_phase1 中已经找好对应的异常处理信息，可以直接读取信息并且设置 context 的寄存器，此时读取的就是 unwind_phase1 中保存的结果，通过 set_registers 设置对应的值</li>
+<li>另一类则是没有可用处理信息的情况，会再次 scan_eh_tab，使用搜索到的结果更新 context。</li>
+</ul>
+<p>当 <code>__gxx_personality_v0</code> 方法找到对应的 landingpad 时，会通过 set_registers 设置好寄存器 R0 为unwind_exception，R1 为 ttypeIndex，IP 设置为 landingPad 的入口地址，并返回 _URC_INSTALL_CONTEXT。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cxa_personality.cpp</span></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">set_registers</span><span class="params">(_Unwind_Exception* unwind_exception, _Unwind_Context* context,</span></span></span><br><span class="line"><span class="params"><span class="function">              <span class="type">const</span> scan_results&amp; results)</span> </span>&#123;</span><br><span class="line">  _Unwind_SetGR(context, __builtin_eh_return_data_regno(<span class="number">0</span>), unwind_exception);</span><br><span class="line">  _Unwind_SetGR(context, __builtin_eh_return_data_regno(<span class="number">1</span>), results.ttypeIndex);</span><br><span class="line">  _Unwind_SetIP(context, results.landingPad);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当  <code>__gxx_personality_v0</code> 返回时，unwind_phase2 方法会调用 __unw_phase2_resume 进行跳转。__unw_phase2_resume 会一路调用 __unw_resume 方法，最后调用到 Registers_arm64 的 jumpto 方法，该方法就是将前面准备的寄存器值从内存加载到真正的寄存器中进行跳转，至此代码将真正跳转到 landing pad。</p>
+<p>__unw_resume 的跳转逻辑如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">//</span><br><span class="line">// extern &quot;C&quot; void __libunwind_Registers_arm64_jumpto(Registers_arm64 *, unsigned);</span><br><span class="line">//</span><br><span class="line">// On entry:</span><br><span class="line">//  thread_state pointer is in x0</span><br><span class="line">//  walked_frames counter is in x1</span><br><span class="line">//</span><br><span class="line">DEFINE_LIBUNWIND_FUNCTION(__libunwind_Registers_arm64_jumpto)</span><br><span class="line"></span><br><span class="line">  // skip restore of x0,x1 for now</span><br><span class="line">  ldp    x2, x3,  [x0, #0x010]</span><br><span class="line">  ldp    x4, x5,  [x0, #0x020]</span><br><span class="line">  ldp    x6, x7,  [x0, #0x030]</span><br><span class="line">  ldp    x8, x9,  [x0, #0x040]</span><br><span class="line">  ldp    x10,x11, [x0, #0x050]</span><br><span class="line">  ldp    x12,x13, [x0, #0x060]</span><br><span class="line">  ldp    x14,x15, [x0, #0x070]</span><br><span class="line">  // x16 and x17 were clobbered by the call into the unwinder, so no point in</span><br><span class="line">  // restoring them.</span><br><span class="line">  ldp    x18,x19, [x0, #0x090]</span><br><span class="line">  ldp    x20,x21, [x0, #0x0A0]</span><br><span class="line">  ldp    x22,x23, [x0, #0x0B0]</span><br><span class="line">  ldp    x24,x25, [x0, #0x0C0]</span><br><span class="line">  ldp    x26,x27, [x0, #0x0D0]</span><br><span class="line">  ldp    x28,x29, [x0, #0x0E0]</span><br><span class="line"></span><br><span class="line">  ldp    d0, d1,  [x0, #0x110]</span><br><span class="line">  ldp    d2, d3,  [x0, #0x120]</span><br><span class="line">  ldp    d4, d5,  [x0, #0x130]</span><br><span class="line">  ldp    d6, d7,  [x0, #0x140]</span><br><span class="line">  ldp    d8, d9,  [x0, #0x150]</span><br><span class="line">  ldp    d10,d11, [x0, #0x160]</span><br><span class="line">  ldp    d12,d13, [x0, #0x170]</span><br><span class="line">  ldp    d14,d15, [x0, #0x180]</span><br><span class="line">  ldp    d16,d17, [x0, #0x190]</span><br><span class="line">  ldp    d18,d19, [x0, #0x1A0]</span><br><span class="line">  ldp    d20,d21, [x0, #0x1B0]</span><br><span class="line">  ldp    d22,d23, [x0, #0x1C0]</span><br><span class="line">  ldp    d24,d25, [x0, #0x1D0]</span><br><span class="line">  ldp    d26,d27, [x0, #0x1E0]</span><br><span class="line">  ldp    d28,d29, [x0, #0x1F0]</span><br><span class="line">  ldr    d30,     [x0, #0x200]</span><br><span class="line">  ldr    d31,     [x0, #0x208]</span><br><span class="line">  // Finally, restore sp. This must be done after the last read from the</span><br><span class="line">  // context struct, because it is allocated on the stack, and an exception</span><br><span class="line">  // could clobber the de-allocated portion of the stack after sp has been</span><br><span class="line">  // restored.</span><br><span class="line"></span><br><span class="line">  ldr    x16,     [x0, #0x0F8]  // load sp into scratch</span><br><span class="line">  ldr    lr,      [x0, #0x100]  // restore pc into lr</span><br><span class="line">  ldp    x0, x1,  [x0, #0x000]  // restore x0,x1</span><br><span class="line">  mov    sp,x16                 // restore sp</span><br><span class="line">  ret    x30                    // jump to pc</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>可以看下跳转时刻的堆栈信息</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">frame <span class="comment">#0: libunwind.1.dylib`__libunwind_Registers_arm64_jumpto at UnwindRegistersRestore.S:646</span></span><br><span class="line">frame <span class="comment">#1: libunwind.1.dylib`libunwind::Registers_arm64::returnto at Registers.hpp:2291:3</span></span><br><span class="line">frame <span class="comment">#2: libunwind.1.dylib`libunwind::UnwindCursor&lt;libunwind::LocalAddressSpace, libunwind::Registers_arm64&gt;::jumpto at UnwindCursor.hpp:1474:14</span></span><br><span class="line">frame <span class="comment">#3: libunwind.1.dylib`__unw_resume at libunwind.cpp:375:7</span></span><br><span class="line">frame <span class="comment">#4: libunwind.1.dylib`__unw_resume_with_frames_walked at libunwind.cpp:363:10</span></span><br><span class="line">frame <span class="comment">#5: libunwind.1.dylib`unwind_phase2 at UnwindLevel1.c:328:9</span></span><br><span class="line">frame <span class="comment">#6: libunwind.1.dylib`_Unwind_RaiseException at UnwindLevel1.c:480:10</span></span><br><span class="line">frame <span class="comment">#7: libc++abi.dylib`__cxa_throw at cxa_exception.cpp:295:5</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Landing-Pad"><a href="#Landing-Pad" class="headerlink" title="Landing Pad"></a>Landing Pad</h3><p><code>unwind_phase2</code> 每次退栈过程中，都可能会涉及到一次 landingpad 的跳转，<strong>landingpad 有 3 种类型：</strong></p>
+<ul>
+<li><strong>cleanup clause</strong>：调用 destructors of out-of-scope variables ，然后调用 <code>_Unwind_Resume</code> 跳转到 <strong>unwind_phase2</strong></li>
+<li><strong>catch clause</strong>：调用 destructors of out-of-scope variables，跳转到 <code>__cxa_begin_catch</code> 调用，然后是 <code>catch handler</code>  块，最后是 <code>__cxa_end_catch</code> 调用</li>
+<li><strong>rethrow</strong>：调用 <code>__cxa_end_catch</code>，执行 destructors of out-of-scope variables in the catch clause，然后调用 **_Unwind_Resume **跳转到 <strong>unwind_phase2</strong>。</li>
+</ul>
+<blockquote>
+<p>注意：这里关于 rethrow 有一些疑惑性：它代表着上次的异常已经被捕获处理，并且在处理的过程中再次抛出。从API 的调用链来看，它会在当前帧栈再次调用 _Unwind_RaiseException 进行栈展开处理，那么当前帧栈尚且没有处理完毕，所以必须确保在开始新的展开之前，做好当前 catch 块的清理：先调用 __cxa_end_catch，再调用 destructors</p>
+</blockquote>
+<h3 id="CFI-CIE-FDE"><a href="#CFI-CIE-FDE" class="headerlink" title="CFI &amp; CIE &amp; FDE"></a>CFI &amp; CIE &amp; FDE</h3><p>CFI（Call Frame Information）是 DWARF 标准中定义的一组数据结构和指令，用于描述程序执行过程中如何从一个函数的栈帧（stack frame）恢复到其调用者的栈帧。CFI 通过描述调用栈帧的布局，特别是<strong>返回地址和调用者寄存器</strong>值是如何保存的，来实现栈的“展开”（unwinding）。</p>
+<p>CFI 内部有 2 个重要的结构体：CIE 和 FDE</p>
+<style>.wignyjkzklku{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/09.png" class="wignyjkzklku">
+
+<ul>
+<li><p>CIE 中记录的是一些公用的入口信息，包括异常的handler，数据增强信息等。每个函数都会对应一个CIE，一个CIE 可以供多个函数共用, 如果两个函数拥有相同的初始化指令序列那么他们通常指向同一个CIE</p>
+</li>
+<li><p>FDE 中记录了此函数栈回溯相关的信息, 最主要的是记录了一系列指令序列 (CFI, Call Frame Infomation)，此指令序列可用来确定此函数执行到其每个地址时其各个寄存器的值应该如何获取&#x2F;计算，每个函数都有且仅有一个FDE结构体</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">CIE_Info</span> &#123;</span><br><span class="line">    <span class="type">pint_t</span>    cieStart;</span><br><span class="line">    <span class="type">pint_t</span>    cieLength;</span><br><span class="line">    <span class="type">pint_t</span>    cieInstructions;</span><br><span class="line">    <span class="type">uint8_t</span>   pointerEncoding;</span><br><span class="line">    <span class="type">uint8_t</span>   lsdaEncoding;</span><br><span class="line">    <span class="type">uint8_t</span>   personalityEncoding;</span><br><span class="line">    <span class="type">uint8_t</span>   personalityOffsetInCIE;</span><br><span class="line">    <span class="type">personality_t</span> personality;</span><br><span class="line">    <span class="type">uint32_t</span>  codeAlignFactor;</span><br><span class="line">    <span class="type">int</span>       dataAlignFactor;</span><br><span class="line">    <span class="type">bool</span>      isSignalFrame;</span><br><span class="line">    <span class="type">bool</span>      fdesHaveAugmentationData;</span><br><span class="line">    <span class="type">uint8_t</span>   returnAddressRegister;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">FDE_Info</span> &#123;</span><br><span class="line">    <span class="type">pint_t</span>  fdeStart;</span><br><span class="line">    <span class="type">pint_t</span>  fdeLength;</span><br><span class="line">    <span class="type">pint_t</span>  fdeInstructions;</span><br><span class="line">    <span class="type">pint_t</span>  pcStart;</span><br><span class="line">    <span class="type">pint_t</span>  pcEnd;</span><br><span class="line">    <span class="type">pint_t</span>  lsda;</span><br><span class="line">  &#125;;</span><br><span class="line">  </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">PrologInfo</span> &#123;</span><br><span class="line">    <span class="type">uint32_t</span>          cfaRegister;</span><br><span class="line">    <span class="type">int32_t</span>           cfaRegisterOffset;  <span class="comment">// CFA = (cfaRegister)+cfaRegisterOffset</span></span><br><span class="line">    <span class="type">int64_t</span>           cfaExpression;      <span class="comment">// CFA = expression</span></span><br><span class="line">    <span class="type">uint32_t</span>          spExtraArgSize;</span><br><span class="line">    RegisterLocation  savedRegisters[kMaxRegisterNumber + <span class="number">1</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这是一些常见的 cfi 指令</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.cfi_startproc                                ; 开始函数</span><br><span class="line">.cfi_def_cfa w29, <span class="number">16</span>                          ; 定义规范帧地址（CFA）</span><br><span class="line">.cfi_offset w30, <span class="number">-8</span>                           ; LR保存在CFA<span class="number">-8</span></span><br><span class="line">.cfi_offset w29, <span class="number">-16</span>                          ; FP保存在CFA<span class="number">-16</span></span><br><span class="line">.cfi_endproc                                  ; 结束函数</span><br><span class="line">.cfi_personality <span class="number">155</span>, ___gxx_personality_v0   ; personality 指定</span><br><span class="line">.cfi_lsda <span class="number">16</span>, Lexception0                     ;指向 LSDA 数据的标签</span><br></pre></td></tr></table></figure>
+
+<h3 id="LSDA-（Language-Specific-Data-Area）"><a href="#LSDA-（Language-Specific-Data-Area）" class="headerlink" title="LSDA （Language Specific Data Area）"></a>LSDA （Language Specific Data Area）</h3><p>在 Personality Routine 环节提到：“为了寻找对应帧栈的异常处理信息，需要先扫描 eh_frame 来获取 lsda”。那么什么是 LSDA 呢？LSDA 是每个函数的“语言特定扩展表”，其中包含：</p>
+<ul>
+<li>哪些指令范围可能抛出异常；</li>
+<li>对应的 landing pad 地址；</li>
+<li>匹配类型信息（typeinfo 指针）</li>
+</ul>
+<p>指令范围可以用来判断该异常是否在该帧栈的管理范畴内，typeinfo 匹配决定该异常是否在自己的 catch 范围内，如果前两者都满足的话，可以跳转到对应的 landing pad 地址。</p>
+<h4 id="LSDA-结构"><a href="#LSDA-结构" class="headerlink" title="LSDA 结构"></a>LSDA 结构</h4><style>.cpjpxneiixks{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/03.png" class="cpjpxneiixks">
+<style>.cmeoarcldfje{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/05.png" class="cmeoarcldfje">
+
+<p>如图，LSDA 结构主要包括 4 部分信息</p>
+<ol>
+<li><strong>Header</strong> </li>
+<li><strong>Call Site Table</strong></li>
+<li><strong>Action Table</strong><br>  actionType 有 3 种情况：</li>
+</ol>
+  <style>.gurhljfrydnz{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/10.png" class="gurhljfrydnz">
+
+<ol start="4">
+<li><strong>Type Table</strong> </li>
+<li>关于Type Table，需要注意的是该表格一分为二：</li>
+<li>横线以上的对应异常类型，倒序排列</li>
+<li>横线以下的正序部分是异常规格索引，已经在 C++17 被移除</li>
+</ol>
+  <style>.egjdunapelvo{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/01.png" class="egjdunapelvo">
+
+<p>最后可以从汇编代码中感受下真实的 lsda 信息</p>
+<style>.oqrphwshvoub{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/06.png" class="oqrphwshvoub">
+
+<h4 id="LSDA-解析"><a href="#LSDA-解析" class="headerlink" title="LSDA 解析"></a>LSDA 解析</h4><p>整个流程中少不了的是 scan_eh_tab 这个过程，而这个函数主要的用途就是去<strong>解析 lsda 的结构信息</strong>。解析的核心逻辑，就是遍历 Call Site Table，获取到 Action Table Index，然后在 Action Table 中获取到 ttypeIndex，然后根据 ttypeIndex 在 type_info Table 中开始搜索和匹配异常对象和 catch 对象是否匹配。如果匹配则返回，如果不匹配，循环遍历Action Table中的action链表，直到处理完。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">scan_eh_tab</span><span class="params">(scan_results &amp;results, _Unwind_Action actions,</span></span></span><br><span class="line"><span class="params"><span class="function">                        <span class="type">bool</span> native_exception,</span></span></span><br><span class="line"><span class="params"><span class="function">                        _Unwind_Exception *unwind_exception,</span></span></span><br><span class="line"><span class="params"><span class="function">                        _Unwind_Context *context)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Initialize results to found nothing but an error</span></span><br><span class="line">    results.ttypeIndex = <span class="number">0</span>;</span><br><span class="line">    results.actionRecord = <span class="number">0</span>;</span><br><span class="line">    results.languageSpecificData = <span class="number">0</span>;</span><br><span class="line">    results.landingPad = <span class="number">0</span>;</span><br><span class="line">    results.adjustedPtr = <span class="number">0</span>;</span><br><span class="line">    results.reason = _URC_FATAL_PHASE1_ERROR;</span><br><span class="line">    <span class="comment">// Check for consistent actions</span></span><br><span class="line">    ......</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Start scan by getting exception table address.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span> *lsda = (<span class="type">const</span> <span class="type">uint8_t</span> *)_Unwind_GetLanguageSpecificData(context);</span><br><span class="line">    <span class="keyword">if</span> (lsda == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// There is no exception table</span></span><br><span class="line">        results.reason = _URC_CONTINUE_UNWIND;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    results.languageSpecificData = lsda;</span><br><span class="line">    <span class="type">uintptr_t</span> base = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// Get the current instruction pointer and offset it before next</span></span><br><span class="line">    <span class="comment">// instruction in the current frame which threw the exception.</span></span><br><span class="line">    <span class="type">uintptr_t</span> ip = _Unwind_GetIP(context) - <span class="number">1</span>;</span><br><span class="line">    <span class="comment">// Get beginning current frame&#x27;s code (as defined by the</span></span><br><span class="line">    <span class="comment">// emitted dwarf code)</span></span><br><span class="line">    <span class="type">uintptr_t</span> funcStart = _Unwind_GetRegionStart(context);</span><br><span class="line">    <span class="type">uintptr_t</span> ipOffset = ip - funcStart;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* classInfo = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">// Note: See JITDwarfEmitter::EmitExceptionTable(...) for corresponding</span></span><br><span class="line">    <span class="comment">//       dwarf emission</span></span><br><span class="line">    <span class="comment">// Parse LSDA header.</span></span><br><span class="line">    <span class="type">uint8_t</span> lpStartEncoding = *lsda++;</span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* lpStart = lpStartEncoding == DW_EH_PE_omit</span><br><span class="line">                                 ? (<span class="type">const</span> <span class="type">uint8_t</span>*)funcStart</span><br><span class="line">                                 : (<span class="type">const</span> <span class="type">uint8_t</span>*)<span class="built_in">readEncodedPointer</span>(&amp;lsda, lpStartEncoding, base);</span><br><span class="line">    <span class="type">uint8_t</span> ttypeEncoding = *lsda++;</span><br><span class="line">    <span class="keyword">if</span> (ttypeEncoding != DW_EH_PE_omit) &#123;</span><br><span class="line">        <span class="comment">// Calculate type info locations in emitted dwarf code which</span></span><br><span class="line">        <span class="comment">// were flagged by type info arguments to llvm.eh.selector</span></span><br><span class="line">        <span class="comment">// intrinsic</span></span><br><span class="line">        <span class="type">uintptr_t</span> classInfoOffset = <span class="built_in">readULEB128</span>(&amp;lsda);</span><br><span class="line">        classInfo = lsda + classInfoOffset;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Walk call-site table looking for range that</span></span><br><span class="line">    <span class="comment">// includes current PC.</span></span><br><span class="line">    <span class="type">uint8_t</span> callSiteEncoding = *lsda++;</span><br><span class="line"></span><br><span class="line">    <span class="type">uint32_t</span> callSiteTableLength = <span class="built_in">static_cast</span>&lt;<span class="type">uint32_t</span>&gt;(<span class="built_in">readULEB128</span>(&amp;lsda));</span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* callSiteTableStart = lsda;</span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* callSiteTableEnd = callSiteTableStart + callSiteTableLength;</span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* actionTableStart = callSiteTableEnd;</span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* callSitePtr = callSiteTableStart;</span><br><span class="line">    <span class="keyword">while</span> (callSitePtr &lt; callSiteTableEnd) &#123;</span><br><span class="line">        <span class="comment">// There is one entry per call site.</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// The call sites are non-overlapping in [start, start+length)</span></span><br><span class="line">        <span class="comment">// The call sites are ordered in increasing value of start</span></span><br><span class="line">        <span class="type">uintptr_t</span> start = <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">        <span class="type">uintptr_t</span> length = <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">        <span class="type">landing_pad_t</span> landingPad = <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">        <span class="type">uintptr_t</span> actionEntry = <span class="built_in">readULEB128</span>(&amp;callSitePtr);</span><br><span class="line">        <span class="keyword">if</span> ((start &lt;= ipOffset) &amp;&amp; (ipOffset &lt; (start + length))) &#123;</span><br><span class="line">            <span class="comment">// Found the call site containing ip.</span></span><br><span class="line">            <span class="keyword">if</span> (landingPad == <span class="number">0</span>) &#123; <span class="comment">// No handler here</span></span><br><span class="line">                results.reason = _URC_CONTINUE_UNWIND;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            landingPad = (<span class="type">uintptr_t</span>)lpStart + landingPad;</span><br><span class="line">            results.landingPad = landingPad;</span><br><span class="line">            <span class="keyword">if</span> (actionEntry == <span class="number">0</span>) &#123; <span class="comment">// Found a cleanup</span></span><br><span class="line">                results.reason = (actions &amp; _UA_SEARCH_PHASE) ? _URC_CONTINUE_UNWIND : _URC_HANDLER_FOUND;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// Convert 1-based byte offset into</span></span><br><span class="line">            <span class="type">const</span> <span class="type">uint8_t</span>* action = actionTableStart + (actionEntry - <span class="number">1</span>);</span><br><span class="line">            <span class="type">bool</span> hasCleanup = <span class="literal">false</span>;</span><br><span class="line">            <span class="comment">// Scan action entries until you find a matching handler, cleanup, or the end of action list</span></span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="type">const</span> <span class="type">uint8_t</span>* actionRecord = action;</span><br><span class="line">                <span class="type">int64_t</span> ttypeIndex = <span class="built_in">readSLEB128</span>(&amp;action);</span><br><span class="line">                <span class="keyword">if</span> (ttypeIndex &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="comment">// Found a catch, does it actually catch?</span></span><br><span class="line">                    <span class="comment">// First check for catch (...)</span></span><br><span class="line">                    <span class="type">const</span> __shim_type_info* catchType = <span class="built_in">get_shim_type_info</span>(<span class="built_in">static_cast</span>&lt;<span class="type">uint64_t</span>&gt;(ttypeIndex),</span><br><span class="line">                                           classInfo, ttypeEncoding,</span><br><span class="line">                                           native_exception, unwind_exception,</span><br><span class="line">                                           base);</span><br><span class="line">                    <span class="keyword">if</span> (catchType == <span class="number">0</span>) &#123;</span><br><span class="line">                        <span class="comment">// Found catch (...) catches everything, including</span></span><br><span class="line">                        <span class="comment">// foreign exceptions. This is search phase, cleanup</span></span><br><span class="line">                        <span class="comment">// phase with foreign exception, or forced unwinding.</span></span><br><span class="line">                        <span class="built_in">assert</span>(actions &amp; (_UA_SEARCH_PHASE | _UA_HANDLER_FRAME | _UA_FORCE_UNWIND));</span><br><span class="line">                        results.ttypeIndex = ttypeIndex;</span><br><span class="line">                        results.actionRecord = actionRecord;</span><br><span class="line">                        results.adjustedPtr = <span class="built_in">get_thrown_object_ptr</span>(unwind_exception);</span><br><span class="line">                        results.reason = _URC_HANDLER_FOUND;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// Else this is a catch (T) clause and will never</span></span><br><span class="line">                    <span class="comment">//    catch a foreign exception</span></span><br><span class="line">                    <span class="keyword">else</span> <span class="keyword">if</span> (native_exception) &#123;</span><br><span class="line">                        __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception<span class="number">+1</span>) - <span class="number">1</span>;</span><br><span class="line">                        <span class="type">void</span>* adjustedPtr = <span class="built_in">get_thrown_object_ptr</span>(unwind_exception);</span><br><span class="line">                        <span class="type">const</span> __shim_type_info* excpType = <span class="built_in">static_cast</span>&lt;<span class="type">const</span> __shim_type_info*&gt;(exception_header-&gt;exceptionType);</span><br><span class="line">                        <span class="keyword">if</span> (catchType-&gt;<span class="built_in">can_catch</span>(excpType, adjustedPtr)) &#123;</span><br><span class="line">                            <span class="comment">// Found a matching handler. This is either search</span></span><br><span class="line">                            <span class="comment">// phase or forced unwinding.</span></span><br><span class="line">                            <span class="built_in">assert</span>(actions &amp; (_UA_SEARCH_PHASE | _UA_FORCE_UNWIND));</span><br><span class="line">                            results.ttypeIndex = ttypeIndex;</span><br><span class="line">                            results.actionRecord = actionRecord;</span><br><span class="line">                            results.adjustedPtr = adjustedPtr;</span><br><span class="line">                            results.reason = _URC_HANDLER_FOUND;</span><br><span class="line">                            <span class="keyword">return</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// Scan next action ...</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (ttypeIndex &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="comment">// Found an exception specification.</span></span><br><span class="line">                    <span class="keyword">if</span> (actions &amp; _UA_FORCE_UNWIND) &#123;</span><br><span class="line">                        <span class="comment">// Skip if forced unwinding.</span></span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (native_exception) &#123;</span><br><span class="line">                        <span class="comment">// Does the exception spec catch this native exception?</span></span><br><span class="line">                        __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception<span class="number">+1</span>) - <span class="number">1</span>;</span><br><span class="line">                        <span class="type">void</span>* adjustedPtr = <span class="built_in">get_thrown_object_ptr</span>(unwind_exception);</span><br><span class="line">                        <span class="type">const</span> __shim_type_info* excpType = <span class="built_in">static_cast</span>&lt;<span class="type">const</span> __shim_type_info*&gt;(exception_header-&gt;exceptionType);</span><br><span class="line">                        <span class="keyword">if</span> (<span class="built_in">exception_spec_can_catch</span>(ttypeIndex, classInfo,</span><br><span class="line">                                                     ttypeEncoding, excpType,</span><br><span class="line">                                                     adjustedPtr,</span><br><span class="line">                                                     unwind_exception, base)) &#123;</span><br><span class="line">                            <span class="comment">// Native exception caught by exception specification.</span></span><br><span class="line">                            <span class="built_in">assert</span>(actions &amp; _UA_SEARCH_PHASE);</span><br><span class="line">                            results.ttypeIndex = ttypeIndex;</span><br><span class="line">                            results.actionRecord = actionRecord;</span><br><span class="line">                            results.adjustedPtr = adjustedPtr;</span><br><span class="line">                            results.reason = _URC_HANDLER_FOUND;</span><br><span class="line">                            <span class="keyword">return</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        <span class="comment">// foreign exception caught by exception spec</span></span><br><span class="line">                        results.ttypeIndex = ttypeIndex;</span><br><span class="line">                        results.actionRecord = actionRecord;</span><br><span class="line">                        results.adjustedPtr = <span class="built_in">get_thrown_object_ptr</span>(unwind_exception);</span><br><span class="line">                        results.reason = _URC_HANDLER_FOUND;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// Scan next action ...</span></span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    hasCleanup = <span class="literal">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="type">const</span> <span class="type">uint8_t</span>* temp = action;</span><br><span class="line">                <span class="type">int64_t</span> actionOffset = <span class="built_in">readSLEB128</span>(&amp;temp);</span><br><span class="line">                <span class="keyword">if</span> (actionOffset == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="comment">// End of action list. If this is phase 2 and we have found</span></span><br><span class="line">                    <span class="comment">// a cleanup (ttypeIndex=0), return _URC_HANDLER_FOUND;</span></span><br><span class="line">                    <span class="comment">// otherwise return _URC_CONTINUE_UNWIND.</span></span><br><span class="line">                    results.reason = hasCleanup &amp;&amp; actions &amp; _UA_CLEANUP_PHASE</span><br><span class="line">                                         ? _URC_HANDLER_FOUND</span><br><span class="line">                                         : _URC_CONTINUE_UNWIND;</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// Go to next action</span></span><br><span class="line">                action += actionOffset;</span><br><span class="line">            &#125;  <span class="comment">// there is no break out of this loop, only return</span></span><br><span class="line">        &#125; </span><br><span class="line">        ......</span><br><span class="line">    &#125;  <span class="comment">// there might be some tricky cases which break out of this loop</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// It is possible that no eh table entry specify how to handle</span></span><br><span class="line">    <span class="comment">// this exception. By spec, terminate it immediately.</span></span><br><span class="line">    <span class="built_in">call_terminate</span>(native_exception, unwind_exception);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><strong>获取LSDA指针</strong>：</li>
+</ol>
+<ul>
+<li>lsda &#x3D;  _Unwind_GetLanguageSpecificData(context);</li>
+</ul>
+<ol start="2">
+<li><strong>解析LSDA头部</strong>：</li>
+</ol>
+<ul>
+<li>lpStartEncoding：landing pad 起始编码方式</li>
+<li>ttypeEncoding：类型信息编码方式</li>
+<li>callSiteEncoding：调用点表编码方式</li>
+<li>classInfoOffset：类信息表偏移量</li>
+</ul>
+<ol start="3">
+<li><strong>解析callSiteTable</strong>：每个try块对应一个表项，包含：</li>
+</ol>
+<ul>
+<li>start：try 块起始地址</li>
+<li>length：try 块长度</li>
+<li>landingPad：landing pad 地址</li>
+<li>actionEntry：action 表项偏移量</li>
+</ul>
+<ol start="4">
+<li><strong>解析 actionEntry 链表</strong>：每个actionEntry包含：</li>
+</ol>
+<ul>
+<li>ttypeIndex：类型索引（SLEB128格式）</li>
+<li>actionOffset：下一action项偏移量，链表结构</li>
+</ul>
+<ol start="5">
+<li><strong>类型匹配检查</strong>：</li>
+</ol>
+<ul>
+<li>对每个 ttypeIndex，通过 typetable 表找到对应的 typeinfo</li>
+<li>检查 catchType-&gt;can_catch(excpType, adjustedPtr)</li>
+</ul>
+<h3 id="RTTI"><a href="#RTTI" class="headerlink" title="RTTI"></a>RTTI</h3><h4 id="type-info-的缺陷"><a href="#type-info-的缺陷" class="headerlink" title="type_info 的缺陷"></a>type_info 的缺陷</h4><p>前文中 can_catch 需要对类型进行动态比对。为了实现运行时类型检查，C++ 标准提供了一套名为 RTTI 的接口，这套接口的核心是 std::type_info 类，它用于在运行时表示某个类型的相关信息。但这套接口提供的功能过于简单，它只支持查询一个多态对象的动态类型以及类型的基本属性（例如类型的名称等），并不支持动态查询不同的类型之间的关系（例如查询两个 std::type_info 所表示的类型是否构成继承关系等）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">type_info</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *__type_name;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>因此，各个 ABI 都需要对 RTTI 定义的功能进一步扩充以满足以下三点：</p>
+<ol>
+<li>需要能够动态查询两个类型是否构成继承关系；</li>
+<li>在两个类型构成继承关系的基础上，需要能够进一步查询这两个类型构成何种继承关系：是否为公开继承、是否为虚继承等；</li>
+<li>在两个类型构成继承关系的基础上，需要能够进一步查询如何对基类子对象指针施加一定的偏移才能使其指向子类对象指针。</li>
+</ol>
+<h4 id="class-相关的-type-info"><a href="#class-相关的-type-info" class="headerlink" title="class 相关的 type_info"></a>class 相关的 type_info</h4><p>std::type_info 可能的子类型有：（<a href="https://refspecs.linuxfoundation.org/cxxabi-1.86.html#vtable">参考这里</a>）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">abi::__fundamental_type_info</span><br><span class="line">abi::__array_type_info</span><br><span class="line">abi::__function_type_info</span><br><span class="line">abi::__enum_type_info</span><br><span class="line">abi::__class_type_info</span><br><span class="line">abi::__si_class_type_info</span><br><span class="line">abi::__vmi_class_type_info</span><br><span class="line">abi::__pbase_type_info</span><br><span class="line">abi::__pointer_type_info</span><br><span class="line">abi::__pointer_to_member_type_info</span><br></pre></td></tr></table></figure>
+
+<p>限于篇幅，这里重点说明 class 相关的 type_info</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">__shim_type_info</span> : <span class="keyword">public</span> std::type_info &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">can_catch</span><span class="params">(<span class="type">const</span> __shim_type_info *thrown_type, <span class="type">void</span> *&amp;adjustedPtr)</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">  ......</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__class_type_info</span> :  __shim_type_info &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__si_class_type_info</span> : __class_type_info &#123;</span><br><span class="line">    <span class="type">const</span> __class_type_info *__base_type;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__vmi_class_type_info</span> : __class_type_info &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> __flags;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> __base_count;</span><br><span class="line">    __base_class_type_info __base_info[<span class="number">1</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>它们各自描述不同情况的类类型：</p>
+<ul>
+<li>__class_type_info 用于描述<strong>没有任何基类</strong>的类类型；</li>
+<li>__si_class_type_info 用于描述那些<strong>有且只有一个直接公开非虚基类</strong>的类类型，其中的 __base_type 成员即指向描述基类的 __class_type_info 对象；</li>
+<li>__vmi_class_type_info 用于描述不满足上述两种情况的其他所有的类类型。<ul>
+<li>其中的 __flags 成员是一组标志位，描述这种情况下类类型的的某些属性；</li>
+<li>__base_count 表示类类型有多少个直接基类；</li>
+<li>__base_info 是一个实际长度为 __base_count 的数组，数组中的每个元素是一个 __base_class_type_info 对象用于描述一个基类，其中 __base_class_type_info 如下：<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__base_class_type_info</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">const</span> __class_type_info* __base_type;</span><br><span class="line">    <span class="type">long</span> __offset_flags;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">enum</span> <span class="title class_">__offset_flags_masks</span> &#123;</span><br><span class="line">        __virtual_mask = <span class="number">0x1</span>,</span><br><span class="line">        __public_mask  = <span class="number">0x2</span>, <span class="comment">// base is public</span></span><br><span class="line">        __offset_shift = <span class="number">8</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+<p>以上 3 种类类型 can_catch 是共享的，__si_class_type_info 和 __vmi_class_type_info 并没有重写该方法，所以这里直接分析 __class_type_info 的 can_catch 方法</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">__class_type_info::can_catch</span><span class="params">(<span class="type">const</span> __shim_type_info* thrown_type, <span class="type">void</span>*&amp; adjustedPtr)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// bullet 1</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, thrown_type, <span class="literal">false</span>)) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="type">const</span> __class_type_info* thrown_class_type = <span class="built_in">dynamic_cast</span>&lt;<span class="type">const</span> __class_type_info*&gt;(thrown_type);</span><br><span class="line">    <span class="keyword">if</span> (thrown_class_type == <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// bullet 2</span></span><br><span class="line">    __dynamic_cast_info info = &#123;thrown_class_type, <span class="number">0</span>, <span class="keyword">this</span>, <span class="number">-1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">true</span>, <span class="literal">nullptr</span>&#125;;</span><br><span class="line">    info.number_of_dst_type = <span class="number">1</span>;</span><br><span class="line">    thrown_class_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(&amp;info, adjustedPtr, public_path);</span><br><span class="line">    <span class="keyword">if</span> (info.path_dst_ptr_to_static_ptr == public_path) &#123;</span><br><span class="line">        adjustedPtr = <span class="built_in">const_cast</span>&lt;<span class="type">void</span>*&gt;(info.dst_ptr_leading_to_static_ptr);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="bullet1-is-equal"><a href="#bullet1-is-equal" class="headerlink" title="bullet1: is_equal"></a>bullet1: is_equal</h5><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">bool</span> <span class="title">is_equal</span><span class="params">(<span class="type">const</span> std::type_info* x, <span class="type">const</span> std::type_info* y, <span class="type">bool</span> use_strcmp)</span> </span>&#123;    </span><br><span class="line">    <span class="comment">// Still allow pointer equality to short circut.</span></span><br><span class="line">    <span class="keyword">return</span> x == y || <span class="built_in">strcmp</span>(x-&gt;<span class="built_in">name</span>(), y-&gt;<span class="built_in">name</span>()) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>std::type_info 重载了 &#x3D;&#x3D; 方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">type_info</span> &#123;</span><br><span class="line"> <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> type_info&amp; __arg) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> __impl::__eq(__type_name, __arg.__type_name);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中 __impl 有 3 种类型：</p>
+<ol>
+<li><strong>__unique_impl::__eq</strong></li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__unique_impl</span> : __string_impl_base &#123;</span><br><span class="line">  <span class="type">static</span> <span class="type">bool</span> __eq(<span class="type">__type_name_t</span> __lhs, <span class="type">__type_name_t</span> __rhs) _NOEXCEPT &#123;</span><br><span class="line">    <span class="keyword">return</span> __lhs == __rhs;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在遵循 Itanium ABI 的编译器中，对于给定类型的 RTTI，只有一个唯一的副本存在，因此可以通过比较类型名称的地址来判断 type_info 是否相等，无需使用字符串，可以提高性能并简化代码</p>
+<ol start="2">
+<li><strong>__non_unique_impl::__eq</strong></li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__non_unique_impl</span> : __string_impl_base &#123;</span><br><span class="line">  <span class="type">static</span> <span class="type">bool</span> __eq(<span class="type">__type_name_t</span> __lhs, <span class="type">__type_name_t</span> __rhs) _NOEXCEPT &#123;</span><br><span class="line">    <span class="keyword">return</span> __lhs == __rhs || __builtin_strcmp(__lhs, __rhs) == <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>由于各种原因，链接器可能没有合并所有类型的 RTTI（llvm.org&#x2F;PR37398）。在这种情况下，如果两个 type_info 的地址相等或者它们的名称字符串相等，这两个 type_info 被认为是相等的。</p>
+<ol start="3">
+<li><strong>__non_unique_arm_rtti_bit_impl::__eq</strong></li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__non_unique_arm_rtti_bit_impl</span> &#123;</span><br><span class="line">  <span class="type">static</span> <span class="type">bool</span> __eq(<span class="type">__type_name_t</span> __lhs, <span class="type">__type_name_t</span> __rhs) _NOEXCEPT &#123;</span><br><span class="line">    <span class="keyword">if</span> (__lhs == __rhs)</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">if</span> (__is_type_name_unique(__lhs) || __is_type_name_unique(__rhs))</span><br><span class="line">      <span class="comment">// Either both are unique and have a different address, or one of them</span></span><br><span class="line">      <span class="comment">// is unique and the other one isn&#x27;t. In both cases they are unequal.</span></span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">return</span> __builtin_strcmp(__type_name_to_string(__lhs), __type_name_to_string(__rhs)) == <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这种方式是 Apple ARM64 的特定实现，给定类型的 RTTI 可能存在多个副本。在构造 type_info 时，编译器将类型名称的指针存储在 uintptr_t 类型中，指针的最高位表示 non_unique 默认为 0(false)。如果最高位被设置为 1，表示 type_info 在程序中不是唯一的。如果最高位没有被设置，表示 type_info 是唯一的。这个设计的目的是为了避免使用 weak 符号。它将原本会被作为弱符号生成的默认可见性的 type_info，转而使用隐藏可见性的 type_info，并把 non_unique bit 位设置为 1 ，表示非唯一。这样做的好处是，在链接镜像内，hidden 可见性的 type_info 仍然可以认为是唯一的，可以继续通过 linker 进行去重，而在不同的镜像间，会被视为不同的类型，避免了 weak 符号被重定向，导致 RTTI 类型信息混乱。</p>
+<h5 id="bullet2-dynamic-cast-info"><a href="#bullet2-dynamic-cast-info" class="headerlink" title="bullet2: __dynamic_cast_info"></a>bullet2: __dynamic_cast_info</h5><p>涉及到继承关系，需要使用 dynamic_cast 和 __dynamic_cast_info 构建动态转换信息，检查 <strong>thrown_type 是否以公共方式继承自 this（catchType）。</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">__dynamic_cast_info info = &#123;thrown_class_type, <span class="number">0</span>, <span class="keyword">this</span>, <span class="number">-1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">true</span>, <span class="literal">nullptr</span>&#125;;</span><br><span class="line">info.number_of_dst_type = <span class="number">1</span>;</span><br><span class="line">thrown_class_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(&amp;info, adjustedPtr, public_path);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">__class_type_info::has_unambiguous_public_base</span><span class="params">(__dynamic_cast_info* info,</span></span></span><br><span class="line"><span class="params"><span class="function">                                               <span class="type">void</span>* adjustedPtr,</span></span></span><br><span class="line"><span class="params"><span class="function">                                               <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__si_class_type_info::has_unambiguous_public_base</span><span class="params">(__dynamic_cast_info* info,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">void</span>* adjustedPtr,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        __base_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(info, adjustedPtr, path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__vmi_class_type_info::has_unambiguous_public_base</span><span class="params">(__dynamic_cast_info* info,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                   <span class="type">void</span>* adjustedPtr,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                   <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">typedef</span> <span class="type">const</span> __base_class_type_info* Iter;</span><br><span class="line">        <span class="type">const</span> Iter e = __base_info + __base_count;</span><br><span class="line">        Iter p = __base_info;</span><br><span class="line">        p-&gt;<span class="built_in">has_unambiguous_public_base</span>(info, adjustedPtr, path_below);</span><br><span class="line">        <span class="keyword">if</span> (++p &lt; e) &#123;</span><br><span class="line">            <span class="keyword">do</span> &#123;</span><br><span class="line">                p-&gt;<span class="built_in">has_unambiguous_public_base</span>(info, adjustedPtr, path_below);</span><br><span class="line">                <span class="keyword">if</span> (info-&gt;search_done) <span class="keyword">break</span>;</span><br><span class="line">            &#125; <span class="keyword">while</span> (++p &lt; e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这部分逻辑和 C++ 继承方式密切相关，例如单继承、多继承，虚继承，逻辑比较复杂</p>
+<style>.peokpbbmefyt{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/11.png" class="peokpbbmefyt">
+
+<p>感兴趣的同学可以先参考《<a href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">深入探索 C++ 多态 ② - 继承关系</a>》里的这 <strong>3 张图</strong>，了解下 C++ 对象的内存模型，然后可以在此基础上了解下 dynamic_cast 的工作过程。</p>
+<style>.jgeixolpebhg{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/08.png" class="jgeixolpebhg">
+<style>.wvneryrqnheu{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/04.png" class="wvneryrqnheu">
+<style>.plxliislreut{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png" class="plxliislreut">
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文主要结合源码分析了 C++ 的异常机制流程，包括抛出异常、两段式回溯、退栈、Personality Routine 通过 lsda 找到对应的 landing pad，异常类型匹配等逻辑，整体可以对 C++ 的异常机制有一个深入的理解，进而可以着手排查一下异常的相关问题。</p>
+<h2 id="QA："><a href="#QA：" class="headerlink" title="QA："></a>QA：</h2><h3 id="C-异常疑难杂症排查案例"><a href="#C-异常疑难杂症排查案例" class="headerlink" title="C++ 异常疑难杂症排查案例"></a>C++ 异常疑难杂症排查案例</h3><p>从网上的经验贴来看，type_info 类型匹配几乎是导致异常捕获失效的最大元凶了，其中根本原因则是由于各种原因，出现了多份 type_info，导致匹配失败。这里以 2 个案例说明：</p>
+<p><strong>案例一：</strong> <a href="https://juejin.cn/post/7331924057925304370"><strong>震惊！try catch 语句竟然失效了？</strong></a></p>
+<p>总结一下：由于某个 OC 组件该组件内使用了异常，但是禁用了 RTTI，为了能继续获取异常类型的 type_info 信息，编译器会重新生成一份，由于 OC 组件是静态库，最后该 type_info 信息会一起进入主二进制，这样就导致了主二进制和 libc++ 动态库同时拥有同名的 type_info 信息，进而导致 can_catch 匹配失败。</p>
+<p>iOS 工程通常使用 cocoapods 集成不同的组件，这些组件在编译时会作为一个独立的 target，任意一个 target 的编译选项禁用 RTTI 后都会影响到宿主 App 的异常处理流程，继而可能引发 try catch 失效，所以禁用 RTTI 的同时禁用 exception handling，即 -fno-rtti 和 -fno-exceptions 一起使用，这样单独的 target 不会影响到宿主 App 的 exception handing</p>
+<p><strong>案例二:</strong> <a href="https://www.cnblogs.com/Iflyinsky/p/19412352"><strong>一次酣畅淋漓的问题排查（c++标准库异常实现原理）</strong></a><a href="https://www.cnblogs.com/Iflyinsky/p/19412352"> </a></p>
+<p>总结一下：ANDROID_STL在 cmake 中默认是 c++_static 的(<a href="https://developer.android.com/ndk/guides/cpp-support?hl=zh-cn#selecting_a_c_runtime)%EF%BC%8C%E6%AD%A4%E6%97%B6">https://developer.android.com/ndk/guides/cpp-support?hl=zh-cn#selecting_a_c_runtime)，此时</a> c++ 标准库以静态库的方式链接到业务的 so 文件，因此 so 文件中相关的 type_info 是 local 的，进而导致 can_catch 匹配失败。此时将 c++_static 修改为 c++_shared 可以解决问题，或者手动把 typeinfo&#x2F;vtable 的符号都导出为依赖 libc++.so 或者 libstdc++.so 也可以解决。</p>
+<h3 id="两段式回溯是必需的吗？"><a href="#两段式回溯是必需的吗？" class="headerlink" title="两段式回溯是必需的吗？"></a>两段式回溯是必需的吗？</h3><p>并非必需，《<a href="https://refspecs.linuxfoundation.org/abi-eh-1.22.html">Itanium C++ ABI: Exception Handling</a>》文档提到：</p>
+<blockquote>
+<p>A two-phase exception-handling model is** not strictly necessary** to implement C++ language semantics, but it does provide some benefits. For example, the first phase allows an exception-handling mechanism to dismiss an exception before stack unwinding begins, which allows resumptive exception handling (correcting the exceptional condition and resuming execution at the point where it was raised). While C++ does not support resumptive exception handling, other languages do, and the two-phase model allows C++ to coexist with those languages on the stack.</p>
+</blockquote>
+<p>翻译过来：两个阶段的异常处理模型对于 C++ 并不是严格必需的，但是它可以带来一些好处。比如，第一阶段允许异常处理机制在栈帧展开之前消除异常，这样可以进行恢复式异常处理(对异常情况进行修复，然后在抛出异常的地方继续执行)，虽然 C++ 不支持恢复式的异常处理，但其它语言支持，两阶段模型允许 C++ 与那些语言在堆栈上共存。</p>
+<h3 id="有没有可以最小成本理解异常的实践方式？"><a href="#有没有可以最小成本理解异常的实践方式？" class="headerlink" title="有没有可以最小成本理解异常的实践方式？"></a>有没有可以最小成本理解异常的实践方式？</h3><p>强烈推荐 <a href="https://nicolasbrailo.github.io/blog/projects_texts/13exceptionsunderthehood.html">《C++ Exceptions under the hood》</a> 系列，可以基于 libunwind 实现一个自己的<strong>最小集 MyCxxABI</strong>，方便调试和理解，不过由于年代久远代码失修，原代码会有编译不过的问题，不想麻烦可以参考这里：</p>
+<p>[test.zip](从源码看 C++ 异常&#x2F;test.zip)</p>
+<h3 id="Forgion-Exception-vs-Native-Exception"><a href="#Forgion-Exception-vs-Native-Exception" class="headerlink" title="Forgion Exception vs Native Exception"></a>Forgion Exception vs Native Exception</h3><p>用 g++ 编译的代码抛出的异常，可以由 clang++ 编译的代码捕获吗？</p>
+<p>[gcc_clang_abi_test.zip](从源码看 C++ 异常&#x2F;gcc_clang_abi_test.zip)</p>
+<p>尝试用 G++ 和 Clang++ 混合编译了 2 个 cpp文件，测试结果：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">=== GCC 和 Clang 混合编译异常处理演示 ===</span><br><span class="line">编译信息:</span><br><span class="line">- main.cpp: 使用 Clang <span class="number">17.0</span></span><br><span class="line"></span><br><span class="line">[main] 调用 GCC 编译的函数...</span><br><span class="line">[gcc] 调用 bar.cpp 中的函数...</span><br><span class="line">[clang] 在 bar_function 中...</span><br><span class="line">[clang] 调用 GCC 编译的函数（可能抛出异常）...</span><br><span class="line">[gcc] 在 gcc_throw_func 中，准备抛出异常...</span><br><span class="line">[clang] 捕获了 runtime_error: 这是从 GCC 编译的代码抛出的异常！</span><br><span class="line">[gcc] 捕获到异常: clang: 重新抛出的逻辑错误</span><br><span class="line">[main] 最终捕获: clang: 重新抛出的逻辑错误</span><br><span class="line"></span><br><span class="line">=== 程序正常结束 ===</span><br></pre></td></tr></table></figure>
+
+<h3 id="为什么-C-的析构函数禁止抛出异常-？"><a href="#为什么-C-的析构函数禁止抛出异常-？" class="headerlink" title="为什么 C++ 的析构函数禁止抛出异常 ？"></a>为什么 C++ 的析构函数禁止抛出异常 ？</h3><p><strong>可能会导致双重异常：</strong></p>
+<p>抛出第一个异常 –&gt; 开始栈展开 –&gt; 析构 obj –&gt; obj 析构抛出第二个异常 –&gt; 现在有两个活跃异常 → 无法处理。</p>
+<p>所以析构函数禁止抛出异常。如果析构函数发生异常，不要让异常逃离析构函数，析构函数应该捕捉任何异常，不传播或结束程序</p>
+<h3 id="OC-的异常处理机制也是一样的吗？"><a href="#OC-的异常处理机制也是一样的吗？" class="headerlink" title="OC 的异常处理机制也是一样的吗？"></a>OC 的异常处理机制也是一样的吗？</h3><p>OC 的异常处理实际和 C++ 一样，OC 很多异常处理方法只是对 C++ 异常处理方法的封装，例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// runtime/objc-exception.mm</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> objc_exception_throw(<span class="type">id</span> obj)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">struct</span> objc_exception *exc = (<span class="keyword">struct</span> objc_exception *)</span><br><span class="line">        __cxa_allocate_exception(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> objc_exception));</span><br><span class="line"></span><br><span class="line">    obj = (*exception_preprocessor)(obj);</span><br><span class="line">    [obj <span class="keyword">retain</span>];</span><br><span class="line"></span><br><span class="line">    exc-&gt;obj = obj;</span><br><span class="line">    exc-&gt;tinfo.vtable = objc_ehtype_vtable+<span class="number">2</span>;</span><br><span class="line">    exc-&gt;tinfo.name = object_getClassName(obj);</span><br><span class="line">    exc-&gt;tinfo.cls_unremapped = obj ? obj-&gt;getIsa() : Nil;</span><br><span class="line">    </span><br><span class="line">    __cxa_throw(exc, &amp;exc-&gt;tinfo, &amp;_objc_exception_destructor);</span><br><span class="line">    __builtin_trap();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">_Unwind_Reason_Code </span><br><span class="line">__objc_personality_v0(<span class="type">int</span> version,</span><br><span class="line">                      _Unwind_Action actions,</span><br><span class="line">                      uint64_t exceptionClass,</span><br><span class="line">                      <span class="keyword">struct</span> _Unwind_Exception *exceptionObject,</span><br><span class="line">                      <span class="keyword">struct</span> _Unwind_Context *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">bool</span> unwinding = ((actions &amp; _UA_CLEANUP_PHASE)  ||  (actions &amp; _UA_FORCE_UNWIND));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If we&#x27;re executing the unwind, call this frame&#x27;s alt handlers, if any.</span></span><br><span class="line">    <span class="keyword">if</span> (unwinding) &#123;</span><br><span class="line">        call_alt_handlers(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Let C++ handle the unwind itself.</span></span><br><span class="line">    <span class="keyword">return</span> __gxx_personality_v0(version, actions, exceptionClass, </span><br><span class="line">                           exceptionObject, context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Swift-的异常机制又是怎样的呢？"><a href="#Swift-的异常机制又是怎样的呢？" class="headerlink" title="Swift 的异常机制又是怎样的呢？"></a>Swift 的异常机制又是怎样的呢？</h3><p>Swift 的错误处理模型是基于 <code>try</code>、<code>catch</code> 以及 <code>throws</code> 和 <code>throw</code> 关键字的。<code>throws</code> 声明一个函数可以抛出错误，而 <code>throw</code> 则是在实际运行时抛出错误。<code>throws</code> 关键字本质上是通过引入异常控制流来实现的。当一个 <code>throws</code> 函数被调用时，Swift 在内部生成一段额外的代码，用于检测函数是否抛出了错误。如果没有错误发生，函数会像普通函数一样返回结果；如果发生了错误，则会跳转到调用方的 <code>catch</code> 块进行处理。</p>
+<p>这意味着 <code>throws</code> 和普通函数的调用在编译器层面有着不同的处理方式。在编译生成的中间代码中，<code>throws</code> 函数的返回值不是直接返回，而是封装在一个类似于 <code>Result</code> 类型的结构中，附带一个可能的错误对象。只有在 <code>do-catch</code> 块中，错误对象才会被解封和处理。</p>
+<p><strong>Swift 的错误是值，不是控制流中断，并不涉及栈回溯的行为，这与 C++ 的异常有本质区别，它和 OC 的 NSError机制更像。在纯 Swift 项目中应该避免依赖 OC 异常，在混合项目中应该小心处理。</strong></p>
+<h3 id="Java-的异常机制类似吗？"><a href="#Java-的异常机制类似吗？" class="headerlink" title="Java 的异常机制类似吗？"></a>Java 的异常机制类似吗？</h3><p>相同点：二者都有 try-catch 块，都支持异常传播，都进行栈展开，而且都是两段式栈回溯。</p>
+<p>不同点：</p>
+<style>.stwehxowlvyu{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="stwehxowlvyu">
+
+<h3 id="对待-C-异常的态度？"><a href="#对待-C-异常的态度？" class="headerlink" title="对待 C++ 异常的态度？"></a>对待 C++ 异常的态度？</h3><ul>
+<li>Google 编码规范说不使用异常，但它也说了主要是历史原因，老代码太多。</li>
+</ul>
+<blockquote>
+<p>Because most existing C++ code at Google is not prepared to deal with exceptions, it is comparatively difficult to adopt new code that generates exceptions.<br>Things would probably be different if we had to do it all over again from scratch.<br>Google C++ Style Guide</p>
+</blockquote>
+<ul>
+<li><a href="https://zhida.zhihu.com/search?content_id=717914916&content_type=Answer&match_order=1&q=Qt&zhida_source=entity">Qt</a> 也不使用异常，原因主要是历史原因和二进制尺寸。</li>
+</ul>
+<blockquote>
+<p>Qt itself will not throw exceptions. Instead, error codes are used. In addition, some classes have user visible error messages, for example QIODevice::errorString() or QSqlQuery::lastError(). This has historical and practical reasons . Turning on exceptions can increase library size by over 20%.<br>Exception Safety | Qt 6.6</p>
+</blockquote>
+<ul>
+<li>现代语言的反思：回归“错误即值”</li>
+</ul>
+<blockquote>
+<p>近年来如 Go 和 Rust 等语言开始回归“返回值”模式（如 Rust 的 Result&lt;T, E&gt;）， 将错误视作数据（值），鼓励通过组合子（如 map, and_then）处理错误，使程序结构更加预测和类型安全</p>
+</blockquote>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ol>
+<li><a href="https://itanium-cxx-abi.github.io/cxx-abi/abi.html">Itanium C++ ABI</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/2454917">https://cloud.tencent.com/developer/article/2454917</a></li>
+<li><a href="https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html#intro">https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html#intro</a></li>
+<li><a href="https://llvm.org/docs/ExceptionHandling.html">https://llvm.org/docs/ExceptionHandling.html</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/32706175219">https://zhuanlan.zhihu.com/p/32706175219</a></li>
+<li><a href="https://www.cnblogs.com/catch/p/3619379.html">https://www.cnblogs.com/catch/p/3619379.html</a></li>
+<li><a href="https://maskray.me/blog/2020-12-12-c++-exception-handling-abi">C++ exception handling ABI</a><br><a href="https://libcxxabi.llvm.org/spec.html">https://libcxxabi.llvm.org/spec.html</a></li>
+<li><a href="https://www.cnblogs.com/sewain/p/14360853.html">利用C语言中的setjmp和longjmp，来实现异常捕获和协程</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/580330672">dynamic_cast 的实现方法分析以及性能优化</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/692886292">彻底理解 C++ ABI</a></li>
+<li><a href="https://juejin.cn/post/7331924057925304370">震惊！try catch 语句竟然失效了？</a></li>
+<li><a href="https://nicolasbrailo.github.io/blog/projects_texts/13exceptionsunderthehood.html">C++ Exceptions under the hood</a></li>
+<li><a href="https://maskray.me/blog/2020-11-08-stack-unwinding">Stack unwinding</a></li>
+<li><a href="https://www.usenix.org/legacy/event/woot11/tech/slides/oakley.pdf">Exploiting the Hard-Working DWARF</a></li>
+<li><a href="https://blog.csdn.net/weixin_45030965/article/details/138618084">Linux .eh_frame section以及libunwind</a></li>
+<li><a href="https://sourceware.org/binutils/docs/as/CFI-directives.html">CFI directives</a></li>
+<li><a href="https://reviews.llvm.org/D137315#3910662">[libc++abi] Improve performance of __dynamic_cast</a></li>
+<li><a href="https://juejin.cn/post/7444781208297455655">C++对象模型实践探索</a></li>
+<li><a href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">深入探索 C++ 多态 ② - 继承关系</a></li>
+<li><a href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">what-is-the-vtt-for-a-class</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/">从源码看 C++ 异常</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2026年03月07日 - 23:03</p>
+  <p><span>最后更新:</span>2026年08月02日 - 02:08</p>
+  <p><span>原始链接:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/" title="从源码看 C++ 异常">https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/">从源码看 C++ 异常</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2026年03月07日 - 23:03</p>
+  <p><span>最后更新:</span>2026年08月02日 - 02:08</p>
+  <p><span>原始链接:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/" title="从源码看 C++ 异常">https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/" rel="next" title="聊聊iOS中的中心重定向">
+                <i class="fa fa-chevron-left"></i> 聊聊iOS中的中心重定向
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">简述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-C-%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">什么是 C++ 异常机制？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%E7%9A%84%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5"><span class="nav-number">1.2.</span> <span class="nav-text">C++ 异常机制的设计理念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E5%93%AA%E4%BA%9B-C-%E5%BC%82%E5%B8%B8%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">有哪些 C++ 异常实现机制？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%E5%88%86%E5%B1%82"><span class="nav-number">1.4.</span> <span class="nav-text">C++ 异常机制分层</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%E6%A6%82%E8%A7%88"><span class="nav-number">2.</span> <span class="nav-text">异常机制概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%9B%E5%87%BA%E5%BC%82%E5%B8%B8"><span class="nav-number">3.</span> <span class="nav-text">抛出异常</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cxa-allocate-exception"><span class="nav-number">3.1.</span> <span class="nav-text">__cxa_allocate_exception</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cxa-throw"><span class="nav-number">3.2.</span> <span class="nav-text">__cxa_throw</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%88%E5%9B%9E%E6%BA%AF"><span class="nav-number">4.</span> <span class="nav-text">栈回溯</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Unwind-RaiseException"><span class="nav-number">4.1.</span> <span class="nav-text">_Unwind_RaiseException</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unwind-phase1"><span class="nav-number">4.2.</span> <span class="nav-text">unwind_phase1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unwind-phase2"><span class="nav-number">4.3.</span> <span class="nav-text">unwind_phase2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Others"><span class="nav-number">4.4.</span> <span class="nav-text">Others</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#unw-step-%E9%80%80%E6%A0%88"><span class="nav-number">4.4.1.</span> <span class="nav-text">__unw_step 退栈</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unw-get-proc-info-%E8%8E%B7%E5%8F%96%E6%A0%88%E5%B8%A7%E4%BF%A1%E6%81%AF"><span class="nav-number">4.4.2.</span> <span class="nav-text">__unw_get_proc_info 获取栈帧信息</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8D%95%E8%8E%B7%E5%92%8C%E5%A4%84%E7%90%86%E5%BC%82%E5%B8%B8"><span class="nav-number">5.</span> <span class="nav-text">捕获和处理异常</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Personality-Routine"><span class="nav-number">5.1.</span> <span class="nav-text">Personality Routine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Landing-Pad"><span class="nav-number">5.2.</span> <span class="nav-text">Landing Pad</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CFI-CIE-FDE"><span class="nav-number">5.3.</span> <span class="nav-text">CFI &amp; CIE &amp; FDE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LSDA-%EF%BC%88Language-Specific-Data-Area%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">LSDA （Language Specific Data Area）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LSDA-%E7%BB%93%E6%9E%84"><span class="nav-number">5.4.1.</span> <span class="nav-text">LSDA 结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LSDA-%E8%A7%A3%E6%9E%90"><span class="nav-number">5.4.2.</span> <span class="nav-text">LSDA 解析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RTTI"><span class="nav-number">5.5.</span> <span class="nav-text">RTTI</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#type-info-%E7%9A%84%E7%BC%BA%E9%99%B7"><span class="nav-number">5.5.1.</span> <span class="nav-text">type_info 的缺陷</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#class-%E7%9B%B8%E5%85%B3%E7%9A%84-type-info"><span class="nav-number">5.5.2.</span> <span class="nav-text">class 相关的 type_info</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#bullet1-is-equal"><span class="nav-number">5.5.2.1.</span> <span class="nav-text">bullet1: is_equal</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#bullet2-dynamic-cast-info"><span class="nav-number">5.5.2.2.</span> <span class="nav-text">bullet2: __dynamic_cast_info</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#QA%EF%BC%9A"><span class="nav-number">7.</span> <span class="nav-text">QA：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E5%BC%82%E5%B8%B8%E7%96%91%E9%9A%BE%E6%9D%82%E7%97%87%E6%8E%92%E6%9F%A5%E6%A1%88%E4%BE%8B"><span class="nav-number">7.1.</span> <span class="nav-text">C++ 异常疑难杂症排查案例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E6%AE%B5%E5%BC%8F%E5%9B%9E%E6%BA%AF%E6%98%AF%E5%BF%85%E9%9C%80%E7%9A%84%E5%90%97%EF%BC%9F"><span class="nav-number">7.2.</span> <span class="nav-text">两段式回溯是必需的吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E6%B2%A1%E6%9C%89%E5%8F%AF%E4%BB%A5%E6%9C%80%E5%B0%8F%E6%88%90%E6%9C%AC%E7%90%86%E8%A7%A3%E5%BC%82%E5%B8%B8%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E5%BC%8F%EF%BC%9F"><span class="nav-number">7.3.</span> <span class="nav-text">有没有可以最小成本理解异常的实践方式？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Forgion-Exception-vs-Native-Exception"><span class="nav-number">7.4.</span> <span class="nav-text">Forgion Exception vs Native Exception</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-C-%E7%9A%84%E6%9E%90%E6%9E%84%E5%87%BD%E6%95%B0%E7%A6%81%E6%AD%A2%E6%8A%9B%E5%87%BA%E5%BC%82%E5%B8%B8-%EF%BC%9F"><span class="nav-number">7.5.</span> <span class="nav-text">为什么 C++ 的析构函数禁止抛出异常 ？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OC-%E7%9A%84%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6%E4%B9%9F%E6%98%AF%E4%B8%80%E6%A0%B7%E7%9A%84%E5%90%97%EF%BC%9F"><span class="nav-number">7.6.</span> <span class="nav-text">OC 的异常处理机制也是一样的吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Swift-%E7%9A%84%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%E5%8F%88%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84%E5%91%A2%EF%BC%9F"><span class="nav-number">7.7.</span> <span class="nav-text">Swift 的异常机制又是怎样的呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-%E7%9A%84%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6%E7%B1%BB%E4%BC%BC%E5%90%97%EF%BC%9F"><span class="nav-number">7.8.</span> <span class="nav-text">Java 的异常机制类似吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E5%BE%85-C-%E5%BC%82%E5%B8%B8%E7%9A%84%E6%80%81%E5%BA%A6%EF%BC%9F"><span class="nav-number">7.9.</span> <span class="nav-text">对待 C++ 异常的态度？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="nav-number">8.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count"></span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
