@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="富文本 流式渲染," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景在使用ChatGPT或者LLM时，模型的回复内容是逐字输出的，而不是整段话直接出现，因为模型需要不断预测接下来要回复什么内容，如果等整段回复生成之后再输出到终端，用户体验就会很差。为了适应大模型流式输出，终端也必须实现流式渲染能力。大模型为了增强表达能力，一般都会采用富文本格式（例如 Markdown 格式，HTML 格式等），而不是普通的纯文本格式。流式的输出，富文本的加持，这无疑对端上的渲">
+<meta property="og:type" content="article">
+<meta property="og:title" content="聊聊 iOS 富文本的流式渲染">
+<meta property="og:url" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="背景在使用ChatGPT或者LLM时，模型的回复内容是逐字输出的，而不是整段话直接出现，因为模型需要不断预测接下来要回复什么内容，如果等整段回复生成之后再输出到终端，用户体验就会很差。为了适应大模型流式输出，终端也必须实现流式渲染能力。大模型为了增强表达能力，一般都会采用富文本格式（例如 Markdown 格式，HTML 格式等），而不是普通的纯文本格式。流式的输出，富文本的加持，这无疑对端上的渲">
+<meta property="og:locale">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/04.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
+<meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
+<meta property="article:modified_time" content="2026-08-02T15:34:34.434Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="富文本 流式渲染">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2024/08/06/聊聊 iOS 富文本的流式渲染/"/>
+
+
+
+
+
+  <title>聊聊 iOS 富文本的流式渲染 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">聊聊 iOS 富文本的流式渲染</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-06T16:25:16+08:00">
+                2024-08-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OC/" itemprop="url" rel="index">
+                    <span itemprop="name">OC</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  42k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  2:34
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在使用ChatGPT或者LLM时，模型的回复内容是逐字输出的，而不是整段话直接出现，因为模型需要不断预测接下来要回复什么内容，如果等整段回复生成之后再输出到终端，用户体验就会很差。为了适应大模型流式输出，终端也必须实现流式渲染能力。大模型为了增强表达能力，一般都会采用富文本格式（例如 Markdown 格式，HTML 格式等），而不是普通的纯文本格式。流式的输出，富文本的加持，这无疑对端上的渲染能力提出了挑战。本文将结合业务场景聊聊端上是如何实现富文本的流式渲染，这里的富文本包括 <code>HTML</code> 和 <code>LaTeX</code>。</p>
+<h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><h3 id="流请求"><a href="#流请求" class="headerlink" title="流请求"></a>流请求</h3><p><a href="https://github.com/deanWombourne/AFNetworking-streaming">AFNetworking-streaming</a> 提供了一个 chunk 数据返回的接口，要做的事情简单来说是发一次请求，需要处理多个response 回调和最后的结果回调。当数据刚回来时会触发一次headerCallback，接着随着服务端数据发送，会触发多次dataCallback，最后发送结束时会触发一次callback。数据流通过dataCallback获得，需要客户端根据与服务端约定好的分隔符进行解析。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSURL</span> *url = [<span class="built_in">NSURL</span> URLWithString:<span class="string">@&quot;https://raw.githubusercontent.com&quot;</span>];</span><br><span class="line"><span class="keyword">self</span>.manager = [[DWHTTPStreamSessionManager alloc] initWithBaseURL:url];</span><br><span class="line"><span class="keyword">self</span>.manager.itemSerializerProvider = [[DWHTTPJSONItemSerializerProvider alloc] init];</span><br><span class="line"><span class="keyword">self</span>.manager.responseSerializer = [[DWDummyHTTPResponseSerializer alloc] init];</span><br><span class="line">[<span class="keyword">self</span>.manager GET:<span class="string">@&quot;deanWombourne/AFNetworking-streaming/master/Example/example.json&quot;</span></span><br><span class="line">           parameters:@&#123;&#125;</span><br><span class="line">                 data:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSDictionary</span> *dictionary) &#123;</span><br><span class="line">                     [<span class="keyword">self</span>.results addObject:dictionary];</span><br><span class="line">                     [<span class="keyword">self</span>.tableView reloadData];</span><br><span class="line">                 &#125;</span><br><span class="line">              success:^(<span class="built_in">NSURLSessionDataTask</span> *task) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response complete&quot;</span>);</span><br><span class="line">              &#125;</span><br><span class="line">              failure:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSError</span> *error) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response failed&quot;</span>);</span><br><span class="line">              &#125;];</span><br></pre></td></tr></table></figure>
+
+<h3 id="伪流式解析"><a href="#伪流式解析" class="headerlink" title="伪流式解析"></a>伪流式解析</h3><p>为了支持流式渲染，首先要支持 <code>HTML</code> 和 <code>LaTeX</code> 等富文本的流式解析，然而端上并没有真正意义上的流式解析器，而要做真正的流式解析也会面临很多困难，所以端上选择的方案是“伪流式解析”：<strong>解析器每次接收到流式文本，都会拼接上之前已有的文本，重新从头解析一遍</strong>。</p>
+<h4 id="标签不完整规则"><a href="#标签不完整规则" class="headerlink" title="标签不完整规则"></a>标签不完整规则</h4><p>由于富文本是有一定的格式的，这意味着任何时刻，流式文本格式有可能是不完整或者不符合语法规则的，在非流式场景下会被当成错误来处理，但是在流式场景下，这是“正常情况”，所以需要一些异常处理规则：</p>
+<ol>
+<li>闭合的标签都会被输出，未闭合的标签都会被吞没：<ol>
+<li>&lt;div&gt;是已闭合<ol>
+<li>如果&lt;div&gt;123，会输出123</li>
+<li>如果&lt;div&gt;&lt;span&gt;123&lt;&#x2F;span&gt;&lt;b&gt;456，会输出123<strong>456</strong></li>
+</ol>
+</li>
+<li>而&lt;div、&lt;di、&lt;d、&lt;img src&#x3D;”http:&#x2F;&#x2F;都是未闭合，会被吞没；</li>
+</ol>
+</li>
+<li>叶子节点都会被正常输出<blockquote>
+<p>这里的闭合含义：HTML中标签的前半部分只要是完整的就认为是闭合</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="公式不完整规则"><a href="#公式不完整规则" class="headerlink" title="公式不完整规则"></a>公式不完整规则</h4><p><code>tex</code>标签有些特殊，根本原因是里面的文本还要经过<code>LaTeX</code>引擎的解析，所以最后是否输出取决于<code>latex</code>文本的语法是否合法:</p>
+<ol>
+<li><code>&lt;tex&gt;\frac&#123;1&#125;&#123;2&#125;</code>，尽管没有<code>&lt;/tex&gt;</code>，但是里面的文本是完整的，所以也会正常渲染</li>
+<li><code>&lt;tex&gt;\frac&#123;2&#125;&#123;&lt;/tex&gt;</code>，尽管标签已完整，但是<code>latex</code>文本有语法错误，也会被吞没</li>
+</ol>
+<h3 id="伪流式渲染"><a href="#伪流式渲染" class="headerlink" title="伪流式渲染"></a>伪流式渲染</h3><p><code>iOS</code>的富文本渲染是基于<code>YYText</code>做的渲染，如果按照流式渲染的原理来做的话，需要魔改<code>YYText</code>，使得<code>YYText</code>支持流式渲染，这无疑是需要付出巨大代价的，所以端上选择了伪流式渲染机制。</p>
+<h4 id="核心原理"><a href="#核心原理" class="headerlink" title="核心原理"></a>核心原理</h4><p>伪渲染机制的核心就一个字：“遮”。通常来说，当给定一段富文本，经过解析生成<code>NSAttributedString</code>，<code>YYLabel</code>生成的排版信息是确定的，可以先全部渲染出来，然后给<code>YYLabel</code>添加一层遮罩，然后像“刮刮卡”一样，每次选中一个格子刮开，这样就会有流的感觉。</p>
+<p>遮罩方案如视频所示（1 为DEBUG版本，2 为正常版本）：</p>
+<table></tr>
+<td><video src='07.mp4' type='video/mp4' controls='controls'  width='100%' height='100%'/></td>
+<td><video src='08.mp4' type='video/mp4' controls='controls'  width='100%' height='100%'/></td>
+</tr></table>
+
+
+<p>红色的横向遮罩和蓝色的纵向遮罩，每流一个字，红色的遮罩宽度向右减小一个字符的距离，直到该行文字流完。此时红色遮罩已到下一行，而蓝色遮罩的高度向下减小一行的高度。流的过程中，始终将<code>loading</code>图展示在红色遮罩的最左端。</p>
+<blockquote>
+<p><strong>注意：遮罩的颜色需要和底层视图的颜色保持一致，且不能包含有透明色</strong></p>
+</blockquote>
+<h4 id="流式渲染流程"><a href="#流式渲染流程" class="headerlink" title="流式渲染流程"></a>流式渲染流程</h4><img src="01.png" width="100%"/>
+
+<ol>
+<li>端上发出SSE请求，代表真流开始，同时也会同步给渲染引擎，内部会标记伪流渲染开始，开始loading；</li>
+<li>中间会收到多次真流数据回调，第一次回调的时候，引擎会生成真流数据对应的排版信息，并开始定时器进行流式渲染。之后每次收到真流数据，都会将其拼接到之前收到的真流数据后面，重新生成排版信息，并将前一次的排版信息进行覆盖。引擎内部的流式渲染每次只判定当前的进度是否超越排版的末尾，没有的话，就向前“撕开”一个格子；</li>
+<li>真流结束的时候，会生成最后的排版信息并更新，同时会标记真流已结束。当内部引擎流完已有排版信息的时候，会判断当前真流是否结束，如果已结束，则会结束伪流渲染，否则的话，引擎会等待新的真流数据的到来。</li>
+<li>某些情况下，需要直接打断伪流渲染，可以直接调用相应的API，引擎内部会关闭定时器，在当前流到的位置后面添加……，标识流是被打断的。</li>
+</ol>
+<h4 id="卡片膨胀"><a href="#卡片膨胀" class="headerlink" title="卡片膨胀"></a>卡片膨胀</h4><style>.lujyekwjxcvr{}</style><img src="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/02.png" class="lujyekwjxcvr">
+<p>业务场景中流式卡片大多存在于滑动列表中，不同于传统的业务场景中卡片的高度是自外向内来决定的，流式卡片的高度是自内向外来决定的，所以引擎在流式渲染的过程中需要时刻回调，通知外面的cell卡片自己的宽度和高度。实际上只更新cell的高度还不够，还需要有一个容器负责切边，因为仅有遮罩还不够，还需要把当前未流到的区域裁剪掉。</p>
+<blockquote>
+<p>如果流式卡片在列表中，那么在流式过程中更新了model的高度之后，是不能调用 reloadData 或者 reloadItemsAtIndexPaths: 等方法去刷新cell的，会造成闪烁，应该使用下面的方法只去刷新cell的高度（不刷新内容）</p>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UITableView</span></span><br><span class="line">[<span class="keyword">self</span>.tableView beginUpdates];</span><br><span class="line">[<span class="keyword">self</span>.tableView endUpdates];</span><br><span class="line"></span><br><span class="line"><span class="comment">// UICollectionView</span></span><br><span class="line">[<span class="keyword">self</span>.collectionView performBatchUpdates:^&#123;&#125; completion:^(**<span class="type">BOOL</span>** finished) &#123;&#125;];</span><br></pre></td></tr></table></figure>
+
+<h2 id="踩坑记"><a href="#踩坑记" class="headerlink" title="踩坑记"></a>踩坑记</h2><h3 id="先输出latex文本，后又正常渲染"><a href="#先输出latex文本，后又正常渲染" class="headerlink" title="先输出latex文本，后又正常渲染"></a>先输出latex文本，后又正常渲染</h3><p>由于数据是流式返回的，可能会出现完整的公式 被截断返回的中间状态，在端上会出现渲染闪动的问题，即：先渲染出部分原始文本，直到端侧拿到完整数据后，再渲染出正确的结果，造成视觉上的闪动。</p>
+<p>造成这种现象的原因是：嵌套在<code>HTML</code>里面的公式如果用的是<code>$xxx$</code>来表达的话，那么在解析器处理之前，会被正则匹配为<tex>xxx</tex>。然而在流式过程中，如果只有前半部分数据，例如<code>$(a-b)</code>，那么这个匹配是不会成功的，所以<code>$(a-b)</code>会被当成纯文本来处理，直接文本输出。后续数据完整了，变成了<code>$(a-b)^&#123;2&#125;$</code>，则会被正常解析和渲染出来。</p>
+<p>解决策略是：对于不完整的<code>$xx</code>公式，会被正则替换为<tex>xx，此时如果xx不能被<code>LaTeX</code>引擎正常解析渲染，则会被吞没，否则会输出。但是考虑到一些边界<code>case</code>未能被考虑到，iOS采取了一劳永逸的方案：对于这种不完整的<tex>标签，例如<tex>xx，在没有碰到</tex>之前，其中的内容不再走<code>LaTeX</code>引擎解析，返回空，流式效果就是在公式的开始处一直处于<code>loading</code>状态。</p>
+<h3 id="文本双边对齐问题"><a href="#文本双边对齐问题" class="headerlink" title="文本双边对齐问题"></a>文本双边对齐问题</h3><p>通常来说，<code>YYLabel</code>提供了现成的API来设置双边对齐能力:view.textAlignment &#x3D; NSTextAlignmentJustified，然而这会在流式渲染过程中出现闪烁问题（如视频所示），根本原因是双边对齐在排版中会涉及到调整已经渲染过文字的位置，从而造成文字闪烁（如视频所示），这种对齐方式适合于静态卡片，但是不适合于流式渲染卡片。</p>
+<h3 id="显示覆盖问题"><a href="#显示覆盖问题" class="headerlink" title="显示覆盖问题"></a>显示覆盖问题</h3><p>在流式过程中，引擎要依赖<code>YYTextLayout</code>去获取当前字符的位置，然而在某些情况下，换行的时候获取到的位置信息有问题。</p>
+<style>.uyagvgxqvmmh{}</style><img src="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/03.png" class="uyagvgxqvmmh">
+
+<p>如图所示，第N个格子流完之后，当前行已经流完，下一个位置应该是第N+2个格子，但是<code>YYTextLayout</code>返回的是第N+1个格子，这个格子区域很大，不仅重复了已经流过的区域，而且把未流的区域也提前暴露了出来，从而造成先显示又遮挡的闪烁问题。</p>
+<p>经过排查，这个和<code>YYTextLayout</code>计算<code>Rect</code>并集的逻辑有关系，有些<code>Rect</code>的宽度或者高度为0，是不需要进行并集计算的，排除即可。</p>
+<style>.cdxefiavrwlf{}</style><img src="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/04.jpg" class="cdxefiavrwlf">
+
+<p>修改 rectForRange: 方法如下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">CGRect</span>)rectForRange:(YYTextRange *)range &#123;</span><br><span class="line">    <span class="built_in">NSArray</span> *rects = [<span class="keyword">self</span> selectionRectsForRange:range];</span><br><span class="line">    <span class="keyword">if</span> (rects.count == <span class="number">0</span>) <span class="keyword">return</span> <span class="built_in">CGRectNull</span>;</span><br><span class="line">    <span class="built_in">CGRect</span> rectUnion = ((YYTextSelectionRect *)rects.firstObject).rect;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> i = <span class="number">1</span>; i &lt; rects.count; i++) &#123;</span><br><span class="line">        YYTextSelectionRect *rect = rects[i];</span><br><span class="line">        <span class="keyword">if</span> (fabs(<span class="built_in">CGRectGetWidth</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span> &amp;&amp; fabs(<span class="built_in">CGRectGetHeight</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span>) &#123;</span><br><span class="line">            rectUnion = <span class="built_in">CGRectUnion</span>(rectUnion, rect.rect);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> rectUnion;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="下划线间距问题"><a href="#下划线间距问题" class="headerlink" title="下划线间距问题"></a>下划线间距问题</h3><style>.wnbudgorcyvl{}</style>
+<p><code>YYText</code>是无法支持调整文字和下划线之间的间距的，但是业务场景中这是个强需求，解决方案就是去修改<code>YYText</code>的<code>YYTextDrawDecoration</code>方法，增加下划线偏移</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>) decorationWithStyle: (YYTextLineStyle)style width: (<span class="keyword">nullable</span> <span class="built_in">NSNumber</span> *)width color: (<span class="keyword">nullable</span></span><br><span class="line"><span class="built_in">UIColor</span> *)color;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) YYTextLineStyle style;                <span class="comment">///&lt; line style</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *width;    <span class="comment">///&lt; line width (nil means automatic width)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *offset;   <span class="comment">///&lt; line offset(nil means 0, only for underline)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">UIColor</span> *color;     <span class="comment">///&lt; line color (nil means automatic color)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) YYTextShadow *shadow; <span class="comment">///&lt; line shadow</span></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<p>然后在<code>YYTextDrawDecoration</code>方法中把偏移值<code>offset</code>计入下划线的y坐标中</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    TRunGetPositions(run, <span class="built_in">CFRangeMake</span> (<span class="number">0</span>, <span class="number">1</span>), &amp;runPosition);</span><br><span class="line">    underlineStart.x = strikethroughStart.x = runPosition.x + line position.x;</span><br><span class="line">    length = <span class="built_in">CTRunGetTypographicBounds</span>|run, <span class="built_in">CFRangeMake</span>(<span class="number">0</span>, <span class="number">0</span>), <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// offset</span></span><br><span class="line">    <span class="keyword">if</span> (underline.offset) &#123;</span><br><span class="line">        underlineStart.y += underline.offset.floatValue;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (underlineOffset) &#123;</span><br><span class="line">        underlineStart.y += underline0ffset.floatValue;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
+<p>修改之后，会经常出现最后一行下划线丢失的问题，主要原因是由于最后一行设置的下划线间距过大的话，会超越了布局范围，从而被裁切。所以还需要扩大布局信息：在布局方法中最后确定布局大小的时候，把这个偏移值也考虑在内。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">+ (YYTextLayout *)layoutWithContainer:(YYTextContainer *)container text:(<span class="built_in">NSAttributedString</span> *)text range:(<span class="built_in">NSRange</span>)range &#123;</span><br><span class="line">......</span><br><span class="line">    &#123;</span><br><span class="line">        YYTextLine *lastLine = lines.lastObject;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(lastLine.CTLine);</span><br><span class="line">        <span class="keyword">if</span> (runs != <span class="literal">nil</span>) &#123;</span><br><span class="line">            <span class="built_in">CGFloat</span> underlinePositionCustom = <span class="number">0.</span>f;</span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, <span class="literal">NULL</span>, &amp;underlinePositionCustom, <span class="literal">NULL</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> maxUnderlineOffset = <span class="number">0.</span>f;</span><br><span class="line">            <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">                <span class="built_in">CTRunRef</span> run = <span class="built_in">CFArrayGetValueAtIndex</span>(runs, r);</span><br><span class="line">                <span class="built_in">CFIndex</span> glyphCount = <span class="built_in">CTRunGetGlyphCount</span>(run);</span><br><span class="line">                <span class="keyword">if</span> (glyphCount == <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">                <span class="built_in">NSDictionary</span> *attrs = (<span class="type">id</span>)<span class="built_in">CTRunGetAttributes</span>(run);</span><br><span class="line">                YYTextDecoration *underline = attrs[YYTextUnderlineAttributeName];</span><br><span class="line">                <span class="keyword">if</span> (underlinePositionCustom &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    maxUnderlineOffset = MAX(maxUnderlineOffset, fabs(underlinePositionCustom * <span class="number">-1</span> + underline.width.floatValue));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (maxUnderlineOffset &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">CGRect</span> tempRect = textBoundingRect;</span><br><span class="line">                tempRect.size.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingRect = tempRect;</span><br><span class="line">                </span><br><span class="line">                <span class="built_in">CGSize</span> tempSize = textBoundingSize;</span><br><span class="line">                tempSize.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingSize = tempSize;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    layout.frameSetter = ctSetter;</span><br><span class="line">    layout.frame = ctFrame;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">if</span> (lineOrigins) free(lineOrigins);</span><br><span class="line">    <span class="keyword">return</span> layout;</span><br></pre></td></tr></table></figure>
+
+<h3 id="下划线-Attachement"><a href="#下划线-Attachement" class="headerlink" title="下划线 Attachement"></a>下划线 Attachement</h3><p>富文本会包含公式、图片，他们通常以<code>attachement</code>的方式出现在<code>NSAttributedString</code>中，有些情况下，公式或者图片的高度明显大于普通文本的高度，所以下划线会有问题，如图所示，下划线直接穿过公式，明显不符合产品要求。</p>
+<style>.fdvygpemtggj{}</style><img src="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg" class="fdvygpemtggj">
+
+<p>因为需要再次修改<code>YYText</code>排版逻辑：核心逻辑就是在每行排版过程中，获取<code>attachement</code>的<code>ascent</code>和<code>descent</code>，在最大的<code>descent</code>的基础上进行偏移。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">static void YYTextGetRunsMaxMetricOfAttachment(CFArrayRef  _Nonnull runs, CGFloat * _Nullable xHeight, CGFloat * _Nonnull underlinePosition, CGFloat * _Nullable lineThickness) &#123;</span><br><span class="line">    CGFloat maxXHeight = 0;</span><br><span class="line">    CGFloat maxUnderlinePos = 0;</span><br><span class="line">    for (NSUInteger i = 0, max = CFArrayGetCount(runs); i &lt; max; i++) &#123;</span><br><span class="line">        CTRunRef run = CFArrayGetValueAtIndex(runs, i);</span><br><span class="line">        CFDictionaryRef attrs = CTRunGetAttributes(run);</span><br><span class="line">        if (attrs) &#123;</span><br><span class="line">            YYTextDecoration *underline = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextUnderlineAttributeName);</span><br><span class="line">            YYTextDecoration *attachment = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextAttachmentAttributeName);</span><br><span class="line">            YYTextRunDelegate *runDelegate = CTRunDelegateGetRefCon(CFDictionaryGetValue(attrs, kCTRunDelegateAttributeName));</span><br><span class="line">            if (underline &amp;&amp; attachment &amp;&amp; runDelegate) &#123;</span><br><span class="line">                if (runDelegate.descent * -1 &lt; maxUnderlinePos) &#123;</span><br><span class="line">                    maxUnderlinePos = runDelegate.descent * -1;</span><br><span class="line">                &#125;</span><br><span class="line">                if (runDelegate.ascent &lt; maxXHeight) &#123;</span><br><span class="line">                    maxXHeight = runDelegate.ascent;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (underlinePosition &amp;&amp; *underlinePosition &gt; maxUnderlinePos) &#123;</span><br><span class="line">        *underlinePosition = maxUnderlinePos;</span><br><span class="line">    &#125;</span><br><span class="line">    if (xHeight &amp;&amp; *xHeight &lt; maxXHeight) &#123;</span><br><span class="line">        *xHeight = maxXHeight;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> l = <span class="number">0</span>, lMax = layout.lines.count; l &lt; lMax; l++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cancel &amp;&amp; cancel()) <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        YYTextLine *line = lines[l];</span><br><span class="line">        <span class="keyword">if</span> (layout.truncatedLine &amp;&amp; layout.truncatedLine.index == line.index) line = layout.truncatedLine;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(line.CTLine);</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">            ......</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> xHeight, underlinePosition, lineThickness;</span><br><span class="line">            YYTextGetRunsMaxMetric(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// get the runs max metric of attachment</span></span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            ......  </span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这个问题有个前提就是<code>Attachement</code>必须正确地设置<code>ascent</code>和<code>descent</code>，否则的话无法解决问题。</p>
+</blockquote>
+<h3 id="闪烁-错位问题"><a href="#闪烁-错位问题" class="headerlink" title="闪烁+错位问题"></a>闪烁+错位问题</h3><p>从现象上看，应该是流的时候的排版信息和实际显示的排版信息有差异，从而导致错位和闪烁。通过排查发现这个问题是由于短时间内对<code>YYText</code>进行了频繁的刷新导致，所以需要修改原来的方案：</p>
+<p>收到流文本，不再把新生成的排版信息刷到视图上，而是把该排版信息记录下来。视图流完当前的排版信息，会回去检查排版信息是否有更新，有的话，则把新的排版信息刷到视图上，继续流，否则的话伪流渲染完成。在当前排版信息的流式渲染过程中，新的排版信息可能会被多次更新（覆盖）。这样做不仅可以避免视图的频繁刷新，解决闪烁和错位问题，还可以提升性能。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (void)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    if (!self.isStreamingRendering) &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // relocate the animateView at the first time that the layout was set.</span><br><span class="line">    if (![[XXXTimer defaultTimer] hasTimerWithName:self.identify]) &#123;</span><br><span class="line">        [self updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [self.animateView locateInRect:CGRectMake(0, 0, 0, CGRectGetHeight(self.loadingView.frame))];</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // save the textlayout</span><br><span class="line">        self.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    // start rendering timer</span><br><span class="line">    [self startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)startRenderingTimer &#123;</span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [[XXXTimer defaultTimer] scheduledTimerWithName:<span class="keyword">self</span>.identify timeInterval:<span class="keyword">self</span>.renderingInterval queue:dispatch_get_main_queue() startImmediately:<span class="literal">YES</span> repeat:<span class="literal">YES</span> action:^&#123;</span><br><span class="line">            <span class="built_in">NSUInteger</span> length = <span class="keyword">self</span>.textLayout.text.yy_rangeOfAll.length;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">self</span>.rectIndex &lt; length) &#123;</span><br><span class="line">                [<span class="keyword">self</span> informChangeStreamingRenderingWithInfo];</span><br><span class="line">                <span class="keyword">self</span>.rectIndex++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">self</span>.tempTextLayout != <span class="literal">nil</span> &amp;&amp; <span class="keyword">self</span>.textLayout != <span class="keyword">self</span>.tempTextLayout) &#123;</span><br><span class="line">                    <span class="comment">// update the text layout and frame</span></span><br><span class="line">                    [<span class="keyword">self</span> updateTextLayoutAndFrame:<span class="keyword">self</span>.tempTextLayout];</span><br><span class="line">                    <span class="keyword">self</span>.tempTextLayout = <span class="literal">nil</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">                        <span class="comment">// wait</span></span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        [<span class="keyword">self</span> stopAnimation];</span><br><span class="line">                        [<span class="keyword">self</span> stopRenderingTimer];</span><br><span class="line">                        [<span class="keyword">self</span> informStopStreamingRenderingWithInfo];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="流式渲染打断进度同步到TTS"><a href="#流式渲染打断进度同步到TTS" class="headerlink" title="流式渲染打断进度同步到TTS"></a>流式渲染打断进度同步到TTS</h3><p>在业务场景中，原始的富文本通常需要经过渲染引擎的解析，把富文本转换为可朗读文字投喂给<code>TTS</code>引擎进行朗读，通常情况下这不会有什么问题，但是在业务中有一个打断的流式场景，最后显示…，但是可朗读文本是提前被整体投喂给<code>TTS</code>的，所以就会导致<code>TTS</code>朗读的文本比流式渲染的文本要多，而喂多了想取消可能不是一件容易的事情。因此最终的解决方案是：每渲染一个字符，渲染引擎会吐对应的文本到<code>TTS</code>（TTS内部有缓存队列），这样当流式渲染被打断的时候，投喂<code>TTS</code>的文本也会到此为止，IM也会把这个<code>index</code>记录下来，之后重新播放也可以定位到相同的位置，从而保证了渲染和<code>TTS</code>最终文本的一致性。</p>
+<h3 id="…-…-问题"><a href="#…-…-问题" class="headerlink" title="$…$$…$问题"></a>$…$$…$问题</h3><p>这个问题比较复杂，先讲点背景：传统的 TeX 有两种排版公式的方法：</p>
+<ul>
+<li><strong>inline math mode</strong>，其中公式包含在段落中，TeX早期使用$…$来表示</li>
+<li><strong>display math mode</strong>，其中公式独占一行，TeX早期使用 $$…$$来表示</li>
+</ul>
+<p>如今，标准最佳实践是避免使用 $ 字符来排版公式，而是使用 LaTeX 分隔符，例如：</p>
+<ul>
+<li>对于<strong>inline math mode</strong>，使用(… ) 、\begin{math}…\end{math}， 而不是$…$；</li>
+<li>对于<strong>display math mode</strong>，使用 [… ] 、 \begin{displaymath}…\end{displaymath}，而不是 $$…$$；</li>
+</ul>
+<p>回到业务场景，Latex公式通常都嵌套在HTML中，所以首先要进行HTML解析，为了方便解析，使用自定义标签<tex>…</tex>来表达Latex公式，即使如此，Latex的解析也并不省心，原因在于latex文本中可能会包含HTML语法标记符号，例如：<tex>1+2&lt;5</tex>，Latex文本中包含&lt;，只是为了显示，并不是HTML标记符号的意思，但是这里会被HTML解析器当成标记，从而导致解析错乱，所以在解析之前，需要正则匹配<tex>…</tex>，然后将&lt;替换为&amp;lt;进行转义。类似的符号还有&gt;、&amp;、”、’等。</p>
+<p>大模型来了之后，前面提到的各种分隔符都是有可能返回的，所以端上渲染还是得支持这些分隔符，以 $…$ 和 $$…$$为例：端上一开始的做法相当简单：在解析之前，使用正则优先匹配 $$…$$，然后匹配$…$ ，将它们替换为<tex>…</tex>，随后的逻辑和之前保持一致，一切都相安无事（实际上这里有一个假定前提：如果HTML中文本想表达美元$符号，则必须使用$的形式，否则一个美元$符会使得后面的解析全部错位）。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    <span class="comment">// replace the $$xxx$$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDoubleDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// replace the $xxx$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// process the excape in tex tag</span></span><br><span class="line">    [<span class="keyword">self</span> processExcapeInTexTag];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>直到有一天大模型返回了$…$$…$，打破了这份平静：它的本意是想表达两个连续的公式，但是由于中间的$$耦合了，导致端上的正则逻辑失败：端上先匹配$$…$$，匹配失败，然后匹配$…$，最后将<code>...$$...</code>当成latex文本来处理，从而导致错误。<br>端上最终放弃了正则匹配方案，采用了遍历入栈出栈方案：</p>
+<ol>
+<li>当碰到$符号时候，看看栈中是不是有$，有的话优先出栈，此时一个公式匹配完成；</li>
+<li>否则考虑下一个字符是否是$<ol>
+<li>如果是，则组成$$<ol>
+<li>看看栈中是不是有$$，有的话优先出栈，此时一个公式匹配完成；</li>
+<li>否则将$$入栈，标记一个公式的开始；</li>
+</ol>
+</li>
+<li>否则将$入栈，标记一个公式的开始；</li>
+</ol>
+</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    .....</span><br><span class="line">    <span class="keyword">if</span> (curCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$&quot;</span>]) &#123;</span><br><span class="line">            [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">self</span>.index + <span class="number">1</span> &lt; <span class="keyword">self</span>.len) &#123;</span><br><span class="line">            <span class="type">wchar_t</span> nextCh = *(<span class="keyword">self</span>.str + <span class="keyword">self</span>.index + <span class="number">1</span>);</span><br><span class="line">            <span class="keyword">if</span> (nextCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$$&quot;</span>]) &#123;</span><br><span class="line">                    [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">self</span>.index += <span class="number">2</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">                <span class="keyword">self</span>.index++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> appendWideCharacter:curCh];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    .....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该遍历入栈出栈方案带来了灵活和自由，不仅可以处理$和$$问题，同时可以将(…), […]顺手解决，另外也可以处理HTML语法标记符号转义的问题，所有的问题都可以在一次遍历中全部解决，这在正则方案中是不太可能的。<br>此外该遍历入栈出栈方案也获得了性能上的收益：Latex的预处理耗时降到了正则方案的1&#x2F;2~1&#x2F;4。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>前文提到的流式渲染都是建立在<code>YYText</code>的基础上进行的，得益于<code>YYText</code>的良好的排版机制，可以使用“伪流式”快速实现流式效果，满足业务需求，但是同时也碰到了很多问题，踩了很多坑。即使如此，目前的伪流式方案有一些天然的缺陷：</p>
+<ol>
+<li>由于是基于<code>YYText</code>，很多问题还是需要去修改<code>YYText</code>源码，无法将<code>YYText</code>当成黑盒来处理，这给以后的开发和维护工作也提升了门槛和难度；</li>
+<li>业务侧的排版控制很弱，尤其涉及到一些表格、列表等块元素，端上非常吃力，终归结底是<code>YYText</code>主要还是针对文本的排版，涉及到图文表混排，以及他们的嵌套排版，如果想控制一些细节，<code>YYText</code>表现的会有些吃力，因为在<code>attachment</code>和<code>YYText</code>是分离的，很难利用<code>YYText</code>的排版渲染能力；</li>
+<li><code>HTML</code>和<code>LaTeX</code>在渲染层是割裂的，公式整体作为一个<code>attachment</code> 被嵌入到<code>YYText</code>中，只能作为一个<code>View</code>被整体输出，很难实现流式渲染效果。。。<br>未来可能需要构建一套能融合多种富文本语法的渲染引擎，尽管上层的语法是不同的，但是底层的渲染框架是一致的，这样就能带来统一的渲染能力和更加灵活的定制能力，为解决块元素嵌套渲染，公式流式渲染等问题提供更大的可能性。</li>
+</ol>
+<p>思考几个问题：</p>
+<ol>
+<li>是否有可能做真正意义上的流式解析器？</li>
+<li>是否可以减少排版的次数？</li>
+<li>是否可以做到真正意义上的流式渲染？</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/">聊聊 iOS 富文本的流式渲染</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2024年08月06日 - 16:08</p>
+  <p><span>最后更新:</span>2026年08月02日 - 23:08</p>
+  <p><span>原始链接:</span><a href="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/" title="聊聊 iOS 富文本的流式渲染">https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/">聊聊 iOS 富文本的流式渲染</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2024年08月06日 - 16:08</p>
+  <p><span>最后更新:</span>2026年08月02日 - 23:08</p>
+  <p><span>原始链接:</span><a href="/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/" title="聊聊 iOS 富文本的流式渲染">https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E5%AF%8C%E6%96%87%E6%9C%AC-%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/" rel="tag"># 富文本 流式渲染</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/" rel="next" title="聊聊iOS中的中心重定向">
+                <i class="fa fa-chevron-left"></i> 聊聊iOS中的中心重定向
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/" rel="prev" title="从源码看 C++ 异常">
+                从源码看 C++ 异常 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E8%AF%B7%E6%B1%82"><span class="nav-number">2.1.</span> <span class="nav-text">流请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%AA%E6%B5%81%E5%BC%8F%E8%A7%A3%E6%9E%90"><span class="nav-number">2.2.</span> <span class="nav-text">伪流式解析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%87%E7%AD%BE%E4%B8%8D%E5%AE%8C%E6%95%B4%E8%A7%84%E5%88%99"><span class="nav-number">2.2.1.</span> <span class="nav-text">标签不完整规则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%AC%E5%BC%8F%E4%B8%8D%E5%AE%8C%E6%95%B4%E8%A7%84%E5%88%99"><span class="nav-number">2.2.2.</span> <span class="nav-text">公式不完整规则</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%AA%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93"><span class="nav-number">2.3.</span> <span class="nav-text">伪流式渲染</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86"><span class="nav-number">2.3.1.</span> <span class="nav-text">核心原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93%E6%B5%81%E7%A8%8B"><span class="nav-number">2.3.2.</span> <span class="nav-text">流式渲染流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%A1%E7%89%87%E8%86%A8%E8%83%80"><span class="nav-number">2.3.3.</span> <span class="nav-text">卡片膨胀</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B8%A9%E5%9D%91%E8%AE%B0"><span class="nav-number">3.</span> <span class="nav-text">踩坑记</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%BE%93%E5%87%BAlatex%E6%96%87%E6%9C%AC%EF%BC%8C%E5%90%8E%E5%8F%88%E6%AD%A3%E5%B8%B8%E6%B8%B2%E6%9F%93"><span class="nav-number">3.1.</span> <span class="nav-text">先输出latex文本，后又正常渲染</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E6%9C%AC%E5%8F%8C%E8%BE%B9%E5%AF%B9%E9%BD%90%E9%97%AE%E9%A2%98"><span class="nav-number">3.2.</span> <span class="nav-text">文本双边对齐问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%BE%E7%A4%BA%E8%A6%86%E7%9B%96%E9%97%AE%E9%A2%98"><span class="nav-number">3.3.</span> <span class="nav-text">显示覆盖问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E5%88%92%E7%BA%BF%E9%97%B4%E8%B7%9D%E9%97%AE%E9%A2%98"><span class="nav-number">3.4.</span> <span class="nav-text">下划线间距问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E5%88%92%E7%BA%BF-Attachement"><span class="nav-number">3.5.</span> <span class="nav-text">下划线 Attachement</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AA%E7%83%81-%E9%94%99%E4%BD%8D%E9%97%AE%E9%A2%98"><span class="nav-number">3.6.</span> <span class="nav-text">闪烁+错位问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93%E6%89%93%E6%96%AD%E8%BF%9B%E5%BA%A6%E5%90%8C%E6%AD%A5%E5%88%B0TTS"><span class="nav-number">3.7.</span> <span class="nav-text">流式渲染打断进度同步到TTS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%80%A6-%E2%80%A6-%E9%97%AE%E9%A2%98"><span class="nav-number">3.8.</span> <span class="nav-text">$…$$…$问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">NaNm</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
