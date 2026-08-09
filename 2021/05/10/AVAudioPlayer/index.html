@@ -99,12 +99,12 @@
 
 
 
-<meta name="description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示 12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv)">
+<meta name="description" content="背景 之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示 12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv)">
 <meta property="og:type" content="article">
 <meta property="og:title" content="记一个AVAudioPlayer Crash修复">
 <meta property="og:url" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示 12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv)">
+<meta property="og:description" content="背景 之前曾经遇到过一个AVAudioPlayer的多线程crash，这里记录一下。 crash堆栈如下所示 12345678910Crashed: com.apple.main-thread0 libobjc.A.dylib 0x1834fc910 objc_msgSend + 161 AVFAudio 0x189c814f4 -[AVAudioPlayer(AVAudioPlayerPriv)">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/04.png">
@@ -160,7 +160,119 @@
 
 
 
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
 
@@ -352,6 +464,16 @@
 
           
             
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/05/10/AVAudioPlayer/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count gitment-comments-count" data-xid="/2021/05/10/AVAudioPlayer/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
           
 
           
@@ -370,7 +492,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  13k
+                  12k
                 </span>
               
 
@@ -386,7 +508,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  46 mins.
+                  45 mins.
                 </span>
               
             </div>
@@ -407,52 +529,49 @@
       
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>之前曾经遇到过一个<code>AVAudioPlayer</code>的多线程crash，这里记录一下。</p>
-<p>crash堆栈如下所示</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Crashed: com.apple.main-thread</span><br><span class="line"><span class="number">0</span> libobjc.A.dylib <span class="number">0x1834fc910</span> objc_msgSend + <span class="number">16</span></span><br><span class="line"><span class="number">1</span> <span class="built_in">AVFAudio</span> <span class="number">0x189c814f4</span> -[<span class="built_in">AVAudioPlayer</span>(<span class="built_in">AVAudioPlayerPriv</span>) finishedPlaying:] + <span class="number">92</span></span><br><span class="line"><span class="number">2</span> Foundation <span class="number">0x184d7a0ec</span> __NSThreadPerformPerform + <span class="number">340</span></span><br><span class="line"><span class="number">3</span> CoreFoundation <span class="number">0x1842d7404</span> <span class="built_in">CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION</span> + <span class="number">24</span></span><br><span class="line"><span class="number">4</span> CoreFoundation <span class="number">0x1842d6c2c</span> __CFRunLoopDoSources0 + <span class="number">276</span></span><br><span class="line"><span class="number">5</span> CoreFoundation <span class="number">0x1842d479c</span> __CFRunLoopRun + <span class="number">1204</span></span><br><span class="line"><span class="number">6</span> CoreFoundation <span class="number">0x1841f4da8</span> <span class="built_in">CFRunLoopRunSpecific</span> + <span class="number">552</span></span><br><span class="line"><span class="number">7</span> GraphicsServices <span class="number">0x1861d9020</span> GSEventRunModal + <span class="number">100</span></span><br><span class="line"><span class="number">8</span> <span class="built_in">UIKit</span> <span class="number">0x18e211758</span> <span class="built_in">UIApplicationMain</span> + <span class="number">236</span></span><br></pre></td></tr></table></figure>
-
-<p>通过查询，发现也有其他同学遇到了这个问题：</p>
-<ul>
-<li><a href="https://github.com/mapbox/mapbox-navigation-ios/issues/1561">Crash : AVAudioPlayer(AVAudioPlayerPriv) finishedPlaying</a></li>
-<li><a href="https://developer.apple.com/forums/thread/112837">Crash with AVAudioPlayer</a></li>
-<li><a href="http://forum.giderosmobile.com/discussion/4311/some-ios-audio-crash">Some iOS audio crash</a></li>
-</ul>
-<p>也尝试了一些网上的解决方案，发现并不奏效：</p>
-<ul>
-<li><a href="https://stackoverflow.com/questions/15324174/crash-report-ios-view-controller-related/15325328#15325328">Crash Report - iOS - View Controller Related?
-</a></li>
-</ul>
-<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>观察堆栈，应该是在<code>finishedPlaying:</code>方法中访问了非法地址，而<code>_objc_msgSend</code>则大概率预示着这是一个多线程问题。<br><code>AVAudioPlayer</code>播放声音是异步的，另起一个播放线程，并不在主线程。当声音播放完全之后，再切换到主线程调用<code>AVAudioPlayer的finishedPlaying:</code>方法，从而调用<code>delegate</code>的方法。而当从播放线程切换到主线程的过程当中，<code>AVAudioPlayer</code>会被引用，并不会被释放。这样当<code>AVAudioPlayer</code>的代理被释放后，<code>AVAudioPlayer</code>还是有可能调用了 delegate的方法。</p>
-<p>通过google，也可以发现类似的解释</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">The cause of this problem was that the AVAudioPlayer object was trying</span><br><span class="line">to invoke [avAudioPlayer.delegate audioPlayerDidFinishPlaying] but the</span><br><span class="line">avAudioPlayer.delegate ref was no longer valid because it had been</span><br><span class="line">deallocated when releasing the avAudioPlayer in my code</span><br></pre></td></tr></table></figure>
-
-<p>通过查看<code>AVAudioPlayer.h</code>头文件，发现其代理是weak的，同时该crash几乎通吃所有的系统版本和机型，这让人十分费解</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AVAudioPlayer.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">AVAudioPlayer</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line"> <span class="keyword">@private</span></span><br><span class="line">    <span class="type">id</span> _impl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// the delegate will be sent messages from the AVAudioPlayerDelegate protocol</span></span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">weak</span>, <span class="keyword">nullable</span>) <span class="type">id</span>&lt;<span class="built_in">AVAudioPlayerDelegate</span>&gt; delegate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><p>由于<code>finishedPlaying:</code>并没有暴露为共有方法，为了能看下堆栈，所以hook了<code>finishedPlaying:</code>方法</p>
-<style>.xngogmgwqlyw{}</style><img src="/2021/05/10/AVAudioPlayer/03.png" class="xngogmgwqlyw">
-<style>.zhjcpsvsqhfv{}</style><img src="/2021/05/10/AVAudioPlayer/04.png" class="zhjcpsvsqhfv">
-
+        <h2 id="背景">背景</h2>
+<p>之前曾经遇到过一个<code>AVAudioPlayer</code>的多线程crash，这里记录一下。</p>
+<p>crash堆栈如下所示 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Crashed: com.apple.main-thread</span><br><span class="line"><span class="number">0</span> libobjc.A.dylib <span class="number">0x1834fc910</span> objc_msgSend + <span class="number">16</span></span><br><span class="line"><span class="number">1</span> <span class="built_in">AVFAudio</span> <span class="number">0x189c814f4</span> -[<span class="built_in">AVAudioPlayer</span>(<span class="built_in">AVAudioPlayerPriv</span>) finishedPlaying:] + <span class="number">92</span></span><br><span class="line"><span class="number">2</span> Foundation <span class="number">0x184d7a0ec</span> __NSThreadPerformPerform + <span class="number">340</span></span><br><span class="line"><span class="number">3</span> CoreFoundation <span class="number">0x1842d7404</span> <span class="built_in">CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION</span> + <span class="number">24</span></span><br><span class="line"><span class="number">4</span> CoreFoundation <span class="number">0x1842d6c2c</span> __CFRunLoopDoSources0 + <span class="number">276</span></span><br><span class="line"><span class="number">5</span> CoreFoundation <span class="number">0x1842d479c</span> __CFRunLoopRun + <span class="number">1204</span></span><br><span class="line"><span class="number">6</span> CoreFoundation <span class="number">0x1841f4da8</span> <span class="built_in">CFRunLoopRunSpecific</span> + <span class="number">552</span></span><br><span class="line"><span class="number">7</span> GraphicsServices <span class="number">0x1861d9020</span> GSEventRunModal + <span class="number">100</span></span><br><span class="line"><span class="number">8</span> <span class="built_in">UIKit</span> <span class="number">0x18e211758</span> <span class="built_in">UIApplicationMain</span> + <span class="number">236</span></span><br></pre></td></tr></table></figure></p>
+<p>通过查询，发现也有其他同学遇到了这个问题： * <a
+href="https://github.com/mapbox/mapbox-navigation-ios/issues/1561">Crash
+: AVAudioPlayer(AVAudioPlayerPriv) finishedPlaying</a> * <a
+href="https://developer.apple.com/forums/thread/112837">Crash with
+AVAudioPlayer</a> * <a
+href="http://forum.giderosmobile.com/discussion/4311/some-ios-audio-crash">Some
+iOS audio crash</a></p>
+<p>也尝试了一些网上的解决方案，发现并不奏效： * <a
+href="https://stackoverflow.com/questions/15324174/crash-report-ios-view-controller-related/15325328#15325328">Crash
+Report - iOS - View Controller Related?</a></p>
+<h2 id="分析">分析</h2>
+<p>观察堆栈，应该是在<code>finishedPlaying:</code>方法中访问了非法地址，而<code>_objc_msgSend</code>则大概率预示着这是一个多线程问题。
+<code>AVAudioPlayer</code>播放声音是异步的，另起一个播放线程，并不在主线程。当声音播放完全之后，再切换到主线程调用<code>AVAudioPlayer的finishedPlaying:</code>方法，从而调用<code>delegate</code>的方法。而当从播放线程切换到主线程的过程当中，<code>AVAudioPlayer</code>会被引用，并不会被释放。这样当<code>AVAudioPlayer</code>的代理被释放后，<code>AVAudioPlayer</code>还是有可能调用了
+delegate的方法。</p>
+<p>通过google，也可以发现类似的解释 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">The cause of this problem was that the AVAudioPlayer object was trying</span><br><span class="line">to invoke [avAudioPlayer.delegate audioPlayerDidFinishPlaying] but the</span><br><span class="line">avAudioPlayer.delegate ref was no longer valid because it had been</span><br><span class="line">deallocated when releasing the avAudioPlayer in my code</span><br></pre></td></tr></table></figure></p>
+<p>通过查看<code>AVAudioPlayer.h</code>头文件，发现其代理是weak的，同时该crash几乎通吃所有的系统版本和机型，这让人十分费解
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AVAudioPlayer.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">AVAudioPlayer</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line"> <span class="keyword">@private</span></span><br><span class="line">    <span class="type">id</span> _impl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// the delegate will be sent messages from the AVAudioPlayerDelegate protocol</span></span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">weak</span>, <span class="keyword">nullable</span>) <span class="type">id</span>&lt;<span class="built_in">AVAudioPlayerDelegate</span>&gt; delegate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="调试">调试</h2>
+<p>由于<code>finishedPlaying:</code>并没有暴露为共有方法，为了能看下堆栈，所以hook了<code>finishedPlaying:</code>方法
+<style>.oemkqojcuxes{}</style><img src="/2021/05/10/AVAudioPlayer/03.png" class="oemkqojcuxes">
+<style>.xtrqfcfswnfu{}</style><img src="/2021/05/10/AVAudioPlayer/04.png" class="xtrqfcfswnfu"></p>
 <p>通过调试，发现原AVAudioPlayer有一个内部实现类<code>AudioPlayerImpl</code>，这个内部实现类还有一个成员变量<code>_delegate</code></p>
-<p>进而详细查看了<code>AudioPlayerImpl</code>的头文件：<a href="https://github.com/ultramiraculous/iOS9-Runtime-Headers/blob/master/lib/libAVFAudio.dylib/AudioPlayerImpl.h">AudioPlayerImpl的头文件</a></p>
-<style>.dgkfqmkqgits{}</style><img src="/2021/05/10/AVAudioPlayer/05.png" class="dgkfqmkqgits">
-
-
-<p>通过验证，发现这两个代理都指向同一个对象：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> (lldb) po <span class="keyword">self</span>.delegate</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br><span class="line"></span><br><span class="line">Printing description of <span class="keyword">self</span>-&gt;_impl-&gt;_delegate:</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br></pre></td></tr></table></figure>
-
+<p>进而详细查看了<code>AudioPlayerImpl</code>的头文件：<a
+href="https://github.com/ultramiraculous/iOS9-Runtime-Headers/blob/master/lib/libAVFAudio.dylib/AudioPlayerImpl.h">AudioPlayerImpl的头文件</a>
+<style>.rswjurvxphij{}</style><img src="/2021/05/10/AVAudioPlayer/05.png" class="rswjurvxphij"></p>
+<p>通过验证，发现这两个代理都指向同一个对象： <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> (lldb) po <span class="keyword">self</span>.delegate</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br><span class="line"></span><br><span class="line">Printing description of <span class="keyword">self</span>-&gt;_impl-&gt;_delegate:</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br></pre></td></tr></table></figure></p>
 <p>我们不由地怀疑这个内部类<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>有问题，初步推断crash是这样产生的：</p>
 <p>假设<code>AVAudioPlayer</code>的<code>delegate</code>为A，内部类<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>为B</p>
 <p>正常设计上，外部代理释放的时候，weak的A会自动变为nil，同时也应该将B设置为nil，并且要保证原子性。但是可能有些情况下A和B的变化并没有保持绝对同步，导致A变为nil的时候，B仍然指向一个非法的地址，如果此时访问B，便会crash。</p>
-<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p>朝着这个怀疑点，尝试修复一下，原理很简单：</p>
-<p>在执行方法<code>finishedPlaying</code>之前，先判断<code>AVAudioPlayer</code>的代理<code>delegate</code>是否为nil</p>
-<ul>
-<li>如果是nil，将<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>也设置为nil</li>
-<li>否则，强持有<code>AVAudioPlayer</code>的代理<code>delegate</code>，保证<code>finishedPlaying</code>方法执行期间不被释放；<br>代码如下：</li>
-</ul>
+<h2 id="解决办法">解决办法</h2>
+<p>朝着这个怀疑点，尝试修复一下，原理很简单：</p>
+<p>在执行方法<code>finishedPlaying</code>之前，先判断<code>AVAudioPlayer</code>的代理<code>delegate</code>是否为nil
+*
+如果是nil，将<code>AudioPlayerImpl</code>的成员变量<code>_delegate</code>也设置为nil
+*
+否则，强持有<code>AVAudioPlayer</code>的代理<code>delegate</code>，保证<code>finishedPlaying</code>方法执行期间不被释放；
+代码如下：</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">AVAudioPlayer</span> (<span class="title">Extension</span>)</span></span><br><span class="line"></span><br><span class="line">+ (<span class="type">void</span>)load &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic push</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic ignored <span class="string">&quot;-Wundeclared-selector&quot;</span></span></span><br><span class="line">    dm_swizzleSelector([<span class="keyword">self</span> <span class="keyword">class</span>], <span class="keyword">@selector</span>(finishedPlaying:), <span class="keyword">@selector</span>(dm_finishedPlaying:));</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic pop</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)dm_finishedPlaying:(<span class="type">id</span>)success &#123;</span><br><span class="line"></span><br><span class="line">    Ivar ivar = class_getInstanceVariable([<span class="keyword">self</span> <span class="keyword">class</span>], <span class="string">&quot;_impl&quot;</span>);</span><br><span class="line">    <span class="type">id</span> impl = object_getIvar(<span class="keyword">self</span>, ivar);</span><br><span class="line">    <span class="built_in">NSString</span> *implClassName = [@[<span class="string">@&quot;Aud&quot;</span>, <span class="string">@&quot;ioPl&quot;</span>, <span class="string">@&quot;aye&quot;</span>, <span class="string">@&quot;rIm&quot;</span>, <span class="string">@&quot;pl&quot;</span>] componentsJoinedByString:<span class="string">@&quot;&quot;</span>];</span><br><span class="line">    Ivar implDelegate = class_getInstanceVariable(<span class="built_in">NSClassFromString</span>(implClassName), <span class="string">&quot;_delegate&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// if the weak delegate of AVAudioPlayer is nil, you should set the assign delegate of AudioPlayerImpl to nil too.</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>.delegate) &#123;</span><br><span class="line">        object_setIvar(impl, implDelegate, <span class="literal">nil</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// retain self.delegate to keep it alive during the execution of the finishedPlaying: method</span></span><br><span class="line">    <span class="type">id</span> __<span class="keyword">strong</span> strongDelegate = <span class="keyword">self</span>.delegate;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// call the original method finishedPlaying:</span></span><br><span class="line">    [<span class="keyword">self</span> dm_finishedPlaying:success];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// this line doesn&#x27;t make sense, just to avoid warning and optimization by the complier</span></span><br><span class="line">    strongDelegate = <span class="literal">nil</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>通过上线验证后，该修复方法的确生效了</p>
+<h2 id="验证">验证</h2>
+<p>通过上线验证后，该修复方法的确生效了</p>
 
       
     </div>
@@ -635,9 +754,12 @@
           
 
   
-    <div id="gitalk-container">
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
     </div>
-
+    
   
 
 
@@ -690,7 +812,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-count">34</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -701,7 +823,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -780,7 +902,7 @@
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">NaNm</span>
+    <span title="Site words total count">144k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -953,27 +1075,47 @@
 
 
 
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://aimingoo.github.io/gitmint/style/default.css">
+        <script src="https://aimingoo.github.io/gitmint/dist/gitmint.browser.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitmint({
+            id: window.location.pathname, 
+            owner: 'tsuijunxi',
+            repo: 'tsuijunxi.github.io',
+            
+            lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
+            
+            oauth: {
+            
+            
+                client_secret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+            
+                client_id: '3b98a5ec68bfccc21c29'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
 
 
 
 
 
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
 
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: 'true'
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
   
