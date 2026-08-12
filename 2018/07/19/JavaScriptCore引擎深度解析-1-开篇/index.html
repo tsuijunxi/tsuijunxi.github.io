@@ -493,7 +493,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  8.3k
+                  8.4k
                 </span>
               
 
@@ -533,12 +533,14 @@ mjx-container[display="true"] + br {
         <h2 id="前言">前言</h2>
 <p>不知不觉又到了挖坑季节，作为一个菜鸟，我愿意给自己一个机会，督促自己的学习和总结，同时也给自己一个挑战，从<code>JavaScriptCore</code>的开源代码中剖析它的实现原理。（本系列的文章尽量会写的有血有肉，内容会随时保持更新）</p>
 <h2 id="javascriptcore简介">JavaScriptCore简介</h2>
-<p><code>JavaScriptCore</code>是苹果开源项目WebKit中的默认<code>JavaScript</code>引擎，被用来解释和执行<code>JavaScript</code>代码。一开始它是基于KJS开发的，是基于抽象语法树的解释器，性能较差。2008年苹果重写了编译器和字节码解释器，叫<code>SquirrelFish</code>:
-&gt; SquirrelFish is a register-based, direct-threaded(bigger code and
+<p><code>JavaScriptCore</code>是苹果开源项目WebKit中的默认<code>JavaScript</code>引擎，被用来解释和执行<code>JavaScript</code>代码。一开始它是基于KJS开发的，是基于抽象语法树的解释器，性能较差。2008年苹果重写了编译器和字节码解释器，叫<code>SquirrelFish</code>:</p>
+<blockquote>
+<p>SquirrelFish is a register-based, direct-threaded(bigger code and
 data, but fast), high-level bytecode engine, with a sliding register
 window calling convention. It lazily generates bytecodes from a syntax
 tree, using a simple one-pass compiler with built-in copy
 propagation.</p>
+</blockquote>
 <h2 id="源码目录结构">源码目录结构</h2>
 <blockquote>
 <ul>
@@ -567,9 +569,13 @@ Interpreter，编译四层里的第一层，负责解释执行低效字节码</l
 <h2 id="核心模块">核心模块</h2>
 <p>该部分内容主要翻译自<a
 href="https://trac.webkit.org/wiki/JavaScriptCore">官方文档</a></p>
-<p><code>JavaScriptCore</code>是一个高度优化的虚拟机，主要包括以下几个模块:
-&gt;* <strong>Lexer</strong>
-词法分析器，将JavaScript源码分解成Tokens，代码文件：parser/Lexer.cpp.</p>
+<p><code>JavaScriptCore</code>是一个高度优化的虚拟机，主要包括以下几个模块:</p>
+<blockquote>
+<ul>
+<li><strong>Lexer</strong>
+词法分析器，将JavaScript源码分解成Tokens，代码文件：parser/Lexer.cpp.</li>
+</ul>
+</blockquote>
 <blockquote>
 <ul>
 <li><strong>Parse</strong>
@@ -604,9 +610,9 @@ JIT。一样，这些都是近似数，整个过程也是趋向于启发式的�
 JIT&amp;Interpreter)收集的数据停止类型揣测，这样就可以尽早获得类型信息(forward-propagate
 type
 information)，从而减少了大批的类型检查。DFG也会自行停止揣测，比如为了启用inlining,
-可能会将从heap中加载的内容识别出一个已知的函数对象。如果揣测失败，DFG取消优化(Deoptimization)，也称为”OSR
-exit”.
-Deoptimization可能是同步的(某个类型检测分支正在执行)，也可能是异步的(比如runtime视察到某个值变化了，并且与DFG的假设是冲突的)，后者也被称为”watchpointing”。
+可能会将从heap中加载的内容识别出一个已知的函数对象。如果揣测失败，DFG取消优化(Deoptimization)，也称为“OSR
+exit“.
+Deoptimization可能是同步的(某个类型检测分支正在执行)，也可能是异步的(比如runtime视察到某个值变化了，并且与DFG的假设是冲突的)，后者也被称为“watchpointing“。
 <code>Baseline JIT</code>和<code>DFG</code>
 JIT共用一个双向的<code>OSR:Baseline</code>可以在一个函数被频繁调用时OSR进入DFG,
 而DFG则会在deoptimization时OSR回到Baseline JIT. 反复的OSR退出(OSR
@@ -636,8 +642,8 @@ frames，就可能一个运行在<code>LLInt</code>下，另一个运行在<code
 frame正在执行本来旧的DFG编译，而另一个则正执行新的DFG编译。为此三者计划成维护雷同的执行语义(execution
 semantics), 它们的混合应用也是为了带来显著的效能提升。</p>
 <h2 id="工作流程图">工作流程图</h2>
-<style>.biwcldfliipw{}</style>
-<img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png" class="biwcldfliipw">
+<style>.bngkcbolreir{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/01.png" class="bngkcbolreir">
+
 <h2 id="执行的基础环境">执行的基础环境</h2>
 <p>JSC解析生成的代码放到一个虚拟机上来执行(广义上讲JSC主身就是一个虚拟机)。JSC使用的是一个基于寄存器的虚拟机(register-based
 VM)，另一种实现方式是基于栈的虚拟机(stack-based
@@ -647,20 +653,27 @@ VM的效率更高，但可移植性相对弱一些。</p>
 <p>所谓的三元操作符，其中add就是一个三元操作,add dst, src1,
 src2，功能是将src1与src2相加，将结果保存在dst中。dst,
 src1,src2都是寄存器。 参考<a
-href="https://webkit.org/specs/squirrelfish-bytecode.html">JSC字节码规格</a>，给出两个示例：
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">new_array</span><br><span class="line">Format: new_array dst(r) firstArg(r) argCount(n)</span><br><span class="line"></span><br><span class="line">Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.</span><br></pre></td></tr></table></figure></p>
+href="https://webkit.org/specs/squirrelfish-bytecode.html">JSC字节码规格</a>，给出两个示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">new_array</span><br><span class="line">Format: new_array dst(r) firstArg(r) argCount(n)</span><br><span class="line"></span><br><span class="line">Constructs a new Array instance using the original constructor, and puts the result in register dst. The array will contain argCount elements with values taken from registers starting at register firstArg.</span><br></pre></td></tr></table></figure>
+
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add</span><br><span class="line">Format: add dst(r) src1(r) src2(r)</span><br><span class="line"></span><br><span class="line">Adds register src1 and register src2, and puts the result in register dst. (JS add may be string concatenation or numeric add, depending on the types of the operands.)</span><br></pre></td></tr></table></figure>
-<p>而基于栈的虚拟机的生成的字节码如下: <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return  </span><br></pre></td></tr></table></figure>
-可以体会下这两种方式的不同</p>
+
+<p>而基于栈的虚拟机的生成的字节码如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:  iconst_1  </span><br><span class="line">1:  istore_0  </span><br><span class="line">2:  iconst_2  </span><br><span class="line">3:  istore_1  </span><br><span class="line">4:  iload_0  </span><br><span class="line">5:  iload_1  </span><br><span class="line">6:  iadd  </span><br><span class="line">7:  iconst_5  </span><br><span class="line">8:  imul  </span><br><span class="line">9:  istore_2  </span><br><span class="line">10: return  </span><br></pre></td></tr></table></figure>
+
+<p>可以体会下这两种方式的不同</p>
 <h2 id="从js-script到byte-code">从JS Script到Byte Code</h2>
 <p>首先说明<code>Lexer</code>,
 <code>Parser</code>和<code>ByteCode</code>的生成都是由<code>ProgramExecutable</code>初始化过程完成的。首先在JSC的API
-evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。
-<style>.ikugcfvccqlv{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png" class="ikugcfvccqlv">
-下图是CodeCache调用Parser和ByteCodeGenerator的序列图:
-<style>.byotijtnopst{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png" class="byotijtnopst">
-而Lexer则是在Parser过程中调用的，如下图:
-<style>.jgeeqhlrrrlk{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png" class="jgeeqhlrrrlk"></p>
+evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然后传入<code>Interpreter</code>时，再透过<code>CodeCache</code>获取的<code>UnlinkedProgramCodeBlock</code>就是已经生成<code>ByteCode</code>后的<code>Code Block</code>了。</p>
+<style>.xvcwxooqwldf{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/02.png" class="xvcwxooqwldf">
+
+<p>下图是CodeCache调用Parser和ByteCodeGenerator的序列图:</p>
+<style>.mdtsmkdxmfsj{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/03.png" class="mdtsmkdxmfsj">
+
+<p>而Lexer则是在Parser过程中调用的，如下图:</p>
+<style>.khmqmklneczk{}</style><img src="/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/04.png" class="khmqmklneczk">
+
 <p>更具体的细节会在随后会在对应的篇章中进行分析</p>
 <h2 id="更新中">更新中…</h2>
 
@@ -1187,6 +1200,8 @@ evaluate()中会创建<code>ProgramExecutable</code>并指定脚本代码。然�
             lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
             
             oauth: {
+            
+                redirect_protocol: 'https',
             
             
                 client_secret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',

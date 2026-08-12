@@ -99,12 +99,12 @@
 
 
 
-<meta name="description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .vulmkpshltto{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
+<meta name="description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .umjjriyuernt{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Humble Assets Catalog">
 <meta property="og:url" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .vulmkpshltto{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
+<meta property="og:description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .umjjriyuernt{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/03.png">
@@ -560,14 +560,16 @@ mjx-container[display="true"] + br {
         <h2 id="背景">背景</h2>
 <p>QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。</p>
 <h2 id="首次分析解决">首次分析解决</h2>
-<style>.vulmkpshltto{}</style>
-<img src="/2019/04/14/HumbleAssetCatalog/02.png" class="vulmkpshltto">
+<style>.umjjriyuernt{}</style><img src="/2019/04/14/HumbleAssetCatalog/02.png" class="umjjriyuernt">
+
 <p>通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：<code>[UIImage imageNamed:]</code>，此时也就可以理解为什么只有首次才会出现卡顿了。</p>
 <p>通过hook
-<code>[UIImage imageNamed:]</code>方法，直接将设置所使用到的图片全部截获输出，发现竟然需要这么多图片的加载
-<style>.kjkziwdrjknr{}</style><img src="/2019/04/14/HumbleAssetCatalog/03.png" class="kjkziwdrjknr"></p>
-<p>首先想到的解决方案是异步加载这些本地资源的图片，但是感觉工作量很大，于是采取了另外一种方案：在进入阅读页的时候，添加一个观察着，在主线程空闲的时候，去主动预加载这些图片，直到这些图片全部加载完成，然后主动去除观察者
-<style>.xxzolhbyaknu{}</style><img src="/2019/04/14/HumbleAssetCatalog/04.png" class="xxzolhbyaknu"></p>
+<code>[UIImage imageNamed:]</code>方法，直接将设置所使用到的图片全部截获输出，发现竟然需要这么多图片的加载</p>
+<style>.grgnnprmidwf{}</style><img src="/2019/04/14/HumbleAssetCatalog/03.png" class="grgnnprmidwf">
+
+<p>首先想到的解决方案是异步加载这些本地资源的图片，但是感觉工作量很大，于是采取了另外一种方案：在进入阅读页的时候，添加一个观察着，在主线程空闲的时候，去主动预加载这些图片，直到这些图片全部加载完成，然后主动去除观察者</p>
+<style>.uuhecljvoqdm{}</style><img src="/2019/04/14/HumbleAssetCatalog/04.png" class="uuhecljvoqdm">
+
 <p>优化之后直观上感觉好了一些，进行了数据对比</p>
 <table>
 <thead>
@@ -596,20 +598,27 @@ mjx-container[display="true"] + br {
 </tbody>
 </table>
 <p>可以看出，优化后，首次启动的时间和非首次启动的时间已经比较接近了，但是这里实际上还有待于进一步挖掘为什么首次的时间就一定长。
-虽然进步不少，但是不太稳定，有时候还是会莫名其妙地卡顿，相比于前面提到的进一步缩短时间，这个问题更值得深究。用了以下几种方案测试
-&gt;*
-每次杀掉进程，重新启动App，然后进入阅读页，首次点击设置，卡顿不明显；
-&gt;* 每次在阅读页切到后台，然后再切到前台，点击设置，卡顿必现； &gt;*
-竖屏切横屏，横屏切竖屏，有时候会卡顿；</p>
-<p>关于第2点，怀疑是app在切后台的时候，UIImage的系统缓存会被清除，所以在阅读页切到前台的时候，再进行1次预加载
-<style>.cbvxdlgzylgo{}</style><img src="/2019/04/14/HumbleAssetCatalog/05.png" class="cbvxdlgzylgo"></p>
-<p>关于第3点，怀疑是app在切换横竖屏的时候，UIImage的系统缓存会被清除
-<style>.olarrdwkfyhg{}</style><img src="/2019/04/14/HumbleAssetCatalog/06.png" class="olarrdwkfyhg"></p>
+虽然进步不少，但是不太稳定，有时候还是会莫名其妙地卡顿，相比于前面提到的进一步缩短时间，这个问题更值得深究。用了以下几种方案测试</p>
+<blockquote>
+<ul>
+<li>每次杀掉进程，重新启动App，然后进入阅读页，首次点击设置，卡顿不明显；</li>
+<li>每次在阅读页切到后台，然后再切到前台，点击设置，卡顿必现；</li>
+<li>竖屏切横屏，横屏切竖屏，有时候会卡顿；</li>
+</ul>
+</blockquote>
+<p>关于第2点，怀疑是app在切后台的时候，UIImage的系统缓存会被清除，所以在阅读页切到前台的时候，再进行1次预加载</p>
+<style>.ibjwbbhcpgru{}</style><img src="/2019/04/14/HumbleAssetCatalog/05.png" class="ibjwbbhcpgru">
+
+<p>关于第3点，怀疑是app在切换横竖屏的时候，UIImage的系统缓存会被清除</p>
+<style>.xiohnjgomcoj{}</style><img src="/2019/04/14/HumbleAssetCatalog/06.png" class="xiohnjgomcoj">
+
 <p>另外还有一点，就是在内存紧张的情况下，UIImage的系统缓存会被清除。</p>
 <p>最后各种转屏，切后台，切夜间模式，杀掉重启，效果比原来稳定了许多，该方案目前有一个缺陷，就是如果用户从后台切到前台，迅速点击设置按钮，还是会有些卡顿，原因就是图片尚未预加载完毕，毕竟虽然这些图片的加载都是利用主线程的闲暇时间完成的，但是这些图片预加载的总时间一点都节省不下，这点时间代价还是要付出的</p>
 <h2 id="二次分析解决">二次分析解决</h2>
-<p>就在我以为问题已经解决的时候，另一个同学提出了将用到的图片资源简单地放到<code>image.xcassets</code>中就可以解决这样的性能问题。出于好奇，把前文中提到的所有图片（27张图片）都挪到了image.xcassets中，并写了一个test方法，同时加载这些图片，并且和未挪动之前进行了对比
-<style>.wemubuzlfpeb{}</style><img src="/2019/04/14/HumbleAssetCatalog/07.png" class="wemubuzlfpeb"> 对比结果如下：</p>
+<p>就在我以为问题已经解决的时候，另一个同学提出了将用到的图片资源简单地放到<code>image.xcassets</code>中就可以解决这样的性能问题。出于好奇，把前文中提到的所有图片（27张图片）都挪到了image.xcassets中，并写了一个test方法，同时加载这些图片，并且和未挪动之前进行了对比</p>
+<style>.kwzdkwvtntlk{}</style><img src="/2019/04/14/HumbleAssetCatalog/07.png" class="kwzdkwvtntlk">
+
+<p>对比结果如下：</p>
 <table>
 <thead>
 <tr>
@@ -675,42 +684,63 @@ sprites, textures, ARKit resources, colors和
 data、PDF。既让开发者免于代码配置资源的烦恼，也让苹果能够更好的控制包的大小</p>
 <p><a
 href="https://developer.apple.com/videos/play/wwdc2018/227/">WWDC2018：Optimizing
-App Assets</a> 一文中提到： ### 自动图片打包
-在assets分类之前，仅仅是将图片直接放到工程的bundle中组织，这种方式存在一些缺点：
-&gt;*
-每个图片资源都会存储自己的元数据和其他的一些属性信息，如果存在很多同类型的资源，这些相同的信息会产生冗余，造成空间浪费；
-&gt;*
-压缩只针对到文件级别，那么对于一些小的资源文件，也没有进行充分的压缩；
-&gt;*
-在组织文件的时候，处理大量分散的图片资源会比较麻烦，而且调用的接口也不一样；
-&gt;*
-图片格式、属性的不一致性，例如一堆图片文件中，有的支持透明通道，而有的不支持；</p>
+App Assets</a> 一文中提到：</p>
+<h3 id="自动图片打包">自动图片打包</h3>
+<p>在assets分类之前，仅仅是将图片直接放到工程的bundle中组织，这种方式存在一些缺点：</p>
+<blockquote>
+<ul>
+<li>每个图片资源都会存储自己的元数据和其他的一些属性信息，如果存在很多同类型的资源，这些相同的信息会产生冗余，造成空间浪费；</li>
+<li>压缩只针对到文件级别，那么对于一些小的资源文件，也没有进行充分的压缩；</li>
+<li>在组织文件的时候，处理大量分散的图片资源会比较麻烦，而且调用的接口也不一样；</li>
+<li>图片格式、属性的不一致性，例如一堆图片文件中，有的支持透明通道，而有的不支持；</li>
+</ul>
+</blockquote>
 <p>Asset
-Catalog会根据图片的图谱对图片进行分类，通过图集的方式进行存储，帮我们处理图片的压缩以及元数据的存储工作。
-&gt;* 同一种图片资源只需要存储一份元数据 &gt;*
-图片数据得到充分的压缩，图片资源越大使用assets分类后优化的效果就越明显</p>
-<p>这里的存储方式有点类似于创建<code>texture atlas</code>，维基百科解释如下：
-&gt;* a texture atlas (also called a sprite sheet or an image sprite) is
+Catalog会根据图片的图谱对图片进行分类，通过图集的方式进行存储，帮我们处理图片的压缩以及元数据的存储工作。</p>
+<blockquote>
+<ul>
+<li>同一种图片资源只需要存储一份元数据</li>
+<li>图片数据得到充分的压缩，图片资源越大使用assets分类后优化的效果就越明显</li>
+</ul>
+</blockquote>
+<p>这里的存储方式有点类似于创建<code>texture atlas</code>，维基百科解释如下：</p>
+<blockquote>
+<ul>
+<li>a texture atlas (also called a sprite sheet or an image sprite) is
 an image containing a collection of smaller images, usually packed
-together to reduce the atlas size。</p>
+together to reduce the atlas size。</li>
+</ul>
+</blockquote>
 <p>这在游戏领域屡见不鲜。</p>
 <h3 id="有损压缩">有损压缩</h3>
-<p>assets分类支持HEIF(<code>High Efficiency Image File Format</code>)，并且将该格式作为assets分类有损压缩的默认格式
-&gt;* 比现有的格式图片更大的压缩率 &gt;* 支持透明度 &gt;*
-assets分类可以自动将其他类型的图片转换为HEIF</p>
+<p>assets分类支持HEIF(<code>High Efficiency Image File Format</code>)，并且将该格式作为assets分类有损压缩的默认格式</p>
+<blockquote>
+<ul>
+<li>比现有的格式图片更大的压缩率</li>
+<li>支持透明度</li>
+<li>assets分类可以自动将其他类型的图片转换为HEIF</li>
+</ul>
+</blockquote>
 <h3 id="无损压缩">无损压缩</h3>
 <p>无损压缩是默认的压缩形式，工程中大部分assets分类都是使用的无所压缩
 图片资源可以根据使用的色谱和轮廓分为两类，不同的形式在有损压缩时会有不同的优化方式。一种是简单的图片资源，这类使用了简单的配色和使用简单的设计简单，例如很多应用的icon。另一类指的是复杂的图片资源。有损压缩针对这两种形式都做了不同形式的优化</p>
 <p>Apple Deep Pixel Image
-Compression是苹果新引入的一种压缩形式，这是一种灵活的压缩形式，会根据图片的色谱特性选择最优的算法进行压缩
-&gt;* 会适配图片色谱 &gt;* 选择最优的压缩算法 &gt;*
-压缩的大小能够提高15-20%</p>
-<style>.ibjlxpnfrdyw{}</style>
-<img src="/2019/04/14/HumbleAssetCatalog/08.png" class="ibjlxpnfrdyw">
-<style>.mhdqjnjtrdxe{}</style>
-<img src="/2019/04/14/HumbleAssetCatalog/09.png" class="mhdqjnjtrdxe">
+Compression是苹果新引入的一种压缩形式，这是一种灵活的压缩形式，会根据图片的色谱特性选择最优的算法进行压缩</p>
+<blockquote>
+<ul>
+<li>会适配图片色谱</li>
+<li>选择最优的压缩算法</li>
+<li>压缩的大小能够提高15-20%</li>
+</ul>
+</blockquote>
+<style>.oyycqkmldeeo{}</style><img src="/2019/04/14/HumbleAssetCatalog/08.png" class="oyycqkmldeeo">
+
+<style>.ekuxaanxcmni{}</style><img src="/2019/04/14/HumbleAssetCatalog/09.png" class="ekuxaanxcmni">
+
 <h3 id="应用瘦身">应用瘦身</h3>
-<p>各取所需 <style>.vtnetzinghvm{}</style><img src="/2019/04/14/HumbleAssetCatalog/10.png" class="vtnetzinghvm"></p>
+<p>各取所需</p>
+<style>.xekpsqbpgfhf{}</style><img src="/2019/04/14/HumbleAssetCatalog/10.png" class="xekpsqbpgfhf">
+
 <h3 id="结论1">结论1</h3>
 <p>可以看出，App
 Assets通过分类、压缩等途径，能够有效地减小资源包的大小，进而给应用瘦身。的确，资源变小了，加载速度可以提升，但是这仍然无法解释为什么图片的加载速度差异达到2个数量级之多</p>
@@ -721,36 +751,57 @@ your asset catalogs into a runtime binary file format that improves the
 speed of your app</strong></p>
 <h3 id="文件结构">文件结构</h3>
 <p>通过查询资料，发现.car文件实际上是一种特殊的bom文件，而bom(Bill of
-Materials)是从NeXTSTEP继承下来的一种文件格式，命令行输入：man 5 bom
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">The Mac OS X Installer uses a file system &quot;bill of materials&quot; to determine which files to install, remove, or upgrade</span><br></pre></td></tr></table></figure> 类似于bom文件，car文件中包含一些blocks结构
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CARHEADER               // 头部信息</span><br><span class="line">EXTENDED_METADATA       // 扩展的元信息</span><br><span class="line">KEYFORMAT</span><br><span class="line">CARGLOBALS</span><br><span class="line">KEYFORMATWORKAROUND</span><br><span class="line">EXTERNAL_KEYS</span><br></pre></td></tr></table></figure> 同时包含一些trees结构： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FACETKEYS</span><br><span class="line">RENDITIONS</span><br><span class="line">APPEARANCEKEYS</span><br><span class="line">COLORS</span><br><span class="line">FONTS</span><br><span class="line">FONTSIZES</span><br><span class="line">GLYPHS</span><br><span class="line">BEZELS</span><br><span class="line">BITMAPKEYS</span><br><span class="line">ELEMENT_INFO</span><br><span class="line">PART_INFO</span><br></pre></td></tr></table></figure></p>
-<p>在macos中，私有库<code>CoreUI.framework</code>负责解析car文件，中间会调用<code>Bom.framework</code>的C的API接口来解析BOM：
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="type">uint32_t</span> BOMBlockID;</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMStorage</span> *<span class="title">BOMStorage</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMTree</span> *<span class="title">BOMTree</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMTreeIterator</span> *<span class="title">BOMTreeIterator</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Opening a BOM</span></span><br><span class="line">BOMStorage <span class="title function_">BOMStorageOpen</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *inPath, Boolean inWriting)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing a BOM block</span></span><br><span class="line">BOMBlockID <span class="title function_">BOMStorageGetNamedBlock</span><span class="params">(BOMStorage inStorage, <span class="type">const</span> <span class="type">char</span> *inName)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMStorageSizeOfBlock</span><span class="params">(BOMStorage inStorage, BOMBlockID inBlockID)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">BOMStorageCopyFromBlock</span><span class="params">(BOMStorage inStorage, BOMBlockID inBlockID, <span class="type">void</span> *outData)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing a BOM tree</span></span><br><span class="line">BOMTree <span class="title function_">BOMTreeOpenWithName</span><span class="params">(BOMStorage inStorage, <span class="type">const</span> <span class="type">char</span> *inName, Boolean inWriting)</span>;</span><br><span class="line">BOMTreeIterator <span class="title function_">BOMTreeIteratorNew</span><span class="params">(BOMTree inTree, <span class="type">void</span> *, <span class="type">void</span> *, <span class="type">void</span> *)</span>;</span><br><span class="line">Boolean <span class="title function_">BOMTreeIteratorIsAtEnd</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">BOMTreeIteratorNext</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing the keys and values of a BOM tree</span></span><br><span class="line"><span class="type">void</span> * <span class="title function_">BOMTreeIteratorKey</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMTreeIteratorKeySize</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">void</span> * <span class="title function_">BOMTreeIteratorValue</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMTreeIteratorValueSize</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br></pre></td></tr></table></figure></p>
+Materials)是从NeXTSTEP继承下来的一种文件格式，命令行输入：man 5 bom</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">The Mac OS X Installer uses a file system &quot;bill of materials&quot; to determine which files to install, remove, or upgrade</span><br></pre></td></tr></table></figure>
+
+<p>类似于bom文件，car文件中包含一些blocks结构</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CARHEADER               // 头部信息</span><br><span class="line">EXTENDED_METADATA       // 扩展的元信息</span><br><span class="line">KEYFORMAT</span><br><span class="line">CARGLOBALS</span><br><span class="line">KEYFORMATWORKAROUND</span><br><span class="line">EXTERNAL_KEYS</span><br></pre></td></tr></table></figure>
+
+<p>同时包含一些trees结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FACETKEYS</span><br><span class="line">RENDITIONS</span><br><span class="line">APPEARANCEKEYS</span><br><span class="line">COLORS</span><br><span class="line">FONTS</span><br><span class="line">FONTSIZES</span><br><span class="line">GLYPHS</span><br><span class="line">BEZELS</span><br><span class="line">BITMAPKEYS</span><br><span class="line">ELEMENT_INFO</span><br><span class="line">PART_INFO</span><br></pre></td></tr></table></figure>
+
+<p>在macos中，私有库<code>CoreUI.framework</code>负责解析car文件，中间会调用<code>Bom.framework</code>的C的API接口来解析BOM：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="type">uint32_t</span> BOMBlockID;</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMStorage</span> *<span class="title">BOMStorage</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMTree</span> *<span class="title">BOMTree</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">BOMTreeIterator</span> *<span class="title">BOMTreeIterator</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Opening a BOM</span></span><br><span class="line">BOMStorage <span class="title function_">BOMStorageOpen</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *inPath, Boolean inWriting)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing a BOM block</span></span><br><span class="line">BOMBlockID <span class="title function_">BOMStorageGetNamedBlock</span><span class="params">(BOMStorage inStorage, <span class="type">const</span> <span class="type">char</span> *inName)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMStorageSizeOfBlock</span><span class="params">(BOMStorage inStorage, BOMBlockID inBlockID)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">BOMStorageCopyFromBlock</span><span class="params">(BOMStorage inStorage, BOMBlockID inBlockID, <span class="type">void</span> *outData)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing a BOM tree</span></span><br><span class="line">BOMTree <span class="title function_">BOMTreeOpenWithName</span><span class="params">(BOMStorage inStorage, <span class="type">const</span> <span class="type">char</span> *inName, Boolean inWriting)</span>;</span><br><span class="line">BOMTreeIterator <span class="title function_">BOMTreeIteratorNew</span><span class="params">(BOMTree inTree, <span class="type">void</span> *, <span class="type">void</span> *, <span class="type">void</span> *)</span>;</span><br><span class="line">Boolean <span class="title function_">BOMTreeIteratorIsAtEnd</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">BOMTreeIteratorNext</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Accessing the keys and values of a BOM tree</span></span><br><span class="line"><span class="type">void</span> * <span class="title function_">BOMTreeIteratorKey</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMTreeIteratorKeySize</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">void</span> * <span class="title function_">BOMTreeIteratorValue</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br><span class="line"><span class="type">size_t</span> <span class="title function_">BOMTreeIteratorValueSize</span><span class="params">(BOMTreeIterator iterator)</span>;</span><br></pre></td></tr></table></figure>
+
 <h3 id="举个栗子">举个栗子</h3>
-<p>该Asset Catalog包含以下文件： 1、a PNG with 3 resolutions <span
-class="citation" data-cites="1x">@1x</span>, <span class="citation"
-data-cites="2x">@2x</span> and <span class="citation"
-data-cites="3x">@3x</span> 2、a PDF 3、a text file 4、a jpg image 5、a
-color (red with 50% transparency)
-<style>.jmufvqutevud{}</style><img src="/2019/04/14/HumbleAssetCatalog/12.png" class="jmufvqutevud"> 编译之后，Asset
+<p>该Asset Catalog包含以下文件： 1、a PNG with 3 resolutions @1x, @2x
+and @3x 2、a PDF 3、a text file 4、a jpg image 5、a color (red with 50%
+transparency)</p>
+<style>.mbtgdldrgxpw{}</style><img src="/2019/04/14/HumbleAssetCatalog/12.png" class="mbtgdldrgxpw">
+
+<p>编译之后，Asset
 Catalog里面所有的资源都会被编译为Assets.car文件（后缀名的含义是:Compiled
 Asset Catalogs） 命令行输入: assetutil -I Assets.car</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetStorageVersion&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;IBCocoaTouchImageCatalogTool-10.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Authoring Tool&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;@(#)PROGRAM:CoreThemeDefinition  PROJECT:CoreThemeDefinition-346.29\n&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;CoreUIVersion&quot;</span> <span class="punctuation">:</span> <span class="number">498</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;DumpToolVersion&quot;</span> <span class="punctuation">:</span> <span class="number">498.4599999999998976</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Key Format&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="string">&quot;kCRThemeAppearanceName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeScaleName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeIdiomName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeSubtypeName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeDeploymentTargetName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeGraphicsClassName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeMemoryClassName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeDisplayGamutName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeDirectionName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeSizeClassHorizontalName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeSizeClassVerticalName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeIdentifierName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeElementName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemePartName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeStateName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeValueName&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeDimension1Name&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="string">&quot;kCRThemeDimension2Name&quot;</span></span><br><span class="line">    <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;MainVersion&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;@(#)PROGRAM:CoreUI  PROJECT:CoreUI-498.40.1\n&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Platform&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;ios&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PlatformVersion&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;12.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SchemaVersion&quot;</span> <span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;StorageVersion&quot;</span> <span class="punctuation">:</span> <span class="number">15</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ThinningParameters&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;carutil 498.460000, thinned &lt;mode app&gt; &lt;idiom *&gt; &lt;subtype *&gt; &lt;subtypefallback *&gt; &lt;scale *&gt; &lt;gamut *&gt; &lt;graphics *&gt; &lt;graphicsfallback *&gt; &lt;memory *&gt; &lt;deployment+ *&gt; &lt;hostedIdioms *&gt; &lt;removed none&gt;&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Data&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Compression&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;uncompressed&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Data Length&quot;</span> <span class="punctuation">:</span> <span class="number">7284</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyPDF&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">7538</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;UTI&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;com.adobe.pdf&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Data&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Compression&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;uncompressed&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Data Length&quot;</span> <span class="punctuation">:</span> <span class="number">14</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyText&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">238</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;UTI&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;UTI-Unknown&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Image&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;BitsPerComponent&quot;</span> <span class="punctuation">:</span> <span class="number">8</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ColorModel&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;RGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Colorspace&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;srgb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Compression&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;palette-img&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Encoding&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;ARGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Image Type&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;kCoreThemeOnePartScale&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyPNG&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Opaque&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelHeight&quot;</span> <span class="punctuation">:</span> <span class="number">28</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelWidth&quot;</span> <span class="punctuation">:</span> <span class="number">28</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RenditionName&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Timac.png&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">1007</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Template Mode&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;automatic&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Color&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Color components&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">      <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">      <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">      <span class="number">0.5</span></span><br><span class="line">    <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Colorspace&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;srgb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyColor&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">1</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Image&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;BitsPerComponent&quot;</span> <span class="punctuation">:</span> <span class="number">8</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ColorModel&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;RGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Encoding&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;JPEG&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Image Type&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;kCoreThemeOnePartScale&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyJPG&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Opaque&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelHeight&quot;</span> <span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelWidth&quot;</span> <span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RenditionName&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;TimacJPG.jpg&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">8042</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Template Mode&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;automatic&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Image&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;BitsPerComponent&quot;</span> <span class="punctuation">:</span> <span class="number">8</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ColorModel&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;RGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Colorspace&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;srgb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Compression&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;palette-img&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Encoding&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;ARGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Image Type&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;kCoreThemeOnePartScale&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyPNG&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Opaque&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelHeight&quot;</span> <span class="punctuation">:</span> <span class="number">56</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelWidth&quot;</span> <span class="punctuation">:</span> <span class="number">56</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RenditionName&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Timac@2x.png&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">1102</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Template Mode&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;automatic&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;AssetType&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Image&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;BitsPerComponent&quot;</span> <span class="punctuation">:</span> <span class="number">8</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ColorModel&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;RGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Colorspace&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;srgb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Compression&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;palette-img&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Encoding&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;ARGB&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Idiom&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;universal&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Image Type&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;kCoreThemeOnePartScale&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;MyPNG&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Opaque&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelHeight&quot;</span> <span class="punctuation">:</span> <span class="number">84</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PixelWidth&quot;</span> <span class="punctuation">:</span> <span class="number">84</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RenditionName&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Timac@3x.png&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Scale&quot;</span> <span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SizeOnDisk&quot;</span> <span class="punctuation">:</span> <span class="number">1961</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Template Mode&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;automatic&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
-<p>以加载其中的png图片为例： <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">UIImage</span> *myImage = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;MyImage&quot;</span>];</span><br></pre></td></tr></table></figure>
-当程序加载assets中的MyImage图片时，最终会找到图中的二进制流，并利用<code>CUIThemePixelRendition</code>完成数据解析，找到图片的各种信息</p>
+
+<p>以加载其中的png图片为例：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">UIImage</span> *myImage = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;MyImage&quot;</span>];</span><br></pre></td></tr></table></figure>
+
+<p>当程序加载assets中的MyImage图片时，最终会找到图中的二进制流，并利用<code>CUIThemePixelRendition</code>完成数据解析，找到图片的各种信息</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">CUIThemePixelRendition</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> tag;                   <span class="comment">// &#x27;CELM&#x27;</span></span><br><span class="line">    <span class="type">uint32_t</span> version;</span><br><span class="line">    <span class="type">uint32_t</span> compressionType;</span><br><span class="line">    <span class="type">uint32_t</span> rawDataLength;</span><br><span class="line">    <span class="type">uint8_t</span> rawData[];</span><br><span class="line">&#125; __attribute__((packed));</span><br></pre></td></tr></table></figure>
+
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(csiHeader-&gt;pixelFormat == <span class="string">&#x27;ARGB&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA8 &#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGB5&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGBW&#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA16&#x27;</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">CUIThemePixelRendition</span> *<span class="title">themePixelRendition</span> =</span> (<span class="keyword">struct</span> CUIThemePixelRendition *)renditionBytes;</span><br><span class="line">    </span><br><span class="line">    <span class="type">uint32_t</span> compressionType = themePixelRendition-&gt;compressionType;</span><br><span class="line">    <span class="type">uint32_t</span> rawDataLength = themePixelRendition-&gt;rawDataLength;</span><br><span class="line">    <span class="type">uint8_t</span> * __unused rawDataBytes = themePixelRendition-&gt;rawData;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;\n\t\t Found ThemePixelRendition with size %u and compression %s\n&quot;</span>, rawDataLength, [GetRenditionCompressionDescription(compressionType) UTF8String]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个是图片对应的二进制流：
-<style>.vrwnjhjwmyoy{}</style><img src="/2019/04/14/HumbleAssetCatalog/11.png" class="vrwnjhjwmyoy"></p>
-<p>依次解释颜色含义： &gt;* 蓝色：csiheader，长度固定为184字节 &gt;*
-绿色：TLV列表 &gt;* 粉红色：tag标记：CELM &gt;*
-黄色：版本号，总是被设置为0 &gt;*
-深蓝色：压缩算法RenditionCompressionType &gt;* 水红色：图片数据长度
-&gt;* 红色：图片数据，可能被压缩</p>
-<p>压缩算法包含以下类型： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">RenditionCompressionType</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">kRenditionCompressionType_uncompressed = <span class="number">0</span>,</span><br><span class="line">kRenditionCompressionType_rle,</span><br><span class="line">kRenditionCompressionType_zip,</span><br><span class="line">kRenditionCompressionType_lzvn,</span><br><span class="line">kRenditionCompressionType_lzfse,</span><br><span class="line">kRenditionCompressionType_jpeg_lzfse,</span><br><span class="line">kRenditionCompressionType_blurred,</span><br><span class="line">kRenditionCompressionType_astc,</span><br><span class="line">kRenditionCompressionType_palette_img,</span><br><span class="line">kRenditionCompressionType_deepmap_lzfse,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
-<p>更多的细节可以参考<a
-href="Reverse%20engineering%20the%20.car%20file%20format">Reverse
-engineering the .car file format</a></p>
+
+<p>这个是图片对应的二进制流：</p>
+<style>.glrswwjuwvcb{}</style><img src="/2019/04/14/HumbleAssetCatalog/11.png" class="glrswwjuwvcb">
+
+<p>依次解释颜色含义：</p>
+<blockquote>
+<ul>
+<li>蓝色：csiheader，长度固定为184字节</li>
+<li>绿色：TLV列表</li>
+<li>粉红色：tag标记：CELM</li>
+<li>黄色：版本号，总是被设置为0</li>
+<li>深蓝色：压缩算法RenditionCompressionType</li>
+<li>水红色：图片数据长度</li>
+<li>红色：图片数据，可能被压缩</li>
+</ul>
+</blockquote>
+<p>压缩算法包含以下类型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">RenditionCompressionType</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">kRenditionCompressionType_uncompressed = <span class="number">0</span>,</span><br><span class="line">kRenditionCompressionType_rle,</span><br><span class="line">kRenditionCompressionType_zip,</span><br><span class="line">kRenditionCompressionType_lzvn,</span><br><span class="line">kRenditionCompressionType_lzfse,</span><br><span class="line">kRenditionCompressionType_jpeg_lzfse,</span><br><span class="line">kRenditionCompressionType_blurred,</span><br><span class="line">kRenditionCompressionType_astc,</span><br><span class="line">kRenditionCompressionType_palette_img,</span><br><span class="line">kRenditionCompressionType_deepmap_lzfse,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>更多的细节可以参考[Reverse engineering the .car file format](Reverse
+engineering the .car file format)</p>
 <h3 id="结论2">结论2</h3>
 <blockquote>
 <ul>
@@ -762,63 +813,77 @@ engineering the .car file format</a></p>
 <h2 id="实验求证">实验求证</h2>
 <h3 id="调用栈">调用栈</h3>
 <p>通过hook
-<code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用
-<style>.jqkgdghwndel{}</style><img src="/2019/04/14/HumbleAssetCatalog/13.png" class="jqkgdghwndel"></p>
+<code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用</p>
+<style>.jxfjomkhukkk{}</style><img src="/2019/04/14/HumbleAssetCatalog/13.png" class="jxfjomkhukkk">
+
 <h3 id="优先级">优先级</h3>
 <p>实现过程中，发现有个现象很有意思:普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候用<code>[UIImage imageNamed:]</code>加载该文件名时，会显示assets中的图片</p>
 <p>而如果assets中没有该文件时，肯定会显示普通文件夹中的图片</p>
-<p>imageNamed实际上调用的是一个叫做<code>UIAssetManager</code>的类，每个Bundle有一个<code>UIAssetManager</code>。它有一个strong-strong的NSMapTable的属性，用来做缓存。这里推测下imageNamed的加载顺序：
-&gt;* 首先从缓存中查找，如果命中直接返回； &gt;*
-如果查询不到缓存，那么接着命中的是Assets.car，这个是<code>CoreUI.Framework</code>处理的（私有framework），会解压（有缓存）那个Assets.car然后解码取回图。
-&gt;* 如果还找不到，会通过Bundle的path，按照搜索@3x <span
-class="citation" data-cites="2x">@2x</span> <span class="citation"
-data-cites="1x">@1x</span>
-.png等规则，直到找到一个那种非Assets.car的bundle图，然后加载。</p>
+<p>imageNamed实际上调用的是一个叫做<code>UIAssetManager</code>的类，每个Bundle有一个<code>UIAssetManager</code>。它有一个strong-strong的NSMapTable的属性，用来做缓存。这里推测下imageNamed的加载顺序：</p>
+<blockquote>
+<ul>
+<li>首先从缓存中查找，如果命中直接返回；</li>
+<li>如果查询不到缓存，那么接着命中的是Assets.car，这个是<code>CoreUI.Framework</code>处理的（私有framework），会解压（有缓存）那个Assets.car然后解码取回图。</li>
+<li>如果还找不到，会通过Bundle的path，按照搜索@3x @2x @1x
+.png等规则，直到找到一个那种非Assets.car的bundle图，然后加载。</li>
+</ul>
+</blockquote>
 <h3 id="虚拟内存和io">虚拟内存和I/O</h3>
 <h4 id="读取assets中的图片">读取assets中的图片</h4>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)btnAction</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// title_page_card_placeholder在assets和普通文件夹中都存在，图片内容不一样</span></span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;title_page_card_placeholder&quot;</span>];</span><br><span class="line">    _tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>首次加载assets中的图片时，会首先触发car文件的打开操作。
-另外，car文件的加载属于懒加载方式，由于本次实验中启动的时候没有图片加载，所以没有看到car文件的加载，只有在首次读取加载图片的时候，才会触发car文件的读取。由于前文中提到无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，所以这里也同样，无论图片是否是来自assets中，都会触发car文件的打开操作
-<style>.wtitivskiztb{}</style><img src="/2019/04/14/HumbleAssetCatalog/18.png" class="wtitivskiztb"></p>
+另外，car文件的加载属于懒加载方式，由于本次实验中启动的时候没有图片加载，所以没有看到car文件的加载，只有在首次读取加载图片的时候，才会触发car文件的读取。由于前文中提到无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，所以这里也同样，无论图片是否是来自assets中，都会触发car文件的打开操作</p>
+<style>.gcvuwywxweyv{}</style><img src="/2019/04/14/HumbleAssetCatalog/18.png" class="gcvuwywxweyv">
+
 <p>注意图中的<code>Requested Bytes</code>，无论读取的图片的大小是多少，这里都统统是512
 Bytes（实验中在assets中添加了1张2M的图片，进行加载，这里仍然是512
 Bytes）</p>
 <p>同时也会 <strong>触发虚拟内存的映射</strong>，更准确的描述是：
-图片的加载逻辑<code>[UIImage imageNamed:@"title_page_card_placeholder"];</code>会触发<code>VM:CoreUI image file</code>
-<style>.pykqfdofsncf{}</style><img src="/2019/04/14/HumbleAssetCatalog/16.png" class="pykqfdofsncf"></p>
+图片的加载逻辑<code>[UIImage imageNamed:@"title_page_card_placeholder"];</code>会触发<code>VM:CoreUI image file</code></p>
+<style>.vtekoiesomua{}</style><img src="/2019/04/14/HumbleAssetCatalog/16.png" class="vtekoiesomua">
+
 <p>而图片的渲染逻辑<code>_tempView.image = image</code>则会触发<code>VM：IOSurface</code>，它的<code>Responsible Library</code>是<code>CoreUI</code>，<code>Responsible Caller</code>是<code>__csiCompressImageProviderCopyIOSurfaceWithOptions</code>。
 还记得前面提到的<code>CoreUI.framework</code>吗
 还记得前面提到的蓝色的184字节的csiheader吗？ 能对应起来吗？
-另外这里从命名上可以推测基本上是内存级拷贝了
-<style>.hbhtgijlybtc{}</style><img src="/2019/04/14/HumbleAssetCatalog/17.png" class="hbhtgijlybtc"></p>
+另外这里从命名上可以推测基本上是内存级拷贝了</p>
+<style>.mxntqhrtxsrm{}</style><img src="/2019/04/14/HumbleAssetCatalog/17.png" class="mxntqhrtxsrm">
+
 <h4 id="读取普通文件夹中的图片">读取普通文件夹中的图片</h4>
-<p>（1）首先会触发I/O <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)touchesBegan:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;header&quot;</span>];<span class="comment">// header来自普通文件夹</span></span><br><span class="line">    _tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<style>.gpcuipmhgjjq{}</style><img src="/2019/04/14/HumbleAssetCatalog/19.png" class="gpcuipmhgjjq"></p>
-<p>（2）其次图片的加载逻辑<code>[UIImage imageNamed:@"header"];</code>会触发<code>VM:CoreUI image file</code>，这个和上面类似
-<style>.fbajejpabrrp{}</style><img src="/2019/04/14/HumbleAssetCatalog/22.png" class="fbajejpabrrp"></p>
-<p>(3)图片的渲染逻辑<code>_tempView.image = image;</code>则会触发<code>VM:ImageIO_PNG_Data</code>，它的<code>Responsible Library</code>是<code>ImageIO</code>，<code>Responsible Caller</code>是<code>ImageIO_Malloc</code>，
-<style>.nxhlwvyjiifu{}</style><img src="/2019/04/14/HumbleAssetCatalog/23.png" class="nxhlwvyjiifu"></p>
+<p>（1）首先会触发I/O</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)touchesBegan:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;header&quot;</span>];<span class="comment">// header来自普通文件夹</span></span><br><span class="line">    _tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<style>.ihpyxitgsudt{}</style><img src="/2019/04/14/HumbleAssetCatalog/19.png" class="ihpyxitgsudt">
+
+<p>（2）其次图片的加载逻辑<code>[UIImage imageNamed:@"header"];</code>会触发<code>VM:CoreUI image file</code>，这个和上面类似</p>
+<style>.ivvfwsfmvcxc{}</style><img src="/2019/04/14/HumbleAssetCatalog/22.png" class="ivvfwsfmvcxc">
+
+<p>(3)图片的渲染逻辑<code>_tempView.image = image;</code>则会触发<code>VM:ImageIO_PNG_Data</code>，它的<code>Responsible Library</code>是<code>ImageIO</code>，<code>Responsible Caller</code>是<code>ImageIO_Malloc</code>，</p>
+<style>.hfskbhgpghkl{}</style><img src="/2019/04/14/HumbleAssetCatalog/23.png" class="hfskbhgpghkl">
+
 <h3 id="结论3">结论3</h3>
 <p>（1）.car文件并不是整个文件都加载到内存中，而是在首次加载的时候使用了虚拟内存，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断，等物理页加载到内存中，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，
 （2）普通文件夹中图片的读取涉及到了I/O操作，在数量很多的情况下，无疑会拖慢速度；
 （3）二者都会用到虚拟内存，后者在调用ImageIO的时候还用到了内存映射(mmap)</p>
 <h2 id="再次求证更新">再次求证（更新）</h2>
 <p>前文中一直在寻找各种证据来解释<code>[UIImage imageNamed:]</code>为什么会如此惊人的加载速度，而对<code>[UIImage imageWithContentsOfFile:]</code>却没有提及。</p>
-<p>实际上在之前的求证过程中也是做过比较的：同样的一张普通文件夹中的图片，两次冷启动，分别用<code>[UIImage imageNamed:]</code>和<code>[UIImage imageWithContentsOfFile:]</code>加载，得到了这样的结果：
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Time taken for [[UIImage imageWithContentsOfFile:]] =0.0204472 s </span><br><span class="line">Time taken for [[UIImage imageNamed:]] =0.0784136 s</span><br></pre></td></tr></table></figure> 一开始对这个结果没有太在意，因为当时觉得在情理之中：
-&gt;* 1、二者的加载速度的确在同1个数量级上，毕竟二者都需要I/O操作 &gt;*
-2、<code>[UIImage imageNamed:]</code>之所以相对慢一些，是因为在加载真正的文件之前，得先去.car的缓存系统中寻找一遍，直到最后没发现，再用路径加载，这在前面也提到过。</p>
+<p>实际上在之前的求证过程中也是做过比较的：同样的一张普通文件夹中的图片，两次冷启动，分别用<code>[UIImage imageNamed:]</code>和<code>[UIImage imageWithContentsOfFile:]</code>加载，得到了这样的结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Time taken for [[UIImage imageWithContentsOfFile:]] =0.0204472 s </span><br><span class="line">Time taken for [[UIImage imageNamed:]] =0.0784136 s</span><br></pre></td></tr></table></figure>
+
+<p>一开始对这个结果没有太在意，因为当时觉得在情理之中：</p>
+<blockquote>
+<ul>
+<li>1、二者的加载速度的确在同1个数量级上，毕竟二者都需要I/O操作</li>
+<li>2、<code>[UIImage imageNamed:]</code>之所以相对慢一些，是因为在加载真正的文件之前，得先去.car的缓存系统中寻找一遍，直到最后没发现，再用路径加载，这在前面也提到过。</li>
+</ul>
+</blockquote>
 <p>直到后来，我做了一次详细的数据统计对比： 10张图，screen0 ~
-screen9，每张图片的的大小在1M左右，分别用如下3种方式加载：
-<style>.ijokjupmjxty{}</style><img src="/2019/04/14/HumbleAssetCatalog/30.png" class="ijokjupmjxty">
-<style>.evrwghynrubd{}</style><img src="/2019/04/14/HumbleAssetCatalog/31.png" class="evrwghynrubd"></p>
+screen9，每张图片的的大小在1M左右，分别用如下3种方式加载：</p>
+<style>.fhqnswtfugcy{}</style><img src="/2019/04/14/HumbleAssetCatalog/30.png" class="fhqnswtfugcy">
+
+<style>.pdwntumrvelc{}</style><img src="/2019/04/14/HumbleAssetCatalog/31.png" class="pdwntumrvelc">
+
 <table>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-</colgroup>
 <thead>
 <tr>
 <th style="text-align: left;">图片名</th>
@@ -902,15 +967,10 @@ screen9，每张图片的的大小在1M左右，分别用如下3种方式加载�
 </tr>
 </tbody>
 </table>
-<p>换个角度看一下上面的数据：
-<style>.exighpybbiav{}</style><img src="/2019/04/14/HumbleAssetCatalog/56.png" class="exighpybbiav"></p>
+<p>换个角度看一下上面的数据：</p>
+<style>.tglmixyrsrxl{}</style><img src="/2019/04/14/HumbleAssetCatalog/56.png" class="tglmixyrsrxl">
+
 <table>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-</colgroup>
 <thead>
 <tr>
 <th style="text-align: left;">统计结果</th>
@@ -938,46 +998,59 @@ screen9，每张图片的的大小在1M左右，分别用如下3种方式加载�
 <blockquote>
 <ul>
 <li>3种加载方式首次加载耗时都比较长，<code>imageNamed</code>的加载方式可以理解为car文件的加载、内存映射和解析，那么<code>imageWithContentsOfFile</code>又如何解释？</li>
-<li>除了首张图片的加载，普通文件夹的<code>imageNamed</code>和<code>imageWithContentsOfFile</code>的加载耗时有了1个数量级的差距，同样是I/O操作，只是<code>imageNamed</code>多了”1轮检查”，难道就是因为这1轮检查就差了1个数量级的加载速度？</li>
+<li>除了首张图片的加载，普通文件夹的<code>imageNamed</code>和<code>imageWithContentsOfFile</code>的加载耗时有了1个数量级的差距，同样是I/O操作，只是<code>imageNamed</code>多了“1轮检查“，难道就是因为这1轮检查就差了1个数量级的加载速度？</li>
 <li>car文件的加载速度无疑还是最厉害的，和前两者分别差了2个数量级和1个数量级；</li>
 </ul>
 </blockquote>
 <h3
 id="imagewithcontentsoffile的加载过程"><code>imageWithContentsOfFile</code>的加载过程</h3>
-<p>这里分别前后加载了两张图片，分别代表首次加载和非首次加载
-<style>.itszzqdefbem{}</style><img src="/2019/04/14/HumbleAssetCatalog/45.png" class="itszzqdefbem">
-<style>.fgeciddahkzn{}</style><img src="/2019/04/14/HumbleAssetCatalog/46.png" class="fgeciddahkzn">
-时间对比下来，时间也就差了差不多2倍左右，这个和前面测出来的数据还是有一定的出入（暂时无法解释why），从堆栈来看，有区别的是这个地方：
-<style>.lvugouhwxpza{}</style><img src="/2019/04/14/HumbleAssetCatalog/52.png" class="lvugouhwxpza">
-推测首次加载耗时长可能和一些必要初始化操作有一些关系</p>
+<p>这里分别前后加载了两张图片，分别代表首次加载和非首次加载</p>
+<style>.yirwejslnqoo{}</style><img src="/2019/04/14/HumbleAssetCatalog/45.png" class="yirwejslnqoo">
+
+<style>.vheftpjgqtij{}</style><img src="/2019/04/14/HumbleAssetCatalog/46.png" class="vheftpjgqtij">
+
+<p>时间对比下来，时间也就差了差不多2倍左右，这个和前面测出来的数据还是有一定的出入（暂时无法解释why），从堆栈来看，有区别的是这个地方：</p>
+<style>.mddyhasophud{}</style><img src="/2019/04/14/HumbleAssetCatalog/52.png" class="mddyhasophud">
+
+<p>推测首次加载耗时长可能和一些必要初始化操作有一些关系</p>
 <h3
 id="imagenamed加载普通文件夹中的图片过程"><code>imageNamed</code>加载普通文件夹中的图片过程</h3>
-<style>.cqfmlgmdqdgm{}</style>
-<img src="/2019/04/14/HumbleAssetCatalog/47.png" class="cqfmlgmdqdgm">
-<p>可以看出，对于普通文件夹中的图片，<code>imageNamed</code>优先到assets中去寻找，并且寻找的这个过程<code>rendtionWithKey</code>占了绝大多数的时间，当然结果肯定是寻找不到的，最后还是会调用<code>UIAssetManager newAssetNamed:fromBundle:</code>方法从bundle中去寻找，这个过程与前面的推理是一致的，只是assets的寻找占用了如此之多的时间是我始料不及的。
-<style>.ibuevonfktuc{}</style><img src="/2019/04/14/HumbleAssetCatalog/48.png" class="ibuevonfktuc">
-从图中可以看出<code>rendtionWithKey</code>占用耗时最多的3部分
-<style>.jshvmierdxtb{}</style><img src="/2019/04/14/HumbleAssetCatalog/49.png" class="jshvmierdxtb">
-<style>.wleufcahftro{}</style><img src="/2019/04/14/HumbleAssetCatalog/50.png" class="wleufcahftro">
-<style>.fqnofktjacux{}</style><img src="/2019/04/14/HumbleAssetCatalog/51.png" class="fqnofktjacux"></p>
+<style>.vjjgtfwppuzy{}</style><img src="/2019/04/14/HumbleAssetCatalog/47.png" class="vjjgtfwppuzy">
+
+<p>可以看出，对于普通文件夹中的图片，<code>imageNamed</code>优先到assets中去寻找，并且寻找的这个过程<code>rendtionWithKey</code>占了绝大多数的时间，当然结果肯定是寻找不到的，最后还是会调用<code>UIAssetManager newAssetNamed:fromBundle:</code>方法从bundle中去寻找，这个过程与前面的推理是一致的，只是assets的寻找占用了如此之多的时间是我始料不及的。</p>
+<style>.twdlergqmnua{}</style><img src="/2019/04/14/HumbleAssetCatalog/48.png" class="twdlergqmnua">
+
+<p>从图中可以看出<code>rendtionWithKey</code>占用耗时最多的3部分</p>
+<style>.nieoflsclflf{}</style><img src="/2019/04/14/HumbleAssetCatalog/49.png" class="nieoflsclflf">
+
+<style>.dkawsevsjnfo{}</style><img src="/2019/04/14/HumbleAssetCatalog/50.png" class="dkawsevsjnfo">
+
+<style>.dsmvmnwqprip{}</style><img src="/2019/04/14/HumbleAssetCatalog/51.png" class="dsmvmnwqprip">
+
 <p>这个方法不知道苹果是否会进行优化？</p>
 <h3
 id="imagenamed加载assets中的图片过程"><code>imageNamed</code>加载assets中的图片过程</h3>
-<p>看完前面两位的表现，再来看下<code>imageNamed</code>加载assets中的图片为什么如此逆天，
-<style>.lwzftdnwwtyo{}</style><img src="/2019/04/14/HumbleAssetCatalog/53.png" class="lwzftdnwwtyo">
-<style>.qzxvumahvqoq{}</style><img src="/2019/04/14/HumbleAssetCatalog/54.png" class="qzxvumahvqoq">
-<style>.hvrsgbmskhes{}</style><img src="/2019/04/14/HumbleAssetCatalog/55.png" class="hvrsgbmskhes"></p>
+<p>看完前面两位的表现，再来看下<code>imageNamed</code>加载assets中的图片为什么如此逆天，</p>
+<style>.oebghlzafonn{}</style><img src="/2019/04/14/HumbleAssetCatalog/53.png" class="oebghlzafonn">
+
+<style>.upftxpjuimew{}</style><img src="/2019/04/14/HumbleAssetCatalog/54.png" class="upftxpjuimew">
+
+<style>.zypltgypnwkk{}</style><img src="/2019/04/14/HumbleAssetCatalog/55.png" class="zypltgypnwkk">
+
 <p>首次加载时间长的原因：
 （1）.car文件本身需要加载1次，需要进行I/O操作；
 （2）需要<code>UIAssetManager</code>的初始化操作；</p>
 <p><code>imageNamed</code>加载assets资源快的原因：
 （1）一方面，.car文件本身只需要极其有限的I/O操作，而bundle中资源每读取一个资源，都需要相应的I/O操作。
 （2）另一方面，.car文件里面的各种资源的信息都是提前编译好的，几乎都是快速定位，而普通文件夹中加载需要先读取图像获取其参数，再生成rendition和renditionKey，并进行需要大量耗时的canGetRenditionWithKey操作.</p>
-<p>这里需要搞清楚两个概念：[内容摘自这里]（https://juejin.im/post/5cb74d786fb9a068773948fc#heading-8)
-&gt;* 什么是rendition ?</p>
+<p>这里需要搞清楚两个概念：[内容摘自这里]（https://juejin.im/post/5cb74d786fb9a068773948fc#heading-8)</p>
+<blockquote>
+<ul>
+<li>什么是rendition ?</li>
+</ul>
+</blockquote>
 <p>rendition是 CoreUI.framework
-对某一图像资源的不同样式的统称，如@1x，<span class="citation"
-data-cites="2x">@2x</span>，每一个rendition有一个renditionKey与之对应，renditionKey包含了不同的attribute，用于记录图片资源的参数</p>
+对某一图像资源的不同样式的统称，如@1x，@2x，每一个rendition有一个renditionKey与之对应，renditionKey包含了不同的attribute，用于记录图片资源的参数</p>
 <blockquote>
 <ul>
 <li><code>CUIMutalbeStructuredThemeStore</code>与<code>CUIStructuredThemeStore</code>是什么东西？</li>
@@ -985,9 +1058,13 @@ data-cites="2x">@2x</span>，每一个rendition有一个renditionKey与之对应
 </blockquote>
 <p>可以将它们理解成 imageSet ，其中包含了不同的图像资源</p>
 <h3 id="结论4">结论4</h3>
-<p>从上述图片中可以看出， &gt;*
-1、如果图片资源在.car文件中，那么<code>imageNamed</code>会用到<code>CUIStructuredThemeStore</code>，在Assets
-Catalogs被编译的时候。<code>CUIStructuredThemeStore</code>对应的各种信息已经被编译到.car文件（一种BOM文件），那么读取的时候直接加载即可。</p>
+<p>从上述图片中可以看出，</p>
+<blockquote>
+<ul>
+<li>1、如果图片资源在.car文件中，那么<code>imageNamed</code>会用到<code>CUIStructuredThemeStore</code>，在Assets
+Catalogs被编译的时候。<code>CUIStructuredThemeStore</code>对应的各种信息已经被编译到.car文件（一种BOM文件），那么读取的时候直接加载即可。</li>
+</ul>
+</blockquote>
 <blockquote>
 <ul>
 <li>2、如果图片在bundle中，<code>imageNamed</code>会用到<code>CUIMutalbeStructuredThemeStore</code>。AssetManager没有办法提前知晓该文件的信息，只能通过加载文件获取，并动态添加到<code>CUIMutalbeStructuredThemeStore</code>，并在首次加载后进行缓存，这个过程自然会慢。</li>
@@ -1011,9 +1088,8 @@ Catalog中的资源有如此惊人的加载速度，苹果却谦卑地只字不�
 <h2 id="参考链接">参考链接</h2>
 <p><a
 href="https://developer.apple.com/videos/play/wwdc2018/227/">WWDC2018：Optimizing
-App Assets</a> <a
-href="Reverse%20engineering%20the%20.car%20file%20format">Reverse
-engineering the .car file format</a> <a
+App Assets</a> [Reverse engineering the .car file format](Reverse
+engineering the .car file format) <a
 href="https://juejin.im/post/5cb74d786fb9a068773948fc#heading-8">iOS拾遗——
 Assets Catalogs 与 I/O 优化</a></p>
 
@@ -1305,7 +1381,7 @@ Assets Catalogs 与 I/O 优化</a></p>
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A6%96%E6%AC%A1%E5%88%86%E6%9E%90%E8%A7%A3%E5%86%B3"><span class="nav-number">2.</span> <span class="nav-text">首次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E6%AC%A1%E5%88%86%E6%9E%90%E8%A7%A3%E5%86%B3"><span class="nav-number">3.</span> <span class="nav-text">二次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#asset-catalog%E7%9A%84%E6%8E%A2%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">Asset Catalog的探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E6%8D%9F%E5%8E%8B%E7%BC%A9"><span class="nav-number">4.1.</span> <span class="nav-text">有损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E6%8D%9F%E5%8E%8B%E7%BC%A9"><span class="nav-number">4.2.</span> <span class="nav-text">无损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E7%98%A6%E8%BA%AB"><span class="nav-number">4.3.</span> <span class="nav-text">应用瘦身</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA1"><span class="nav-number">4.4.</span> <span class="nav-text">结论1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car%E6%96%87%E4%BB%B6%E6%8E%A2%E7%B4%A2"><span class="nav-number">5.</span> <span class="nav-text">.car文件探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-number">5.1.</span> <span class="nav-text">文件结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90"><span class="nav-number">5.2.</span> <span class="nav-text">举个栗子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA2"><span class="nav-number">5.3.</span> <span class="nav-text">结论2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%B1%82%E8%AF%81"><span class="nav-number">6.</span> <span class="nav-text">实验求证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E6%A0%88"><span class="nav-number">6.1.</span> <span class="nav-text">调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7"><span class="nav-number">6.2.</span> <span class="nav-text">优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E5%92%8Cio"><span class="nav-number">6.3.</span> <span class="nav-text">虚拟内存和I&#x2F;O</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96assets%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87"><span class="nav-number">6.3.1.</span> <span class="nav-text">读取assets中的图片</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96%E6%99%AE%E9%80%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87"><span class="nav-number">6.3.2.</span> <span class="nav-text">读取普通文件夹中的图片</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA3"><span class="nav-number">6.4.</span> <span class="nav-text">结论3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%8D%E6%AC%A1%E6%B1%82%E8%AF%81%E6%9B%B4%E6%96%B0"><span class="nav-number">7.</span> <span class="nav-text">再次求证（更新）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#imagewithcontentsoffile%E7%9A%84%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B"><span class="nav-number">7.1.</span> <span class="nav-text">imageWithContentsOfFile的加载过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#imagenamed%E5%8A%A0%E8%BD%BD%E6%99%AE%E9%80%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87%E8%BF%87%E7%A8%8B"><span class="nav-number">7.2.</span> <span class="nav-text">imageNamed加载普通文件夹中的图片过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#imagenamed%E5%8A%A0%E8%BD%BDassets%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87%E8%BF%87%E7%A8%8B"><span class="nav-number">7.3.</span> <span class="nav-text">imageNamed加载assets中的图片过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA4"><span class="nav-number">7.4.</span> <span class="nav-text">结论4</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">8.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A6%96%E6%AC%A1%E5%88%86%E6%9E%90%E8%A7%A3%E5%86%B3"><span class="nav-number">2.</span> <span class="nav-text">首次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E6%AC%A1%E5%88%86%E6%9E%90%E8%A7%A3%E5%86%B3"><span class="nav-number">3.</span> <span class="nav-text">二次分析解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#asset-catalog%E7%9A%84%E6%8E%A2%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">Asset Catalog的探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8%E5%9B%BE%E7%89%87%E6%89%93%E5%8C%85"><span class="nav-number">4.1.</span> <span class="nav-text">自动图片打包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E6%8D%9F%E5%8E%8B%E7%BC%A9"><span class="nav-number">4.2.</span> <span class="nav-text">有损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E6%8D%9F%E5%8E%8B%E7%BC%A9"><span class="nav-number">4.3.</span> <span class="nav-text">无损压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E7%98%A6%E8%BA%AB"><span class="nav-number">4.4.</span> <span class="nav-text">应用瘦身</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA1"><span class="nav-number">4.5.</span> <span class="nav-text">结论1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#car%E6%96%87%E4%BB%B6%E6%8E%A2%E7%B4%A2"><span class="nav-number">5.</span> <span class="nav-text">.car文件探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-number">5.1.</span> <span class="nav-text">文件结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90"><span class="nav-number">5.2.</span> <span class="nav-text">举个栗子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA2"><span class="nav-number">5.3.</span> <span class="nav-text">结论2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E6%B1%82%E8%AF%81"><span class="nav-number">6.</span> <span class="nav-text">实验求证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E6%A0%88"><span class="nav-number">6.1.</span> <span class="nav-text">调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7"><span class="nav-number">6.2.</span> <span class="nav-text">优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E5%92%8Cio"><span class="nav-number">6.3.</span> <span class="nav-text">虚拟内存和I&#x2F;O</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96assets%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87"><span class="nav-number">6.3.1.</span> <span class="nav-text">读取assets中的图片</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96%E6%99%AE%E9%80%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87"><span class="nav-number">6.3.2.</span> <span class="nav-text">读取普通文件夹中的图片</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA3"><span class="nav-number">6.4.</span> <span class="nav-text">结论3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%8D%E6%AC%A1%E6%B1%82%E8%AF%81%E6%9B%B4%E6%96%B0"><span class="nav-number">7.</span> <span class="nav-text">再次求证（更新）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#imagewithcontentsoffile%E7%9A%84%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B"><span class="nav-number">7.1.</span> <span class="nav-text">imageWithContentsOfFile的加载过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#imagenamed%E5%8A%A0%E8%BD%BD%E6%99%AE%E9%80%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87%E8%BF%87%E7%A8%8B"><span class="nav-number">7.2.</span> <span class="nav-text">imageNamed加载普通文件夹中的图片过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#imagenamed%E5%8A%A0%E8%BD%BDassets%E4%B8%AD%E7%9A%84%E5%9B%BE%E7%89%87%E8%BF%87%E7%A8%8B"><span class="nav-number">7.3.</span> <span class="nav-text">imageNamed加载assets中的图片过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA4"><span class="nav-number">7.4.</span> <span class="nav-text">结论4</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">8.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">9.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
             
 
           </div>
@@ -1534,6 +1610,8 @@ Assets Catalogs 与 I/O 优化</a></p>
             lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
             
             oauth: {
+            
+                redirect_protocol: 'https',
             
             
                 client_secret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',

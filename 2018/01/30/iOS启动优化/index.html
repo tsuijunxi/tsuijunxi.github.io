@@ -503,7 +503,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  16k
+                  17k
                 </span>
               
 
@@ -519,7 +519,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  58 mins.
+                  1:01
                 </span>
               
             </div>
@@ -543,34 +543,55 @@ mjx-container[display="true"] + br {
         <h2 id="前言">前言</h2>
 <p>随着互联网的高速发展，用户对手机应用的要求越来越高，应用启动时间作为一项重要的参考指标，直接影响着用户的使用体验。QQ阅读App的启动流程包含了大量的业务模块，并且涉及了很多第三方库的初始化，这势必会增加应用的启动时间，因此非常有必要对App的启动进行优化。</p>
 <h2 id="mach-o文件">Mach-O文件</h2>
-<p>在优化之前，先来了解下什么是Mach-O文件。UNIX标准制定了一个通用的可移植的二进制格式文件，叫ELF，然而OSX却维护了一个自己独有的二进制格式：Mach-Object（Mach-O）
-### Mach-O文件类型
-对于OSX和iOS来说，Mach-O是其可执行文件的格式，主要包括以下几种文件类型：
-&gt;* Executable：应用的主要二进制 &gt;* Dylib：动态链接库 &gt;*
-Bundle：不能被链接，只能在运行时使用dlopen加载 &gt;*
-Image：包含Executable、Dylib和Bundle &gt;*
-Framework：包含Dylib、资源文件和头文件的文件夹</p>
+<p>在优化之前，先来了解下什么是Mach-O文件。UNIX标准制定了一个通用的可移植的二进制格式文件，叫ELF，然而OSX却维护了一个自己独有的二进制格式：Mach-Object（Mach-O）</p>
+<h3 id="mach-o文件类型">Mach-O文件类型</h3>
+<p>对于OSX和iOS来说，Mach-O是其可执行文件的格式，主要包括以下几种文件类型：</p>
+<blockquote>
+<ul>
+<li>Executable：应用的主要二进制</li>
+<li>Dylib：动态链接库</li>
+<li>Bundle：不能被链接，只能在运行时使用dlopen加载</li>
+<li>Image：包含Executable、Dylib和Bundle</li>
+<li>Framework：包含Dylib、资源文件和头文件的文件夹</li>
+</ul>
+</blockquote>
 <h3 id="mach-o镜像文件格式">Mach-O镜像文件格式</h3>
-<style>.htbzhfiishwp{}</style>
-<img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/01.png" class="htbzhfiishwp">
-<p>Mach-O镜像文件主要包含以下3部分： &gt;* Mach64 Header &gt;* Load
-Commands &gt;* Section64</p>
+<style>.uumncsybyrso{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/01.png" class="uumncsybyrso">
+
+<p>Mach-O镜像文件主要包含以下3部分：</p>
+<blockquote>
+<ul>
+<li>Mach64 Header</li>
+<li>Load Commands</li>
+<li>Section64</li>
+</ul>
+</blockquote>
 <p>看一个真实的可执行文件的格式： <img src="02.png"
 alt="镜像文件格式" />
-几乎所有的Mach-O文件都包含3个段：<code>_TEXT</code>、<code>_DATA</code>和<code>_LINKEDIT</code>
-&gt;* <code>__TEXT</code> 包含 Mach header，被执行的代码和只读常量（如C
-字符串）。只读可执行（r-x）。 &gt;*
-<code>__DATA</code> 包含全局变量，静态变量等。可读写（rw-）。 &gt;*
-<code>__LINKEDIT</code> 包含了加载程序的『元数据』，比如函数的名称和地址。只读（r–）</p>
+几乎所有的Mach-O文件都包含3个段：<code>_TEXT</code>、<code>_DATA</code>和<code>_LINKEDIT</code></p>
+<blockquote>
+<ul>
+<li><code>__TEXT</code> 包含 Mach header，被执行的代码和只读常量（如C
+字符串）。只读可执行（r-x）。</li>
+<li><code>__DATA</code> 包含全局变量，静态变量等。可读写（rw-）。</li>
+<li><code>__LINKEDIT</code> 包含了加载程序的『元数据』，比如函数的名称和地址。只读（r–）</li>
+</ul>
+</blockquote>
 <h3 id="通用二进制胖二进制">通用二进制（胖二进制）</h3>
 <p>通用二进制格式由多种架构的Mach-O文件合并而成，通过Fat
-Header来记录不同架构在文件中的偏移量，QQReader的可执行文件就是一个胖二进制：
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">lingyun@sairyouifus-MBP Desktop$ file QQReaderUI</span><br><span class="line">QQReaderUI: Mach-O universal binary with 2 architectures: [arm_v7:Mach-O executable arm_v7] [arm64]</span><br><span class="line">QQReaderUI (for architecture armv7):    Mach-O executable arm_v7</span><br><span class="line">QQReaderUI (for architecture arm64):    Mach-O 64-bit executable arm64</span><br></pre></td></tr></table></figure></p>
+Header来记录不同架构在文件中的偏移量，QQReader的可执行文件就是一个胖二进制：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">lingyun@sairyouifus-MBP Desktop$ file QQReaderUI</span><br><span class="line">QQReaderUI: Mach-O universal binary with 2 architectures: [arm_v7:Mach-O executable arm_v7] [arm64]</span><br><span class="line">QQReaderUI (for architecture armv7):    Mach-O executable arm_v7</span><br><span class="line">QQReaderUI (for architecture arm64):    Mach-O 64-bit executable arm64</span><br></pre></td></tr></table></figure>
+
 <h2 id="ios应用启动流程">iOS应用启动流程</h2>
 <h3 id="可执行文件的内核流程">可执行文件的内核流程</h3>
-<p>如图，当启动一个应用程序时，系统最后会根据你的行为调用两个函数，fork和execve。fork功能创建一个进程；execve功能加载和运行程序。这里有多个不同的功能，比如execl,execv和exect，每个功能提供了不同传参和环境变量的方法到程序中。在OSX中，每个这些其他的exec路径最终调用了内核路径execve。
-<style>.hwmgpjvhuleb{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/03.png" class="hwmgpjvhuleb"> &gt;*
-1、执行exec系统调用，一般都是这样，用fork()函数新建立一个进程，然后让进程去执行exec调用。我们知道，在fork()建立新进程之后，父进各与子进程共享代码段，但数据空间是分开的，但父进程会把自己数据空间的内容copy到子进程中去，还有上下文也会copy到子进程中去。</p>
+<p>如图，当启动一个应用程序时，系统最后会根据你的行为调用两个函数，fork和execve。fork功能创建一个进程；execve功能加载和运行程序。这里有多个不同的功能，比如execl,execv和exect，每个功能提供了不同传参和环境变量的方法到程序中。在OSX中，每个这些其他的exec路径最终调用了内核路径execve。</p>
+<style>.bvphxgdvbyiv{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/03.png" class="bvphxgdvbyiv">
+
+<blockquote>
+<ul>
+<li>1、执行exec系统调用，一般都是这样，用fork()函数新建立一个进程，然后让进程去执行exec调用。我们知道，在fork()建立新进程之后，父进各与子进程共享代码段，但数据空间是分开的，但父进程会把自己数据空间的内容copy到子进程中去，还有上下文也会copy到子进程中去。</li>
+</ul>
+</blockquote>
 <blockquote>
 <ul>
 <li>2、为了提高效率，采用一种写时copy的策略，即创建子进程的时候，并不copy父进程的地址空间，父子进程拥有共同的地址空间，只有当子进程需要写入数据时(如向缓冲区写入数据),这时候会复制地址空间，复制缓冲区到子进程中去。从而父子进程拥有独立的地址空间。而对于fork()之后执行exec后，这种策略能够很好的提高效率，如果一开始就copy,那么exec之后，子进程的数据会被放弃，被新的进程所代替</li>
@@ -583,11 +604,6 @@ Optimizing App Startup
 Time》</a>，iOS应用的启动可分为pre-main阶段和main两个阶段，所以<strong>App总启动时间
 = pre-main耗时 + main耗时</strong></p>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>阶段</th>
@@ -603,42 +619,54 @@ Time》</a>，iOS应用的启动可分为pre-main阶段和main两个阶段，所
 </tr>
 </tbody>
 </table>
-<p>盗用两张经典的图： #### pre-main
-<style>.idrdfozsgomm{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/04.png" class="idrdfozsgomm"> #### main
-<style>.rtfkkkkbqbqq{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/05.png" class="rtfkkkkbqbqq"></p>
+<p>盗用两张经典的图：</p>
+<h4 id="pre-main">pre-main</h4>
+<style>.nhijbrpphlmg{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/04.png" class="nhijbrpphlmg">
+
+<h4 id="main">main</h4>
+<style>.loettrffetno{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/05.png" class="loettrffetno">
+
 <h3
 id="qqreader启动的pre-main耗时测量">QQReader启动的pre-main耗时测量</h3>
 <h4
 id="添加dyld_print_statistics选项">添加DYLD_PRINT_STATISTICS选项</h4>
-<style>.hkdixttyllus{}</style>
-<img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/06.png" class="hkdixttyllus">
+<style>.ncnyfimhsgsd{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/06.png" class="ncnyfimhsgsd">
+
 <h4 id="测量结果">测量结果</h4>
-<p>冷启动时间： <style>.goxsionqwwog{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/07.png" class="goxsionqwwog">
-热启动时间： <style>.jajmbmcqsjsc{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/08.png" class="jajmbmcqsjsc"></p>
+<p>冷启动时间：</p>
+<style>.ruldeucjcque{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/07.png" class="ruldeucjcque">
+
+<p>热启动时间：</p>
+<style>.yirlkepudndi{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/08.png" class="yirlkepudndi">
+
 <h2 id="动态链接库dyld">动态链接库dyld</h2>
 <h3 id="什么是dyld">什么是dyld？</h3>
 <p>动态链接库的加载过程主要由dyld来完成，dyld是苹果的动态链接器
-系统先读取App的可执行文件（Mach-O文件），从里面获得dyld的路径，然后加载dyld，dyld去初始化运行环境，开启缓存策略，加载程序相关依赖库(其中也包含我们的可执行文件)，并对这些库进行链接，最后调用每个依赖库的初始化方法，在这一步，runtime被初始化。当所有依赖库的初始化后，轮到最后一位(程序可执行文件)进行初始化，在这时runtime会对项目中所有类进行类结构初始化，然后调用所有的load方法。最后dyld返回main函数地址，main函数被调用，我们便来到了熟悉的程序入口。
-### dyld共享库缓存
-当你构建一个真正的程序时，将会链接各种各样的库。它们又会依赖其他一些framework和动态库。需要加载的动态库会非常多。而对于相互依赖的符号就更多了。可能将会有上千个符号需要解析处理，这将花费很长的时间
+系统先读取App的可执行文件（Mach-O文件），从里面获得dyld的路径，然后加载dyld，dyld去初始化运行环境，开启缓存策略，加载程序相关依赖库(其中也包含我们的可执行文件)，并对这些库进行链接，最后调用每个依赖库的初始化方法，在这一步，runtime被初始化。当所有依赖库的初始化后，轮到最后一位(程序可执行文件)进行初始化，在这时runtime会对项目中所有类进行类结构初始化，然后调用所有的load方法。最后dyld返回main函数地址，main函数被调用，我们便来到了熟悉的程序入口。</p>
+<h3 id="dyld共享库缓存">dyld共享库缓存</h3>
+<p>当你构建一个真正的程序时，将会链接各种各样的库。它们又会依赖其他一些framework和动态库。需要加载的动态库会非常多。而对于相互依赖的符号就更多了。可能将会有上千个符号需要解析处理，这将花费很长的时间
 <strong>为了缩短这个处理过程所花费时间，OS X 和 iOS
 上的动态链接器使用了共享缓存，OS
 X的共享缓存位于<code>/private/var/db/dyld/</code>，iOS的则在<code>/System/Library/Caches/com.apple.dyle/</code>。</strong>
 <strong>对于每一种架构，操作系统都有一个单独的文件，文件中包含了绝大多数的动态库，这些库都已经链接为一个文件，并且已经处理好了它们之间的符号关系。当加载一个
 Mach-O 文件 (一个可执行文件或者一个库)
 时，动态链接器首先会检查共享缓存看看是否存在其中，如果存在，那么就直接从共享缓存中拿出来使用。每一个进程都把这个共享缓存映射到了自己的地址空间中。这个方法大大优化了
-OS X 和 iOS 上程序的启动时间</strong>
-<style>.ombfiaqxkfdx{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/09.png" class="ombfiaqxkfdx"> ### dyld加载过程
-dyld加载过程主要包含以下几个步骤： #### Load dylibs image
-在每个动态库的加载过程中， dyld需要： 1. 分析所依赖的动态库 2.
+OS X 和 iOS 上程序的启动时间</strong></p>
+<style>.snlrswlrslup{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/09.png" class="snlrswlrslup">
+
+<h3 id="dyld加载过程">dyld加载过程</h3>
+<p>dyld加载过程主要包含以下几个步骤：</p>
+<h4 id="load-dylibs-image">Load dylibs image</h4>
+<p>在每个动态库的加载过程中， dyld需要： 1. 分析所依赖的动态库 2.
 找到动态库的mach-o文件 3. 打开文件 4. 验证文件 5. 在系统核心注册文件签名
 6. 对动态库的每一个segment调用mmap()
 通常的，一个App需要加载很多个dylibs，
 但是其中的系统库被优化，可以很快的加载。应用所依赖的dylib文件可能会再依赖其他
 dylib，所以dyld所需要加载的是动态库列表一个递归依赖的集合。</p>
 <p>针对这一步骤的优化有： 1. 减少非系统库的依赖 2. 合并非系统库
-来看一下QQReader依赖的共享动态库 输入命令：otool -L QQReaderUI
-<style>.lnzufwmkiyth{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/10.png" class="lnzufwmkiyth"></p>
+来看一下QQReader依赖的共享动态库 输入命令：otool -L QQReaderUI</p>
+<style>.jbrrjxtfiyst{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/10.png" class="jbrrjxtfiyst">
+
 <h4 id="rebasebind-image">Rebase/Bind image</h4>
 <p>由于<code>ASLR(address space layout randomization)</code>的存在，可执行文件和动态链接库在虚拟内存中的加载地址每次启动都不固定，所以需要这2步来修复镜像中的资源指针，来指向正确的地址。
 rebase修复的是指向当前镜像内部的资源指针；
@@ -646,48 +674,71 @@ rebase修复的是指向当前镜像内部的资源指针；
 rebase步骤先进行，需要把镜像读入内存，并以page为单位进行加密验证，保证不会被篡改，所以这一步的瓶颈在IO。bind在其后进行，由于要查询符号表，来指向跨镜像的资源，加上在rebase阶段，镜像已被读入和加密验证，所以这一步的瓶颈在于CPU计算。 
 优化该阶段的关键在于减少__DATA segment中的指针数量。我们可以优化的点有：
 1. 减少Objc类数量， 减少selector数量 2. 减少C++虚函数数量
-这里主要解决几个疑惑： &gt;* 1、ASLR（地址空间布局随机化） 1.
+这里主要解决几个疑惑：</p>
+<blockquote>
+<ul>
+<li>1、ASLR（地址空间布局随机化） 1.
 传统方式下，进程每次启动采用的都是固定可预见的方式，这意味着一个给定的程序在给定的架构上的进程初始虚拟内存都是基本一致的，而且在进程正常运行的生命周期中，内存中的地址分布具有非常强的可预测性，这给了黑客很大的施展空间（代码注入，重写内存）；
 2.
 如果采用ASLR，进程每次启动，地址空间都会被简单地随机化，但是只是偏移，不是搅乱。大体布局——程序文本、数据和库是一样的，但是具体的地址都不同了，可以阻挡黑客对地址的猜测
-。 &gt;* 2、rebase：针对mach-o在加载到内存中不是固定的首地址
-这一现象做数据修正的过程； &gt;*
-3、binding就是将这个二进制调用的外部符号进行绑定的过程。比如我们objc代码中需要使用到NSObject,
+。</li>
+<li>2、rebase：针对mach-o在加载到内存中不是固定的首地址
+这一现象做数据修正的过程；</li>
+<li>3、binding就是将这个二进制调用的外部符号进行绑定的过程。比如我们objc代码中需要使用到NSObject,
 即符号<code>_OBJC_CLASS_$_NSObject</code>，但是这个符号又不在我们的二进制中，在系统库
-<code>Foundation.framework</code>中，因此就需要binding这个操作将对应关系绑定到一起；
-&gt;* 4、<code>lazyBinding</code>就是在加载动态库的时候不会立即binding,
+<code>Foundation.framework</code>中，因此就需要binding这个操作将对应关系绑定到一起；</li>
+<li>4、<code>lazyBinding</code>就是在加载动态库的时候不会立即binding,
 当时当第一次调用这个方法的时候再实施binding。 做到的方法也很简单：
 通过<code>dyld_stub_binder</code>这个符号来做。<code>lazyBinding</code>的方法第一次会调用到<code>dyld_stub_binder</code>,
-然后<code>dyld_stub_binder</code>负责找到真实的方法，并且将地址bind到桩上，下一次就不用再bind了。</p>
+然后<code>dyld_stub_binder</code>负责找到真实的方法，并且将地址bind到桩上，下一次就不用再bind了。</li>
+</ul>
+</blockquote>
 <h4 id="objc-setup">Objc setup</h4>
 <p><code>Objc setup</code>主要是在<code>objc_init</code>完成的，<code>objc_init</code>是在<code>libsystem</code>中的一个<code>initialize</code>方法<code>libsystem_initializer</code>中初始化了<code>libdispatch</code>，然后<code>libdispatch_init</code>调用了<code>_os_object_int</code>，
-最终调用了<code>_objc_init</code>。
-<style>.qybapejrvptx{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/11.png" class="qybapejrvptx"> <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _objc_init(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">bool</span> initialized = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (initialized) <span class="keyword">return</span>;</span><br><span class="line">    initialized = <span class="literal">true</span>;</span><br><span class="line">    </span><br><span class="line">    environ_init();</span><br><span class="line">    tls_init();</span><br><span class="line">    static_init();</span><br><span class="line">    lock_init();</span><br><span class="line">    exception_init();</span><br><span class="line"></span><br><span class="line">    _dyld_objc_notify_register(&amp;map_2_images, load_images, unmap_image);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-runtime在<code>_objc_init</code>向dyld绑定了3个回调函数，分别是<code>map_2_images</code>,<code>load_images</code>和<code>unmap_image</code>
-<style>.iggorsnuxobp{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/12.png" class="iggorsnuxobp"> &gt;*
-1、dyld在<code>binding</code>操作结束之后，会发出<code>dyld_image_state_bound</code>通知，然后与之绑定的回调函数<code>map_2_images</code>就会被调用，它主要做以下几件事来完成<code>Objc Setup</code>：
+最终调用了<code>_objc_init</code>。</p>
+<style>.gkvngodftmqk{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/11.png" class="gkvngodftmqk"> 
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _objc_init(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">bool</span> initialized = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (initialized) <span class="keyword">return</span>;</span><br><span class="line">    initialized = <span class="literal">true</span>;</span><br><span class="line">    </span><br><span class="line">    environ_init();</span><br><span class="line">    tls_init();</span><br><span class="line">    static_init();</span><br><span class="line">    lock_init();</span><br><span class="line">    exception_init();</span><br><span class="line"></span><br><span class="line">    _dyld_objc_notify_register(&amp;map_2_images, load_images, unmap_image);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>runtime在<code>_objc_init</code>向dyld绑定了3个回调函数，分别是<code>map_2_images</code>,<code>load_images</code>和<code>unmap_image</code></p>
+<style>.lbquqoermiiw{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/12.png" class="lbquqoermiiw">
+
+<blockquote>
+<ul>
+<li>1、dyld在<code>binding</code>操作结束之后，会发出<code>dyld_image_state_bound</code>通知，然后与之绑定的回调函数<code>map_2_images</code>就会被调用，它主要做以下几件事来完成<code>Objc Setup</code>：
 1. 读取二进制文件的 DATA 段内容，找到与 objc 相关的信息 2. 注册 Objc 类
-3. 确保 selector 的唯一性 4. 读取 protocol 以及 category 的信息 &gt;*
-2、<code>load_images</code>函数作用就是调用Objc的<code>load</code>方法，它监听<code>dyld_image_state_dependents_initialize</code>通知
-&gt;*
-3、<code>unmap_image</code>可以理解为<code>map_2_images</code>的逆向操作</p>
+3. 确保 selector 的唯一性 4. 读取 protocol 以及 category 的信息</li>
+<li>2、<code>load_images</code>函数作用就是调用Objc的<code>load</code>方法，它监听<code>dyld_image_state_dependents_initialize</code>通知</li>
+<li>3、<code>unmap_image</code>可以理解为<code>map_2_images</code>的逆向操作</li>
+</ul>
+</blockquote>
 <h4 id="initializers">initializers</h4>
 <p>以上三步属于静态调整，都是在修改<code>__DATA segment</code>中的内容，而这里则开始动态调整，开始在堆和栈中写入内容。
-工作主要有： &gt;* 1、 Objc的+load()函数 &gt;* 2、 C++的构造函数属性函数
-形如<code>attribute((constructor)) void DoSomeInitializationWork()</code>
-&gt;* 3、
-非基本类型的C++静态全局变量的创建(通常是类或结构体)(non-trivial
+工作主要有：</p>
+<blockquote>
+<ul>
+<li>1、 Objc的+load()函数</li>
+<li>2、 C++的构造函数属性函数
+形如<code>attribute((constructor)) void DoSomeInitializationWork()</code></li>
+<li>3、 非基本类型的C++静态全局变量的创建(通常是类或结构体)(non-trivial
 initializer)
-比如一个全局静态结构体的构建，如果在构造函数中有繁重的工作，那么会拖慢启动速度</p>
-<p>Objc的load函数和C++的静态构造器采用由底向上的方式执行，来保证每个执行的方法，都可以找到所依赖的动态库
-&gt;* 1、 dyld开始将程序二进制文件初始化 &gt;* 2、
-交由<code>ImageLoader</code>读取image，其中包含了我们的类、方法等各种符号
-&gt;* 3、
-由于runtime向dyld绑定了回调，当image加载到内存后，dyld会通知runtime进行处理
-&gt;* 4、
+比如一个全局静态结构体的构建，如果在构造函数中有繁重的工作，那么会拖慢启动速度</li>
+</ul>
+</blockquote>
+<p>Objc的load函数和C++的静态构造器采用由底向上的方式执行，来保证每个执行的方法，都可以找到所依赖的动态库</p>
+<blockquote>
+<ul>
+<li>1、 dyld开始将程序二进制文件初始化</li>
+<li>2、
+交由<code>ImageLoader</code>读取image，其中包含了我们的类、方法等各种符号</li>
+<li>3、
+由于runtime向dyld绑定了回调，当image加载到内存后，dyld会通知runtime进行处理</li>
+<li>4、
 runtime接手后调用<code>mapimages</code>做解析和处理，接下来<code>loadimages</code>中调用
 <code>callloadmethods</code>方法，遍历所有加载进来的Class，按继承层级依次调用Class的<code>+load</code>方法和其
-Category的<code>+load</code>方法</p>
+Category的<code>+load</code>方法</li>
+</ul>
+</blockquote>
 <p>整个事件由<code>dyld</code>主导，完成运行环境的初始化后，配合<code>ImageLoader</code>
 将二进制文件按格式加载到内存，动态链接依赖库，并由<code>runtime</code>负责加载成objc
 定义的结构，所有初始化工作结束后，<code>dyld</code>调用真正的<code>main</code>函数</p>
@@ -698,17 +749,28 @@ constructor 和 +load 都是在 main 函数执行前调用，但 +load 比 const
 image（可以理解成 Mach-O 文件）时会先通知 objc runtime
 去加载其中所有的类，每加载一个类时，它的 +load
 随之调用，全部加载完成后，dyld 才会调用这个 image 中所有的 constructor
-方法。 所以 constructor 是一个干坏事的绝佳时机： &gt;* 所有 Class
-都已经加载完成 &gt;* main 函数还未执行 &gt;* 无需像 +load 还得挂载在一个
-Class 中</p>
+方法。 所以 constructor 是一个干坏事的绝佳时机：</p>
+<blockquote>
+<ul>
+<li>所有 Class 都已经加载完成</li>
+<li>main 函数还未执行</li>
+<li>无需像 +load 还得挂载在一个 Class 中</li>
+</ul>
+</blockquote>
 <h2 id="pre-main阶段优化">pre-main阶段优化</h2>
 <h3
-id="删除无用代码未被调用的静态变量类和方法">1、删除无用代码（未被调用的静态变量、类和方法）</h3>
-<p>可以使用AppCode对工程进行扫描，删除以下无用代码 &gt;*
-1、未使用的本地变量； &gt;* 2、未使用的参数； &gt;* 3、未使用的值。</p>
-<style>.rdjqboblldfn{}</style>
-<img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/13.png" class="rdjqboblldfn">
-<h3 id="抽象重复代码">2、抽象重复代码</h3>
+id="1删除无用代码未被调用的静态变量类和方法">1、删除无用代码（未被调用的静态变量、类和方法）</h3>
+<p>可以使用AppCode对工程进行扫描，删除以下无用代码</p>
+<blockquote>
+<ul>
+<li>1、未使用的本地变量；</li>
+<li>2、未使用的参数；</li>
+<li>3、未使用的值。</li>
+</ul>
+</blockquote>
+<style>.gjsznjoxiyhy{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/13.png" class="gjsznjoxiyhy">
+
+<h3 id="2抽象重复代码">2、抽象重复代码</h3>
 <blockquote>
 <ul>
 <li>1、在iOS代码中可能会为同一个类写很多分类方法，由于参与开发同学较多，可能会导致方法重复，但是实际上运行起来只能有一个分类的方法被调用，这取决于哪个分类后被加载，然而编译的二进制代码中，两个方法应该是都存在的，这不仅会增加app体积，也会增加启动时间，所以应该杜绝这样的重复问题；</li>
@@ -717,23 +779,35 @@ id="删除无用代码未被调用的静态变量类和方法">1、删除无用�
 </ul>
 </blockquote>
 <h3
-id="load方法中做的事情延迟到initialize中或者在load中做的事情不宜花费过多时间">3、<code>+load</code>方法中做的事情延迟到<code>+initialize</code>中，或者在<code>+load</code>中做的事情不宜花费过多时间</h3>
+id="3load方法中做的事情延迟到initialize中或者在load中做的事情不宜花费过多时间">3、<code>+load</code>方法中做的事情延迟到<code>+initialize</code>中，或者在<code>+load</code>中做的事情不宜花费过多时间</h3>
 <p>因为load是在启动的时候调用，而initialize是在类首次被使用的时候调用，不过当你把load中的逻辑移到initialize中时候，一定要注意initialize的重复调用问题。</p>
 <h3
-id="减少不必要的framework或者优化已有的framework">4、减少不必要的framework，或者优化已有的framework</h3>
+id="4减少不必要的framework或者优化已有的framework">4、减少不必要的framework，或者优化已有的framework</h3>
 <p>例如QQReaderUI
-linkmap分析，看下那部分文件或者第三方库占了较大的空间，从而给我们优化提供一定的方向
-<style>.txjvnuxbhwoy{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/14.png" class="txjvnuxbhwoy"> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Path: /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Products/Debug-iphoneos/QQReaderUI.app/QQReaderUI</span><br><span class="line">Arch: arm64</span><br><span class="line">Object files:</span><br><span class="line">[0] linker synthesized</span><br><span class="line">[  1] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX1.o</span><br><span class="line">[  2] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX2.o</span><br><span class="line">[  3] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX3.o</span><br><span class="line">[  4] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX4.o</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-用<code>WMLinkMapAnalyzer</code>分析下linkmap文件
+linkmap分析，看下那部分文件或者第三方库占了较大的空间，从而给我们优化提供一定的方向</p>
+<style>.irssxywlmmwf{}</style><img src="/2018/01/30/iOS%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96/14.png" class="irssxywlmmwf">
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Path: /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Products/Debug-iphoneos/QQReaderUI.app/QQReaderUI</span><br><span class="line">Arch: arm64</span><br><span class="line">Object files:</span><br><span class="line">[0] linker synthesized</span><br><span class="line">[  1] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX1.o</span><br><span class="line">[  2] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX2.o</span><br><span class="line">[  3] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX3.o</span><br><span class="line">[  4] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX4.o</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>用<code>WMLinkMapAnalyzer</code>分析下linkmap文件
 这个文件可以让你了解整个APP编译后的情况，也许从中可以发现一些异常，还可以用这个文件计算静态链接库在项目里占的大小，有时候我们在项目里链了很多第三方库，导致APP体积变大很多，我们想确切知道每个库占用了多大空间，可以给我们优化提供方向。LinkMap里有了每个目标文件每个方法每个数据的占用大小数据，所以只要写个脚本，就可以统计出每个.o最后的大小，属于一个.a静态链接库的.o加起来，就是这个库在APP里占用的空间大小</p>
-<p>各模块体积大小，从大到小排列： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Core1(xxxx1.o)  256.00M</span><br><span class="line">Core2(xxxx2.o) 208.00M</span><br><span class="line">Core3(xxxx3.o)    64.00M</span><br><span class="line">Core4(xxxx4.o)     20.41M</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-然后就可以根据分析结果决定具体优化模块了</p>
+<p>各模块体积大小，从大到小排列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Core1(xxxx1.o)  256.00M</span><br><span class="line">Core2(xxxx2.o) 208.00M</span><br><span class="line">Core3(xxxx3.o)    64.00M</span><br><span class="line">Core4(xxxx4.o)     20.41M</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>然后就可以根据分析结果决定具体优化模块了</p>
 <h2 id="main阶段优化">main阶段优化</h2>
-<p>这一个阶段的时间主要是指：main函数开始到第一个界面渲染完成这段时间，优化出发点就是减少从main函数开始到第一个界面出现的时间，可以从两方面入手：
-### didFinishLaunchingWithOptions
-一般情况下，app在<code>didFinishLaunchingWithOptions</code>这个函数中会做以下工作：
-&gt;* 1、日志、统计 &gt;* 2、配置 APP 运行需要的环境 &gt;*
-3、第三方SDK集成 &gt;* …</p>
+<p>这一个阶段的时间主要是指：main函数开始到第一个界面渲染完成这段时间，优化出发点就是减少从main函数开始到第一个界面出现的时间，可以从两方面入手：</p>
+<h3
+id="didfinishlaunchingwithoptions">didFinishLaunchingWithOptions</h3>
+<p>一般情况下，app在<code>didFinishLaunchingWithOptions</code>这个函数中会做以下工作：</p>
+<blockquote>
+<ul>
+<li>1、日志、统计</li>
+<li>2、配置 APP 运行需要的环境</li>
+<li>3、第三方SDK集成</li>
+<li>…</li>
+</ul>
+</blockquote>
 <p>如果这些工作里面有的可能是不必要的，有的可以采用懒加载的方式，那么久有必要进行优化。QQReader在<code>didFinishLaunchingWithOptions</code>有将近30多个启动模块，其中耗时最多的前6个模块耗时占比将近86%，对此，我们对这主要的6个模块进行逐个分析，比如字体加载模块、打点上报模块等采用懒加载的方式进行优化。</p>
 <h3 id="首次启动渲染的页面优化">首次启动渲染的页面优化</h3>
 <blockquote>
@@ -1049,7 +1123,7 @@ linkmap分析，看下那部分文件或者第三方库占了较大的空间，�
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mach-o%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">Mach-O文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mach-o%E9%95%9C%E5%83%8F%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.1.</span> <span class="nav-text">Mach-O镜像文件格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E7%94%A8%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%83%96%E4%BA%8C%E8%BF%9B%E5%88%B6"><span class="nav-number">2.2.</span> <span class="nav-text">通用二进制（胖二进制）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ios%E5%BA%94%E7%94%A8%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">iOS应用启动流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E6%A0%B8%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.</span> <span class="nav-text">可执行文件的内核流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#app%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E7%9A%84%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9"><span class="nav-number">3.2.</span> <span class="nav-text">App启动流程的关键节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#qqreader%E5%90%AF%E5%8A%A8%E7%9A%84pre-main%E8%80%97%E6%97%B6%E6%B5%8B%E9%87%8F"><span class="nav-number">3.3.</span> <span class="nav-text">QQReader启动的pre-main耗时测量</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0dyld_print_statistics%E9%80%89%E9%A1%B9"><span class="nav-number">3.3.1.</span> <span class="nav-text">添加DYLD_PRINT_STATISTICS选项</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%8B%E9%87%8F%E7%BB%93%E6%9E%9C"><span class="nav-number">3.3.2.</span> <span class="nav-text">测量结果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93dyld"><span class="nav-number">4.</span> <span class="nav-text">动态链接库dyld</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFdyld"><span class="nav-number">4.1.</span> <span class="nav-text">什么是dyld？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#rebasebind-image"><span class="nav-number">4.1.1.</span> <span class="nav-text">Rebase&#x2F;Bind image</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#objc-setup"><span class="nav-number">4.1.2.</span> <span class="nav-text">Objc setup</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#initializers"><span class="nav-number">4.1.3.</span> <span class="nav-text">initializers</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pre-main%E9%98%B6%E6%AE%B5%E4%BC%98%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">pre-main阶段优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%97%A0%E7%94%A8%E4%BB%A3%E7%A0%81%E6%9C%AA%E8%A2%AB%E8%B0%83%E7%94%A8%E7%9A%84%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%B1%BB%E5%92%8C%E6%96%B9%E6%B3%95"><span class="nav-number">5.1.</span> <span class="nav-text">1、删除无用代码（未被调用的静态变量、类和方法）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%BD%E8%B1%A1%E9%87%8D%E5%A4%8D%E4%BB%A3%E7%A0%81"><span class="nav-number">5.2.</span> <span class="nav-text">2、抽象重复代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#load%E6%96%B9%E6%B3%95%E4%B8%AD%E5%81%9A%E7%9A%84%E4%BA%8B%E6%83%85%E5%BB%B6%E8%BF%9F%E5%88%B0initialize%E4%B8%AD%E6%88%96%E8%80%85%E5%9C%A8load%E4%B8%AD%E5%81%9A%E7%9A%84%E4%BA%8B%E6%83%85%E4%B8%8D%E5%AE%9C%E8%8A%B1%E8%B4%B9%E8%BF%87%E5%A4%9A%E6%97%B6%E9%97%B4"><span class="nav-number">5.3.</span> <span class="nav-text">3、+load方法中做的事情延迟到+initialize中，或者在+load中做的事情不宜花费过多时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%8F%E5%B0%91%E4%B8%8D%E5%BF%85%E8%A6%81%E7%9A%84framework%E6%88%96%E8%80%85%E4%BC%98%E5%8C%96%E5%B7%B2%E6%9C%89%E7%9A%84framework"><span class="nav-number">5.4.</span> <span class="nav-text">4、减少不必要的framework，或者优化已有的framework</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#main%E9%98%B6%E6%AE%B5%E4%BC%98%E5%8C%96"><span class="nav-number">6.</span> <span class="nav-text">main阶段优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E6%AC%A1%E5%90%AF%E5%8A%A8%E6%B8%B2%E6%9F%93%E7%9A%84%E9%A1%B5%E9%9D%A2%E4%BC%98%E5%8C%96"><span class="nav-number">6.1.</span> <span class="nav-text">首次启动渲染的页面优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E4%BB%A3%E7%A0%81%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">7.</span> <span class="nav-text">写代码注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mach-o%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">Mach-O文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mach-o%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.1.</span> <span class="nav-text">Mach-O文件类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mach-o%E9%95%9C%E5%83%8F%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">Mach-O镜像文件格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E7%94%A8%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%83%96%E4%BA%8C%E8%BF%9B%E5%88%B6"><span class="nav-number">2.3.</span> <span class="nav-text">通用二进制（胖二进制）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ios%E5%BA%94%E7%94%A8%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">iOS应用启动流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E6%A0%B8%E6%B5%81%E7%A8%8B"><span class="nav-number">3.1.</span> <span class="nav-text">可执行文件的内核流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#app%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E7%9A%84%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9"><span class="nav-number">3.2.</span> <span class="nav-text">App启动流程的关键节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#pre-main"><span class="nav-number">3.2.1.</span> <span class="nav-text">pre-main</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#main"><span class="nav-number">3.2.2.</span> <span class="nav-text">main</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#qqreader%E5%90%AF%E5%8A%A8%E7%9A%84pre-main%E8%80%97%E6%97%B6%E6%B5%8B%E9%87%8F"><span class="nav-number">3.3.</span> <span class="nav-text">QQReader启动的pre-main耗时测量</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0dyld_print_statistics%E9%80%89%E9%A1%B9"><span class="nav-number">3.3.1.</span> <span class="nav-text">添加DYLD_PRINT_STATISTICS选项</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%8B%E9%87%8F%E7%BB%93%E6%9E%9C"><span class="nav-number">3.3.2.</span> <span class="nav-text">测量结果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93dyld"><span class="nav-number">4.</span> <span class="nav-text">动态链接库dyld</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFdyld"><span class="nav-number">4.1.</span> <span class="nav-text">什么是dyld？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dyld%E5%85%B1%E4%BA%AB%E5%BA%93%E7%BC%93%E5%AD%98"><span class="nav-number">4.2.</span> <span class="nav-text">dyld共享库缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dyld%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">dyld加载过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#load-dylibs-image"><span class="nav-number">4.3.1.</span> <span class="nav-text">Load dylibs image</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rebasebind-image"><span class="nav-number">4.3.2.</span> <span class="nav-text">Rebase&#x2F;Bind image</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#objc-setup"><span class="nav-number">4.3.3.</span> <span class="nav-text">Objc setup</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#initializers"><span class="nav-number">4.3.4.</span> <span class="nav-text">initializers</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pre-main%E9%98%B6%E6%AE%B5%E4%BC%98%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">pre-main阶段优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%E5%88%A0%E9%99%A4%E6%97%A0%E7%94%A8%E4%BB%A3%E7%A0%81%E6%9C%AA%E8%A2%AB%E8%B0%83%E7%94%A8%E7%9A%84%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%B1%BB%E5%92%8C%E6%96%B9%E6%B3%95"><span class="nav-number">5.1.</span> <span class="nav-text">1、删除无用代码（未被调用的静态变量、类和方法）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%E6%8A%BD%E8%B1%A1%E9%87%8D%E5%A4%8D%E4%BB%A3%E7%A0%81"><span class="nav-number">5.2.</span> <span class="nav-text">2、抽象重复代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3load%E6%96%B9%E6%B3%95%E4%B8%AD%E5%81%9A%E7%9A%84%E4%BA%8B%E6%83%85%E5%BB%B6%E8%BF%9F%E5%88%B0initialize%E4%B8%AD%E6%88%96%E8%80%85%E5%9C%A8load%E4%B8%AD%E5%81%9A%E7%9A%84%E4%BA%8B%E6%83%85%E4%B8%8D%E5%AE%9C%E8%8A%B1%E8%B4%B9%E8%BF%87%E5%A4%9A%E6%97%B6%E9%97%B4"><span class="nav-number">5.3.</span> <span class="nav-text">3、+load方法中做的事情延迟到+initialize中，或者在+load中做的事情不宜花费过多时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%E5%87%8F%E5%B0%91%E4%B8%8D%E5%BF%85%E8%A6%81%E7%9A%84framework%E6%88%96%E8%80%85%E4%BC%98%E5%8C%96%E5%B7%B2%E6%9C%89%E7%9A%84framework"><span class="nav-number">5.4.</span> <span class="nav-text">4、减少不必要的framework，或者优化已有的framework</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#main%E9%98%B6%E6%AE%B5%E4%BC%98%E5%8C%96"><span class="nav-number">6.</span> <span class="nav-text">main阶段优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#didfinishlaunchingwithoptions"><span class="nav-number">6.1.</span> <span class="nav-text">didFinishLaunchingWithOptions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E6%AC%A1%E5%90%AF%E5%8A%A8%E6%B8%B2%E6%9F%93%E7%9A%84%E9%A1%B5%E9%9D%A2%E4%BC%98%E5%8C%96"><span class="nav-number">6.2.</span> <span class="nav-text">首次启动渲染的页面优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E4%BB%A3%E7%A0%81%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">7.</span> <span class="nav-text">写代码注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -1278,6 +1352,8 @@ linkmap分析，看下那部分文件或者第三方库占了较大的空间，�
             lang: "" || navigator.language || navigator.systemLanguage || navigator.userLanguage,
             
             oauth: {
+            
+                redirect_protocol: 'https',
             
             
                 client_secret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
