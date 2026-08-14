@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CRTP," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景 最近在写一些C++代码的时候，遇到了一些代码重复性问题，在思考如何通过模板去解决这些问题的时候，我想到了CRTP，一个不怎么正经的继承。 什么是CRTP ？ CRTP全称Curiously Recurring Template Pattern，翻译过来是「奇异递归模板模式」，是C++模板编程的一种惯用方法。这是由James Coplien在1995年提出的一项技术，它的特点是：  继承自模板">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CRTP，一个不正经的继承">
+<meta property="og:url" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="背景 最近在写一些C++代码的时候，遇到了一些代码重复性问题，在思考如何通过模板去解决这些问题的时候，我想到了CRTP，一个不怎么正经的继承。 什么是CRTP ？ CRTP全称Curiously Recurring Template Pattern，翻译过来是「奇异递归模板模式」，是C++模板编程的一种惯用方法。这是由James Coplien在1995年提出的一项技术，它的特点是：  继承自模板">
+<meta property="og:locale">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/04.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/06.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/05.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/07.png">
+<meta property="article:published_time" content="2022-06-23T17:08:00.000Z">
+<meta property="article:modified_time" content="2026-08-14T17:21:36.067Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="CRTP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2022/06/24/CRTP，一个不正经的继承/"/>
+
+
+
+
+
+  <title>CRTP，一个不正经的继承 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">CRTP，一个不正经的继承</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-06-24T01:08:00+08:00">
+                2022-06-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C-C/" itemprop="url" rel="index">
+                    <span itemprop="name">C/C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  98k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  5:58
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景">背景</h2>
+<p>最近在写一些<code>C++</code>代码的时候，遇到了一些代码重复性问题，在思考如何通过模板去解决这些问题的时候，我想到了<code>CRTP</code>，一个不怎么正经的继承。</p>
+<h2 id="什么是crtp-">什么是CRTP ？</h2>
+<p><code>CRTP</code>全称<code>Curiously Recurring Template Pattern</code>，翻译过来是「奇异递归模板模式」，是<code>C++</code>模板编程的一种惯用方法。这是由<code>James Coplien</code>在<code>1995</code>年提出的一项技术，它的特点是：</p>
+<ol type="1">
+<li>继承自模板类；</li>
+<li>把派生类作为基类的模板参数；</li>
+</ol>
+<p><code>CRTP</code>的一般形式如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> &#123;...&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base&lt;Derived&gt; &#123;...&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在我有限的知识仓库里，大概没有第二种语言可以这么书写了。。。</p>
+<p>那么问题来了，为什么要这么实现呢？为什么又可以这么实现呢？</p>
+<p>这里通过以下代码来说明：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Base</span> &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">interface</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">static_cast</span> &lt;T*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">implementation</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Derived</span> : Base&lt;Derived&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">implementation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot; Derived class &quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>看到这里，估计很多同学已经在思考“现在和未来如何穿梭”的事情了，因为代码看起来很怪异，<code>Derived</code>看上去感觉像是在继承自己一样，而且<code>Derived</code>还没声明完就可以被拿来使用。。。</p>
+<p>通常来说，基类模板可以利用“<strong>虽然成员函数很早就被声明了，但是直到其被派生类继承才会被实例化</strong>”这一事实，<strong>在基类模板的成员函数中访问派生类的方法</strong>。</p>
+<p>在上面的代码中，<code>Base&lt;Derived&gt;::interface()</code>，虽然是在<code>Derived</code>之前就被声明了，但在它被实际调用之前，并不会被编译器实例化，而真正的实例化发生于<code>Derived</code>声明之后，此时<code>Derived::implementation()</code>的声明，对于<code>Base&lt;Derived&gt;::interface()</code>实现来说是已知可见的。</p>
+<p>考虑一个<strong>没有虚函数</strong>的基类。
+每当基类调用另一个成员函数时，它总是会调用自己的基类函数。
+当我们从这个基类派生一个类时，我们继承了所有未被覆盖的成员变量和成员函数（没有构造函数或析构函数）。
+如果派生类调用一个继承函数，然后该函数调用另一个成员函数，则该函数将永远不会调用派生类中的任何派生或重写的成员函数</p>
+<p>但是，<strong>如果基类成员函数对所有成员函数调用使用
+<code>CRTP</code>，则可以在编译时选择派生类中的重写函数，
+这在编译时有效地模拟了虚拟函数调用系统，而没有大小或函数调用开销</strong>（<code>VTBL</code>
+结构和方法查找、多继承 <code>VTBL</code>
+机制）的成本，缺点是无法在运行时做出此选择，有人也称这种技术为“静态多态”。</p>
+<p>这里有<code>2</code>点需要注意：</p>
+<ol type="1">
+<li>类模板是模板，类是类，这里的<code>Base</code>只是模板；</li>
+<li>这里的基类是<code>Base&lt;Derived&gt;</code>，不是<code>Base</code>；</li>
+</ol>
+<p>这里有几个触及的灵魂的问题，大家可以思考下：</p>
+<ol type="1">
+<li><code>Base&lt;Derived&gt;</code>基类中有<code>implementation</code>方法的实现吗？以下代码可以通过编译吗？</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CRTPBase&lt;CRTPDerived&gt; base;</span><br><span class="line">base.<span class="built_in">interface</span>();</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li><code>Derived</code>究竟是从<code>Base&lt;Derived&gt;</code>继承了什么，还是在遵循什么承诺？</li>
+</ol>
+<h2 id="crtp-性能如何-">CRTP 性能如何 ？</h2>
+<blockquote>
+<p>实验环境：x86-64 clang 14.0.0 -std=c++14</p>
+</blockquote>
+<h3 id="虚函数耗时">虚函数耗时</h3>
+<p><img src="01.png" alt="Image" /></p>
+<h3 id="crtp耗时禁止内联">CRTP耗时（禁止内联）</h3>
+<p><img src="02.png" alt="Image" /></p>
+<h3 id="crtp耗时内联">CRTP耗时（内联）</h3>
+<p><img src="03.png" alt="Image" /></p>
+<h3 id="指标对比">指标对比</h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>虚函数</th>
+<th>CRTP（非内联）</th>
+<th>CRTP（内联）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>耗时</td>
+<td>28ms</td>
+<td>18ms</td>
+<td>1ms</td>
+</tr>
+<tr>
+<td>对象大小</td>
+<td>16B</td>
+<td>8B</td>
+<td>8B</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到，在<code>demo</code>实验中，<code>CRTP</code>的实现方式在开启内联的情况下（一般在<code>release</code>下都是默认开启的），不仅速度快，而且对象占用内存小（虚函数的<code>vptr</code>多占8个字节）。对于一些对性能要求高的场景不妨一试。当然这里的性能对比特别简单，更专业的性能对比需要<code>benchmark</code></p>
+<h2 id="当-crtp-碰到设计模式">当 CRTP 碰到设计模式</h2>
+<p>那么<code>CRTP</code>可以用来做些什么呢？又应该如何来应用呢？我们不妨从经典的一些设计模式讲起。话说回来，当<code>CRTP</code>遇上设计模式时，一些事情变得有意思起来。</p>
+<h3 id="单例模式">单例模式</h3>
+<p>传统模式下，<code>C++</code>应该怎么实现单例呢？</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Singleton</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>: <span class="comment">// 注意这里是private</span></span><br><span class="line">        <span class="built_in">Singleton</span>() &#123; &#125;;</span><br><span class="line">        ~<span class="built_in">Singleton</span>() &#123; &#125;;</span><br><span class="line">        <span class="built_in">Singleton</span>(<span class="type">const</span> Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">        Singleton&amp; <span class="keyword">operator</span>=(<span class="type">const</span> Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">static</span> Singleton&amp; <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="type">static</span> Singleton instance;</span><br><span class="line">                <span class="keyword">return</span> instance;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>C++11</code>规定了<code>local static</code>在多线程条件下的初始化行为，要求编译器保证了内部静态变量的线程安全性。在<code>C++11</code>标准下，《<code>Effective C++</code>》提出了一种优雅的单例模式实现，使用函数内的
+<code>local static</code>
+对象。这样，只有当第一次访问<code>getInstance()</code>方法时才创建实例。这种方法也被称为<code>Meyers' Singleton</code>。<code>C++0x</code>之后该实现是线程安全的，<code>C++0x</code>之前仍需加锁。关于<code>C++</code>单例更多的实现方式在这里：https://zhuanlan.zhihu.com/p/37469260，这里不再展开。</p>
+<p>如果另一个类也需要实现单例呢？笨办法就是把上面的代码再抄一遍，但是如果用<code>CRTP</code>来实现单例呢？</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Singleton</span> &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> ...Args&gt;</span></span><br><span class="line"><span class="function">    <span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(<span class="type">const</span> Args&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> std::unique_ptr&lt;Derived&gt; m_instance;</span><br><span class="line">        <span class="type">static</span> std::once_flag m_flag;</span><br><span class="line">        std::<span class="built_in">call_once</span>(m_flag, [](<span class="keyword">auto</span> ...args) &#123;</span><br><span class="line">            m_instance.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">Derived</span>(args...));</span><br><span class="line">        &#125;, args...);</span><br><span class="line">        <span class="keyword">return</span>  m_instance;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>() = <span class="keyword">default</span>;</span><br><span class="line">    ~<span class="built_in">Singleton</span>() = <span class="keyword">default</span>;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>(Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>如代码所示，我们把派生类当成了模板参数，当实现单例的时候，直接调用派生类的构造函数，这里使用了：</p>
+<ol type="1">
+<li>变参模板<code>variadic template</code>，可以支持任意参数的传递。想想看，如果在<code>OC</code>里面实现1个支持任意参数的单例，是不是并不容易？</li>
+<li><code>std::call_once</code>和<code>std::once_flag</code>，是不是和<code>OC</code>的<code>dispatch_once</code>和<code>dispatch_once_t</code>很像？</li>
+</ol>
+<p>在这样的情况下，当任何一个类想要自己的单例的时候，只需要简单地继承<code>Singleton</code>，并把自己作为模板参数传入即可。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">TestService</span> : <span class="keyword">public</span> Singleton&lt;TestService&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">doSomething</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;TestService doSomething&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">TestService</span>() = <span class="keyword">default</span>; <span class="comment">// 注意这里需要把构造函数声明为私有</span></span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">Singleton</span>&lt;TestService&gt;; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    TestService::<span class="built_in">GetInstance</span>()-&gt;<span class="built_in">doSomething</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ol type="1">
+<li>子类需要将自己的构造函数声明为<code>private</code>；</li>
+<li>子类中需要声明友元类：<code>Singleton&lt;TestService&gt;</code></li>
+</ol>
+</blockquote>
+<h3 id="简单工厂模式">简单工厂模式</h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived, <span class="type">bool</span> ThreadSafe = <span class="literal">true</span>&gt;</span><br><span class="line"><span class="keyword">class</span> Factory &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="keyword">using</span> WeakMap = WeakWrapper&lt;std::map&lt;std::string, std::unique_ptr&lt;Derived&gt;&gt;&gt;;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">static</span> StaticWrapper&lt;WeakMap&gt;&amp; <span class="title">GetMap</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> StaticWrapper&lt;WeakMap&gt; container;</span><br><span class="line">        <span class="keyword">return</span>  container;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">static</span> rwlock&amp; <span class="title">GetLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> rwlock *lock = <span class="keyword">new</span> <span class="built_in">rwlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  *lock;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ...Args&gt;</span><br><span class="line">    <span class="function"><span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(<span class="type">const</span> std::string&amp; key, Args&amp;&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span>&amp; container = <span class="built_in">GetMap</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; lock = <span class="built_in">GetLock</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock_shared</span>();</span><br><span class="line">        <span class="keyword">auto</span> safe_container = container.<span class="built_in">SafeGet</span>();</span><br><span class="line">        <span class="keyword">auto</span> map_ptr = safe_container.<span class="built_in">Lock</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; map = map_ptr-&gt;<span class="built_in">GetItem</span>();</span><br><span class="line">        <span class="keyword">auto</span> iter = map.<span class="built_in">find</span>(key);</span><br><span class="line">        <span class="keyword">if</span>  (iter != map.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">            <span class="keyword">return</span>  map[key];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock</span>();</span><br><span class="line">        map[key] = std::<span class="built_in">make_unique</span>&lt;Derived&gt;(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  map[key];</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样，想要实现简单工厂的类只需要简单地继承自<code>Factory</code>，然后把自己作为模板参数传入即可。另外，这个简单工厂内部需要把对象以<code>key-value</code>的形式存下来，所以需要调用侧传<code>1</code>个<code>key</code>进去。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SomeService</span> : <span class="keyword">public</span>  Factory &lt;SomeService&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">doSomething</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">SomeService::<span class="built_in">GetInstance</span>(key, param)-&gt;<span class="built_in">doSomething</span>();</span><br></pre></td></tr></table></figure>
+
+<p>这个代码调用起来比较难受，到处都得传<code>1</code>个不需要的<code>key</code>值。那么改造一下吧</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ...Args&gt;</span><br><span class="line">    <span class="function"><span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(Args&amp;&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span>&amp; container = <span class="built_in">GetMap</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; lock = <span class="built_in">GetLock</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">auto</span> key = <span class="built_in">DecayFirstParam</span>(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock_shared</span>();</span><br><span class="line">        <span class="keyword">auto</span> safe_container = container.<span class="built_in">SafeGet</span>();</span><br><span class="line">        <span class="keyword">auto</span> map_ptr = safe_container.<span class="built_in">Lock</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; map = map_ptr-&gt;<span class="built_in">GetItem</span>();</span><br><span class="line">        <span class="keyword">auto</span> iter = map.<span class="built_in">find</span>(key);</span><br><span class="line">        <span class="keyword">if</span>  (iter != map.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">            <span class="keyword">return</span>  map[key];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock</span>();</span><br><span class="line">        map[key] = std::<span class="built_in">make_unique</span>&lt;Derived&gt;(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  map[key];</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>改造的核心思想就是：要获取到第<code>1</code>个参数，并根据参数的类型获取最终想要的<code>key</code>值。这里通过<code>DecayFirstParam</code>获取到了参数列表中的第<code>1</code>个参数，这个叫<strong>参数解包</strong>（有点像<strong>萃取技术）。<strong>由于第一个参数的类型不能够确定，这里采用了<code>std::enable_if</code>，分别对项目中具体使用到的<code>ModuleEnv</code>、<code>Env</code>和<code>std::string</code>几个类型进行了</strong>方法重载</strong>处理。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::shared_ptr&lt;ModuleEnv&gt;&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  t-&gt;<span class="built_in">GetModuleId</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::shared_ptr&lt;Env&gt;&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  t-&gt;<span class="built_in">GetIdentify</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::string&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    std::string copy = t;</span><br><span class="line">    <span class="keyword">return</span>  copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除此之外，这里还使用了<strong>万能引用</strong>和<strong>完美转发</strong>技术，但是这不是本文要讨论的内容，可以先忽略，详情可以参考：<a
+href="https://zhuanlan.zhihu.com/p/50816420">https://zhuanlan.zhihu.com/p/50816420</a></p>
+<h3 id="策略模式">策略模式</h3>
+<p>这里以一个流量控制的案例来说明：假设对流量控制需要采取2种不同的模式：正常模式和限流模式，那么传统的UML图如下图所示
+<img src="04.jpg" alt="Image" /></p>
+<p>代码也很简单易懂</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">IFlowControlStrategy</span> &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">IFlowControlStrategy</span>() = <span class="keyword">default</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NormalFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LimitedFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>如果使用CRTP来实现的话： <img src="06.jpg" alt="Image" /></p>
+<ol type="1">
+<li>先定义<code>1</code>个<code>CRTP</code>基类<code>BaseFlowControlStrategy</code>;</li>
+<li>再根据<code>2</code>种策略定<code>2</code>个子类：<code>NormalFlowControlStrategy</code>和<code>LimitedFlowControlStrategy</code>;</li>
+<li>对外的接口则是模板方法<code>GetUploadMaxSize</code>和<code>GetUploadInterval</code>。</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">Derived</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>  &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="keyword">static_cast</span> &lt;Derived*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">InternalGetUploadMaxSize</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="keyword">static_cast</span> &lt;Derived*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">InternalGetUploadInterval</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NormalFlowControlStrategy</span> : <span class="keyword">public</span>  BaseFlowControlStrategy&lt;NormalFlowControlStrategy&gt; &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>&lt;NormalFlowControlStrategy&gt;;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadMaxSize</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadInterval</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LimitedFlowControlStrategy</span> : <span class="keyword">public</span>  BaseFlowControlStrategy&lt;LimitedFlowControlStrategy&gt; &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>&lt;LimitedFlowControlStrategy&gt;;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadMaxSize</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadInterval</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">(BaseFlowControlStrategy&lt;T&gt;&amp;&amp; strategy)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  strategy.<span class="built_in">GetUploadMaxSize</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">(BaseFlowControlStrategy&lt;T&gt;&amp;&amp; strategy)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  strategy.<span class="built_in">GetUploadInterval</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意这里的friend class</p>
+</blockquote>
+<p>外侧调用</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">long</span>  <span class="title">Context::GetUploadInterval</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m_strategy_mutex)</span></span>;</span><br><span class="line">    <span class="keyword">if</span>  (m_strategy_type == FlowControlStrategyTypeNormal) &#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="built_in">GetUploadInterval</span>(<span class="built_in">NormalFlowControlStrategy</span>());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="built_in">GetUploadInterval</span>(<span class="built_in">LimitedFlowControlStrategy</span>());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，对外的接口是个模板方法，所以这注定了它和传统的<code>OOP</code>编程模式有些格格不入。</p>
+<blockquote>
+<p>这个模式还有个别名：<strong>Policy-Based Class Design</strong></p>
+</blockquote>
+<h3 id="克隆模式">克隆模式</h3>
+<p>当要通过基类指针获得对象的拷贝时，通常做法是加个虚的<code>Clone</code>函数，而用<code>CRTP</code>可以避免在每个派生类中重复这个函数，只要派生类允许复制构造即可</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Base class has a pure virtual function for cloning</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Shape</span>() &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Shape* <span class="title">Clone</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// This CRTP class implements clone() for Derived</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Shape_CRTP</span> : <span class="keyword">public</span> Shape &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">Shape* <span class="title">Clone</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Derived</span>(<span class="built_in">static_cast</span>&lt;Derived <span class="type">const</span>&amp;&gt;(*<span class="keyword">this</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Square</span> : <span class="keyword">public</span> Shape_CRTP&lt;Square&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Square</span>(Square&amp; s);</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Circle</span> : <span class="keyword">public</span> Shape_CRTP&lt;Circle&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Circle</span>(Circle&amp; c);</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="访问者模式">访问者模式</h3>
+<p>访问者模式本身就比较复杂，这里还要结合<code>CRTP</code>，所以整体会比较困难，这里借助<a
+href="http://purecpp.org/detail?id=2087">modern
+c++设计模式系列（一）</a>的例子进行说明.</p>
+<p>假设有一个动物的继承体系，有<code>dog</code>,
+<code>bird</code>派生于动物基类<code>animal</code>，基类的纯虚函数是<code>move</code>。随着需求的变化，我们给<code>dog</code>添加了<code>swim</code>，给<code>bird</code>添加了<code>fly</code>方法。因为<code>dog</code>是不能<code>fly</code>的，<code>bird</code>是不能<code>swim</code>的，所以这<code>2</code>个方法不能放到基类<code>animal</code>中。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>那么现在需要通过<code>animal</code>对象来调用<code>swim</code>和<code>fly</code>方法，怎么做？</p>
+<h4 id="downcasting">Downcasting</h4>
+<p>很常见的办法就是<code>downcasting</code>。 <img src="05.jpg"
+alt="Image" /></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">test</span><span class="params">(animal* anim)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;dog*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;dog*&gt;(anim)-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;bird*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;bird*&gt;(anim)-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相信大部分人都见过类似的代码，甚至也写过这样的代码，包括我自己，但是这种写法的确会很糟糕：</p>
+<ol type="1">
+<li>随着需求的变化，这里的<code>if-else</code>会愈来愈膨胀；</li>
+<li><code>dynamic_cast</code>很低效，应该尽量避免；</li>
+</ol>
+<h4 id="visitor模式上场">visitor模式上场</h4>
+<p>这个时候轮到<code>visitor</code>模式上场了：<code>visitor</code>模式可以在不修改被访问对象的情况下，添加新的访问行为，通过<code>visitor</code>模式我们可以消除之前的
+<code>dynamic_cast</code>了</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span></span>=<span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">accept</span><span class="params">(visitor*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span></span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span></span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl</span> : <span class="keyword">public</span> visitor&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(dog* d)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        d-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(bird* b)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        b-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    visitor* v = <span class="keyword">new</span> visitor_impl;</span><br><span class="line">    </span><br><span class="line">    animal* a = <span class="keyword">new</span> dog;</span><br><span class="line">    a-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    animal* b = <span class="keyword">new</span> bird;</span><br><span class="line">    b-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是经典的<code>visitor</code>模式的实现，对于被访问者继承体系<code>animal</code>体系来说，访问<code>animal</code>的方式可以通过<code>visitor</code>自由增加了，而<code>animal</code>体系是不会感知到的，换句话说，在不修改被访问者的前提下，你可以给被访问者添加新的访问行为，这很棒。</p>
+<p>这也是一个经典的<strong>双分派</strong>的<code>visitor</code>模式，所谓双分派就是两次分派，有两次虚函数调用：</p>
+<ol type="1">
+<li>第一次虚函数调用是<code>animal::accept</code>纯虚方法的调用；</li>
+<li>第二次虚函数调用是<code>visitor::visit</code>纯虚方法的调用。</li>
+</ol>
+<h4 id="crtp介入">CRTP介入</h4>
+<p>有没有看到<code>1</code>个令人讨厌的方法？对，就是<code>accept</code>，<code>dog</code>和<code>bird</code>都写了一遍，且一模一样。我们来照着前面的克隆模式，消除下这个重复方法：把<code>accept</code>挪动到继承自<code>animal</code>的<code>visitable</code>中，其它的派生类从现在开始不再直接继承<code>animal</code>，而是继承<code>visitable</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//crtp</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> visitable&lt;dog&gt;&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> visitable&lt;bird&gt;&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>瞬间感觉派生类清爽了很多，有没有？</p>
+<h4 id="魔法来了">魔法来了</h4>
+<p>如果此时再添加<code>1</code>个子类<code>fish</code>，那么<code>visitor</code>基类就得新增<code>1</code>个虚函数，那么之前的派生类都得修改，所以这段代码是不稳定的，也违反了开闭原则。问题的原因是<code>animal</code>依赖了<code>visitor</code>，<code>visitor</code>又依赖了具体的<code>animal</code>类型。<strong><code>SOLID</code>原则时刻告诫我们，要依赖抽象，不应该依赖具体。</strong></p>
+<p>所以可以把<code>visitor</code>定义为<code>1</code>个模板类，这样<code>animal</code>就依赖了<code>1</code>个泛型类型，而不是具体的类型。考虑到模板的传染性，为了避免<code>animal</code>也得模板化，这里又引入了<code>visitor_token</code>基类，可以看到<code>visitor_token</code>就是一个辅助基类，里面除了默认的虚析构函数，啥都没有，但是这已经足够了。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(T*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_token</span>&#123;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">visitor_token</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal &#123;</span><br><span class="line">     <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span>(<span class="keyword">auto</span> p = <span class="keyword">dynamic_cast</span>&lt;visitor&lt;T&gt;*&gt;(v); p)&#123;</span><br><span class="line">               p-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> visitable&lt;dog&gt;&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> visitable&lt;bird&gt;&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">fish</span> : <span class="keyword">public</span> visitable&lt;fish&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dive</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;dive&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span>... T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">MultipleVisitor</span> : <span class="keyword">public</span> visitor_token, <span class="keyword">public</span> visitor&lt;T&gt;...  &#123;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> MyVisitor = MultipleVisitor&lt;dog, bird&gt;;</span><br><span class="line"><span class="keyword">using</span> MyVisitor1 = MultipleVisitor&lt;fish&gt;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl</span> : <span class="keyword">public</span> MyVisitor&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(dog* d)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        d-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(bird* b)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        b-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl1</span> : <span class="keyword">public</span> MyVisitor1&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(fish* f)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        f-&gt;<span class="built_in">dive</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    visitor_token* v = <span class="keyword">new</span> visitor_impl;</span><br><span class="line">    </span><br><span class="line">    animal* a = <span class="keyword">new</span> dog;</span><br><span class="line">    a-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    animal* b = <span class="keyword">new</span> bird;</span><br><span class="line">    b-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    visitor_token* v1 = <span class="keyword">new</span> visitor_impl1;</span><br><span class="line">    </span><br><span class="line">    animal* c = <span class="keyword">new</span> fish;</span><br><span class="line">    c-&gt;<span class="built_in">accept</span>(v1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>到此时，<code>visitor</code>和<code>animal</code>都不再依赖具体，而是依赖于抽象，从而达到了解耦的目的。</strong></p>
+<p><strong>本次修改最大的魔法</strong>来自于：<code>MultipleVisitor</code>利用<a
+href="https://en.cppreference.com/w/cpp/language/using_declaration"><code>Using-declaration</code></a>来自动生成一个访问者的继承体系，而不是像之前一样，一个一个定义<code>visitor</code>派生类了，这样对代码做了简化，也可以很方便地定义新的访问者体系了，只要定义一个新类型就行了。</p>
+<p>这里可能稍微有些费解，这里不妨把<code>using MyVisitor = MultipleVisitor&lt;dog, bird&gt;</code>的等价代码展开：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 先把2个接口类特化</span></span><br><span class="line"><span class="keyword">template</span>&lt;&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&lt;dog&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&lt;bird&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 展开继承</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">MyVisitor</span> : <span class="keyword">public</span> visitor_token, <span class="keyword">public</span> visitor&lt;dog&gt;, <span class="keyword">public</span> visitor&lt;bird&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到1行代码替代了<code>15</code>行代码的工作，可以体会下模板的魅力！</p>
+<h4 id="问题">问题</h4>
+<p>到此为止，有没有发现有什么问题？</p>
+<ol type="1">
+<li>最终的方案并没有彻底消除<code>dynamic_cast</code>，可以看到<code>accept</code>里面仍然在使用<code>dynamic_cast</code></li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal &#123;</span><br><span class="line">     <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span>(<span class="keyword">auto</span> p = <span class="keyword">dynamic_cast</span>&lt;visitor&lt;T&gt;*&gt;(v); p)&#123;</span><br><span class="line">               p-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>代码还在持续使用虚函数表和虚函数指针，可以看下<code>visitor_impl</code>的虚函数表</li>
+</ol>
+<p><img src="07.png" alt="Image" /></p>
+<p>可以发现，最终的“优雅代码”离我们最初设定的目标还是有一定的偏移，但是鱼和熊掌不可兼得，总得做一些<code>tradeoff</code>，但是这些<code>tradeoff</code>是值得我们付出的。</p>
+<h2 id="crtp-实际应用">CRTP 实际应用</h2>
+<h3 id="stdenable_shared_from_this">std::enable_shared_from_this</h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">_Tp</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">enable_shared_from_this</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">mutable</span> weak_ptr&lt;_Tp&gt; __weak_this_;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="built_in">enable_shared_from_this</span>() _NOEXCEPT &#123;&#125;</span><br><span class="line">    <span class="built_in">enable_shared_from_this</span>(enable_shared_from_this <span class="type">const</span>&amp;) _NOEXCEPT &#123;&#125;</span><br><span class="line">    enable_shared_from_this&amp; <span class="keyword">operator</span>=(enable_shared_from_this <span class="type">const</span>&amp;) _NOEXCEPT</span><br><span class="line">        &#123;<span class="keyword">return</span>  *<span class="keyword">this</span>;&#125;</span><br><span class="line">    ~<span class="built_in">enable_shared_from_this</span>() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function">shared_ptr&lt;_Tp&gt; <span class="title">shared_from_this</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;<span class="keyword">return</span>  <span class="built_in">shared_ptr</span>&lt;_Tp&gt;(__weak_this_);&#125;</span><br><span class="line">    <span class="function">shared_ptr&lt;_Tp <span class="type">const</span>&gt; <span class="title">shared_from_this</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">        </span>&#123;<span class="keyword">return</span>  <span class="built_in">shared_ptr</span>&lt;<span class="type">const</span> _Tp&gt;(__weak_this_);&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">_Up</span>&gt; <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">shared_ptr</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在使用智能指针的情况下，如果想使用<code>this</code>的智能指针，必须要按照<code>Good</code>的方式去实现：继承自<code>std::enable_shared_from_this</code>，并把自己作为模板参数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// correct </span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Good</span>: std::enable_shared_from_this&lt;Good&gt; &#123; </span><br><span class="line">    <span class="function">std::shared_ptr&lt;Good&gt; <span class="title">getptr</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">shared_from_this</span>(); </span><br><span class="line">    &#125; </span><br><span class="line">&#125;; </span><br><span class="line"></span><br><span class="line"><span class="comment">// wrong</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Bad</span> &#123; </span><br><span class="line">    <span class="function">std::shared_ptr&lt;Bad&gt; <span class="title">getptr</span><span class="params">()</span> </span>&#123; </span><br><span class="line">        <span class="keyword">return</span> std::<span class="built_in">shared_ptr</span>&lt;Bad&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="clickhouse">Clickhouse</h3>
+<p>https://github.com/ClickHouse/ClickHouse/blob/master/src/AggregateFunctions/IAggregateFunction.h</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunction</span> : <span class="keyword">public</span> std::enable_shared_from_this&lt;IAggregateFunction&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">IAggregateFunction</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">argument_types</span>(argument_types_), <span class="built_in">parameters</span>(parameters_) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get main function name.</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> String <span class="title">getName</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get the result type.</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> DataTypePtr <span class="title">getReturnType</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get the data type of internal state. By default it is AggregateFunction(name(params), argument_types...).</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> DataTypePtr <span class="title">getStateType</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Implement method to obtain an address of &#x27;add&#x27; function.</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunctionHelper</span> : <span class="keyword">public</span> IAggregateFunction</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">addFree</span><span class="params">(<span class="type">const</span> IAggregateFunction * that, AggregateDataPtr place, <span class="type">const</span> IColumn ** columns, <span class="type">size_t</span> row_num, Arena * arena)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;<span class="type">const</span> Derived &amp;&gt;(*that).<span class="built_in">add</span>(place, columns, row_num, arena);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">IAggregateFunctionHelper</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">IAggregateFunction</span>(argument_types_, parameters_) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">AddFunc <span class="title">getAddressOfAddFunction</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123; <span class="keyword">return</span> &amp;addFree; &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Implements several methods for manipulation with data. T - type of structure with data for aggregation.</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunctionDataHelper</span> : <span class="keyword">public</span> IAggregateFunctionHelper&lt;Derived&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="keyword">using</span> Data = T;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">static</span> Data &amp; <span class="title">data</span><span class="params">(AggregateDataPtr __restrict place)</span> </span>&#123; <span class="keyword">return</span> *<span class="built_in">reinterpret_cast</span>&lt;Data *&gt;(place); &#125;</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">const</span> Data &amp; <span class="title">data</span><span class="params">(ConstAggregateDataPtr __restrict place)</span> </span>&#123; <span class="keyword">return</span> *<span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> Data *&gt;(place); &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Derived class can `override` this to flag that DateTime64 is not supported.</span></span><br><span class="line">    <span class="type">static</span> <span class="keyword">constexpr</span> <span class="type">bool</span> DateTime64Supported = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">IAggregateFunctionDataHelper</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">IAggregateFunctionHelper</span>&lt;Derived&gt;(argument_types_, parameters_) &#123;&#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Simply count number of calls.</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AggregateFunctionCount</span> <span class="keyword">final</span> : <span class="keyword">public</span> IAggregateFunctionDataHelper&lt;AggregateFunctionCountData, AggregateFunctionCount&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">AggregateFunctionCount</span><span class="params">(<span class="type">const</span> DataTypes &amp; argument_types_)</span> : IAggregateFunctionDataHelper(argument_types_, &#123;</span>&#125;) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">String <span class="title">getName</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123; <span class="keyword">return</span> <span class="string">&quot;count&quot;</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">DataTypePtr <span class="title">getReturnType</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> std::<span class="built_in">make_shared</span>&lt;DataTypeUInt64&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结">总结</h2>
+<p>本文主要讨论了：</p>
+<ol type="1">
+<li><p><code>CRTP</code>的概念</p></li>
+<li><p>和虚函数做了性能对比</p></li>
+<li><p>通过若干设计模式讲了一些具体的用法</p></li>
+<li><p>实际应用举例</p></li>
+</ol>
+<p>不难发现：</p>
+<p>CRTP的优点：性能高、代码复用程度高，比单继承容易拓展（CRTP+多继承）</p>
+<p>CRTP的缺点：理解起来比较晦涩，和传统的OOP编程有些格格不入，使用模板，传染性强。</p>
+<h2 id="后记crtp的幽灵兄弟">后记：CRTP的幽灵兄弟</h2>
+<p><code>1995</code>年的<code>CRTP</code>“这杯陈酿”是不是品的如痴如醉？</p>
+<p>此时，不妨来看看<code>CRTP</code>的幽灵兄弟，<strong><code>Mixin</code></strong>。
+<strong><code>Mixin</code></strong>
+是一种将若干功能独立的类通过继承的方式实现模块复用的C++模板编程技巧。其基本做法是将模板参数作为派生类的基类:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MixinClass</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">MixinClass</span>() :  <span class="built_in">Mixins</span>()... &#123;&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>这里以<code>Point</code>举个示例：传统方式下，如果要扩展，一般以<code>Point</code>为基类，派生出<code>LabelPoint</code>，<code>ColorPoint</code>，<code>LabelColorPoint</code>等子类。可以看到<code>LabelColorPoint</code>用到了<strong>菱形继承</strong>，必须使用<strong>虚继承</strong>方式</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">Point</span> &#123;</span><br><span class="line">    <span class="type">double</span> x;</span><br><span class="line">    <span class="type">double</span> y;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">LabelPoint</span> : Point &#123;</span><br><span class="line">    std::string label;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">ColorPoint</span> : Point &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> red;</span><br><span class="line">    <span class="type">unsigned</span> green;</span><br><span class="line">    <span class="type">unsigned</span> blue;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">LabelColorPoint</span> : <span class="keyword">virtual</span> LabelPoint, <span class="keyword">virtual</span> ColorPoint &#123;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>而<code>Mixin</code>方式则是将<code>Label</code>、<code>Color</code>定义为不同的类，最后通过组合的方式形成<code>LabelColorPoint</code>类，像搭积木一样，完成功能复用。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Point</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line">    <span class="type">double</span> x, y;</span><br><span class="line">    <span class="built_in">Point</span>() : <span class="built_in">Mixins</span>()..., <span class="built_in">x</span>(<span class="number">0.0</span>), <span class="built_in">y</span>(<span class="number">0.0</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">Point</span>(<span class="type">double</span> x, <span class="type">double</span> y) : <span class="built_in">Mixins</span>()..., <span class="built_in">x</span>(x), <span class="built_in">y</span>(y) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Label</span> &#123;</span><br><span class="line">    <span class="built_in">Label</span>() : <span class="built_in">label</span>(<span class="string">&quot;&quot;</span>) &#123;&#125;</span><br><span class="line">    std::string label;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Color</span> &#123;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> red;</span><br><span class="line">  <span class="type">unsigned</span> green;</span><br><span class="line">  <span class="type">unsigned</span> blue;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> LabelColorPoint = Point&lt;Label, Color&gt;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    LabelColorPoint lcp;</span><br><span class="line">    std::cout &lt;&lt; lcp.x &lt;&lt; lcp.label &lt;&lt; lcp.red &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之所以称<code>Mixin</code>为<code>CRTP</code>的幽灵，主要是因为二者的继承从形式上看正好是相反的：</p>
+<ol type="1">
+<li><code>CRTP</code>是把派生类作为模板参数，并且基类模板内部调用子类的功能；</li>
+<li><code>Mixin</code>则是把基类作为模板参数，通过“组合的继承方式”，派生类模板内部调用基类的功能；</li>
+</ol>
+<h2 id="参考文档">参考文档</h2>
+<ol type="1">
+<li><a
+href="https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern">Curiously
+recurring template pattern - Wikipedia</a></li>
+<li><a
+href="https://eli.thegreenplace.net/2013/12/05/the-cost-of-dynamic-virtual-calls-vs-static-crtp-dispatch-in-c/">The
+cost of dynamic virtual calls vs. static CRTP dispatch in C++</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/50816420">C++
+万能引用和完美转发</a></li>
+<li><a
+href="http://ot-note.logdown.com/posts/805904/wtl-atl-cwindoesimp-composition-notebook">WTL
+/ ATL CWindowImpl Composition Notebook</a></li>
+<li><a
+href="https://siddswork.com/cpp-design-pattern-policy-based-class">C++
+Design Pattern: Policy-Based Class</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/460825741">现代 C++
+设计模式相关参考</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      <div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">CRTP，一个不正经的继承</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2022年06月24日 - 01:06</p>
+  <p><span>最后更新:</span>2026年08月15日 - 01:08</p>
+  <p><span>原始链接:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" title="CRTP，一个不正经的继承">https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      <div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>本文标题:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">CRTP，一个不正经的继承</a></p>
+  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
+  <p><span>发布时间:</span>2022年06月24日 - 01:06</p>
+  <p><span>最后更新:</span>2026年08月15日 - 01:08</p>
+  <p><span>原始链接:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" title="CRTP，一个不正经的继承">https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"  aria-label="复制成功！"></i></span>
+  </p>
+  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CRTP/" rel="tag"># CRTP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/" rel="next" title="深入理解 OC/C++ 闭包">
+                <i class="fa fa-chevron-left"></i> 深入理解 OC/C++ 闭包
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/" rel="prev" title="静态变量究竟有多坑？">
+                静态变量究竟有多坑？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFcrtp-"><span class="nav-number">2.</span> <span class="nav-text">什么是CRTP ？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#crtp-%E6%80%A7%E8%83%BD%E5%A6%82%E4%BD%95-"><span class="nav-number">3.</span> <span class="nav-text">CRTP 性能如何 ？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E5%87%BD%E6%95%B0%E8%80%97%E6%97%B6"><span class="nav-number">3.1.</span> <span class="nav-text">虚函数耗时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crtp%E8%80%97%E6%97%B6%E7%A6%81%E6%AD%A2%E5%86%85%E8%81%94"><span class="nav-number">3.2.</span> <span class="nav-text">CRTP耗时（禁止内联）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crtp%E8%80%97%E6%97%B6%E5%86%85%E8%81%94"><span class="nav-number">3.3.</span> <span class="nav-text">CRTP耗时（内联）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%87%E6%A0%87%E5%AF%B9%E6%AF%94"><span class="nav-number">3.4.</span> <span class="nav-text">指标对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93-crtp-%E7%A2%B0%E5%88%B0%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.</span> <span class="nav-text">当 CRTP 碰到设计模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.1.</span> <span class="nav-text">单例模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.2.</span> <span class="nav-text">简单工厂模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.3.</span> <span class="nav-text">策略模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%8B%E9%9A%86%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.4.</span> <span class="nav-text">克隆模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BF%E9%97%AE%E8%80%85%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.5.</span> <span class="nav-text">访问者模式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#downcasting"><span class="nav-number">4.5.1.</span> <span class="nav-text">Downcasting</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#visitor%E6%A8%A1%E5%BC%8F%E4%B8%8A%E5%9C%BA"><span class="nav-number">4.5.2.</span> <span class="nav-text">visitor模式上场</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#crtp%E4%BB%8B%E5%85%A5"><span class="nav-number">4.5.3.</span> <span class="nav-text">CRTP介入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%AD%94%E6%B3%95%E6%9D%A5%E4%BA%86"><span class="nav-number">4.5.4.</span> <span class="nav-text">魔法来了</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%97%AE%E9%A2%98"><span class="nav-number">4.5.5.</span> <span class="nav-text">问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#crtp-%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">CRTP 实际应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#stdenable_shared_from_this"><span class="nav-number">5.1.</span> <span class="nav-text">std::enable_shared_from_this</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clickhouse"><span class="nav-number">5.2.</span> <span class="nav-text">Clickhouse</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0crtp%E7%9A%84%E5%B9%BD%E7%81%B5%E5%85%84%E5%BC%9F"><span class="nav-number">7.</span> <span class="nav-text">后记：CRTP的幽灵兄弟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="nav-number">8.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -509,9 +509,9 @@ href="https://mp.weixin.qq.com/s/kp6cdDrdQ4rhfdXH-_Q8IA">&lt;&lt;优先级反转
 <h2 id="背景">背景</h2>
 <p>最近在线上碰到大量读写锁的卡死，通过观察发现，出问题的线程堆栈都是<code>NSOperationQueue</code>队列，且都有<code>QOS:BACKGROUND</code>标记。整体看起来持有锁的子线程仍然在执行，只是留给主线程的时间不够了，从而导致卡死。为什么这些子线程在持有锁的情况下，需要执行这么久，直到主线程的8s卡死？一种情况就是真的如此耗时，另一种则是出现了优先级反转。</p>
 <p>如下所示：图1是正在等锁的主线程，图2是正在持有锁的子线程</p>
-<style>.wqjbpswstmtl{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png" class="wqjbpswstmtl">
+<style>.wesrqwljrrfa{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png" class="wesrqwljrrfa">
 
-<style>.qmqhfjxohclc{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/07.png" class="qmqhfjxohclc">
+<style>.mbrhfwxxvggl{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/07.png" class="mbrhfwxxvggl">
 
 <h3 id="解决办法">解决办法</h3>
 <p>在这个案例里面：持有读写锁且优先级低的线程迟迟得不到调度（又或者得到调度的时候又被抢占了，或者得到调度的时候时间已然不够了），而具有高优先级的线程由于拿不到读写锁，一直被阻塞，所以互相死锁。
@@ -579,11 +579,11 @@ to RTOS - Solution to Part 11 (Priority Inversion)</a>
 <blockquote>
 <p>这里的任务也可以理解为线程</p>
 </blockquote>
-<style>.wntmswntasaf{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/01.png" class="wntmswntasaf">
+<style>.biwgednpdbel{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/01.png" class="biwgednpdbel">
 
 <h4 id="unbounded-priority-inversion">Unbounded priority inversion</h4>
 <p>在<code>Task L</code>持有锁的情况下，如果有一个中间优先级的任务（<code>Task M</code>）打断了<code>Task L</code>，前面的<code>bounded</code>就会变为<code>unbounded</code>，因为<code>Task M</code>只要抢占了<code>Task L</code>的<code>CPU</code>，就可能会阻塞<code>Task H</code>任意多的时间（<code>Task M</code>可能不止1个）</p>
-<style>.ubbhrinkeyox{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/02.png" class="ubbhrinkeyox">
+<style>.xqmkugelappg{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/02.png" class="xqmkugelappg">
 
 <h3 id="优先级反转常规解决思路">优先级反转常规解决思路</h3>
 <p>目前解决<code>Unbounded priority inversion</code>有2种方法：一种被称作优先权极限（<code>priority ceiling protocol</code>），另一种被称作优先级继承（<code>priority inheritance</code>）。</p>
@@ -591,11 +591,11 @@ to RTOS - Solution to Part 11 (Priority Inversion)</a>
 <p>在优先权极限方案中，系统把每一个临界资源与1个极限优先权相关联。当1个任务进入临界区时，系统便把这个极限优先权传递给这个任务，使得这个任务的优先权最高；
 当这个任务退出临界区后，系统立即把它的优先权恢复正常，从而保证系统不会出现优先权反转的情况。该极限优先权的值是由所有需要该临界资源的任务的最大优先级来决定的。
 如图所示，锁的极限优先权是3。当<code>Task L</code>持有锁的时候，它的优先级将会被提升到3，和<code>Task H</code>一样的优先级。这样就可以阻止<code>Task M</code>(优先级是2）的运行，直到<code>Task L</code>和<code>Task H</code>不再需要该锁。</p>
-<style>.dlmhgijqxoxy{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/03.png" class="dlmhgijqxoxy">
+<style>.wsnxtiqpojne{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/03.png" class="wsnxtiqpojne">
 
 <h4 id="priority-inheritance">Priority inheritance</h4>
 <p>在优先级继承方案中，大致原理是：高优先级任务在尝试获取锁的时候，如果该锁正好被低优先级任务持有，此时会临时把高优先级线程的优先级转移给拥有锁的低优先级线程，使低优先级线程能更快的执行并释放同步资源，释放同步资源后再恢复其原来的优先级。</p>
-<style>.xdrlgfksyofq{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/04.png" class="xdrlgfksyofq">
+<style>.qrlhhgknhlbw{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/04.png" class="qrlhhgknhlbw">
 
 <blockquote>
 <p><code>priority ceiling protocol</code>和<code>priority inheritance</code>都会在释放锁的时候，恢复低优先级任务的优先级。同时要注意，以上2种方法只能阻止<code>Unbounded priority inversion</code>，而无法阻止<code>Bounded priority inversion</code>（<code>Task H</code>必须等待<code>Task L</code>执行完毕才能执行，这个反转是无法避免的）。</p>
@@ -782,7 +782,7 @@ construct like NSLock) instead.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">auto</span> <span class="title">findGCDAntiPatternWithSemaphore</span><span class="params">()</span> -&gt; <span class="title">decltype</span><span class="params">(compoundStmt())</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> <span class="type">char</span> *SemaphoreBinding = <span class="string">&quot;semaphore_name&quot;</span>;</span><br><span class="line">  <span class="keyword">auto</span> SemaphoreCreateM = <span class="built_in">callExpr</span>(<span class="built_in">allOf</span>(</span><br><span class="line">      <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_create&quot;</span>),</span><br><span class="line">      <span class="built_in">hasArgument</span>(<span class="number">0</span>, <span class="built_in">ignoringParenCasts</span>(<span class="built_in">integerLiteral</span>(<span class="built_in">equals</span>(<span class="number">0</span>))))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreBindingM = <span class="built_in">anyOf</span>(</span><br><span class="line">      forEachDescendant(</span><br><span class="line">          <span class="built_in">varDecl</span>(<span class="built_in">hasDescendant</span>(SemaphoreCreateM)).<span class="built_in">bind</span>(SemaphoreBinding)),</span><br><span class="line">      forEachDescendant(<span class="built_in">binaryOperator</span>(<span class="built_in">bindAssignmentToDecl</span>(SemaphoreBinding),</span><br><span class="line">                     <span class="built_in">hasRHS</span>(SemaphoreCreateM))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockArgumentM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">hasType</span>(</span><br><span class="line">            <span class="built_in">hasCanonicalType</span>(<span class="built_in">blockPointerType</span>())</span><br><span class="line">            ));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> ArgCallsSignalM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(<span class="built_in">callExpr</span>(</span><br><span class="line">          <span class="built_in">allOf</span>(</span><br><span class="line">              <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_signal&quot;</span>),</span><br><span class="line">              <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">              )))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockAndCallsSignalM = <span class="built_in">allOf</span>(HasBlockArgumentM, ArgCallsSignalM);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockCallingSignalM =</span><br><span class="line">    forEachDescendant(</span><br><span class="line">      <span class="built_in">stmt</span>(<span class="built_in">anyOf</span>(</span><br><span class="line">        <span class="built_in">callExpr</span>(HasBlockAndCallsSignalM),</span><br><span class="line">        <span class="built_in">objcMessageExpr</span>(HasBlockAndCallsSignalM)</span><br><span class="line">           )));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreWaitM = forEachDescendant(</span><br><span class="line">    <span class="built_in">callExpr</span>(</span><br><span class="line">      <span class="built_in">allOf</span>(</span><br><span class="line">        <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_wait&quot;</span>),</span><br><span class="line">        <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">      )</span><br><span class="line">    ).<span class="built_in">bind</span>(WarnAtNode));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">compoundStmt</span>(</span><br><span class="line">      SemaphoreBindingM, HasBlockCallingSignalM, SemaphoreWaitM);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>如果想使用该功能，只需要打开<code>xcode</code>设置即可：</p>
-<style>.kwuxqxxvnwxo{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/05.png" class="kwuxqxxvnwxo">
+<style>.rblciyyhffus{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/05.png" class="rblciyyhffus">
 
 <blockquote>
 <p>另外，<code>dispatch_group</code> 跟 <code>semaphore</code>
@@ -795,7 +795,7 @@ construct like NSLock) instead.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">__block <span class="type">BOOL</span> auth = <span class="literal">NO</span>;</span><br><span class="line">dispatch_semaphore_t semaphore = dispatch_semaphore_create(<span class="number">0</span>);</span><br><span class="line">[KTAuthorizeService requestAuthorizationWithType:KTPermissionsTypeCamera completionHandler:^(<span class="type">BOOL</span> allow) &#123;</span><br><span class="line">  auth = allow;</span><br><span class="line">  dispatch_semaphore_signal(semaphore);</span><br><span class="line">&#125;];</span><br><span class="line">dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);</span><br></pre></td></tr></table></figure>
 
 <p>上线后长期占据卡死<code>top1</code>，当时百思不得其解，在深入了解到信号量无法避免优先级反转后，终于豁然开朗，一扫之前心中的阴霾。</p>
-<style>.nfihuvnttntk{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png" class="nfihuvnttntk">
+<style>.unpjbcjhktfr{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png" class="unpjbcjhktfr">
 
 <p>这类问题一般通过2种方式来解决：</p>
 <ol type="1">
@@ -830,7 +830,7 @@ href="http://newosxbook.com/MOXiI.pdf">「Mac OS® X and iOS Internals
 <li>实时系统线程的优先级是<code>96~127</code>；</li>
 <li><code>64~79</code>被保留给系统使用；</li>
 </ol>
-<style>.ithhkhjhhtfe{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png" class="ithhkhjhhtfe">
+<style>.attipngnucsa{}</style><img src="/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png" class="attipngnucsa">
 
 <h2 id="总结">总结</h2>
 <p>本文主要阐述了优先级反转的一些概念和解决思路，并结合<code>iOS</code>平台的几种锁进行了详细的调研。通过深入的理解，可以去规避一些不必要的优先级反转，从而进一步避免卡死异常。</p>
@@ -1002,8 +1002,8 @@ infect each other with their low priority</a></li>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/" rel="next" title="深入理解 OC/C++ 闭包">
-                <i class="fa fa-chevron-left"></i> 深入理解 OC/C++ 闭包
+              <a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/" rel="next" title="静态变量究竟有多坑？">
+                <i class="fa fa-chevron-left"></i> 静态变量究竟有多坑？
               </a>
             
           </div>
@@ -1097,9 +1097,9 @@ infect each other with their low priority</a></li>
             
               <div class="site-state-item site-state-posts">
               
-                <a href="/archives/%7C%7C%20archive">
+                <a href="/archives/">
               
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">37</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1110,7 +1110,7 @@ infect each other with their low priority</a></li>
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1121,7 +1121,7 @@ infect each other with their low priority</a></li>
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">20</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1189,7 +1189,7 @@ infect each other with their low priority</a></li>
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">150k</span>
+    <span title="Site words total count">159k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
