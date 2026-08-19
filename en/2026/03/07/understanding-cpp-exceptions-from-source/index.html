@@ -108,12 +108,24 @@
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="Brief overview What is the C++ exception mechanism? This article starts from a few questions:  When throw is triggered inside a try block, how does the runtime find the matching catch, especially acro">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/11.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-08-19T04:56:21.763Z">
+<meta property="article:modified_time" content="2026-08-19T15:08:29.160Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 
 
 
@@ -439,9 +451,11 @@ path. The runtime must also clean up the execution context along the
 way.</p>
 <h3 id="which-implementation-mechanisms-exist">Which implementation
 mechanisms exist?</h3>
-<p>There have been several C++ exception implementations over time. The
-most common ones are SJLJ, EHABI, DWARF CFI, and Apple’s Compact Unwind
-optimization.</p>
+<p>There have been <a
+href="https://www.gricad-gitlab.univ-grenoble-alpes.fr/tracing-llvm/llvm/-/tree/d2298e74235598f15594fe2c99bbac870a507c59/libunwind/docs#:~:text=libunwind%20is%20a%20production%2Dquality,%2C%20SjLj%2C%20and%20ARM%20EHABI.">several
+C++ exception implementations</a> over time.</p>
+<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%"/>
+
 <ul>
 <li>SJLJ is older and simple, but not very efficient.</li>
 <li>EHABI is mainly used on ARM32 and is tightly coupled to that
@@ -498,85 +512,524 @@ discussion mainly targets ARM64.</p>
 <h2 id="throwing-an-exception">Throwing an exception</h2>
 <h3
 id="__cxa_allocate_exception"><code>__cxa_allocate_exception</code></h3>
-<p>The runtime first allocates storage for the exception object.</p>
+<p>When user code executes <code>throw</code>, control first reaches
+<code>__cxa_allocate_exception</code>. This function allocates a piece
+of memory that contains an <code>exception header</code>, used by the
+C++ ABI, followed by the actual user-thrown object.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *__cxa_allocate_exception(<span class="type">size_t</span> thrown_size) <span class="keyword">throw</span>() &#123;</span><br><span class="line">    <span class="type">size_t</span> actual_size = <span class="built_in">cxa_exception_size_from_exception_thrown_size</span>(thrown_size);</span><br><span class="line">    <span class="type">size_t</span> header_offset = <span class="built_in">get_cxa_exception_offset</span>();</span><br><span class="line">    <span class="type">char</span> *raw_buffer = (<span class="type">char</span> *)__aligned_malloc_with_fallback(header_offset + actual_size);</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == raw_buffer) std::<span class="built_in">terminate</span>();</span><br><span class="line">    __cxa_exception *exception_header =</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;__cxa_exception *&gt;((<span class="type">void</span> *)(raw_buffer + header_offset));</span><br><span class="line">    ::<span class="built_in">memset</span>(<span class="built_in">static_cast</span>&lt;<span class="type">void</span>*&gt;(exception_header), <span class="number">0</span>, actual_size);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">thrown_object_from_cxa_exception</span>(exception_header);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This looks like a simple allocation, but the constraints are subtle.
+Allocating on the stack is a bad fit because the stack is precisely what
+will be unwound. Allocating on the heap can also fail because an
+exception may need to be thrown under memory pressure. Static allocation
+is not enough either because the operation must be thread-safe. Most
+implementations therefore allocate from thread-local storage, and use an
+emergency storage area when ordinary allocation fails.</p>
 <h3 id="__cxa_throw"><code>__cxa_throw</code></h3>
-<p><code>__cxa_throw</code> stores the type information, attaches the
-exception object, and hands control to the unwind runtime.</p>
+<p>After the memory is ready, execution enters <code>__cxa_throw</code>.
+It initializes the <code>__cxa_exception</code> structure, pushes the
+exception into the thread-local exception-management stack
+<code>__cxa_eh_globals</code>, and finally calls
+<code>_Unwind_RaiseException</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __cxa_throw(<span class="type">void</span> *thrown_object, std::type_info *tinfo,</span><br><span class="line">                 <span class="built_in">void</span> (_LIBCXXABI_DTOR_FUNC *dest)(<span class="type">void</span> *)) &#123;</span><br><span class="line">  __cxa_eh_globals* globals = __cxa_get_globals();</span><br><span class="line">  globals-&gt;uncaughtExceptions += <span class="number">1</span>;</span><br><span class="line">  __cxa_exception* exception_header =</span><br><span class="line">      __cxa_init_primary_exception(thrown_object, tinfo, dest);</span><br><span class="line">  exception_header-&gt;referenceCount = <span class="number">1</span>;</span><br><span class="line">  _Unwind_RaiseException(&amp;exception_header-&gt;unwindHeader);</span><br><span class="line">  <span class="built_in">failed_throw</span>(exception_header);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The layout of <code>__cxa_exception</code>,
+<code>_Unwind_Exception</code>, and the actual thrown object matters
+because the runtime frequently converts between those pointers. For
+example, from an <code>_Unwind_Exception *</code>, libc++abi can recover
+the surrounding <code>__cxa_exception *</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__cxa_exception</span> &#123;</span><br><span class="line">    std::type_info *exceptionType;</span><br><span class="line">    <span class="built_in">void</span> (*exceptionDestructor)(<span class="type">void</span> *);</span><br><span class="line">    unexpected_handler unexpectedHandler;</span><br><span class="line">    terminate_handler terminateHandler;</span><br><span class="line">    __cxa_exception *nextException;</span><br><span class="line">    <span class="type">int</span> handlerCount;</span><br><span class="line">    <span class="type">int</span> handlerSwitchValue;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *actionRecord;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *languageSpecificData;</span><br><span class="line">    <span class="type">void</span> *catchTemp;</span><br><span class="line">    <span class="type">void</span> *adjustedPtr;</span><br><span class="line">    _Unwind_Exception unwindHeader;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">_Unwind_Exception</span> &#123;</span><br><span class="line">  _Unwind_Exception_Class exception_class;</span><br><span class="line">  <span class="built_in">void</span> (*exception_cleanup)(_Unwind_Reason_Code reason, _Unwind_Exception *exc);</span><br><span class="line">  <span class="type">uintptr_t</span> private_1;</span><br><span class="line">  <span class="type">uintptr_t</span> private_2;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The thread-local <code>__cxa_eh_globals</code> stores the top
+exception and the number of uncaught exceptions:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__cxa_eh_globals</span> &#123;</span><br><span class="line">    __cxa_exception *caughtExceptions;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> uncaughtExceptions;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Every new exception links its header to the current top exception
+through <code>nextException</code>, then updates
+<code>caughtExceptions</code>. Exception handling therefore behaves like
+a stack: the newest exception is handled first.
+<code>__cxa_begin_catch</code> decreases the uncaught count and pushes
+the current <code>cxa_exception</code>; <code>__cxa_end_catch</code>
+pops it back out.</p>
 <h2 id="stack-unwinding">Stack unwinding</h2>
 <h3 id="_unwind_raiseexception"><code>_Unwind_RaiseException</code></h3>
-<p>This is the entry point into the unwind library. It begins walking
-the call stack to find a handler.</p>
+<p><code>_Unwind_RaiseException</code> is the entry point into
+libunwind. It uses the classic two-phase unwinding model:
+<code>unwind_phase1</code> and <code>unwind_phase2</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">_Unwind_Reason_Code _Unwind_RaiseException(_Unwind_Exception *exception_object) &#123;</span><br><span class="line">  <span class="type">unw_context_t</span> uc;</span><br><span class="line">  <span class="type">unw_cursor_t</span> cursor;</span><br><span class="line">  __unw_getcontext(&amp;uc);</span><br><span class="line"></span><br><span class="line">  exception_object-&gt;private_1 = <span class="number">0</span>;</span><br><span class="line">  exception_object-&gt;private_2 = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  _Unwind_Reason_Code phase1 = <span class="built_in">unwind_phase1</span>(&amp;uc, &amp;cursor, exception_object);</span><br><span class="line">  <span class="keyword">if</span> (phase1 != _URC_NO_REASON) <span class="keyword">return</span> phase1;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">unwind_phase2</span>(&amp;uc, &amp;cursor, exception_object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>unwind_phase1</code>, the search phase, walks the stack looking
+for an exception handler. If no handler is found, libunwind returns
+<code>_URC_END_OF_STACK</code>; the caller decides how to terminate.</p>
+<p><code>unwind_phase2</code>, the cleanup phase, walks frames again,
+runs cleanups, destroys out-of-scope objects, and eventually transfers
+control to the handler frame. If phase 1 fails, phase 2 never runs,
+which means stack objects do not get destructed by the exception
+path.</p>
 <h3 id="unwind_phase1"><code>unwind_phase1</code></h3>
-<p>Phase 1 only searches for a matching handler. It does not run cleanup
-yet.</p>
+<p>The core loop in phase 1 repeatedly steps to the next frame, fetches
+frame metadata, and asks the frame’s personality routine whether this
+frame wants to stop the unwind.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Reason_Code</span></span><br><span class="line"><span class="function"><span class="title">unwind_phase1</span><span class="params">(<span class="type">unw_context_t</span> *uc, <span class="type">unw_cursor_t</span> *cursor,</span></span></span><br><span class="line"><span class="params"><span class="function">              _Unwind_Exception *exception_object)</span> </span>&#123;</span><br><span class="line">  __unw_init_local(cursor, uc);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    <span class="type">int</span> stepResult = __unw_step(cursor);</span><br><span class="line">    <span class="keyword">if</span> (stepResult == <span class="number">0</span>) <span class="keyword">return</span> _URC_END_OF_STACK;</span><br><span class="line">    <span class="keyword">if</span> (stepResult &lt; <span class="number">0</span>) <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="type">unw_proc_info_t</span> frameInfo;</span><br><span class="line">    <span class="type">unw_word_t</span> sp;</span><br><span class="line">    <span class="keyword">if</span> (__unw_get_proc_info(cursor, &amp;frameInfo) != UNW_ESUCCESS)</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (frameInfo.handler != <span class="number">0</span>) &#123;</span><br><span class="line">      _Unwind_Personality_Fn p = <span class="built_in">get_handler_function</span>(&amp;frameInfo);</span><br><span class="line">      _Unwind_Reason_Code personalityResult =</span><br><span class="line">          (*p)(<span class="number">1</span>, _UA_SEARCH_PHASE, exception_object-&gt;exception_class,</span><br><span class="line">               exception_object, (<span class="keyword">struct</span> _Unwind_Context *)(cursor));</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (personalityResult == _URC_HANDLER_FOUND) &#123;</span><br><span class="line">        __unw_get_reg(cursor, UNW_REG_SP, &amp;sp);</span><br><span class="line">        exception_object-&gt;private_2 = (<span class="type">uintptr_t</span>)sp;</span><br><span class="line">        <span class="keyword">return</span> _URC_NO_REASON;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (personalityResult != _URC_CONTINUE_UNWIND)</span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE1_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The search itself also performs type matching through RTTI, so a call
+chain with many <code>catch</code> clauses can make phase 1 more
+expensive.</p>
 <h3 id="unwind_phase2"><code>unwind_phase2</code></h3>
-<p>Once a handler is found, phase 2 actually unwinds frames, runs
-cleanups, and transfers control to the landing pad.</p>
+<p>Phase 2 looks very similar, but its purpose is different. It walks
+the stack again and tells each personality routine that cleanup is now
+happening. When the stack pointer equals the value saved in
+<code>exception_object-&gt;private_2</code>, the current frame is the
+handler frame found during phase 1.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Reason_Code</span></span><br><span class="line"><span class="function"><span class="title">unwind_phase2</span><span class="params">(<span class="type">unw_context_t</span> *uc, <span class="type">unw_cursor_t</span> *cursor,</span></span></span><br><span class="line"><span class="params"><span class="function">              _Unwind_Exception *exception_object)</span> </span>&#123;</span><br><span class="line">  __unw_init_local(cursor, uc);</span><br><span class="line">  <span class="type">unsigned</span> framesWalked = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    <span class="type">int</span> stepResult = __unw_step_stage2(cursor);</span><br><span class="line">    <span class="keyword">if</span> (stepResult == <span class="number">0</span>) <span class="keyword">return</span> _URC_END_OF_STACK;</span><br><span class="line">    <span class="keyword">if</span> (stepResult &lt; <span class="number">0</span>) <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="type">unw_word_t</span> sp;</span><br><span class="line">    <span class="type">unw_proc_info_t</span> frameInfo;</span><br><span class="line">    __unw_get_reg(cursor, UNW_REG_SP, &amp;sp);</span><br><span class="line">    <span class="keyword">if</span> (__unw_get_proc_info(cursor, &amp;frameInfo) != UNW_ESUCCESS)</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line"></span><br><span class="line">    ++framesWalked;</span><br><span class="line">    <span class="keyword">if</span> (frameInfo.handler != <span class="number">0</span>) &#123;</span><br><span class="line">      _Unwind_Personality_Fn p = <span class="built_in">get_handler_function</span>(&amp;frameInfo);</span><br><span class="line">      _Unwind_Action action = _UA_CLEANUP_PHASE;</span><br><span class="line">      <span class="keyword">if</span> (sp == exception_object-&gt;private_2)</span><br><span class="line">        action = (_Unwind_Action)(_UA_CLEANUP_PHASE | _UA_HANDLER_FRAME);</span><br><span class="line"></span><br><span class="line">      _Unwind_Reason_Code personalityResult =</span><br><span class="line">          (*p)(<span class="number">1</span>, action, exception_object-&gt;exception_class,</span><br><span class="line">               exception_object, (<span class="keyword">struct</span> _Unwind_Context *)(cursor));</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (personalityResult == _URC_CONTINUE_UNWIND)</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">if</span> (personalityResult == _URC_INSTALL_CONTEXT) &#123;</span><br><span class="line">        __unw_phase2_resume(cursor, framesWalked);</span><br><span class="line">        <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> _URC_FATAL_PHASE2_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In short, phase 2:</p>
+<ol type="1">
+<li>Calls <code>__unw_step_stage2</code> to move to the previous
+frame.</li>
+<li>Reads the current stack pointer and frame metadata.</li>
+<li>Invokes the personality routine with
+<code>_UA_CLEANUP_PHASE</code>.</li>
+<li>If the personality routine returns
+<code>_URC_INSTALL_CONTEXT</code>, libunwind resumes execution at the
+generated landing pad.</li>
+</ol>
 <h3 id="others">Others</h3>
 <h4 id="__unw_step"><code>__unw_step</code></h4>
-<p>This is the step used to move from one frame to the previous one.</p>
+<p>Both phases rely on <code>__unw_step</code> or
+<code>__unw_step_stage2</code> to move one frame upward. A single step
+needs to solve two problems:</p>
+<ol type="1">
+<li>Restore callee-saved registers.</li>
+<li>Correctly set <code>pc</code>, <code>lr</code>, <code>fp</code>, and
+<code>sp</code>.</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __unw_step(<span class="type">unw_cursor_t</span> *cursor) &#123;</span><br><span class="line">  AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;</span><br><span class="line">  <span class="keyword">return</span> co-&gt;<span class="built_in">step</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> __unw_step_stage2(<span class="type">unw_cursor_t</span> *cursor) &#123;</span><br><span class="line">  AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;</span><br><span class="line">  <span class="keyword">return</span> co-&gt;<span class="built_in">step</span>(<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>On DWARF CFI, the actual logic eventually reaches
+<code>stepWithDwarfFDE</code>, and then
+<code>DwarfInstructions::stepWithDwarf</code>. That function decodes CIE
+and FDE, interprets DWARF instructions, calculates the CFA, restores
+registers from the previous frame, and sets IP to the return
+address.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">stepWithDwarfFDE</span><span class="params">(<span class="type">bool</span> stage2)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">typename</span> R::<span class="type">link_reg_t</span> pc = <span class="keyword">this</span>-&gt;<span class="built_in">getReg</span>(UNW_REG_IP);</span><br><span class="line">  <span class="keyword">return</span> DwarfInstructions&lt;A, R&gt;::<span class="built_in">stepWithDwarf</span>(</span><br><span class="line">      _addressSpace, pc, (<span class="type">pint_t</span>)_info.unwind_info, _registers,</span><br><span class="line">      _isSignalFrame, stage2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The <strong>CFA</strong>, Canonical Frame Address, is the caller’s
+stack pointer value when entering the current function. In practice,
+libunwind calculates the CFA, reads saved registers from locations
+relative to it, sets the previous IP, and then replaces the in-memory
+register snapshot. These are not hardware registers yet; they are a
+saved register state that will later be loaded into real registers when
+resuming.</p>
 <h4 id="__unw_get_proc_info"><code>__unw_get_proc_info</code></h4>
-<p>This fetches metadata for the current frame.</p>
+<p><code>__unw_get_proc_info</code> fetches <code>unw_proc_info_t</code>
+for the current frame. This structure contains the function range, LSDA
+address, personality routine pointer, compact unwind format, and the
+DWARF unwind-info address.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">unw_proc_info_t</span> &#123;</span><br><span class="line">  <span class="type">unw_word_t</span> start_ip;</span><br><span class="line">  <span class="type">unw_word_t</span> end_ip;</span><br><span class="line">  <span class="type">unw_word_t</span> lsda;</span><br><span class="line">  <span class="type">unw_word_t</span> handler;</span><br><span class="line">  <span class="type">unw_word_t</span> gp;</span><br><span class="line">  <span class="type">unw_word_t</span> flags;</span><br><span class="line">  <span class="type">uint32_t</span> format;</span><br><span class="line">  <span class="type">uint32_t</span> unwind_info_size;</span><br><span class="line">  <span class="type">unw_word_t</span> unwind_info;</span><br><span class="line">  <span class="type">unw_word_t</span> extra;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The information is obtained from CIE and FDE:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> UnwindCursor&lt;A, R&gt;::<span class="built_in">getInfoFromFdeCie</span>(</span><br><span class="line">    <span class="type">const</span> <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::FDE_Info &amp;fdeInfo,</span><br><span class="line">    <span class="type">const</span> <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::CIE_Info &amp;cieInfo,</span><br><span class="line">    <span class="keyword">typename</span> R::<span class="type">link_hardened_reg_arg_t</span> pc, <span class="type">uintptr_t</span> dso_base) &#123;</span><br><span class="line">  <span class="keyword">typename</span> CFI_Parser&lt;A&gt;::PrologInfo prolog;</span><br><span class="line">  <span class="keyword">if</span> (CFI_Parser&lt;A&gt;::<span class="keyword">template</span> <span class="built_in">parseFDEInstructions</span>&lt;R&gt;(</span><br><span class="line">          _addressSpace, fdeInfo, cieInfo, pc, R::<span class="built_in">getArch</span>(), &amp;prolog)) &#123;</span><br><span class="line">    _info.start_ip = fdeInfo.pcStart;</span><br><span class="line">    _info.end_ip = fdeInfo.pcEnd;</span><br><span class="line">    _info.lsda = fdeInfo.lsda;</span><br><span class="line">    _info.handler = cieInfo.personality;</span><br><span class="line">    _info.unwind_info = fdeInfo.fdeStart;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="catching-and-handling-exceptions">Catching and handling
 exceptions</h2>
 <h3 id="personality-routine">Personality routine</h3>
-<p>The personality routine is the core decision-maker during unwinding.
-It inspects the metadata for each frame and decides whether the current
-frame can catch the exception or needs cleanup only.</p>
+<p>During both phases, libunwind obtains the personality routine with
+<code>get_handler_function</code>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> _Unwind_Personality_Fn <span class="title">get_handler_function</span><span class="params">(<span class="type">unw_proc_info_t</span> *frameInfo)</span> </span>&#123;</span><br><span class="line">  <span class="type">uintptr_t</span> reauthenticatedIntegerHandler = frameInfo-&gt;handler;</span><br><span class="line">  _Unwind_Personality_Fn handler;</span><br><span class="line">  <span class="built_in">memmove</span>(&amp;handler, (<span class="type">void</span> *)&amp;reauthenticatedIntegerHandler,</span><br><span class="line">          <span class="built_in">sizeof</span>(_Unwind_Personality_Fn));</span><br><span class="line">  <span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The personality routine is a callback. This is the key reason
+libunwind can remain language-independent: C++, Objective-C, SJLJ,
+Windows SEH, and other systems can provide different personalities.</p>
+<p>Common examples:</p>
+<ul>
+<li><code>__gxx_personality_v0</code>: C++</li>
+<li><code>__gxx_personality_sj0</code>: SJLJ</li>
+<li><code>__gcc_personality_v0</code>: C with <code>-fexceptions</code>
+and cleanup attributes</li>
+<li><code>__CxxFrameHandler3</code>: Windows MSVC</li>
+<li><code>__gxx_personality_seh0</code>: MinGW-w64 SEH exceptions</li>
+<li><code>__objc_personality_v0</code>: Objective-C on macOS</li>
+</ul>
+<p>For libc++abi, the personality routine is
+<code>__gxx_personality_v0</code>. It receives the exception context,
+the exception object, and the current frame’s exception table
+information.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">_Unwind_Reason_Code __gxx_personality_v0(</span><br><span class="line">    <span class="type">int</span> version, _Unwind_Action actions, <span class="type">uint64_t</span> exceptionClass,</span><br><span class="line">    _Unwind_Exception* unwind_exception, _Unwind_Context* context) &#123;</span><br><span class="line">  <span class="type">bool</span> native_exception =</span><br><span class="line">      (exceptionClass &amp; get_vendor_and_language) ==</span><br><span class="line">      (kOurExceptionClass &amp; get_vendor_and_language);</span><br><span class="line"></span><br><span class="line">  scan_results results;</span><br><span class="line">  <span class="keyword">if</span> (actions == (_UA_CLEANUP_PHASE | _UA_HANDLER_FRAME) &amp;&amp; native_exception) &#123;</span><br><span class="line">    __cxa_exception* exception_header =</span><br><span class="line">        (__cxa_exception*)(unwind_exception + <span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">    results.ttypeIndex = exception_header-&gt;handlerSwitchValue;</span><br><span class="line">    results.actionRecord = exception_header-&gt;actionRecord;</span><br><span class="line">    results.languageSpecificData = exception_header-&gt;languageSpecificData;</span><br><span class="line">    results.landingPad =</span><br><span class="line">        <span class="built_in">reinterpret_cast</span>&lt;<span class="type">uintptr_t</span>&gt;(exception_header-&gt;catchTemp);</span><br><span class="line">    results.adjustedPtr = exception_header-&gt;adjustedPtr;</span><br><span class="line">    <span class="built_in">set_registers</span>(unwind_exception, context, results);</span><br><span class="line">    <span class="keyword">return</span> _URC_INSTALL_CONTEXT;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">scan_eh_tab</span>(results, actions, native_exception, unwind_exception, context);</span><br><span class="line">  <span class="keyword">if</span> (results.reason == _URC_CONTINUE_UNWIND ||</span><br><span class="line">      results.reason == _URC_FATAL_PHASE1_ERROR)</span><br><span class="line">    <span class="keyword">return</span> results.reason;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (actions &amp; _UA_SEARCH_PHASE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (native_exception) &#123;</span><br><span class="line">      __cxa_exception* exc = (__cxa_exception*)(unwind_exception + <span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">      exc-&gt;handlerSwitchValue = <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(results.ttypeIndex);</span><br><span class="line">      exc-&gt;actionRecord = results.actionRecord;</span><br><span class="line">      exc-&gt;languageSpecificData = results.languageSpecificData;</span><br><span class="line">      exc-&gt;catchTemp = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">void</span>*&gt;(results.landingPad);</span><br><span class="line">      exc-&gt;adjustedPtr = results.adjustedPtr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _URC_HANDLER_FOUND;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">set_registers</span>(unwind_exception, context, results);</span><br><span class="line">  <span class="keyword">return</span> _URC_INSTALL_CONTEXT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>During the search phase, it scans LSDA to find exception-handling
+information for the current frame. If no match is found, it returns
+<code>_URC_CONTINUE_UNWIND</code>; if a handler is found, it caches the
+result inside <code>__cxa_exception</code> for phase 2.</p>
+<p>During the cleanup phase, there are two paths. If phase 1 already
+cached a handler result, the personality routine can reuse it directly.
+Otherwise, it scans LSDA again and updates the context from the new
+result.</p>
+<p>When a landing pad is selected, <code>set_registers</code> sets the
+exception object into argument register 0, the type index into argument
+register 1, and the instruction pointer to the landing-pad address.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">set_registers</span><span class="params">(_Unwind_Exception* unwind_exception,</span></span></span><br><span class="line"><span class="params"><span class="function">                          _Unwind_Context* context,</span></span></span><br><span class="line"><span class="params"><span class="function">                          <span class="type">const</span> scan_results&amp; results)</span> </span>&#123;</span><br><span class="line">  _Unwind_SetGR(context, __builtin_eh_return_data_regno(<span class="number">0</span>), unwind_exception);</span><br><span class="line">  _Unwind_SetGR(context, __builtin_eh_return_data_regno(<span class="number">1</span>), results.ttypeIndex);</span><br><span class="line">  _Unwind_SetIP(context, results.landingPad);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After <code>__gxx_personality_v0</code> returns
+<code>_URC_INSTALL_CONTEXT</code>, <code>unwind_phase2</code> calls
+<code>__unw_phase2_resume</code>. On ARM64 this eventually loads the
+prepared register snapshot and jumps to the landing pad.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">DEFINE_LIBUNWIND_FUNCTION(__libunwind_Registers_arm64_jumpto)</span><br><span class="line">  ldp    x2, x3,  [x0, #0x010]</span><br><span class="line">  ldp    x4, x5,  [x0, #0x020]</span><br><span class="line">  ldp    x28,x29, [x0, #0x0E0]</span><br><span class="line">  ldr    x16,     [x0, #0x0F8]  // load sp into scratch</span><br><span class="line">  ldr    lr,      [x0, #0x100]  // restore pc into lr</span><br><span class="line">  ldp    x0, x1,  [x0, #0x000]  // restore x0,x1</span><br><span class="line">  mov    sp,x16</span><br><span class="line">  ret    x30</span><br></pre></td></tr></table></figure>
+
+<p>At the jump moment, a typical stack looks like this:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">frame <span class="comment">#0: libunwind.1.dylib`__libunwind_Registers_arm64_jumpto</span></span><br><span class="line">frame <span class="comment">#1: libunwind.1.dylib`libunwind::Registers_arm64::returnto</span></span><br><span class="line">frame <span class="comment">#2: libunwind.1.dylib`libunwind::UnwindCursor&lt;...&gt;::jumpto</span></span><br><span class="line">frame <span class="comment">#3: libunwind.1.dylib`__unw_resume</span></span><br><span class="line">frame <span class="comment">#4: libunwind.1.dylib`__unw_resume_with_frames_walked</span></span><br><span class="line">frame <span class="comment">#5: libunwind.1.dylib`unwind_phase2</span></span><br><span class="line">frame <span class="comment">#6: libunwind.1.dylib`_Unwind_RaiseException</span></span><br><span class="line">frame <span class="comment">#7: libc++abi.dylib`__cxa_throw</span></span><br></pre></td></tr></table></figure>
+
 <h3 id="landing-pad">Landing pad</h3>
-<p>The landing pad is the destination code generated by the compiler for
-exception handling. When the runtime decides that a frame should catch
-or clean up, control is transferred there.</p>
+<p>Every time <code>unwind_phase2</code> steps through a frame, it may
+jump into a landing pad. There are three common landing-pad
+patterns:</p>
+<ul>
+<li><strong>cleanup clause</strong>: calls destructors for out-of-scope
+variables, then calls <code>_Unwind_Resume</code> to return to
+<code>unwind_phase2</code>.</li>
+<li><strong>catch clause</strong>: calls destructors, enters
+<code>__cxa_begin_catch</code>, runs the catch handler, and then calls
+<code>__cxa_end_catch</code>.</li>
+<li><strong>rethrow</strong>: calls <code>__cxa_end_catch</code>,
+destroys objects inside the catch clause, then calls
+<code>_Unwind_Resume</code> to continue unwinding.</li>
+</ul>
+<p>The rethrow case is easy to misunderstand. It means the previous
+exception has already been caught and is being thrown again while still
+inside the current frame. Before the new unwind proceeds, the runtime
+must clean up the current catch block correctly.</p>
 <h3 id="cfi-cie-and-fde">CFI, CIE, and FDE</h3>
-<p>These are the unwind metadata structures stored in the binary. They
-describe how to restore registers and move across frames.</p>
+<p>CFI, Call Frame Information, is the DWARF data and instruction set
+that describes how to restore a stack frame to its caller. It records
+how the return address and caller registers are saved, allowing the
+unwinder to walk the stack.</p>
+<p>CFI has two important structures: CIE and FDE.</p>
+<img src="/2026/03/07/从源码看 C++ 异常/09.png" width="100%"/>
+
+<ul>
+<li>CIE stores shared entry information, including personality routine
+and augmentation data. A CIE can be shared by multiple functions.</li>
+<li>FDE stores unwind information for one function. The most important
+part is its CFI instruction sequence, which tells the unwinder how to
+recover register values at each address inside that function.</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">CIE_Info</span> &#123;</span><br><span class="line">    <span class="type">pint_t</span> cieStart;</span><br><span class="line">    <span class="type">pint_t</span> cieLength;</span><br><span class="line">    <span class="type">pint_t</span> cieInstructions;</span><br><span class="line">    <span class="type">uint8_t</span> pointerEncoding;</span><br><span class="line">    <span class="type">uint8_t</span> lsdaEncoding;</span><br><span class="line">    <span class="type">uint8_t</span> personalityEncoding;</span><br><span class="line">    <span class="type">personality_t</span> personality;</span><br><span class="line">    <span class="type">uint32_t</span> codeAlignFactor;</span><br><span class="line">    <span class="type">int</span> dataAlignFactor;</span><br><span class="line">    <span class="type">bool</span> isSignalFrame;</span><br><span class="line">    <span class="type">bool</span> fdesHaveAugmentationData;</span><br><span class="line">    <span class="type">uint8_t</span> returnAddressRegister;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">FDE_Info</span> &#123;</span><br><span class="line">    <span class="type">pint_t</span> fdeStart;</span><br><span class="line">    <span class="type">pint_t</span> fdeLength;</span><br><span class="line">    <span class="type">pint_t</span> fdeInstructions;</span><br><span class="line">    <span class="type">pint_t</span> pcStart;</span><br><span class="line">    <span class="type">pint_t</span> pcEnd;</span><br><span class="line">    <span class="type">pint_t</span> lsda;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Some common CFI directives look like this:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.cfi_startproc</span><br><span class="line">.cfi_def_cfa w29, <span class="number">16</span></span><br><span class="line">.cfi_offset w30, <span class="number">-8</span></span><br><span class="line">.cfi_offset w29, <span class="number">-16</span></span><br><span class="line">.cfi_endproc</span><br><span class="line">.cfi_personality <span class="number">155</span>, ___gxx_personality_v0</span><br><span class="line">.cfi_lsda <span class="number">16</span>, Lexception0</span><br></pre></td></tr></table></figure>
+
 <h3 id="lsda">LSDA</h3>
-<p>LSDA means <code>Language Specific Data Area</code>. It stores
-language-specific exception metadata.</p>
+<p>Earlier we said that the personality routine scans
+<code>eh_frame</code> to obtain LSDA. LSDA, Language Specific Data Area,
+is the per-function language-specific exception table. It records:</p>
+<ul>
+<li>Which instruction ranges may throw.</li>
+<li>Which landing pad should handle a range.</li>
+<li>Which typeinfo pointer should be used for matching.</li>
+</ul>
+<p>The instruction range decides whether the current throw belongs to
+this frame. The typeinfo match decides whether the frame’s
+<code>catch</code> can handle this exception. If both match, control can
+transfer to the landing pad.</p>
 <h4 id="lsda-structure">LSDA structure</h4>
+<img src="/2026/03/07/从源码看 C++ 异常/03.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/05.png" width="100%"/>
+
+<p>LSDA mainly contains four parts:</p>
+<ol type="1">
+<li><strong>Header</strong></li>
+<li><strong>Call Site Table</strong></li>
+<li><strong>Action Table</strong></li>
+<li><strong>Type Table</strong></li>
+</ol>
+<p>The Action Table has three kinds of <code>actionType</code>:</p>
+<img src="/2026/03/07/从源码看 C++ 异常/10.png" width="100%"/>
+
+<p>The Type Table is split into two regions. Entries above the dividing
+line are exception types, stored in reverse order. Entries below it are
+exception-specification indexes, which were removed in C++17.</p>
+<img src="/2026/03/07/从源码看 C++ 异常/01.png" width="100%"/>
+
+<p>Real LSDA in assembly looks like this:</p>
+<img src="/2026/03/07/从源码看 C++ 异常/06.png" width="100%"/>
+
 <h4 id="lsda-parsing">LSDA parsing</h4>
-<p>The runtime uses LSDA to match a thrown type against the handlers
-declared in the source code.</p>
+<p>The core parser is <code>scan_eh_tab</code>. Its job is to parse
+LSDA, iterate the Call Site Table, obtain the Action Table index, read
+<code>ttypeIndex</code> from the Action Table, and then use
+<code>ttypeIndex</code> to find a typeinfo entry in the Type Table.
+Finally it checks whether the thrown type matches the catch type.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">scan_eh_tab</span><span class="params">(scan_results &amp;results, _Unwind_Action actions,</span></span></span><br><span class="line"><span class="params"><span class="function">                        <span class="type">bool</span> native_exception,</span></span></span><br><span class="line"><span class="params"><span class="function">                        _Unwind_Exception *unwind_exception,</span></span></span><br><span class="line"><span class="params"><span class="function">                        _Unwind_Context *context)</span> </span>&#123;</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span> *lsda =</span><br><span class="line">      (<span class="type">const</span> <span class="type">uint8_t</span> *)_Unwind_GetLanguageSpecificData(context);</span><br><span class="line">  <span class="keyword">if</span> (lsda == <span class="number">0</span>) &#123;</span><br><span class="line">    results.reason = _URC_CONTINUE_UNWIND;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">uintptr_t</span> ip = _Unwind_GetIP(context) - <span class="number">1</span>;</span><br><span class="line">  <span class="type">uintptr_t</span> funcStart = _Unwind_GetRegionStart(context);</span><br><span class="line">  <span class="type">uintptr_t</span> ipOffset = ip - funcStart;</span><br><span class="line"></span><br><span class="line">  <span class="type">uint8_t</span> lpStartEncoding = *lsda++;</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span>* lpStart = lpStartEncoding == DW_EH_PE_omit</span><br><span class="line">      ? (<span class="type">const</span> <span class="type">uint8_t</span>*)funcStart</span><br><span class="line">      : (<span class="type">const</span> <span class="type">uint8_t</span>*)<span class="built_in">readEncodedPointer</span>(&amp;lsda, lpStartEncoding, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  <span class="type">uint8_t</span> ttypeEncoding = *lsda++;</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span>* classInfo = <span class="literal">NULL</span>;</span><br><span class="line">  <span class="keyword">if</span> (ttypeEncoding != DW_EH_PE_omit) &#123;</span><br><span class="line">    <span class="type">uintptr_t</span> classInfoOffset = <span class="built_in">readULEB128</span>(&amp;lsda);</span><br><span class="line">    classInfo = lsda + classInfoOffset;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">uint8_t</span> callSiteEncoding = *lsda++;</span><br><span class="line">  <span class="type">uint32_t</span> callSiteTableLength = <span class="built_in">readULEB128</span>(&amp;lsda);</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span>* callSiteTableStart = lsda;</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span>* callSiteTableEnd =</span><br><span class="line">      callSiteTableStart + callSiteTableLength;</span><br><span class="line">  <span class="type">const</span> <span class="type">uint8_t</span>* actionTableStart = callSiteTableEnd;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">const</span> <span class="type">uint8_t</span>* callSitePtr = callSiteTableStart;</span><br><span class="line">       callSitePtr &lt; callSiteTableEnd;) &#123;</span><br><span class="line">    <span class="type">uintptr_t</span> start = <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">    <span class="type">uintptr_t</span> length = <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">    <span class="type">landing_pad_t</span> landingPad =</span><br><span class="line">        <span class="built_in">readEncodedPointer</span>(&amp;callSitePtr, callSiteEncoding);</span><br><span class="line">    <span class="type">uintptr_t</span> actionEntry = <span class="built_in">readULEB128</span>(&amp;callSitePtr);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((start &lt;= ipOffset) &amp;&amp; (ipOffset &lt; (start + length))) &#123;</span><br><span class="line">      <span class="keyword">if</span> (landingPad == <span class="number">0</span>) &#123;</span><br><span class="line">        results.reason = _URC_CONTINUE_UNWIND;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      results.landingPad = (<span class="type">uintptr_t</span>)lpStart + landingPad;</span><br><span class="line">      <span class="keyword">if</span> (actionEntry == <span class="number">0</span>) &#123;</span><br><span class="line">        results.reason = (actions &amp; _UA_SEARCH_PHASE)</span><br><span class="line">            ? _URC_CONTINUE_UNWIND</span><br><span class="line">            : _URC_HANDLER_FOUND;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="type">const</span> <span class="type">uint8_t</span>* action = actionTableStart + (actionEntry - <span class="number">1</span>);</span><br><span class="line">      <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="type">int64_t</span> ttypeIndex = <span class="built_in">readSLEB128</span>(&amp;action);</span><br><span class="line">        <span class="comment">// Use ttypeIndex to fetch catch type and call can_catch.</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The parsing flow is:</p>
+<ol type="1">
+<li>Get the LSDA pointer with
+<code>_Unwind_GetLanguageSpecificData(context)</code>.</li>
+<li>Parse the LSDA header: <code>lpStartEncoding</code>,
+<code>ttypeEncoding</code>, <code>callSiteEncoding</code>, and
+<code>classInfoOffset</code>.</li>
+<li>Parse the Call Site Table. Each entry records <code>start</code>,
+<code>length</code>, <code>landingPad</code>, and
+<code>actionEntry</code>.</li>
+<li>Parse the linked list of action entries. Each entry contains
+<code>ttypeIndex</code> and the offset to the next action.</li>
+<li>Use the Type Table to get <code>typeinfo</code>, then call
+<code>catchType-&gt;can_catch(excpType, adjustedPtr)</code>.</li>
+</ol>
 <h3 id="rtti">RTTI</h3>
-<p>RTTI is needed so the runtime can compare the thrown type with the
-catch clauses.</p>
+<p>RTTI is the last critical piece. Exception matching depends on
+runtime type comparison.</p>
 <h4 id="defects-of-type_info">Defects of <code>type_info</code></h4>
+<p><code>std::type_info</code> is the standard RTTI interface. It can
+represent the dynamic type of an object and expose basic information
+such as the type name, but by itself it does not describe type
+relationships. It cannot answer questions such as:</p>
+<ol type="1">
+<li>Whether two classes form an inheritance relationship.</li>
+<li>Whether that inheritance is public or virtual.</li>
+<li>How to adjust a base-class subobject pointer so it points to the
+derived object.</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">type_info</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *__type_name;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>So each ABI extends RTTI beyond the standard surface.</p>
 <h4 id="class-related-type_info">Class-related
 <code>type_info</code></h4>
+<p>Possible <code>std::type_info</code> subtypes include:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">abi::__fundamental_type_info</span><br><span class="line">abi::__array_type_info</span><br><span class="line">abi::__function_type_info</span><br><span class="line">abi::__enum_type_info</span><br><span class="line">abi::__class_type_info</span><br><span class="line">abi::__si_class_type_info</span><br><span class="line">abi::__vmi_class_type_info</span><br><span class="line">abi::__pbase_type_info</span><br><span class="line">abi::__pointer_type_info</span><br><span class="line">abi::__pointer_to_member_type_info</span><br></pre></td></tr></table></figure>
+
+<p>For class types, libc++abi mainly uses:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">__shim_type_info</span> : <span class="keyword">public</span> std::type_info &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">can_catch</span><span class="params">(<span class="type">const</span> __shim_type_info *thrown_type,</span></span></span><br><span class="line"><span class="params"><span class="function">                         <span class="type">void</span> *&amp;adjustedPtr)</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__class_type_info</span> : __shim_type_info &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__si_class_type_info</span> : __class_type_info &#123;</span><br><span class="line">    <span class="type">const</span> __class_type_info *__base_type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__vmi_class_type_info</span> : __class_type_info &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> __flags;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> __base_count;</span><br><span class="line">    __base_class_type_info __base_info[<span class="number">1</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Their meanings are:</p>
+<ul>
+<li><code>__class_type_info</code>: a class with no base class.</li>
+<li><code>__si_class_type_info</code>: a class with exactly one direct,
+public, non-virtual base class.</li>
+<li><code>__vmi_class_type_info</code>: all other class cases, including
+multiple inheritance and virtual inheritance.</li>
+</ul>
+<p>These three class type-info structures share <code>can_catch</code>,
+so the interesting logic starts in
+<code>__class_type_info::can_catch</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">__class_type_info::can_catch</span><span class="params">(<span class="type">const</span> __shim_type_info* thrown_type,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">void</span>*&amp; adjustedPtr)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, thrown_type, <span class="literal">false</span>)) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> __class_type_info* thrown_class_type =</span><br><span class="line">        <span class="built_in">dynamic_cast</span>&lt;<span class="type">const</span> __class_type_info*&gt;(thrown_type);</span><br><span class="line">    <span class="keyword">if</span> (thrown_class_type == <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    __dynamic_cast_info info =</span><br><span class="line">        &#123;thrown_class_type, <span class="number">0</span>, <span class="keyword">this</span>, <span class="number">-1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,</span><br><span class="line">         <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">true</span>, <span class="literal">nullptr</span>&#125;;</span><br><span class="line">    info.number_of_dst_type = <span class="number">1</span>;</span><br><span class="line">    thrown_class_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(&amp;info,</span><br><span class="line">                                                   adjustedPtr,</span><br><span class="line">                                                   public_path);</span><br><span class="line">    <span class="keyword">if</span> (info.path_dst_ptr_to_static_ptr == public_path) &#123;</span><br><span class="line">        adjustedPtr = <span class="built_in">const_cast</span>&lt;<span class="type">void</span>*&gt;(info.dst_ptr_leading_to_static_ptr);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h4 id="bullet1-is_equal"><code>bullet1: is_equal</code></h4>
+<p>The first check is direct type equality:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">bool</span> <span class="title">is_equal</span><span class="params">(<span class="type">const</span> std::type_info* x,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">const</span> std::type_info* y,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">bool</span> use_strcmp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x == y || <span class="built_in">strcmp</span>(x-&gt;<span class="built_in">name</span>(), y-&gt;<span class="built_in">name</span>()) == <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>std::type_info::operator==</code> is backed by ABI-specific
+implementations:</p>
+<ol type="1">
+<li><code>__unique_impl::__eq</code>: under the Itanium ABI, a given
+RTTI object is usually unique, so pointer equality is enough.</li>
+<li><code>__non_unique_impl::__eq</code>: when the linker fails to merge
+RTTI copies, either pointer equality or string equality can make two
+types equal.</li>
+<li><code>__non_unique_arm_rtti_bit_impl::__eq</code>: Apple ARM64 uses
+a high bit in the type-name pointer to mark whether the RTTI is
+non-unique.</li>
+</ol>
+<p>The Apple ARM64 design avoids weak-symbol problems. Hidden typeinfo
+can still be deduplicated within a linked image, while separate images
+can keep separate RTTI copies without being unexpectedly redirected.</p>
 <h4
 id="bullet2-__dynamic_cast_info"><code>bullet2: __dynamic_cast_info</code></h4>
-<p>These sections explain how RTTI participates in exception matching
-and in <code>dynamic_cast</code>.</p>
+<p>If the types are not directly equal, the runtime must check
+inheritance. It uses <code>dynamic_cast</code>-style metadata and
+<code>__dynamic_cast_info</code> to verify whether
+<code>thrown_type</code> publicly and unambiguously derives from the
+catch type.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">__dynamic_cast_info info =</span><br><span class="line">    &#123;thrown_class_type, <span class="number">0</span>, <span class="keyword">this</span>, <span class="number">-1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,</span><br><span class="line">     <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="literal">true</span>, <span class="literal">nullptr</span>&#125;;</span><br><span class="line">info.number_of_dst_type = <span class="number">1</span>;</span><br><span class="line">thrown_class_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(&amp;info,</span><br><span class="line">                                               adjustedPtr,</span><br><span class="line">                                               public_path);</span><br></pre></td></tr></table></figure>
+
+<p>The traversal differs for ordinary classes, single inheritance,
+multiple inheritance, and virtual inheritance:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">__class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__si_class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        __base_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(info,</span><br><span class="line">                                                 adjustedPtr,</span><br><span class="line">                                                 path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__vmi_class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span> p = __base_info; p &lt; __base_info + __base_count; ++p) &#123;</span><br><span class="line">            p-&gt;<span class="built_in">has_unambiguous_public_base</span>(info, adjustedPtr, path_below);</span><br><span class="line">            <span class="keyword">if</span> (info-&gt;search_done) <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is closely tied to the C++ object model:</p>
+<img src="/2026/03/07/从源码看 C++ 异常/11.png" width="100%"/>
+
+<p>For a better intuition, the inheritance-layout diagrams from <a
+href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">Deep Dive into
+C++ Polymorphism 2: Inheritance</a> are useful:</p>
+<img src="/2026/03/07/从源码看 C++ 异常/08.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/04.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/12.png" width="100%"/>
+
 <h2 id="summary">Summary</h2>
-<p>The C++ exception mechanism is a combination of compiler-generated
-metadata and runtime stack-unwinding logic. <code>throw</code> does not
-simply jump to <code>catch</code>; it first goes through object
-allocation, unwind phase 1 to search for handlers, phase 2 to run
-cleanup, and finally lands in the compiler-generated handling code.</p>
+<p>This article followed the C++ exception path from the source-code
+level: throwing, two-phase unwinding, frame stepping, personality
+routines, LSDA parsing, landing-pad selection, and RTTI-based type
+matching. The key takeaway is that <code>throw</code> is not a direct
+jump to <code>catch</code>. It is a cooperation between
+compiler-generated metadata and runtime stack-unwinding logic.</p>
 <h2 id="qa">QA</h2>
 <h3 id="a-tricky-c-exception-debugging-case">A tricky C++ exception
 debugging case</h3>
+<p>From real-world debugging posts, <code>type_info</code> mismatch is
+one of the most common causes of failed catches. The root cause is often
+duplicated RTTI.</p>
+<p><strong>Case 1: <a
+href="https://juejin.cn/post/7331924057925304370">Shocking! The
+try-catch statement stopped working?</a></strong></p>
+<p>The rough story is this: an Objective-C component used exceptions but
+disabled RTTI. To keep exception type information available, the
+compiler generated another copy of <code>type_info</code>. Because the
+component was a static library, that <code>type_info</code> ended up in
+the main binary. As a result, the main binary and libc++ both had
+same-named <code>type_info</code>, and <code>can_catch</code> failed to
+match.</p>
+<p>In iOS projects, CocoaPods usually builds components as separate
+targets. If any target disables RTTI, it may affect exception handling
+in the host app. If RTTI is disabled, exception handling should usually
+be disabled too, namely <code>-fno-rtti</code> together with
+<code>-fno-exceptions</code>.</p>
+<p><strong>Case 2: <a
+href="https://www.cnblogs.com/Iflyinsky/p/19412352">A satisfying
+debugging story about C++ standard-library exceptions</a></strong></p>
+<p>On Android, <code>ANDROID_STL</code> defaults to <a
+href="https://developer.android.com/ndk/guides/cpp-support?hl=zh-cn#selecting_a_c_runtime"><code>c++_static</code></a>
+in CMake. The C++ standard library is linked statically into the
+business <code>.so</code>, so related <code>type_info</code> symbols are
+local, and <code>can_catch</code> may fail. Switching to
+<code>c++_shared</code>, or exporting <code>typeinfo</code> and
+<code>vtable</code> symbols so that they depend on
+<code>libc++.so</code> or <code>libstdc++.so</code>, can solve the
+issue.</p>
 <h3 id="is-two-phase-unwinding-necessary">Is two-phase unwinding
 necessary?</h3>
+<p>Not strictly. The <a
+href="https://refspecs.linuxfoundation.org/abi-eh-1.22.html">Itanium C++
+ABI Exception Handling</a> document explains that the two-phase model is
+not required for C++ semantics, but it provides benefits. In particular,
+phase 1 allows an exception system to dismiss or handle an exception
+before the stack has actually been unwound. C++ does not support
+resumptive exception handling, but other languages do, and the two-phase
+design lets C++ coexist with those languages on the same stack.</p>
 <h3 id="is-there-a-lower-cost-way-to-understand-exceptions">Is there a
 lower-cost way to understand exceptions?</h3>
+<p>I strongly recommend the <a
+href="https://nicolasbrailo.github.io/blog/projects_texts/13exceptionsunderthehood.html">C++
+Exceptions under the hood</a> series. It builds a minimal
+<code>MyCxxABI</code> on top of libunwind, which is a great way to debug
+and understand the mechanism. The original code is old and may not
+compile directly now, so I also kept a local reference package here:</p>
+<p>[test.zip](/2026/03/07/从源码看 C++ 异常/test.zip)</p>
 <h3 id="foreign-exception-vs-native-exception">Foreign Exception vs
 Native Exception</h3>
+<p>Can code compiled by <code>clang++</code> catch an exception thrown
+by code compiled by <code>g++</code>?</p>
+<p>[gcc_clang_abi_test.zip](/2026/03/07/从源码看 C++
+异常/gcc_clang_abi_test.zip)</p>
+<p>I tested two mixed-compiler C++ files. The result:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">=== GCC <span class="keyword">and</span> Clang mixed exception-handling demo ===</span><br><span class="line">Build info:</span><br><span class="line">- main.cpp: compiled with Clang <span class="number">17.0</span></span><br><span class="line"></span><br><span class="line">[main] calling a GCC-compiled function...</span><br><span class="line">[gcc] calling the function in bar.cpp...</span><br><span class="line">[clang] inside bar_function...</span><br><span class="line">[clang] calling a GCC-compiled function that may <span class="keyword">throw</span>...</span><br><span class="line">[gcc] inside gcc_throw_func, about to <span class="keyword">throw</span>...</span><br><span class="line">[clang] caught runtime_error: <span class="keyword">this</span> exception was thrown by GCC-compiled code!</span><br><span class="line">[gcc] caught exception: clang: rethrown logic error</span><br><span class="line">[main] finally caught: clang: rethrown logic error</span><br><span class="line"></span><br><span class="line">=== program ended normally ===</span><br></pre></td></tr></table></figure>
+
 <h3 id="why-are-c-destructors-forbidden-from-throwing">Why are C++
 destructors forbidden from throwing?</h3>
+<p>A throwing destructor can create a double-exception situation:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">first exception is thrown</span><br><span class="line">-&gt; stack unwinding starts</span><br><span class="line">-&gt; obj destructor runs</span><br><span class="line">-&gt; obj destructor throws a second exception</span><br><span class="line">-&gt; now two active exceptions exist, and the runtime cannot proceed safely</span><br></pre></td></tr></table></figure>
+
+<p>So destructors should not let exceptions escape. If cleanup may fail,
+catch the exception inside the destructor and either swallow it
+deliberately or terminate explicitly.</p>
 <h3 id="does-objective-c-exception-handling-work-the-same-way">Does
 Objective-C exception handling work the same way?</h3>
+<p>Objective-C exception handling is very close to the C++ mechanism.
+Many Objective-C exception APIs wrap the same C++ exception
+machinery.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> objc_exception_throw(<span class="type">id</span> obj)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">struct</span> objc_exception *exc = (<span class="keyword">struct</span> objc_exception *)</span><br><span class="line">        __cxa_allocate_exception(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> objc_exception));</span><br><span class="line"></span><br><span class="line">    obj = (*exception_preprocessor)(obj);</span><br><span class="line">    [obj <span class="keyword">retain</span>];</span><br><span class="line"></span><br><span class="line">    exc-&gt;obj = obj;</span><br><span class="line">    exc-&gt;tinfo.vtable = objc_ehtype_vtable+<span class="number">2</span>;</span><br><span class="line">    exc-&gt;tinfo.name = object_getClassName(obj);</span><br><span class="line">    exc-&gt;tinfo.cls_unremapped = obj ? obj-&gt;getIsa() : Nil;</span><br><span class="line">    </span><br><span class="line">    __cxa_throw(exc, &amp;exc-&gt;tinfo, &amp;_objc_exception_destructor);</span><br><span class="line">    __builtin_trap();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">_Unwind_Reason_Code __objc_personality_v0(</span><br><span class="line">    <span class="type">int</span> version, _Unwind_Action actions, uint64_t exceptionClass,</span><br><span class="line">    <span class="keyword">struct</span> _Unwind_Exception *exceptionObject,</span><br><span class="line">    <span class="keyword">struct</span> _Unwind_Context *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">bool</span> unwinding =</span><br><span class="line">        ((actions &amp; _UA_CLEANUP_PHASE) || (actions &amp; _UA_FORCE_UNWIND));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (unwinding) &#123;</span><br><span class="line">        call_alt_handlers(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> __gxx_personality_v0(version, actions, exceptionClass,</span><br><span class="line">                                exceptionObject, context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h3 id="what-about-swift-exceptions">What about Swift exceptions?</h3>
+<p>Swift’s error model is based on <code>try</code>, <code>catch</code>,
+<code>throws</code>, and <code>throw</code>. A <code>throws</code>
+function declares that it may return an error, and <code>throw</code>
+produces that error at runtime.</p>
+<p>The important difference is that Swift errors are values, not
+stack-unwinding control-flow interruptions. Conceptually it is closer to
+<code>Result&lt;T, E&gt;</code> or Objective-C’s <code>NSError</code>
+pattern than to C++ exceptions. In pure Swift projects, relying on
+Objective-C exceptions should be avoided; in mixed projects, it should
+be handled with extra care.</p>
 <h3 id="is-java-exception-handling-similar">Is Java exception handling
 similar?</h3>
+<p>At the language level, both Java and C++ have <code>try-catch</code>,
+exception propagation, and stack unwinding. But their implementation
+models are different. C++ heavily depends on ABI-level metadata, LSDA,
+RTTI, and compiler-generated landing pads. Java exceptions are managed
+by the VM, where the runtime owns the stack metadata and exception
+tables.</p>
+<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%"/>
+
 <h3 id="how-should-we-treat-c-exceptions">How should we treat C++
 exceptions?</h3>
-<p>These Q&amp;A sections discuss practical debugging, design tradeoffs,
-and cross-language comparisons.</p>
+<p>Different ecosystems have made different tradeoffs.</p>
+<p>Google’s C++ style guide says not to use exceptions, but it also says
+the reason is largely historical: too much existing Google C++ code was
+not prepared for exception safety.</p>
+<p>Qt also avoids exceptions. Its documentation mentions historical and
+practical reasons, including binary-size cost. Turning on exceptions can
+increase library size significantly.</p>
+<p>Modern languages have also been rethinking error handling. Go and
+Rust both return to the idea of “errors as values”; Rust’s
+<code>Result&lt;T, E&gt;</code> makes error flow explicit and
+composable.</p>
+<p>My personal view is that C++ exceptions are neither magic nor evil.
+They are a powerful ABI feature with real cost and real failure modes.
+In codebases that choose to use them, exception safety and RTTI
+consistency must be treated as part of the engineering contract.</p>
 <h2 id="references">References</h2>
-<p>The original article lists detailed references for ABI, libunwind,
-LLVM, Apple internals, and related exception-handling material.</p>
+<ol type="1">
+<li><a href="https://itanium-cxx-abi.github.io/cxx-abi/abi.html">Itanium
+C++ ABI</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/2454917">C++
+exception implementation principle and source analysis</a></li>
+<li><a
+href="https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html#intro">Itanium
+C++ ABI: Exception Handling</a></li>
+<li><a href="https://llvm.org/docs/ExceptionHandling.html">LLVM
+Exception Handling</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/32706175219">C++ exception
+handling mechanism</a></li>
+<li><a href="https://www.cnblogs.com/catch/p/3619379.html">C++ exception
+handling</a></li>
+<li><a
+href="https://maskray.me/blog/2020-12-12-c++-exception-handling-abi">C++
+exception handling ABI</a></li>
+<li><a href="https://libcxxabi.llvm.org/spec.html">libc++abi
+Specification</a></li>
+<li><a
+href="https://www.cnblogs.com/sewain/p/14360853.html">Implementing
+exception catching and coroutine behavior with setjmp and longjmp in
+C</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/580330672">dynamic_cast
+implementation analysis and performance optimization</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/692886292">Understanding the
+C++ ABI</a></li>
+<li><a href="https://juejin.cn/post/7331924057925304370">Shocking! The
+try-catch statement stopped working?</a></li>
+<li><a
+href="https://nicolasbrailo.github.io/blog/projects_texts/13exceptionsunderthehood.html">C++
+Exceptions under the hood</a></li>
+<li><a href="https://maskray.me/blog/2020-11-08-stack-unwinding">Stack
+unwinding</a></li>
+<li><a
+href="https://www.usenix.org/legacy/event/woot11/tech/slides/oakley.pdf">Exploiting
+the Hard-Working DWARF</a></li>
+<li><a
+href="https://blog.csdn.net/weixin_45030965/article/details/138618084">Linux
+.eh_frame section and libunwind</a></li>
+<li><a
+href="https://sourceware.org/binutils/docs/as/CFI-directives.html">CFI
+directives</a></li>
+<li><a href="https://reviews.llvm.org/D137315#3910662">[libc++abi]
+Improve performance of __dynamic_cast</a></li>
+<li><a href="https://juejin.cn/post/7444781208297455655">C++ object
+model practice notes</a></li>
+<li><a href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">Deep
+Dive into C++ Polymorphism 2: Inheritance</a></li>
+<li><a
+href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">what-is-the-vtt-for-a-class</a></li>
+</ol>
 
         
       </div>
