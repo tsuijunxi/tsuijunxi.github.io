@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content=",,,," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Background While writing some C++ code recently, I ran into a few repetitive patterns. While thinking about how templates could help, I remembered CRTP, a rather unusual form of inheritance. What Is C">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CRTP, a Slightly Unorthodox Form of Inheritance">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Background While writing some C++ code recently, I ran into a few repetitive patterns. While thinking about how templates could help, I remembered CRTP, a rather unusual form of inheritance. What Is C">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/06.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/05.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/07.png">
+<meta property="article:published_time" content="2022-06-23T17:08:00.000Z">
+<meta property="article:modified_time" content="2026-08-19T04:33:53.892Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="CRTP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/"/>
+
+
+
+
+
+  <title>CRTP, a Slightly Unorthodox Form of Inheritance | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">CRTP, a Slightly Unorthodox Form of Inheritance</h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <h2 id="background">Background</h2>
+<p>While writing some C++ code recently, I ran into a few repetitive
+patterns. While thinking about how templates could help, I remembered
+CRTP, a rather unusual form of inheritance.</p>
+<h2 id="what-is-crtp">What Is CRTP?</h2>
+<p>CRTP stands for <strong>Curiously Recurring Template
+Pattern</strong>. It is a common idiom in C++ template programming. It
+was proposed by James Coplien in 1995 and has two defining traits:</p>
+<ol type="1">
+<li>a class inherits from a template base class;</li>
+<li>the derived class is passed as the template parameter of the base
+class.</li>
+</ol>
+<p>The general form looks like this:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> &#123;...&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base&lt;Derived&gt; &#123;...&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>As far as I know, there is probably no second language that writes
+this exact pattern in quite this way…</p>
+<p>So why does this work? And why would anyone design it like this?</p>
+<p>Here is a small example:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Base</span> &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">interface</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">static_cast</span> &lt;T*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">implementation</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Derived</span> : Base&lt;Derived&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">implementation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot; Derived class &quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>At this point, many people start wondering about time travel, because
+the code looks quite strange. <code>Derived</code> seems to inherit from
+itself, and it is used before it is fully declared.</p>
+<p>In practice, a base-class template can use the fact that a member
+function may be declared early, but is only instantiated when the
+derived class actually uses it. That allows the base template to call
+methods on the derived type.</p>
+<p>In the example above, <code>Base&lt;Derived&gt;::interface()</code>
+is declared before <code>Derived</code>, but it will not be instantiated
+until it is used. By then, <code>Derived::implementation()</code> is
+already visible to the compiler.</p>
+<p>Without virtual functions, a base class always calls its own
+implementation. If a derived class calls an inherited function, and that
+function calls another member function, the derived override is never
+selected.</p>
+<p>With CRTP, however, the base class can route the call to the derived
+class at compile time, effectively simulating virtual dispatch without
+the runtime cost of a vtable lookup. This is usually called
+<strong>static polymorphism</strong>.</p>
+<p>There are two things to keep in mind:</p>
+<ol type="1">
+<li>A class template is a template; a class is a class. Here,
+<code>Base</code> is just the template.</li>
+<li>The base class is <code>Base&lt;Derived&gt;</code>, not
+<code>Base</code>.</li>
+</ol>
+<p>Here are two questions worth thinking about:</p>
+<ol type="1">
+<li>Does <code>Base&lt;Derived&gt;</code> actually implement
+<code>implementation()</code>? Would the following compile?</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CRTPBase&lt;CRTPDerived&gt; base;</span><br><span class="line">base.<span class="built_in">interface</span>();</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>What exactly does <code>Derived</code> inherit from
+<code>Base&lt;Derived&gt;</code>, or what promise is it following?</li>
+</ol>
+<h2 id="how-fast-is-crtp">How Fast Is CRTP?</h2>
+<blockquote>
+<p>Environment: x86-64 clang 14.0.0 -std=c++14</p>
+</blockquote>
+<h3 id="virtual-function-cost">Virtual Function Cost</h3>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/01.png"
+alt="Image" /></p>
+<h3 id="crtp-cost-inlining-disabled">CRTP Cost (Inlining Disabled)</h3>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/02.png"
+alt="Image" /></p>
+<h3 id="crtp-cost-inlining-enabled">CRTP Cost (Inlining Enabled)</h3>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/03.png"
+alt="Image" /></p>
+<h3 id="comparison">Comparison</h3>
+<table>
+<thead>
+<tr>
+<th>type</th>
+<th>virtual function</th>
+<th>CRTP (no inline)</th>
+<th>CRTP (inline)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>time</td>
+<td>28ms</td>
+<td>18ms</td>
+<td>1ms</td>
+</tr>
+<tr>
+<td>object size</td>
+<td>16B</td>
+<td>8B</td>
+<td>8B</td>
+</tr>
+</tbody>
+</table>
+<p>In this demo, CRTP is faster when inlining is enabled, and the object
+is smaller because it does not need a vptr. For performance-sensitive
+code, it is worth considering. Of course, this is only a simple
+benchmark; a real comparison would require proper benchmarking.</p>
+<h2 id="what-happens-when-crtp-meets-design-patterns">What Happens When
+CRTP Meets Design Patterns?</h2>
+<p>What can CRTP be used for? How should it be applied? Let us start
+with a few classic design patterns. When CRTP meets them, things get
+interesting.</p>
+<h3 id="singleton">Singleton</h3>
+<p>How is a singleton usually written in C++?</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Singleton</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">        <span class="built_in">Singleton</span>() &#123; &#125;;</span><br><span class="line">        ~<span class="built_in">Singleton</span>() &#123; &#125;;</span><br><span class="line">        <span class="built_in">Singleton</span>(<span class="type">const</span> Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">        Singleton&amp; <span class="keyword">operator</span>=(<span class="type">const</span> Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">static</span> Singleton&amp; <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="type">static</span> Singleton instance;</span><br><span class="line">                <span class="keyword">return</span> instance;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>C++11 guarantees thread-safe initialization of local statics. In
+C++11, <strong>Effective C++</strong> recommends the elegant Meyers’
+Singleton, which creates the instance only on first call to
+<code>getInstance()</code>. Before C++11, locking was still needed.</p>
+<p>What if another class also needs a singleton? The brute-force
+solution is to copy the code. But with CRTP:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Singleton</span> &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> ...Args&gt;</span></span><br><span class="line"><span class="function">    <span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(<span class="type">const</span> Args&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> std::unique_ptr&lt;Derived&gt; m_instance;</span><br><span class="line">        <span class="type">static</span> std::once_flag m_flag;</span><br><span class="line">        std::<span class="built_in">call_once</span>(m_flag, [](<span class="keyword">auto</span> ...args) &#123;</span><br><span class="line">            m_instance.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">Derived</span>(args...));</span><br><span class="line">        &#125;, args...);</span><br><span class="line">        <span class="keyword">return</span>  m_instance;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>() = <span class="keyword">default</span>;</span><br><span class="line">    ~<span class="built_in">Singleton</span>() = <span class="keyword">default</span>;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>(Singleton&amp;) = <span class="keyword">delete</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The derived class becomes the template parameter, and the singleton
+is constructed directly from the derived constructor. This uses:</p>
+<ol type="1">
+<li>variadic templates, so any number of arguments can be passed;</li>
+<li><code>std::call_once</code> and <code>std::once_flag</code>, which
+are very similar to <code>dispatch_once</code> and
+<code>dispatch_once_t</code>.</li>
+</ol>
+<p>Any class that wants a singleton only needs to inherit from
+<code>Singleton</code> and pass itself as the template argument:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">TestService</span> : <span class="keyword">public</span> Singleton&lt;TestService&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">doSomething</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;TestService doSomething&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">TestService</span>() = <span class="keyword">default</span>;</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">Singleton</span>&lt;TestService&gt;; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    TestService::<span class="built_in">GetInstance</span>()-&gt;<span class="built_in">doSomething</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ol type="1">
+<li>The subclass must make its constructor private.</li>
+<li>The subclass must declare <code>Singleton&lt;TestService&gt;</code>
+as a friend.</li>
+</ol>
+</blockquote>
+<h3 id="simple-factory">Simple Factory</h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived, <span class="type">bool</span> ThreadSafe = <span class="literal">true</span>&gt;</span><br><span class="line"><span class="keyword">class</span> Factory &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="keyword">using</span> WeakMap = WeakWrapper&lt;std::map&lt;std::string, std::unique_ptr&lt;Derived&gt;&gt;&gt;;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">static</span> StaticWrapper&lt;WeakMap&gt;&amp; <span class="title">GetMap</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> StaticWrapper&lt;WeakMap&gt; container;</span><br><span class="line">        <span class="keyword">return</span>  container;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">static</span> rwlock&amp; <span class="title">GetLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="type">static</span> rwlock *lock = <span class="keyword">new</span> <span class="built_in">rwlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  *lock;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ...Args&gt;</span><br><span class="line">    <span class="function"><span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(<span class="type">const</span> std::string&amp; key, Args&amp;&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span>&amp; container = <span class="built_in">GetMap</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; lock = <span class="built_in">GetLock</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock_shared</span>();</span><br><span class="line">        <span class="keyword">auto</span> safe_container = container.<span class="built_in">SafeGet</span>();</span><br><span class="line">        <span class="keyword">auto</span> map_ptr = safe_container.<span class="built_in">Lock</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; map = map_ptr-&gt;<span class="built_in">GetItem</span>();</span><br><span class="line">        <span class="keyword">auto</span> iter = map.<span class="built_in">find</span>(key);</span><br><span class="line">        <span class="keyword">if</span>  (iter != map.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">            <span class="keyword">return</span>  map[key];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock</span>();</span><br><span class="line">        map[key] = std::<span class="built_in">make_unique</span>&lt;Derived&gt;(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  map[key];</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>A class can simply inherit from <code>Factory</code> and pass itself
+as the template parameter. Since the factory stores objects as key-value
+pairs, the caller also has to pass a <code>key</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SomeService</span> : <span class="keyword">public</span>  Factory &lt;SomeService&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">doSomething</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">SomeService::<span class="built_in">GetInstance</span>(key, param)-&gt;<span class="built_in">doSomething</span>();</span><br></pre></td></tr></table></figure>
+
+<p>That call site is awkward because you need to keep passing a key that
+you do not really want. So let us improve it:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ...Args&gt;</span><br><span class="line">    <span class="function"><span class="type">static</span> std::unique_ptr&lt;Derived&gt;&amp; <span class="title">GetInstance</span><span class="params">(Args&amp;&amp; ...args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">auto</span>&amp; container = <span class="built_in">GetMap</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; lock = <span class="built_in">GetLock</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">auto</span> key = <span class="built_in">DecayFirstParam</span>(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock_shared</span>();</span><br><span class="line">        <span class="keyword">auto</span> safe_container = container.<span class="built_in">SafeGet</span>();</span><br><span class="line">        <span class="keyword">auto</span> map_ptr = safe_container.<span class="built_in">Lock</span>();</span><br><span class="line">        <span class="keyword">auto</span>&amp; map = map_ptr-&gt;<span class="built_in">GetItem</span>();</span><br><span class="line">        <span class="keyword">auto</span> iter = map.<span class="built_in">find</span>(key);</span><br><span class="line">        <span class="keyword">if</span>  (iter != map.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">            <span class="keyword">return</span>  map[key];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock_shared</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">lock</span>();</span><br><span class="line">        map[key] = std::<span class="built_in">make_unique</span>&lt;Derived&gt;(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">        <span class="keyword">if</span>  (ThreadSafe) lock.<span class="built_in">unlock</span>();</span><br><span class="line">        <span class="keyword">return</span>  map[key];</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>The core idea is to extract the first argument and derive the final
+key from its type. Here <code>DecayFirstParam</code> extracts the first
+argument, which is a bit like type extraction. Because the first
+parameter type is not fixed, <code>std::enable_if</code> is used to
+overload the method for the concrete types used in the project:
+<code>ModuleEnv</code>, <code>Env</code>, and
+<code>std::string</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::shared_ptr&lt;ModuleEnv&gt;&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  t-&gt;<span class="built_in">GetModuleId</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::shared_ptr&lt;Env&gt;&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  t-&gt;<span class="built_in">GetIdentify</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> ...Args&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;<span class="keyword">typename</span> std::decay&lt;T&gt;::type, std::string&gt;::value, std::string&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">DecayFirstParam</span><span class="params">(T&amp;&amp; t, Args&amp;&amp; ...arg)</span> </span>&#123;</span><br><span class="line">    std::string copy = t;</span><br><span class="line">    <span class="keyword">return</span>  copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This also uses universal references and perfect forwarding, but that
+is not the focus here.</p>
+<h3 id="strategy-pattern">Strategy Pattern</h3>
+<p>Here is a flow-control example. Suppose there are two modes: normal
+mode and limited mode.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">IFlowControlStrategy</span> &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">IFlowControlStrategy</span>() = <span class="keyword">default</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NormalFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LimitedFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>With CRTP, it becomes:</p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/06.jpg"
+alt="Image" /></p>
+<ol type="1">
+<li>Define a CRTP base class <code>BaseFlowControlStrategy</code>.</li>
+<li>Define two derived strategies:
+<code>NormalFlowControlStrategy</code> and
+<code>LimitedFlowControlStrategy</code>.</li>
+<li>Expose <code>GetUploadMaxSize</code> and
+<code>GetUploadInterval</code> as template methods.</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">Derived</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>  &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="keyword">static_cast</span> &lt;Derived*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">InternalGetUploadMaxSize</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="keyword">static_cast</span> &lt;Derived*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">InternalGetUploadInterval</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NormalFlowControlStrategy</span> : <span class="keyword">public</span>  BaseFlowControlStrategy&lt;NormalFlowControlStrategy&gt; &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>&lt;NormalFlowControlStrategy&gt;;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadMaxSize</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadInterval</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LimitedFlowControlStrategy</span> : <span class="keyword">public</span>  BaseFlowControlStrategy&lt;LimitedFlowControlStrategy&gt; &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">BaseFlowControlStrategy</span>&lt;LimitedFlowControlStrategy&gt;;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadMaxSize</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">long</span>  <span class="title">InternalGetUploadInterval</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">(BaseFlowControlStrategy&lt;T&gt;&amp;&amp; strategy)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  strategy.<span class="built_in">GetUploadMaxSize</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">(BaseFlowControlStrategy&lt;T&gt;&amp;&amp; strategy)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span>  strategy.<span class="built_in">GetUploadInterval</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Note the <code>friend class</code> here.</p>
+</blockquote>
+<p>Calling code:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">long</span>  <span class="title">Context::GetUploadInterval</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m_strategy_mutex)</span></span>;</span><br><span class="line">    <span class="keyword">if</span>  (m_strategy_type == FlowControlStrategyTypeNormal) &#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="built_in">GetUploadInterval</span>(<span class="built_in">NormalFlowControlStrategy</span>());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span>  <span class="built_in">GetUploadInterval</span>(<span class="built_in">LimitedFlowControlStrategy</span>());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The public API is a template method, which means it does not really
+fit the traditional OOP style.</p>
+<blockquote>
+<p>Another name for this pattern is <strong>Policy-Based Class
+Design</strong>.</p>
+</blockquote>
+<h3 id="clone-pattern">Clone Pattern</h3>
+<p>When you want to get a copy of an object through a base pointer, the
+usual approach is to add a virtual <code>Clone</code> method. With CRTP,
+the function does not need to be repeated in every derived class, as
+long as the derived class is copy-constructible.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Base class has a pure virtual function for cloning</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Shape</span>() &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Shape* <span class="title">Clone</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// This CRTP class implements clone() for Derived</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Shape_CRTP</span> : <span class="keyword">public</span> Shape &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">Shape* <span class="title">Clone</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Derived</span>(<span class="built_in">static_cast</span>&lt;Derived <span class="type">const</span>&amp;&gt;(*<span class="keyword">this</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Square</span> : <span class="keyword">public</span> Shape_CRTP&lt;Square&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Square</span>(Square&amp; s);</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Circle</span> : <span class="keyword">public</span> Shape_CRTP&lt;Circle&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Circle</span>(Circle&amp; c);</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="visitor-pattern">Visitor Pattern</h3>
+<p>The visitor pattern itself is already fairly complex, and mixing it
+with CRTP makes things more interesting. I will use an example from the
+modern C++ design-pattern series.</p>
+<p>Suppose there is an animal hierarchy: <code>dog</code> and
+<code>bird</code> derive from <code>animal</code>, and the base class
+has a pure virtual <code>move()</code> method. As requirements evolve,
+we add <code>swim()</code> to <code>dog</code> and <code>fly()</code> to
+<code>bird</code>. Since dogs cannot fly and birds cannot swim, those
+methods do not belong in the base <code>animal</code> class.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Now the question is: how do we call <code>swim()</code> and
+<code>fly()</code> through an <code>animal</code> object?</p>
+<h4 id="downcasting">Downcasting</h4>
+<p>The most common approach is downcasting.</p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/05.jpg"
+alt="Image" /></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">test</span><span class="params">(animal* anim)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;dog*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;dog*&gt;(anim)-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;bird*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;bird*&gt;(anim)-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Many people have seen code like this, and many have written it,
+myself included. But the style is really not great:</p>
+<ol type="1">
+<li>the <code>if-else</code> chain grows as requirements change;</li>
+<li><code>dynamic_cast</code> is inefficient and should be avoided when
+possible.</li>
+</ol>
+<h4 id="visitor-to-the-rescue">Visitor to the Rescue</h4>
+<p>This is where the visitor pattern comes in: it adds new behaviors
+without modifying the visited object, and it removes the need for
+<code>dynamic_cast</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span></span>=<span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">accept</span><span class="params">(visitor*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span></span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span></span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl</span> : <span class="keyword">public</span> visitor&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(dog* d)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        d-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(bird* b)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        b-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    visitor* v = <span class="keyword">new</span> visitor_impl;</span><br><span class="line">    </span><br><span class="line">    animal* a = <span class="keyword">new</span> dog;</span><br><span class="line">    a-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    animal* b = <span class="keyword">new</span> bird;</span><br><span class="line">    b-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is the classic visitor pattern. For the <code>animal</code>
+hierarchy, the way you visit an <code>animal</code> can be extended
+freely through a visitor, and the <code>animal</code> hierarchy itself
+is not aware of it. In other words, you can add new behaviors without
+modifying the visited object. That is a great property.</p>
+<p>This is also the classic <strong>double dispatch</strong> visitor
+pattern. Double dispatch means two dispatches, i.e. two virtual function
+calls:</p>
+<ol type="1">
+<li>the first virtual call is <code>animal::accept</code>;</li>
+<li>the second virtual call is <code>visitor::visit</code>.</li>
+</ol>
+<h4 id="crtp-steps-in">CRTP steps in</h4>
+<p>Do you notice one annoying method? Yes, <code>accept</code>. Both
+<code>dog</code> and <code>bird</code> implement it, and the code is
+identical. Following the clone-pattern trick from earlier, we can
+eliminate this duplication by moving <code>accept</code> into a
+<code>visitable</code> class derived from <code>animal</code>. From now
+on, the derived classes no longer inherit <code>animal</code> directly;
+they inherit <code>visitable</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// crtp</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        v-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> visitable&lt;dog&gt;&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> visitable&lt;bird&gt;&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The derived classes immediately look much cleaner, right?</p>
+<h4 id="and-now-the-magic">And now the magic</h4>
+<p>If we add another subclass <code>fish</code>, then the
+<code>visitor</code> base class needs a new virtual function, and all
+previous derived classes need to change. That makes this code unstable
+and violates the open-closed principle. The reason is that
+<code>animal</code> depends on <code>visitor</code>, and
+<code>visitor</code> depends on concrete <code>animal</code> types.
+<strong>SOLID constantly reminds us: depend on abstractions, not on
+concretes.</strong></p>
+<p>So we can make <code>visitor</code> a template class, so
+<code>animal</code> depends on a generic type instead of a concrete one.
+Because templates are contagious, and we do not want to template-ify
+<code>animal</code> as well, we introduce a <code>visitor_token</code>
+base class. It is just a helper base class with nothing but a default
+virtual destructor, but that is enough.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(T*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_token</span>&#123;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">visitor_token</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">animal</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">move</span><span class="params">()</span></span>=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">animal</span>() = <span class="keyword">default</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal &#123;</span><br><span class="line">     <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span>(<span class="keyword">auto</span> p = <span class="keyword">dynamic_cast</span>&lt;visitor&lt;T&gt;*&gt;(v); p)&#123;</span><br><span class="line">               p-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">dog</span> : <span class="keyword">public</span> visitable&lt;dog&gt;&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">4</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">swim</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;swim&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bird</span> : <span class="keyword">public</span> visitable&lt;bird&gt;&#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fly</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;fly&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">fish</span> : <span class="keyword">public</span> visitable&lt;fish&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">move</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dive</span><span class="params">()</span></span>&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">&quot;dive&quot;</span>&lt;&lt;std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span>... T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">MultipleVisitor</span> : <span class="keyword">public</span> visitor_token, <span class="keyword">public</span> visitor&lt;T&gt;...  &#123;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> MyVisitor = MultipleVisitor&lt;dog, bird&gt;;</span><br><span class="line"><span class="keyword">using</span> MyVisitor1 = MultipleVisitor&lt;fish&gt;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl</span> : <span class="keyword">public</span> MyVisitor&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(dog* d)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        d-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(bird* b)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        b-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor_impl1</span> : <span class="keyword">public</span> MyVisitor1&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">visit</span><span class="params">(fish* f)</span> <span class="keyword">override</span></span>&#123;</span><br><span class="line">        f-&gt;<span class="built_in">dive</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    visitor_token* v = <span class="keyword">new</span> visitor_impl;</span><br><span class="line">    </span><br><span class="line">    animal* a = <span class="keyword">new</span> dog;</span><br><span class="line">    a-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    animal* b = <span class="keyword">new</span> bird;</span><br><span class="line">    b-&gt;<span class="built_in">accept</span>(v);</span><br><span class="line"></span><br><span class="line">    visitor_token* v1 = <span class="keyword">new</span> visitor_impl1;</span><br><span class="line">    </span><br><span class="line">    animal* c = <span class="keyword">new</span> fish;</span><br><span class="line">    c-&gt;<span class="built_in">accept</span>(v1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>At this point, both <code>visitor</code> and <code>animal</code>
+depend only on abstractions, which achieves decoupling.</p>
+<p>The biggest trick here comes from <code>MultipleVisitor</code>, which
+uses <a
+href="https://en.cppreference.com/w/cpp/language/using_declaration"><code>using-declaration</code></a>
+to automatically generate a visitor inheritance hierarchy, instead of
+defining each derived visitor class by hand. This simplifies the code
+and makes it easy to define new visitor hierarchies: just add a new
+type.</p>
+<p>This part may feel a little abstract, so let us expand the equivalent
+code for
+<code>using MyVisitor = MultipleVisitor&lt;dog, bird&gt;</code>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. Specialize the two interface classes</span></span><br><span class="line"><span class="keyword">template</span>&lt;&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&lt;dog&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitor</span>&lt;bird&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Expand inheritance</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">MyVisitor</span> : <span class="keyword">public</span> visitor_token, <span class="keyword">public</span> visitor&lt;dog&gt;, <span class="keyword">public</span> visitor&lt;bird&gt; &#123;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(dog*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">visit</span><span class="params">(bird*)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>One line of code replaces about 15 lines. That is the charm of
+templates.</p>
+<h4 id="questions">Questions</h4>
+<p>Do you see any problems so far?</p>
+<ol type="1">
+<li>The final solution does not fully eliminate
+<code>dynamic_cast</code>. You can still see it inside
+<code>accept</code>:</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">visitable</span> : <span class="keyword">public</span> animal &#123;</span><br><span class="line">     <span class="function"><span class="type">void</span> <span class="title">accept</span><span class="params">(visitor_token* v)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span>(<span class="keyword">auto</span> p = <span class="keyword">dynamic_cast</span>&lt;visitor&lt;T&gt;*&gt;(v); p)&#123;</span><br><span class="line">               p-&gt;<span class="built_in">visit</span>(<span class="built_in">static_cast</span>&lt;T*&gt;(<span class="keyword">this</span>));</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>The code still uses a vtable and vptr. You can look at the vtable
+for <code>visitor_impl</code>:</li>
+</ol>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/07.png"
+alt="Image" /></p>
+<p>So the elegant-looking final code is still somewhat away from the
+original goal. But you usually have to make trade-offs, and these
+trade-offs are worth it.</p>
+<h2 id="real-world-crtp-usage">Real-World CRTP Usage</h2>
+<h3
+id="stdenable_shared_from_this"><code>std::enable_shared_from_this</code></h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">_Tp</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">enable_shared_from_this</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">mutable</span> weak_ptr&lt;_Tp&gt; __weak_this_;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="built_in">enable_shared_from_this</span>() _NOEXCEPT &#123;&#125;</span><br><span class="line">    <span class="built_in">enable_shared_from_this</span>(enable_shared_from_this <span class="type">const</span>&amp;) _NOEXCEPT &#123;&#125;</span><br><span class="line">    enable_shared_from_this&amp; <span class="keyword">operator</span>=(enable_shared_from_this <span class="type">const</span>&amp;) _NOEXCEPT</span><br><span class="line">        &#123;<span class="keyword">return</span>  *<span class="keyword">this</span>;&#125;</span><br><span class="line">    ~<span class="built_in">enable_shared_from_this</span>() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function">shared_ptr&lt;_Tp&gt; <span class="title">shared_from_this</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;<span class="keyword">return</span>  <span class="built_in">shared_ptr</span>&lt;_Tp&gt;(__weak_this_);&#125;</span><br><span class="line">    <span class="function">shared_ptr&lt;_Tp <span class="type">const</span>&gt; <span class="title">shared_from_this</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">        </span>&#123;<span class="keyword">return</span>  <span class="built_in">shared_ptr</span>&lt;<span class="type">const</span> _Tp&gt;(__weak_this_);&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">_Up</span>&gt; <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">shared_ptr</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>When using smart pointers, if you want a smart pointer to
+<code>this</code>, the correct way is to inherit from
+<code>std::enable_shared_from_this</code> and pass yourself as the
+template parameter.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// correct</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Good</span>: std::enable_shared_from_this&lt;Good&gt; &#123; </span><br><span class="line">    <span class="function">std::shared_ptr&lt;Good&gt; <span class="title">getptr</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">shared_from_this</span>(); </span><br><span class="line">    &#125; </span><br><span class="line">&#125;; </span><br><span class="line"></span><br><span class="line"><span class="comment">// wrong</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Bad</span> &#123; </span><br><span class="line">    <span class="function">std::shared_ptr&lt;Bad&gt; <span class="title">getptr</span><span class="params">()</span> </span>&#123; </span><br><span class="line">        <span class="keyword">return</span> std::<span class="built_in">shared_ptr</span>&lt;Bad&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="clickhouse">ClickHouse</h3>
+<p>https://github.com/ClickHouse/ClickHouse/blob/master/src/AggregateFunctions/IAggregateFunction.h</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunction</span> : <span class="keyword">public</span> std::enable_shared_from_this&lt;IAggregateFunction&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">IAggregateFunction</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">argument_types</span>(argument_types_), <span class="built_in">parameters</span>(parameters_) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get main function name.</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> String <span class="title">getName</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get the result type.</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> DataTypePtr <span class="title">getReturnType</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/// Get the data type of internal state. By default it is AggregateFunction(name(params), argument_types...).</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> DataTypePtr <span class="title">getStateType</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Implement method to obtain an address of &#x27;add&#x27; function.</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunctionHelper</span> : <span class="keyword">public</span> IAggregateFunction</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">addFree</span><span class="params">(<span class="type">const</span> IAggregateFunction * that, AggregateDataPtr place, <span class="type">const</span> IColumn ** columns, <span class="type">size_t</span> row_num, Arena * arena)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;<span class="type">const</span> Derived &amp;&gt;(*that).<span class="built_in">add</span>(place, columns, row_num, arena);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">IAggregateFunctionHelper</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">IAggregateFunction</span>(argument_types_, parameters_) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">AddFunc <span class="title">getAddressOfAddFunction</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123; <span class="keyword">return</span> &amp;addFree; &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Implements several methods for manipulation with data. T - type of structure with data for aggregation.</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Derived&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IAggregateFunctionDataHelper</span> : <span class="keyword">public</span> IAggregateFunctionHelper&lt;Derived&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="keyword">using</span> Data = T;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">static</span> Data &amp; <span class="title">data</span><span class="params">(AggregateDataPtr __restrict place)</span> </span>&#123; <span class="keyword">return</span> *<span class="built_in">reinterpret_cast</span>&lt;Data *&gt;(place); &#125;</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">const</span> Data &amp; <span class="title">data</span><span class="params">(ConstAggregateDataPtr __restrict place)</span> </span>&#123; <span class="keyword">return</span> *<span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> Data *&gt;(place); &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Derived class can `override` this to flag that DateTime64 is not supported.</span></span><br><span class="line">    <span class="type">static</span> <span class="keyword">constexpr</span> <span class="type">bool</span> DateTime64Supported = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">IAggregateFunctionDataHelper</span>(<span class="type">const</span> DataTypes &amp; argument_types_, <span class="type">const</span> Array &amp; parameters_)</span><br><span class="line">        : <span class="built_in">IAggregateFunctionHelper</span>&lt;Derived&gt;(argument_types_, parameters_) &#123;&#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Simply count number of calls.</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AggregateFunctionCount</span> <span class="keyword">final</span> : <span class="keyword">public</span> IAggregateFunctionDataHelper&lt;AggregateFunctionCountData, AggregateFunctionCount&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">AggregateFunctionCount</span><span class="params">(<span class="type">const</span> DataTypes &amp; argument_types_)</span> : IAggregateFunctionDataHelper(argument_types_, &#123;</span>&#125;) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">String <span class="title">getName</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>&#123; <span class="keyword">return</span> <span class="string">&quot;count&quot;</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">DataTypePtr <span class="title">getReturnType</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> std::<span class="built_in">make_shared</span>&lt;DataTypeUInt64&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="summary">Summary</h2>
+<p>This article covered:</p>
+<ol type="1">
+<li>the CRTP concept;</li>
+<li>performance comparison with virtual functions;</li>
+<li>several design-pattern use cases;</li>
+<li>practical examples.</li>
+</ol>
+<p>The strengths of CRTP are:</p>
+<ul>
+<li>high performance;</li>
+<li>code reuse;</li>
+<li>easier extension than single inheritance in some cases.</li>
+</ul>
+<p>The weaknesses of CRTP are:</p>
+<ul>
+<li>it is hard to understand;</li>
+<li>it does not fit traditional OOP very naturally;</li>
+<li>template use can spread quickly through the codebase.</li>
+</ul>
+<h2 id="postscript-the-ghost-sibling-of-crtp">Postscript: The Ghost
+Sibling of CRTP</h2>
+<p>Does the 1995 vintage of CRTP taste good?</p>
+<p>Then let us look at the ghost sibling of CRTP:
+<strong>Mixin</strong>. A mixin is a C++ template technique that
+combines multiple independent feature classes through inheritance to
+achieve module reuse. The basic idea is to treat template parameters as
+base classes:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MixinClass</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">MixinClass</span>() :  <span class="built_in">Mixins</span>()... &#123;&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Take <code>Point</code> as an example. Traditionally, if we want to
+extend it, we would derive <code>LabelPoint</code>,
+<code>ColorPoint</code>, <code>LabelColorPoint</code>, and so on. You
+can see that <code>LabelColorPoint</code> uses <strong>diamond
+inheritance</strong>, which requires <strong>virtual
+inheritance</strong>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">Point</span> &#123;</span><br><span class="line">    <span class="type">double</span> x;</span><br><span class="line">    <span class="type">double</span> y;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">LabelPoint</span> : Point &#123;</span><br><span class="line">    std::string label;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">ColorPoint</span> : Point &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> red;</span><br><span class="line">    <span class="type">unsigned</span> green;</span><br><span class="line">    <span class="type">unsigned</span> blue;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">LabelColorPoint</span> : <span class="keyword">virtual</span> LabelPoint, <span class="keyword">virtual</span> ColorPoint &#123;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The mixin approach instead defines <code>Label</code> and
+<code>Color</code> as separate classes, and then combines them into
+<code>LabelColorPoint</code> by composition-like inheritance, like
+building blocks:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Point</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line">    <span class="type">double</span> x, y;</span><br><span class="line">    <span class="built_in">Point</span>() : <span class="built_in">Mixins</span>()..., <span class="built_in">x</span>(<span class="number">0.0</span>), <span class="built_in">y</span>(<span class="number">0.0</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">Point</span>(<span class="type">double</span> x, <span class="type">double</span> y) : <span class="built_in">Mixins</span>()..., <span class="built_in">x</span>(x), <span class="built_in">y</span>(y) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Label</span> &#123;</span><br><span class="line">    <span class="built_in">Label</span>() : <span class="built_in">label</span>(<span class="string">&quot;&quot;</span>) &#123;&#125;</span><br><span class="line">    std::string label;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Color</span> &#123;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">char</span> red;</span><br><span class="line">  <span class="type">unsigned</span> green;</span><br><span class="line">  <span class="type">unsigned</span> blue;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> LabelColorPoint = Point&lt;Label, Color&gt;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    LabelColorPoint lcp;</span><br><span class="line">    std::cout &lt;&lt; lcp.x &lt;&lt; lcp.label &lt;&lt; lcp.red &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Mixin is called the ghost sibling of CRTP mainly because the
+inheritance direction looks opposite on the surface:</p>
+<ol type="1">
+<li>CRTP passes the derived class as a template parameter, and the base
+template calls derived-class functionality;</li>
+<li>Mixin passes the base classes as template parameters, and the
+derived template calls base-class functionality through combined
+inheritance.</li>
+</ol>
+<h2 id="references">References</h2>
+<ol type="1">
+<li><a
+href="https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern">Curiously
+recurring template pattern - Wikipedia</a></li>
+<li><a
+href="https://eli.thegreenplace.net/2013/12/05/the-cost-of-dynamic-virtual-calls-vs-static-crtp-dispatch-in-c/">The
+cost of dynamic virtual calls vs. static CRTP dispatch in C++</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/50816420">C++ universal
+references and perfect forwarding</a></li>
+<li><a
+href="http://ot-note.logdown.com/posts/805904/wtl-atl-cwindoesimp-composition-notebook">WTL
+/ ATL CWindowImpl Composition Notebook</a></li>
+<li><a
+href="https://siddswork.com/cpp-design-pattern-policy-based-class">C++
+Design Pattern: Policy-Based Class</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/460825741">Modern C++
+design-pattern references</a></li>
+</ol>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#what-is-crtp"><span class="nav-number">2.</span> <span class="nav-text">What Is CRTP?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-fast-is-crtp"><span class="nav-number">3.</span> <span class="nav-text">How Fast Is CRTP?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#virtual-function-cost"><span class="nav-number">3.1.</span> <span class="nav-text">Virtual Function Cost</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crtp-cost-inlining-disabled"><span class="nav-number">3.2.</span> <span class="nav-text">CRTP Cost (Inlining Disabled)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crtp-cost-inlining-enabled"><span class="nav-number">3.3.</span> <span class="nav-text">CRTP Cost (Inlining Enabled)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#comparison"><span class="nav-number">3.4.</span> <span class="nav-text">Comparison</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#what-happens-when-crtp-meets-design-patterns"><span class="nav-number">4.</span> <span class="nav-text">What Happens When
+CRTP Meets Design Patterns?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#singleton"><span class="nav-number">4.1.</span> <span class="nav-text">Singleton</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#simple-factory"><span class="nav-number">4.2.</span> <span class="nav-text">Simple Factory</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#strategy-pattern"><span class="nav-number">4.3.</span> <span class="nav-text">Strategy Pattern</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clone-pattern"><span class="nav-number">4.4.</span> <span class="nav-text">Clone Pattern</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#visitor-pattern"><span class="nav-number">4.5.</span> <span class="nav-text">Visitor Pattern</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#downcasting"><span class="nav-number">4.5.1.</span> <span class="nav-text">Downcasting</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#visitor-to-the-rescue"><span class="nav-number">4.5.2.</span> <span class="nav-text">Visitor to the Rescue</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#crtp-steps-in"><span class="nav-number">4.5.3.</span> <span class="nav-text">CRTP steps in</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#and-now-the-magic"><span class="nav-number">4.5.4.</span> <span class="nav-text">And now the magic</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#questions"><span class="nav-number">4.5.5.</span> <span class="nav-text">Questions</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#real-world-crtp-usage"><span class="nav-number">5.</span> <span class="nav-text">Real-World CRTP Usage</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#stdenable_shared_from_this"><span class="nav-number">5.1.</span> <span class="nav-text">std::enable_shared_from_this</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clickhouse"><span class="nav-number">5.2.</span> <span class="nav-text">ClickHouse</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">6.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#postscript-the-ghost-sibling-of-crtp"><span class="nav-number">7.</span> <span class="nav-text">Postscript: The Ghost
+Sibling of CRTP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">8.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="This article also appears on WeChat: &lt;&gt;  Background I recently hit a large number of deadlocks in production around read-write locks. After checking the stacks, I found that every problematic t">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Priority Inversion in Practice">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="This article also appears on WeChat: &lt;&gt;  Background I recently hit a large number of deadlocks in production around read-write locks. After checking the stacks, I found that every problematic t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png">
+<meta property="article:published_time" content="2022-11-23T09:53:47.000Z">
+<meta property="article:modified_time" content="2026-08-19T09:18:12.483Z">
+<meta property="article:author" content="lingyun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/"/>
+
+
+
+
+
+  <title>Priority Inversion in Practice | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">Priority Inversion in Practice</h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <blockquote>
+<p>This article also appears on WeChat: <a
+href="https://mp.weixin.qq.com/s/kp6cdDrdQ4rhfdXH-_Q8IA">&lt;<Priority Inversion in Practice>&gt;</a></p>
+</blockquote>
+<h2 id="background">Background</h2>
+<p>I recently hit a large number of deadlocks in production around
+read-write locks. After checking the stacks, I found that every
+problematic thread belonged to an <code>NSOperationQueue</code> and all
+of them were marked <code>QOS:BACKGROUND</code>. It looked like the
+worker threads that held the lock were still running, but they were not
+getting enough CPU time, which eventually caused the main thread to time
+out after 8 seconds.</p>
+<p>Why would a thread that already owns a lock still need so long to
+finish? There are two possibilities:</p>
+<ol type="1">
+<li>It really is that slow.</li>
+<li>Priority inversion is happening.</li>
+</ol>
+<p>The following diagram shows the main thread waiting for the lock, and
+a background thread holding it.</p>
+<img src="/2022/11/23/优先级反转那些事儿/00.png" />
+
+<img src="/2022/11/23/优先级反转那些事儿/07.png" />
+
+<h3 id="how-to-deal-with-it">How to deal with it</h3>
+<p>In this case, the low-priority thread that holds the read-write lock
+keeps getting scheduled too late, gets preempted, or simply runs out of
+time slices. Meanwhile, the high-priority thread keeps waiting for the
+lock. This is classic priority inversion.</p>
+<p>Since iOS 8, Apple introduced <code>QualityOfService</code>, which is
+similar to thread priority. Different QoS classes get different CPU,
+network, and disk resource allocations, so we can use QoS to influence
+queue priority.</p>
+<h4 id="option-1-remove-qos-settings-from-nsoperationqueue">Option 1:
+Remove QoS settings from <code>NSOperationQueue</code></h4>
+<p>Apple gives a clear warning in the <a
+href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/CreatingThreads/CreatingThreads.html">Threading
+Programming Guide</a>:</p>
+<blockquote>
+<p>It is generally a good idea to leave the priorities of your threads
+at their default values. Increasing the priorities of some threads also
+increases the likelihood of starvation among lower-priority threads. If
+your application contains high-priority and low-priority threads that
+must interact with each other, the starvation of lower-priority threads
+may block other threads and create performance bottlenecks.</p>
+</blockquote>
+<p>The advice is simple: do not arbitrarily raise thread priority,
+especially when high- and low-priority threads compete for the same
+critical resource. Removing the QoS tweak can solve the problem.</p>
+<h4 id="option-2-temporarily-raise-the-worker-thread-priority">Option 2:
+Temporarily raise the worker thread priority</h4>
+<p>The <a
+href="https://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread_rwlock_wrlock.html0">pthread_rwlock_rdlock(3pthread)</a>
+documentation says:</p>
+<blockquote>
+<p>Realtime applications may encounter priority inversion when using
+read-write locks. The problem occurs when a high priority thread “locks”
+a read-write lock that is about to be “unlocked” by a low priority
+thread, but the low priority thread is preempted by a medium priority
+thread. This scenario leads to priority inversion; a high priority
+thread is blocked by lower priority threads for an unlimited period of
+time. During system design, realtime programmers must take into account
+the possibility of this kind of priority inversion. They can deal with
+it in a number of ways, such as by having critical sections that are
+guarded by read-write locks execute at a high priority, so that a thread
+cannot be preempted while executing in its critical section.</p>
+</blockquote>
+<p>That is written for realtime systems, but it still gives a useful
+hint. In our case, once a thread acquires <code>_rwlock</code> through
+<code>pthread_rwlock_wrlock</code>, we temporarily boost its QoS, then
+restore the original QoS after releasing the lock.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">        </span><br><span class="line">        qos_class_t oldQos = qos_class_self();</span><br><span class="line">        <span class="type">BOOL</span> needRecover = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Temporarily boost thread priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; oldQos &lt; QOS_CLASS_USER_INTERACTIVE) &#123;</span><br><span class="line">            <span class="type">int</span> ret = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, <span class="number">0</span>);</span><br><span class="line">            needRecover = (ret == <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Restore priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; needRecover) &#123;</span><br><span class="line">            pthread_set_qos_class_self_np(oldQos, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>One thing to note: this has to be done with <code>pthread</code>
+APIs. <code>NSThread</code> APIs do not work here.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NSThread.h</span></span><br><span class="line"><span class="comment">// To be deprecated; use qualityOfService below</span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">double</span> threadPriority API_AVAILABLE(macos(<span class="number">10.6</span>), ios(<span class="number">4.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br><span class="line"><span class="comment">// read-only after the thread is started</span></span><br><span class="line"><span class="keyword">@property</span> <span class="built_in">NSQualityOfService</span> qualityOfService API_AVAILABLE(macos(<span class="number">10.10</span>), ios(<span class="number">8.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br></pre></td></tr></table></figure>
+
+<h3 id="demo-verification">Demo verification</h3>
+<p>To see whether manually adjusting thread priority helps, I ran a
+local demo: create <code>2000</code> operations to keep the CPU busy,
+set the queue QoS to <code>NSQualityOfServiceUserInitiated</code>, and
+downgrade every <code>100th</code> operation to
+<code>NSQualityOfServiceBackground</code>. Each operation runs the same
+expensive work, and we measure the <code>10</code> selected
+operations.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; <span class="number">2000</span>; ++j) &#123;</span><br><span class="line">    <span class="built_in">NSOperationQueue</span> *operation = [[<span class="built_in">NSOperationQueue</span> alloc] init];</span><br><span class="line">    operation.maxConcurrentOperationCount = <span class="number">1</span>;</span><br><span class="line">    operation.qualityOfService = <span class="built_in">NSQualityOfServiceUserInitiated</span>;</span><br><span class="line">    <span class="comment">// if (j % 100 == 0) &#123;</span></span><br><span class="line">    <span class="comment">//    operation.qualityOfService = NSQualityOfServiceBackground;</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">    [operation addOperationWithBlock:^&#123;</span><br><span class="line">        <span class="comment">// qos_class_t oldQos = qos_class_self();</span></span><br><span class="line">        <span class="comment">// pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);</span></span><br><span class="line">        </span><br><span class="line">        <span class="built_in">NSTimeInterval</span> start = <span class="built_in">CFAbsoluteTimeGetCurrent</span>();</span><br><span class="line">        <span class="type">double</span> sum = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) &#123;</span><br><span class="line">            sum += sin(i) + cos(i) + sin(i*<span class="number">2</span>) + cos(i*<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        start = <span class="built_in">CFAbsoluteTimeGetCurrent</span>() - start;</span><br><span class="line">        <span class="keyword">if</span> (j % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">            printf(<span class="string">&quot;%.8f\n&quot;</span>, start * <span class="number">1000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// pthread_set_qos_class_self_np(oldQos, 0);</span></span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Measured results:</p>
+<blockquote>
+<p>Normal case: average time per task is <code>11.8190561</code>. After
+lowering the operation priority: <code>94.70210189</code>. After
+lowering the priority and restoring it inside the block:
+<code>15.04005137</code> (still a bit slower than the normal case, which
+is worth thinking about).</p>
+</blockquote>
+<p>The demo shows that manual priority boosting can greatly reduce the
+total time spent on low-priority tasks. When a lock is held, this
+shortens the time the main thread stays blocked.</p>
+<h2 id="a-deeper-look-at-priority-inversion">A deeper look at priority
+inversion</h2>
+<p>Does every lock need the same manual priority boost? Will the system
+automatically adjust thread priority? If so, can it cover all locks? To
+answer these questions, we need to understand priority inversion more
+carefully.</p>
+<h3 id="what-is-priority-inversion">What is priority inversion?</h3>
+<p>Priority inversion happens when a low-priority process or thread owns
+a synchronization resource, while a high-priority process or thread is
+waiting for that resource. As a result, the high-priority thread is
+delayed behind the low-priority one. Depending on the blocking pattern,
+priority inversion is usually split into
+<code>Bounded priority inversion</code> and
+<code>Unbounded priority inversion</code>.</p>
+<p>The diagrams below are adapted from <a
+href="https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-11-priority-inversion/abf4b8f7cd4a4c70bece35678d1783210">Introduction
+to RTOS - Solution to Part 11 (Priority Inversion)</a>.</p>
+<h4 id="bounded-priority-inversion">Bounded priority inversion</h4>
+<p>Here, the high-priority task (<code>Task H</code>) is blocked by the
+low-priority task (<code>Task L</code>) that owns the lock. The blocking
+time is bounded by how long <code>Task L</code> stays in the critical
+section. As long as <code>Task L</code> holds the lock,
+<code>Task H</code> stays blocked, and the low-priority task effectively
+runs ahead of the high-priority one.</p>
+<img src="/2022/11/23/优先级反转那些事儿/01.png" />
+
+<h4 id="unbounded-priority-inversion">Unbounded priority inversion</h4>
+<p>If a medium-priority task (<code>Task M</code>) preempts
+<code>Task L</code> while <code>Task L</code> is holding the lock, the
+bounded case turns into an unbounded one. <code>Task M</code> can keep
+taking CPU time away from <code>Task L</code>, which means
+<code>Task H</code> may remain blocked for an arbitrarily long time.</p>
+<img src="/2022/11/23/优先级反转那些事儿/02.png" />
+
+<h3 id="common-solutions">Common solutions</h3>
+<p>There are two classic ways to deal with unbounded priority
+inversion:</p>
+<h4 id="priority-ceiling-protocol">Priority ceiling protocol</h4>
+<p>Each critical resource is assigned a ceiling priority. When a task
+enters the critical section, the system temporarily raises that task to
+the ceiling priority. When the task leaves the critical section, its
+original priority is restored. The ceiling is chosen as the maximum
+priority of all tasks that may use the resource.</p>
+<p>In the figure, the lock ceiling is <code>3</code>. When
+<code>Task L</code> holds the lock, it is boosted to priority
+<code>3</code>, the same as <code>Task H</code>, which prevents
+<code>Task M</code> from running until <code>Task L</code> and
+<code>Task H</code> are done with the lock.</p>
+<img src="/2022/11/23/优先级反转那些事儿/03.png" />
+
+<h4 id="priority-inheritance">Priority inheritance</h4>
+<p>With priority inheritance, if a high-priority task is waiting for a
+lock owned by a low-priority task, the low-priority owner temporarily
+inherits the higher priority so it can run sooner and release the
+resource. After the lock is released, the original priority is
+restored.</p>
+<img src="/2022/11/23/优先级反转那些事儿/04.png" />
+
+<p>Both approaches restore the low-priority task’s priority when the
+lock is released. But they only prevent
+<code>Unbounded priority inversion</code>; they cannot eliminate
+<code>Bounded priority inversion</code>, because <code>Task H</code>
+still has to wait for <code>Task L</code> to finish the critical
+section.</p>
+<p>Ways to reduce or avoid bounded inversion include:</p>
+<ol type="1">
+<li>Shorten the critical section.</li>
+<li>Avoid using critical resources that block high-priority work.</li>
+<li>Use a dedicated queue to manage the resource instead of a lock.</li>
+</ol>
+<p>Priority inheritance must be transitive. For example, if
+<code>T1</code> is blocked by a resource owned by <code>T2</code>, and
+<code>T2</code> is itself blocked by a resource owned by
+<code>T3</code>, then <code>T3</code> must inherit the highest priority
+from <code>T1</code> through <code>T2</code>. Otherwise, another thread
+with priority between <code>T2</code> and <code>T3</code> could preempt
+<code>T3</code>, causing an inversion relative to <code>T1</code>.</p>
+<h2 id="how-do-we-avoid-priority-inversion">How do we avoid priority
+inversion?</h2>
+<h3 id="qos-propagation">QoS propagation</h3>
+<p>iOS mainly uses two mechanisms to propagate QoS across threads or
+queues:</p>
+<ul>
+<li><code>dispatch_async</code>
+<ul>
+<li><code>dispatch_async()</code> automatically propagates the QoS from
+the calling thread, but it translates <code>User Interactive</code> to
+<code>User Initiated</code> so that non-main threads do not get that
+highest priority.</li>
+<li>QoS is captured when the block is submitted. If the destination
+queue does not have a QoS or does not lower the QoS, the captured value
+is used.</li>
+</ul></li>
+<li>XPC-based inter-process communication.</li>
+</ul>
+<p>The QoS propagation rules are more complex and depend on:</p>
+<ul>
+<li>the current thread’s QoS,</li>
+<li>the arguments used when creating a <code>dispatch_block</code> with
+<code>dispatch_block_create()</code>,</li>
+<li>the QoS of the destination queue or thread for
+<code>dispatch_async</code> or IPC.</li>
+</ul>
+<p>The scheduler uses these inputs to decide which priority a block
+should run with.</p>
+<ol type="1">
+<li>If no thread is synchronously waiting for that block, the block runs
+at the priority computed above.</li>
+<li>If there is synchronous waiting between threads, the scheduler may
+adjust priorities to avoid inversion.</li>
+</ol>
+<h3 id="when-can-the-system-trigger-inversion-avoidance">When can the
+system trigger inversion avoidance?</h3>
+<p>If the current thread is blocked by work running on another thread,
+and the system knows which thread owns that work, it can boost the
+relevant owner and avoid inversion. If the system does not know the
+owner, it cannot decide whom to boost.</p>
+<p>APIs that record owner information include:</p>
+<ol type="1">
+<li><code>pthread mutex</code>, <code>os_unfair_lock</code>, and
+higher-level APIs built on top of them:
+<ol type="1">
+<li><code>dispatch_once</code> uses <code>os_unfair_lock</code>.</li>
+<li><code>NSLock</code>, <code>NSRecursiveLock</code>,
+<code>@synchronized</code>, and similar APIs are based on
+<code>pthread mutex</code>.</li>
+</ol></li>
+<li><code>dispatch_sync</code> and <code>dispatch_wait</code>.</li>
+<li><code>xpc_connection_send_with_message_sync</code>.</li>
+</ol>
+<p><strong>Using these APIs allows the system to activate priority
+inversion avoidance when inversion happens.</strong></p>
+<h3 id="basic-api-verification">Basic API verification</h3>
+<p>Next, let’s verify the APIs mentioned above.</p>
+<blockquote>
+<p>Test environment: iOS 15.2 simulator</p>
+</blockquote>
+<h4 id="pthread-mutex"><code>pthread mutex</code></h4>
+<p>The <code>pthread_mutex_s</code> structure has an <code>m_tid</code>
+field that records the owner thread ID.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// types_internal.h</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pthread_mutex_s</span> &#123;</span></span><br><span class="line">        <span class="type">long</span> sig;</span><br><span class="line">        _pthread_lock lock;</span><br><span class="line">        <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">                <span class="type">uint32_t</span> value;</span><br><span class="line">                <span class="class"><span class="keyword">struct</span> <span class="title">pthread_mutex_options_s</span> <span class="title">options</span>;</span></span><br><span class="line">        &#125; mtxopts;</span><br><span class="line">        <span class="type">int16_t</span> prioceiling;</span><br><span class="line">        <span class="type">int16_t</span> priority;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _pad;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">        <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">                <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">                        <span class="type">uint32_t</span> m_tid[<span class="number">2</span>]; <span class="comment">// thread id of thread that has mutex locked</span></span><br><span class="line">                        <span class="type">uint32_t</span> m_seq[<span class="number">2</span>]; <span class="comment">// mutex sequence id</span></span><br><span class="line">                        <span class="type">uint32_t</span> m_mis[<span class="number">2</span>]; <span class="comment">// for misaligned locks m_tid/m_seq will span into here</span></span><br><span class="line">                &#125; psynch;</span><br><span class="line">                <span class="class"><span class="keyword">struct</span> _<span class="title">pthread_mutex_ulock_s</span> <span class="title">ulock</span>;</span></span><br><span class="line">        &#125;;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">4</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">1</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Let’s verify whether the thread priority changes.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// printThreadPriority prints the priority information of the current thread</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">printThreadPriority</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="type">thread_t</span> cur_thread = mach_thread_self();</span><br><span class="line">  <span class="type">mach_msg_type_number_t</span> thread_info_count = THREAD_INFO_MAX;</span><br><span class="line">  <span class="type">thread_info_data_t</span> thinfo;</span><br><span class="line">  <span class="type">kern_return_t</span> kr = thread_info(cur_thread, THREAD_EXTENDED_INFO, (<span class="type">thread_info_t</span>)thinfo, &amp;thread_info_count);</span><br><span class="line">  <span class="keyword">if</span> (kr != KERN_SUCCESS) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="type">thread_extended_info_t</span> extend_info = (<span class="type">thread_extended_info_t</span>)thinfo;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;pth_priority: %d, pth_curpri: %d, pth_maxpriority: %d\n&quot;</span>, extend_info-&gt;pth_priority, extend_info-&gt;pth_curpri, extend_info-&gt;pth_maxpriority);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Lock the mutex on a background thread, then have the main thread
+request it:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, <span class="number">0</span>), ^&#123;</span><br><span class="line">  printf(<span class="string">&quot;begin : \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue before lock \n&quot;</span>);</span><br><span class="line">  pthread_mutex_lock(&amp;_lock); <span class="comment">// ensure backgroundQueue gets the lock first</span></span><br><span class="line">  printf(<span class="string">&quot;queue lock \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  <span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;before main lock\n&quot;</span>);</span><br><span class="line">    pthread_mutex_lock(&amp;_lock);</span><br><span class="line">    printf(<span class="string">&quot;in main lock\n&quot;</span>);</span><br><span class="line">    pthread_mutex_unlock(&amp;_lock);</span><br><span class="line">    printf(<span class="string">&quot;after main unlock\n&quot;</span>);</span><br><span class="line">  &#125;);</span><br><span class="line">  sleep(<span class="number">10</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue unlock\n&quot;</span>);</span><br><span class="line">  pthread_mutex_unlock(&amp;_lock);</span><br><span class="line">  printf(<span class="string">&quot;queue after unlock\n&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">begin : </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">queue before lock </span><br><span class="line">queue lock </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">before main lock</span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">queue unlock</span><br><span class="line">in main lock</span><br><span class="line">after main unlock</span><br><span class="line">queue after unlock</span><br></pre></td></tr></table></figure>
+
+<p>You can see that the low-priority background thread starts at
+priority <code>4</code>, and once the main thread requests the lock, the
+owner gets boosted to <code>47</code>.</p>
+<h4 id="os_unfair_lock"><code>os_unfair_lock</code></h4>
+<p><code>os_unfair_lock</code> replaces <code>OSSpinLock</code> and
+solves the inversion problem by putting waiting threads to sleep instead
+of busy-waiting. It stores the owner thread ID internally and donates
+priority to the owner while threads are waiting.</p>
+<p>Let’s verify it:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, <span class="number">0</span>), ^&#123;</span><br><span class="line">  printf(<span class="string">&quot;begin : \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue before lock \n&quot;</span>);</span><br><span class="line">  os_unfair_lock_lock(&amp;_unfair_lock); <span class="comment">// ensure backgroundQueue gets the lock first</span></span><br><span class="line">  printf(<span class="string">&quot;queue lock \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  <span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;before main lock\n&quot;</span>);</span><br><span class="line">    os_unfair_lock_lock(&amp;_unfair_lock);</span><br><span class="line">    printf(<span class="string">&quot;in main lock\n&quot;</span>);</span><br><span class="line">    os_unfair_lock_unlock(&amp;_unfair_lock);</span><br><span class="line">    printf(<span class="string">&quot;after main unlock\n&quot;</span>);</span><br><span class="line">  &#125;);</span><br><span class="line">  sleep(<span class="number">10</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue unlock\n&quot;</span>);</span><br><span class="line">  os_unfair_lock_unlock(&amp;_unfair_lock);</span><br><span class="line">  printf(<span class="string">&quot;queue after unlock\n&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">begin : </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">queue before lock </span><br><span class="line">queue lock </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">before main lock</span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">queue unlock</span><br><span class="line">in main lock</span><br><span class="line">after main unlock</span><br><span class="line">queue after unlock</span><br></pre></td></tr></table></figure>
+
+<p>The result is the same as <code>pthread mutex</code>.</p>
+<h4 id="pthread_rwlock_t"><code>pthread_rwlock_t</code></h4>
+<p>The <code>pthread_rwlock_init</code> documentation says:</p>
+<blockquote>
+<p>Caveats: Beware of priority inversion when using read-write locks. A
+high-priority thread may be blocked waiting on a read-write lock locked
+by a low-priority thread. The microkernel has no knowledge of read-write
+locks, and therefore can’t boost the low-priority thread to prevent the
+priority inversion.</p>
+</blockquote>
+<p>The rough meaning is that the kernel does not understand read-write
+locks, so it cannot boost the low-priority thread and therefore cannot
+avoid priority inversion. Looking at the definition, however,
+<code>pthread_rwlock_s</code> contains an <code>rw_tid</code> field used
+to record the thread that owns the write lock. This raises an
+interesting question: why does <code>pthread_rwlock_s</code> have owner
+information, but still cannot avoid priority inversion?</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pthread_rwlock_s</span> &#123;</span></span><br><span class="line">        <span class="type">long</span> sig;</span><br><span class="line">        _pthread_lock lock;</span><br><span class="line">        <span class="type">uint32_t</span></span><br><span class="line">                unused:<span class="number">29</span>,</span><br><span class="line">                misalign:<span class="number">1</span>,</span><br><span class="line">                pshared:<span class="number">2</span>;</span><br><span class="line">        <span class="type">uint32_t</span> rw_flags;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _pad;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">        <span class="type">uint32_t</span> rw_tid[<span class="number">2</span>]; <span class="comment">// thread id of thread that has exclusive (write) lock</span></span><br><span class="line">        <span class="type">uint32_t</span> rw_seq[<span class="number">4</span>]; <span class="comment">// rw sequence id (at 128-bit aligned boundary)</span></span><br><span class="line">        <span class="type">uint32_t</span> rw_mis[<span class="number">4</span>]; <span class="comment">// for misaligned locks rw_seq will span into here</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">34</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">18</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>This Hacker News thread mentions:</p>
+<blockquote>
+<p>xnu supports priority inheritance through “turnstiles”, a
+kernel-internal mechanism which is used by default by a number of
+locking primitives (list at [1]), including normal
+<code>pthread mutex</code>es (though not read-write locks [2]), as well
+as the <code>os_unfair_lock</code> API (via the ulock syscalls). With
+<code>pthread mutex</code>es, you can actually explicitly request
+priority inheritance by calling pthread_mutexattr_setprotocol [3] with
+PTHREAD_PRIO_INHERIT; the Apple implementation supports it, but
+currently ignores the protocol setting and just gives all mutexes
+priority inheritance.</p>
+</blockquote>
+<p>In short: <code>XNU</code> uses the kernel-internal
+<code>turnstile</code> mechanism for priority inheritance, and this
+mechanism is applied to <code>pthread mutex</code> and
+<code>os_unfair_lock</code>.</p>
+<p>Following that clue, I found <code>_kwq_use_turnstile</code> in
+<code>ksyn_wait</code>. The comment describes read-write locks somewhat
+cautiously and adds “at least sometimes”.</p>
+<blockquote>
+<p><code>pthread mutex</code>es and rwlocks both (at least sometimes)
+know their <code>owner</code> and can use turnstiles. Otherwise, we pass
+NULL as the tstore to the shims so they wait on the global waitq.</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// libpthread/kern/kern_synch.c</span></span><br><span class="line"><span class="type">int</span></span><br><span class="line"><span class="title function_">ksyn_wait</span><span class="params">(<span class="type">ksyn_wait_queue_t</span> kwq, <span class="type">kwq_queue_type_t</span> kqi, <span class="type">uint32_t</span> lockseq,</span></span><br><span class="line"><span class="params">                <span class="type">int</span> fit, <span class="type">uint64_t</span> abstime, <span class="type">uint16_t</span> kwe_flags,</span></span><br><span class="line"><span class="params">                <span class="type">thread_continue_t</span> continuation, <span class="type">block_hint_t</span> block_hint)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="type">thread_t</span> th = current_thread();</span><br><span class="line">        <span class="type">uthread_t</span> uth = pthread_kern-&gt;get_bsdthread_info(th);</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">turnstile</span> **<span class="title">tstore</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">        <span class="type">int</span> res;</span><br><span class="line"></span><br><span class="line">        assert(continuation != THREAD_CONTINUE_NULL);</span><br><span class="line"></span><br><span class="line">        <span class="type">ksyn_waitq_element_t</span> kwe = pthread_kern-&gt;uthread_get_uukwe(uth);</span><br><span class="line">        bzero(kwe, <span class="keyword">sizeof</span>(*kwe));</span><br><span class="line">        kwe-&gt;kwe_count = <span class="number">1</span>;</span><br><span class="line">        kwe-&gt;kwe_lockseq = lockseq &amp; PTHRW_COUNT_MASK;</span><br><span class="line">        kwe-&gt;kwe_state = KWE_THREAD_INWAIT;</span><br><span class="line">        kwe-&gt;kwe_uth = uth;</span><br><span class="line">        kwe-&gt;kwe_thread = th;</span><br><span class="line">        kwe-&gt;kwe_flags = kwe_flags;</span><br><span class="line"></span><br><span class="line">        res = ksyn_queue_insert(kwq, kqi, kwe, lockseq, fit);</span><br><span class="line">        <span class="keyword">if</span> (res != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> res;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_kwqwait, kwq-&gt;kw_addr, kwq-&gt;kw_inqueue,</span><br><span class="line">                        kwq-&gt;kw_prepost.count, kwq-&gt;kw_intr.count);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (_kwq_use_turnstile(kwq)) &#123;</span><br><span class="line">                <span class="comment">// pthread mutexes and rwlocks both (at least sometimes) know their</span></span><br><span class="line">                <span class="comment">// owner and can use turnstiles. Otherwise, we pass NULL as the</span></span><br><span class="line">                <span class="comment">// tstore to the shims so they wait on the global waitq.</span></span><br><span class="line">                tstore = &amp;kwq-&gt;kw_turnstile;</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Looking at <code>_kwq_use_turnstile</code>, the code is more honest:
+only <code>KSYN_WQTYPE_MTX</code> enables <code>turnstile</code>
+priority-inversion protection. A read-write lock is
+<code>KSYN_WQTYPE_RWLOCK</code>, which means it does not use
+<code>_kwq_use_turnstile</code> and therefore cannot avoid priority
+inversion.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_MTX         0x01</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_CVAR        0x02</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_RWLOCK      0x04</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_SEMA        0x08</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">bool</span></span><br><span class="line">_kwq_use_turnstile(<span class="type">ksyn_wait_queue_t</span> kwq)</span><br><span class="line">&#123;</span><br><span class="line">        <span class="comment">// If we had writer-owner information from the</span></span><br><span class="line">        <span class="comment">// rwlock then we could use the turnstile to push on it. For now, only</span></span><br><span class="line">        <span class="comment">// plain mutexes use it.</span></span><br><span class="line">        <span class="keyword">return</span> (_kwq_type(kwq) == KSYN_WQTYPE_MTX);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In <code>_pthread_find_owner</code>, we can also see that the owner
+of a read-write lock is <code>0</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line">_pthread_find_owner(<span class="type">thread_t</span> thread,</span><br><span class="line">                <span class="keyword">struct</span> stackshot_thread_waitinfo * waitinfo)</span><br><span class="line">&#123;</span><br><span class="line">        <span class="type">ksyn_wait_queue_t</span> kwq = _pthread_get_thread_kwq(thread);</span><br><span class="line">        <span class="keyword">switch</span> (waitinfo-&gt;wait_type) &#123;</span><br><span class="line">                <span class="keyword">case</span> kThreadWaitPThreadMutex:</span><br><span class="line">                        assert((kwq-&gt;kw_type &amp; KSYN_WQTYPE_MASK) == KSYN_WQTYPE_MTX);</span><br><span class="line">                        waitinfo-&gt;owner  = thread_tid(kwq-&gt;kw_owner);</span><br><span class="line">                        waitinfo-&gt;context = kwq-&gt;kw_addr;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                <span class="comment">/* Owner of rwlock not stored in kernel space due to races. Punt</span></span><br><span class="line"><span class="comment">                 * and hope that the userspace address is helpful enough. */</span></span><br><span class="line">                <span class="keyword">case</span> kThreadWaitPThreadRWLockRead:</span><br><span class="line">                <span class="keyword">case</span> kThreadWaitPThreadRWLockWrite:</span><br><span class="line">                        assert((kwq-&gt;kw_type &amp; KSYN_WQTYPE_MASK) == KSYN_WQTYPE_RWLOCK);</span><br><span class="line">                        waitinfo-&gt;owner  = <span class="number">0</span>;</span><br><span class="line">                        waitinfo-&gt;context = kwq-&gt;kw_addr;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                <span class="comment">/* Condvars don&#x27;t have owners, so just give the userspace address. */</span></span><br><span class="line">                <span class="keyword">case</span> kThreadWaitPThreadCondVar:</span><br><span class="line">                        assert((kwq-&gt;kw_type &amp; KSYN_WQTYPE_MASK) == KSYN_WQTYPE_CVAR);</span><br><span class="line">                        waitinfo-&gt;owner  = <span class="number">0</span>;</span><br><span class="line">                        waitinfo-&gt;context = kwq-&gt;kw_addr;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> kThreadWaitNone:</span><br><span class="line">                <span class="keyword">default</span>:</span><br><span class="line">                        waitinfo-&gt;owner = <span class="number">0</span>;</span><br><span class="line">                        waitinfo-&gt;context = <span class="number">0</span>;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Now replace the lock with a read-write lock and verify whether the
+theory is correct:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">pthread_rwlock_init(&amp;_rwlock, <span class="literal">NULL</span>);</span><br><span class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, <span class="number">0</span>), ^&#123;</span><br><span class="line">  printf(<span class="string">&quot;begin : \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue before lock \n&quot;</span>);</span><br><span class="line">  pthread_rwlock_rdlock(&amp;_rwlock); <span class="comment">// ensure backgroundQueue gets the lock first</span></span><br><span class="line">  printf(<span class="string">&quot;queue lock \n&quot;</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  <span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;before main lock\n&quot;</span>);</span><br><span class="line">    pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">    printf(<span class="string">&quot;in main lock\n&quot;</span>);</span><br><span class="line">    pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line">    printf(<span class="string">&quot;after main unlock\n&quot;</span>);</span><br><span class="line">  &#125;);</span><br><span class="line">  sleep(<span class="number">10</span>);</span><br><span class="line">  printThreadPriority();</span><br><span class="line">  printf(<span class="string">&quot;queue unlock\n&quot;</span>);</span><br><span class="line">  pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line">  printf(<span class="string">&quot;queue after unlock\n&quot;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">begin : </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">queue before lock </span><br><span class="line">queue lock </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">before main lock</span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br><span class="line">queue unlock</span><br><span class="line">queue after unlock</span><br><span class="line">in main lock</span><br><span class="line">after main unlock</span><br></pre></td></tr></table></figure>
+
+<p>As a result, read-write locks do not boost the owner thread.</p>
+<h4 id="dispatch_sync"><code>dispatch_sync</code></h4>
+<p>The result for <code>dispatch_sync</code> is easy to verify:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Current thread is the main thread</span></span><br><span class="line">dispatch_queue_attr_t qosAttribute = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, <span class="number">0</span>);</span><br><span class="line">_queue = dispatch_queue_create(<span class="string">&quot;com.demo.test&quot;</span>, qosAttribute);</span><br><span class="line">printThreadPriority();</span><br><span class="line"><span class="built_in">dispatch_async</span>(_queue, ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;dispatch_async before dispatch_sync : \n&quot;</span>);</span><br><span class="line">    printThreadPriority();</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">dispatch_sync</span>(_queue, ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;dispatch_sync: \n&quot;</span>);</span><br><span class="line">    printThreadPriority();</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">dispatch_async</span>(_queue, ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;dispatch_async after dispatch_sync: \n&quot;</span>);</span><br><span class="line">    printThreadPriority();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63 </span><br><span class="line">dispatch_async before dispatch_sync : </span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">dispatch_sync: </span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">dispatch_async after dispatch_sync: </span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br></pre></td></tr></table></figure>
+
+<p>The queue is low priority (<code>QOS_CLASS_BACKGROUND</code>). Both
+the <code>dispatch_sync</code> work item and the earlier
+<code>dispatch_async</code> item get boosted to priority
+<code>47</code>, while the later <code>dispatch_async</code> item runs
+at priority <code>4</code>.</p>
+<h4 id="dispatch_wait"><code>dispatch_wait</code></h4>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Current thread is the main thread</span></span><br><span class="line">dispatch_queue_attr_t qosAttribute = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_BACKGROUND, <span class="number">0</span>);</span><br><span class="line">_queue = dispatch_queue_create(<span class="string">&quot;com.demo.test&quot;</span>, qosAttribute);</span><br><span class="line">printf(<span class="string">&quot;main thread\n&quot;</span>);</span><br><span class="line">printThreadPriority();</span><br><span class="line">dispatch_block_t block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^&#123;</span><br><span class="line">    printf(<span class="string">&quot;sub thread\n&quot;</span>);</span><br><span class="line">    sleep(<span class="number">2</span>);</span><br><span class="line">    printThreadPriority();</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">dispatch_async</span>(_queue, block);</span><br><span class="line">dispatch_wait(block, DISPATCH_TIME_FOREVER);</span><br></pre></td></tr></table></figure>
+
+<p>The queue is a low-priority queue
+(<code>QOS_CLASS_BACKGROUND</code>). When the current main thread waits
+through <code>dispatch_wait</code>, the output is as follows, and the
+low-priority task is boosted to priority <code>47</code>:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">main thread</span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">sub thread</span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line"></span><br><span class="line">If dispatch_wait(block, DISPATCH_TIME_FOREVER) is commented out, the output is:</span><br><span class="line">main thread</span><br><span class="line">pth_priority: 47, pth_curpri: 47, pth_maxpriority: 63</span><br><span class="line">sub thread</span><br><span class="line">pth_priority: 4, pth_curpri: 4, pth_maxpriority: 63</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Note that <code>dispatch_wait</code> is a macro / generic entry point
+that can accept <code>dispatch_block_t</code>,
+<code>dispatch_group_t</code>, and <code>dispatch_semaphore_t</code>.
+Here the practical meaning is closer to
+<code>dispatch_block_wait</code>, which is the one that can adjust
+priority and avoid inversion.</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">intptr_t</span></span><br><span class="line"><span class="title function_">dispatch_wait</span><span class="params">(<span class="type">void</span> *object, <span class="type">dispatch_time_t</span> timeout)</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> __has_extension(c_generic_selections)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> dispatch_wait(object, timeout) \</span></span><br><span class="line"><span class="meta">                _Generic((object), \</span></span><br><span class="line"><span class="meta">                        dispatch_block_t:dispatch_block_wait, \</span></span><br><span class="line"><span class="meta">                        dispatch_group_t:dispatch_group_wait, \</span></span><br><span class="line"><span class="meta">                        dispatch_semaphore_t:dispatch_semaphore_wait \</span></span><br><span class="line"><span class="meta">                )((object),(timeout))</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<h3 id="the-mysterious-semaphore">The mysterious semaphore</h3>
+<h4 id="dispatch_semaphore"><code>dispatch_semaphore</code></h4>
+<p>I used to think binary semaphores and mutexes were basically the
+same. After researching, I found that <code>dispatch_semaphore</code>
+has no QoS concept and does not track the owner thread. So when a
+high-priority thread waits on it, the kernel has no idea which thread
+should be boosted. If the lock owner has a lower priority than the
+waiter, the high-priority thread can wait forever.</p>
+<p>This is a warning from the system:</p>
+<blockquote>
+<p>Semaphores are for signaling (same as condition variables, events)
+while mutexes are for mutual exclusion. Technically, you can also use
+semaphores for mutual exclusion (a mutex can be thought as a binary
+semaphore) but you really shouldn’t. Right, but libdispatch doesn’t have
+a mutex. It has semaphores and queues. So if you’re trying to use
+libdispatch and you don’t want the closure-based aspect of queues, you
+might be tempted to use a semaphore instead. Don’t do that, use
+<code>os_unfair_lock</code> or pthread_mutex (or a higher-level
+construct like NSLock) instead.</p>
+</blockquote>
+<p>That is a pretty strong hint: semaphores are dangerous if you use
+them as locks.</p>
+<p>Apple’s example:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">__block <span class="built_in">NSString</span> *taskName = <span class="literal">nil</span>;</span><br><span class="line">dispatch_semaphore_t sema = dispatch_semaphore_create(<span class="number">0</span>); </span><br><span class="line">[<span class="keyword">self</span>.connection.remoteObjectProxy requestCurrentTaskName:^(<span class="built_in">NSString</span> *task) &#123; </span><br><span class="line">     taskName = task; </span><br><span class="line">     dispatch_semaphore_signal(sema); </span><br><span class="line">&#125;]; </span><br><span class="line">dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER); </span><br><span class="line"><span class="keyword">return</span> taskName; </span><br></pre></td></tr></table></figure>
+
+<ol type="1">
+<li>If this runs on the main thread, the current priority is
+<code>QOS_CLASS_USER_INTERACTIVE</code>.</li>
+<li>The async work triggered from the main thread gets elevated to
+<code>QOS_CLASS_USER_INITIATED</code>.</li>
+<li>The main thread is blocked by the semaphore, but the async task that
+signals it runs at a lower priority, so priority inversion may
+happen.</li>
+</ol>
+<p>Clang even has a static checker for this pattern.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">auto</span> <span class="title">findGCDAntiPatternWithSemaphore</span><span class="params">()</span> -&gt; <span class="title">decltype</span><span class="params">(compoundStmt())</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> <span class="type">char</span> *SemaphoreBinding = <span class="string">&quot;semaphore_name&quot;</span>;</span><br><span class="line">  <span class="keyword">auto</span> SemaphoreCreateM = <span class="built_in">callExpr</span>(<span class="built_in">allOf</span>(</span><br><span class="line">      <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_create&quot;</span>),</span><br><span class="line">      <span class="built_in">hasArgument</span>(<span class="number">0</span>, <span class="built_in">ignoringParenCasts</span>(<span class="built_in">integerLiteral</span>(<span class="built_in">equals</span>(<span class="number">0</span>))))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreBindingM = <span class="built_in">anyOf</span>(</span><br><span class="line">      forEachDescendant(</span><br><span class="line">          <span class="built_in">varDecl</span>(<span class="built_in">hasDescendant</span>(SemaphoreCreateM)).<span class="built_in">bind</span>(SemaphoreBinding)),</span><br><span class="line">      forEachDescendant(<span class="built_in">binaryOperator</span>(<span class="built_in">bindAssignmentToDecl</span>(SemaphoreBinding),</span><br><span class="line">                     <span class="built_in">hasRHS</span>(SemaphoreCreateM))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockArgumentM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">hasType</span>(</span><br><span class="line">            <span class="built_in">hasCanonicalType</span>(<span class="built_in">blockPointerType</span>())</span><br><span class="line">            ));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> ArgCallsSignalM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(<span class="built_in">callExpr</span>(</span><br><span class="line">          <span class="built_in">allOf</span>(</span><br><span class="line">              <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_signal&quot;</span>),</span><br><span class="line">              <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">              )))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockAndCallsSignalM = <span class="built_in">allOf</span>(HasBlockArgumentM, ArgCallsSignalM);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockCallingSignalM =</span><br><span class="line">    forEachDescendant(</span><br><span class="line">      <span class="built_in">stmt</span>(<span class="built_in">anyOf</span>(</span><br><span class="line">        <span class="built_in">callExpr</span>(HasBlockAndCallsSignalM),</span><br><span class="line">        <span class="built_in">objcMessageExpr</span>(HasBlockAndCallsSignalM)</span><br><span class="line">           )));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreWaitM = forEachDescendant(</span><br><span class="line">    <span class="built_in">callExpr</span>(</span><br><span class="line">      <span class="built_in">allOf</span>(</span><br><span class="line">        <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_wait&quot;</span>),</span><br><span class="line">        <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">      )</span><br><span class="line">    ).<span class="built_in">bind</span>(WarnAtNode));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">compoundStmt</span>(</span><br><span class="line">      SemaphoreBindingM, HasBlockCallingSignalM, SemaphoreWaitM);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>To enable this check, just turn on the corresponding Xcode
+setting.</p>
+<img src="/2022/11/23/优先级反转那些事儿/05.png" />
+
+<blockquote>
+<p><code>dispatch_group</code> behaves similarly to
+<code>semaphore</code>: when you call <code>enter()</code>, the system
+does not know who will eventually call <code>leave()</code>, so it
+cannot know the owner either. Therefore it does not participate in
+priority donation.</p>
+</blockquote>
+<h4 id="a-real-deadlock-case-caused-by-semaphores">A real deadlock case
+caused by semaphores</h4>
+<p>I once wrote code like this to synchronously wait for camera
+permission on the main thread:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">__block <span class="type">BOOL</span> auth = <span class="literal">NO</span>;</span><br><span class="line">dispatch_semaphore_t semaphore = dispatch_semaphore_create(<span class="number">0</span>);</span><br><span class="line">[KTAuthorizeService requestAuthorizationWithType:KTPermissionsTypeCamera completionHandler:^(<span class="type">BOOL</span> allow) &#123;</span><br><span class="line">  auth = allow;</span><br><span class="line">  dispatch_semaphore_signal(semaphore);</span><br><span class="line">&#125;];</span><br><span class="line">dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);</span><br></pre></td></tr></table></figure>
+
+<p>After launch, it stayed in the top deadlock spot for a long time.
+Once I understood that semaphores cannot avoid priority inversion, the
+reason finally clicked.</p>
+<img src="/2022/11/23/优先级反转那些事儿/06.png" />
+
+<p>There are usually two ways to fix this:</p>
+<ol type="1">
+<li>Use a synchronous API.</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BOOL</span> auth = [KTAuthorizeService authorizationWithType:KTPermissionsTypeCamera];</span><br><span class="line"><span class="comment">// do something next</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>Use an asynchronous callback and do not block the current
+thread.</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[KTAuthorizeService requestAuthorizationWithType:KTPermissionsTypeCamera completionHandler:^(<span class="type">BOOL</span> allow) &#123;</span><br><span class="line">    <span class="type">BOOL</span> auth = allow;</span><br><span class="line">    <span class="comment">// do something next via callback</span></span><br><span class="line">&#125;];</span><br></pre></td></tr></table></figure>
+
+<p>But what if you really need to turn an async API into a sync one,
+while also avoiding priority inversion? <code>dispatch_block_wait</code>
+only accepts the simplest <code>dispatch_block_t</code> form, and cannot
+handle parameterized or returning blocks. So if the callback is more
+complicated, this approach breaks down. Is there a cleaner solution? I
+will leave that question open for now.</p>
+<h2 id="some-concepts">Some concepts</h2>
+<h3 id="turnstile">Turnstile</h3>
+<p>Earlier I mentioned that XNU uses <code>turnstile</code> for priority
+inheritance. Here is a simplified mental model.</p>
+<p>There are many synchronization objects in XNU, such as
+<code>lck_mtx_t</code>. To solve priority inversion, each
+synchronization object would need its own separate structure to track
+all related state, including the queue of blocked threads. If every sync
+object allocated such a structure permanently, memory usage would be
+huge.</p>
+<p>XNU solves this with the <code>turnstile</code> mechanism. The key
+idea is that one thread cannot block on multiple synchronization objects
+at the same time. Therefore each sync object only needs a pointer to a
+<code>turnstile</code>, and the <code>turnstile</code> itself can be
+allocated on demand. It stores everything needed for the lock, such as
+the blocked thread queue and the owner pointer. <code>turnstile</code>s
+are dynamically allocated from a pool, and the pool grows with the
+number of active threads. The number of turnstiles is therefore bounded
+and manageable. The first blocked thread allocates the turnstile; once
+no threads are waiting anymore, the turnstile is returned to the
+pool.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">turnstile</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">waitq</span>                  <span class="title">ts_waitq</span>;</span></span><br><span class="line">    <span class="type">turnstile_inheritor_t</span>         ts_inheritor;</span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">turnstile_list</span> <span class="title">ts_free_turnstiles</span>;</span></span><br><span class="line">        SLIST_ENTRY(turnstile) ts_free_elm;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">priority_queue_sched_max</span> <span class="title">ts_inheritor_queue</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">priority_queue_entry_sched</span> <span class="title">ts_inheritor_links</span>;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">mpsc_queue_chain</span>   <span class="title">ts_deallocate_link</span>;</span></span><br><span class="line">    &#125;;</span><br><span class="line">    SLIST_ENTRY(turnstile)        ts_htable_link;</span><br><span class="line">    <span class="type">uintptr_t</span>                     ts_proprietor;</span><br><span class="line">    <span class="type">os_refcnt_t</span>                   ts_refcount;</span><br><span class="line">    <span class="keyword">_Atomic</span> <span class="type">uint32_t</span>              ts_type_gencount;</span><br><span class="line">    <span class="type">uint32_t</span>                      ts_port_ref;</span><br><span class="line">    <span class="type">turnstile_update_flags_t</span>      ts_inheritor_flags;</span><br><span class="line">    <span class="type">uint8_t</span>                       ts_priority;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> DEVELOPMENT || DEBUG</span></span><br><span class="line">    <span class="type">uint8_t</span>                       ts_state;</span><br><span class="line">    <span class="type">queue_chain_t</span>                 ts_global_elm;</span><br><span class="line">    <span class="type">thread_t</span>                      ts_thread;</span><br><span class="line">    <span class="type">thread_t</span>                      ts_prev_thread;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="priority-values">Priority values</h3>
+<p>The priority numbers in the experiments are Mach-level user thread
+priorities. A quick reference from <a
+href="http://newosxbook.com/MOXiI.pdf">Mac OS X and iOS
+Internals</a>:</p>
+<ol type="1">
+<li>User thread priorities are <code>0~63</code>.
+<ol type="1">
+<li><code>NSQualityOfServiceBackground</code> maps to
+<code>4</code>.</li>
+<li><code>NSQualityOfServiceUtility</code> maps to <code>20</code>.</li>
+<li><code>NSQualityOfServiceDefault</code> maps to <code>31</code>.</li>
+<li><code>NSQualityOfServiceUserInitiated</code> maps to
+<code>37</code>.</li>
+<li><code>NSQualityOfServiceUserInteractive</code> maps to
+<code>47</code>.</li>
+</ol></li>
+<li>Kernel thread priorities are <code>80~95</code>.</li>
+<li>Realtime thread priorities are <code>96~127</code>.</li>
+<li><code>64~79</code> are reserved by the system.</li>
+</ol>
+<img src="/2022/11/23/优先级反转那些事儿/08.png" />
+
+<h2 id="summary">Summary</h2>
+<p>This article walked through the main ideas behind priority inversion
+and the common ways to handle it, then studied several iOS locking
+primitives in detail. With a deeper understanding, we can avoid
+unnecessary priority inversion and reduce deadlock-like stalls.</p>
+<h2 id="references">References</h2>
+<ol type="1">
+<li><a
+href="https://blog.actorsfit.com/a?ID=00001-499b1c8e-8a7f-4960-a1c1-c8e2f42c08c60">WWDC18
+What’s New in LLVM - actorsfit</a></li>
+<li>https://developer.apple.com/videos/play/wwdc2015/718</li>
+<li>https://developer.apple.com/forums/thread/124155</li>
+<li>https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/CreatingThreads/CreatingThreads.html</li>
+<li>https://developer.apple.com/library/archive/documentation/Performance/Conceptual/EnergyGuide-iOS/PrioritizeWorkWithQoS.html</li>
+<li>https://github.com/llvm-mirror/clang/blob/google/stable/lib/StaticAnalyzer/Checkers/GCDAntipatternChecker.cpp</li>
+<li><a href="https://news.ycombinator.com/item?id=219602660">Don’t use
+dispatch semaphores where mutexes (or dispatch queues) would
+suffice</a></li>
+<li><a
+href="https://www.raywenderlich.com/books/concurrency-by-tutorials/v2.0/chapters/5-concurrency-problems0">Concurrency
+Problems Written by Scott Grosch</a></li>
+<li>https://www.jianshu.com/p/af64e05de503</li>
+<li>https://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread_rwlock_wrlock.html</li>
+<li><a
+href="https://wjerry.com/2018/06/iOS%E4%B8%AD%E5%90%84%E7%A7%8D-%E9%94%81-%E7%9A%84%E7%90%86%E8%A7%A3%E5%8F%8A%E5%BA%94%E7%94%A8/">Understanding
+and Using Locks in iOS</a></li>
+<li><a
+href="https://blog.ibireme.com/2016/01/16/spinlock_is_unsafe_in_ios/">The
+Unsafe OSSpinLock</a></li>
+<li>https://blog.actorsfit.com/a?ID=00001-499b1c8e-8a7f-4960-a1c1-c8e2f42c08c6</li>
+<li>https://objccn.io/issue-2-1/#Priority-Inversion</li>
+<li><a
+href="https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-11-priority-inversion/abf4b8f7cd4a4c70bece35678d1783210">Introduction
+to RTOS - Solution to Part 11 (Priority Inversion)</a></li>
+<li>https://threadreaderapp.com/thread/1229999590482444288.html#</li>
+<li><a
+href="https://devyang.space/2020/03/25/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3iOS%E4%B8%AD%E7%9A%84%E9%94%81/0">Deep
+Dive into iOS Locks</a></li>
+<li><a href="https://news.ycombinator.com/item?id=21735239">Threads can
+infect each other with their low priority</a></li>
+</ol>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#how-to-deal-with-it"><span class="nav-number">1.1.</span> <span class="nav-text">How to deal with it</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#option-1-remove-qos-settings-from-nsoperationqueue"><span class="nav-number">1.1.1.</span> <span class="nav-text">Option 1:
+Remove QoS settings from NSOperationQueue</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#option-2-temporarily-raise-the-worker-thread-priority"><span class="nav-number">1.1.2.</span> <span class="nav-text">Option 2:
+Temporarily raise the worker thread priority</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#demo-verification"><span class="nav-number">1.2.</span> <span class="nav-text">Demo verification</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#a-deeper-look-at-priority-inversion"><span class="nav-number">2.</span> <span class="nav-text">A deeper look at priority
+inversion</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#what-is-priority-inversion"><span class="nav-number">2.1.</span> <span class="nav-text">What is priority inversion?</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bounded-priority-inversion"><span class="nav-number">2.1.1.</span> <span class="nav-text">Bounded priority inversion</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unbounded-priority-inversion"><span class="nav-number">2.1.2.</span> <span class="nav-text">Unbounded priority inversion</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#common-solutions"><span class="nav-number">2.2.</span> <span class="nav-text">Common solutions</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#priority-ceiling-protocol"><span class="nav-number">2.2.1.</span> <span class="nav-text">Priority ceiling protocol</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#priority-inheritance"><span class="nav-number">2.2.2.</span> <span class="nav-text">Priority inheritance</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-do-we-avoid-priority-inversion"><span class="nav-number">3.</span> <span class="nav-text">How do we avoid priority
+inversion?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#qos-propagation"><span class="nav-number">3.1.</span> <span class="nav-text">QoS propagation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#when-can-the-system-trigger-inversion-avoidance"><span class="nav-number">3.2.</span> <span class="nav-text">When can the
+system trigger inversion avoidance?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#basic-api-verification"><span class="nav-number">3.3.</span> <span class="nav-text">Basic API verification</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#pthread-mutex"><span class="nav-number">3.3.1.</span> <span class="nav-text">pthread mutex</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#os_unfair_lock"><span class="nav-number">3.3.2.</span> <span class="nav-text">os_unfair_lock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pthread_rwlock_t"><span class="nav-number">3.3.3.</span> <span class="nav-text">pthread_rwlock_t</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#dispatch_sync"><span class="nav-number">3.3.4.</span> <span class="nav-text">dispatch_sync</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#dispatch_wait"><span class="nav-number">3.3.5.</span> <span class="nav-text">dispatch_wait</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#the-mysterious-semaphore"><span class="nav-number">3.4.</span> <span class="nav-text">The mysterious semaphore</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#dispatch_semaphore"><span class="nav-number">3.4.1.</span> <span class="nav-text">dispatch_semaphore</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#a-real-deadlock-case-caused-by-semaphores"><span class="nav-number">3.4.2.</span> <span class="nav-text">A real deadlock case
+caused by semaphores</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#some-concepts"><span class="nav-number">4.</span> <span class="nav-text">Some concepts</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#turnstile"><span class="nav-number">4.1.</span> <span class="nav-text">Turnstile</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#priority-values"><span class="nav-number">4.2.</span> <span class="nav-text">Priority values</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">6.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

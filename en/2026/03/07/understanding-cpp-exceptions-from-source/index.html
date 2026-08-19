@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Brief overview What is the C++ exception mechanism? This article starts from a few questions:  When throw is triggered inside a try block, how does the runtime find the matching catch, especially acro">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Understanding C++ Exceptions from the Source">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Brief overview What is the C++ exception mechanism? This article starts from a few questions:  When throw is triggered inside a try block, how does the runtime find the matching catch, especially acro">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
+<meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
+<meta property="article:modified_time" content="2026-08-19T04:56:21.763Z">
+<meta property="article:author" content="lingyun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/"/>
+
+
+
+
+
+  <title>Understanding C++ Exceptions from the Source | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">Understanding C++ Exceptions from the Source</h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <h2 id="brief-overview">Brief overview</h2>
+<h3 id="what-is-the-c-exception-mechanism">What is the C++ exception
+mechanism?</h3>
+<p>This article starts from a few questions:</p>
+<ul>
+<li>When <code>throw</code> is triggered inside a <code>try</code>
+block, how does the runtime find the matching <code>catch</code>,
+especially across deep call stacks?</li>
+<li>Since <code>throw</code> changes control flow, will the objects
+created inside the <code>try</code> block still be destroyed
+correctly?</li>
+<li>If the call chain mixes different languages, such as
+<code>C -&gt; C++ -&gt; C -&gt; C++</code>, can exception handling still
+work when plain C does not support exceptions?</li>
+<li>Have you ever run into a case that could not be caught?</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">RAII</span> &#123;</span><br><span class="line">    ~<span class="built_in">RAII</span>() &#123; <span class="built_in">printf</span>(<span class="string">&quot;RAII object has been destroyed\n&quot;</span>); &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">catchit</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        RAII r;</span><br><span class="line">        <span class="keyword">throw</span> <span class="built_in">Exception</span>();</span><br><span class="line">    &#125; <span class="built_in">catch</span>(Exception&amp;) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Caught an Exception!\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// output</span></span><br><span class="line">RAII object has been destroyed</span><br><span class="line">Caught an Exception!</span><br></pre></td></tr></table></figure>
+
+<p>The rest of the article explains these questions from the source code
+level.</p>
+<h3 id="design-idea">Design idea</h3>
+<p>Exception handling exists in many high-level languages. It can stop
+the current function immediately and hand control to a function that can
+actually handle the error.</p>
+<p>Bjarne Stroustrup explained the basic motivation in <em>The C++
+Programming Language</em>: a library author can detect a runtime error,
+but usually does not know how to handle it because that depends on the
+application. The application author knows how to handle it, but does not
+know when it will occur. Exceptions solve exactly that problem by
+separating <strong>error detection</strong> from <strong>error
+handling</strong>.</p>
+<p>So the core idea is not “the exception” itself, but the handling
+path. The runtime must also clean up the execution context along the
+way.</p>
+<h3 id="which-implementation-mechanisms-exist">Which implementation
+mechanisms exist?</h3>
+<p>There have been several C++ exception implementations over time. The
+most common ones are SJLJ, EHABI, DWARF CFI, and Apple’s Compact Unwind
+optimization.</p>
+<ul>
+<li>SJLJ is older and simple, but not very efficient.</li>
+<li>EHABI is mainly used on ARM32 and is tightly coupled to that
+architecture.</li>
+<li><strong>DWARF CFI is the most widely used mechanism today. It offers
+a good balance of performance and capability, and is the focus of this
+article.</strong></li>
+<li>Compact Unwind is an Apple-specific optimization. It only supports
+simple stack unwinding; for complex cases, the system falls back to
+DWARF CFI.</li>
+</ul>
+<h3 id="layered-model">Layered model</h3>
+<p>The Itanium C++ ABI splits exception handling into two layers:</p>
+<p><strong>Level 1, the foundational ABI</strong>, is the cross-platform
+unwind library. Its APIs are usually <code>Unwind*</code>, and common
+implementations include libgcc and <strong>libunwind</strong>.</p>
+<ul>
+<li>It captures and restores execution context and supports stack
+unwinding.</li>
+<li>It exposes call stack information during exception handling and
+debugging.</li>
+</ul>
+<p><strong>Level 2, the C++ ABI</strong>, provides the C++ standard
+library ABI support, especially for exceptions and RTTI. Its APIs
+usually start with <code>__cxa_*</code>, and common implementations
+include libsupc++ and <strong>libc++abi</strong>.</p>
+<ul>
+<li>It implements key pieces such as <code>__cxa_throw</code>,
+<code>__cxa_rethrow</code>, and <code>__gxx_personality_v0</code>.</li>
+<li>It also provides dynamic type information support, such as
+<code>typeinfo</code> and <code>dynamic_cast</code>.</li>
+</ul>
+<blockquote>
+<p>The Itanium C++ ABI is usually discussed in four areas. This article
+focuses on the exception-handling part.</p>
+</blockquote>
+<h2 id="exception-overview">Exception overview</h2>
+<img src="/2026/03/07/从源码看 C++ 异常/13.png" width="100%"/>
+
+<p>The figure summarizes the full flow: <code>__cxa_throw</code>,
+<code>_Unwind_RaiseException</code>, <code>unwind_phase1</code>,
+<code>unwind_phase2</code>, <code>landingpad</code>, and the supporting
+metadata such as <code>eh_frame</code>, <code>unw_proc_info_t</code>,
+<code>CIE</code>, <code>FDE</code>, <code>exception table</code>, and
+<code>call site table</code>.</p>
+<p>We can split the mechanism into three stages:</p>
+<ol type="1">
+<li>Throw the exception.</li>
+<li>Unwind the stack.</li>
+<li>Catch and handle the exception.</li>
+</ol>
+<p>The source code in the article is trimmed for focus, and the
+discussion mainly targets ARM64.</p>
+<h2 id="throwing-an-exception">Throwing an exception</h2>
+<h3
+id="__cxa_allocate_exception"><code>__cxa_allocate_exception</code></h3>
+<p>The runtime first allocates storage for the exception object.</p>
+<h3 id="__cxa_throw"><code>__cxa_throw</code></h3>
+<p><code>__cxa_throw</code> stores the type information, attaches the
+exception object, and hands control to the unwind runtime.</p>
+<h2 id="stack-unwinding">Stack unwinding</h2>
+<h3 id="_unwind_raiseexception"><code>_Unwind_RaiseException</code></h3>
+<p>This is the entry point into the unwind library. It begins walking
+the call stack to find a handler.</p>
+<h3 id="unwind_phase1"><code>unwind_phase1</code></h3>
+<p>Phase 1 only searches for a matching handler. It does not run cleanup
+yet.</p>
+<h3 id="unwind_phase2"><code>unwind_phase2</code></h3>
+<p>Once a handler is found, phase 2 actually unwinds frames, runs
+cleanups, and transfers control to the landing pad.</p>
+<h3 id="others">Others</h3>
+<h4 id="__unw_step"><code>__unw_step</code></h4>
+<p>This is the step used to move from one frame to the previous one.</p>
+<h4 id="__unw_get_proc_info"><code>__unw_get_proc_info</code></h4>
+<p>This fetches metadata for the current frame.</p>
+<h2 id="catching-and-handling-exceptions">Catching and handling
+exceptions</h2>
+<h3 id="personality-routine">Personality routine</h3>
+<p>The personality routine is the core decision-maker during unwinding.
+It inspects the metadata for each frame and decides whether the current
+frame can catch the exception or needs cleanup only.</p>
+<h3 id="landing-pad">Landing pad</h3>
+<p>The landing pad is the destination code generated by the compiler for
+exception handling. When the runtime decides that a frame should catch
+or clean up, control is transferred there.</p>
+<h3 id="cfi-cie-and-fde">CFI, CIE, and FDE</h3>
+<p>These are the unwind metadata structures stored in the binary. They
+describe how to restore registers and move across frames.</p>
+<h3 id="lsda">LSDA</h3>
+<p>LSDA means <code>Language Specific Data Area</code>. It stores
+language-specific exception metadata.</p>
+<h4 id="lsda-structure">LSDA structure</h4>
+<h4 id="lsda-parsing">LSDA parsing</h4>
+<p>The runtime uses LSDA to match a thrown type against the handlers
+declared in the source code.</p>
+<h3 id="rtti">RTTI</h3>
+<p>RTTI is needed so the runtime can compare the thrown type with the
+catch clauses.</p>
+<h4 id="defects-of-type_info">Defects of <code>type_info</code></h4>
+<h4 id="class-related-type_info">Class-related
+<code>type_info</code></h4>
+<h4 id="bullet1-is_equal"><code>bullet1: is_equal</code></h4>
+<h4
+id="bullet2-__dynamic_cast_info"><code>bullet2: __dynamic_cast_info</code></h4>
+<p>These sections explain how RTTI participates in exception matching
+and in <code>dynamic_cast</code>.</p>
+<h2 id="summary">Summary</h2>
+<p>The C++ exception mechanism is a combination of compiler-generated
+metadata and runtime stack-unwinding logic. <code>throw</code> does not
+simply jump to <code>catch</code>; it first goes through object
+allocation, unwind phase 1 to search for handlers, phase 2 to run
+cleanup, and finally lands in the compiler-generated handling code.</p>
+<h2 id="qa">QA</h2>
+<h3 id="a-tricky-c-exception-debugging-case">A tricky C++ exception
+debugging case</h3>
+<h3 id="is-two-phase-unwinding-necessary">Is two-phase unwinding
+necessary?</h3>
+<h3 id="is-there-a-lower-cost-way-to-understand-exceptions">Is there a
+lower-cost way to understand exceptions?</h3>
+<h3 id="foreign-exception-vs-native-exception">Foreign Exception vs
+Native Exception</h3>
+<h3 id="why-are-c-destructors-forbidden-from-throwing">Why are C++
+destructors forbidden from throwing?</h3>
+<h3 id="does-objective-c-exception-handling-work-the-same-way">Does
+Objective-C exception handling work the same way?</h3>
+<h3 id="what-about-swift-exceptions">What about Swift exceptions?</h3>
+<h3 id="is-java-exception-handling-similar">Is Java exception handling
+similar?</h3>
+<h3 id="how-should-we-treat-c-exceptions">How should we treat C++
+exceptions?</h3>
+<p>These Q&amp;A sections discuss practical debugging, design tradeoffs,
+and cross-language comparisons.</p>
+<h2 id="references">References</h2>
+<p>The original article lists detailed references for ABI, libunwind,
+LLVM, Apple internals, and related exception-handling material.</p>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#brief-overview"><span class="nav-number">1.</span> <span class="nav-text">Brief overview</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#what-is-the-c-exception-mechanism"><span class="nav-number">1.1.</span> <span class="nav-text">What is the C++ exception
+mechanism?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#design-idea"><span class="nav-number">1.2.</span> <span class="nav-text">Design idea</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#which-implementation-mechanisms-exist"><span class="nav-number">1.3.</span> <span class="nav-text">Which implementation
+mechanisms exist?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#layered-model"><span class="nav-number">1.4.</span> <span class="nav-text">Layered model</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exception-overview"><span class="nav-number">2.</span> <span class="nav-text">Exception overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#throwing-an-exception"><span class="nav-number">3.</span> <span class="nav-text">Throwing an exception</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#__cxa_allocate_exception"><span class="nav-number">3.1.</span> <span class="nav-text">__cxa_allocate_exception</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#__cxa_throw"><span class="nav-number">3.2.</span> <span class="nav-text">__cxa_throw</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stack-unwinding"><span class="nav-number">4.</span> <span class="nav-text">Stack unwinding</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_unwind_raiseexception"><span class="nav-number">4.1.</span> <span class="nav-text">_Unwind_RaiseException</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unwind_phase1"><span class="nav-number">4.2.</span> <span class="nav-text">unwind_phase1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unwind_phase2"><span class="nav-number">4.3.</span> <span class="nav-text">unwind_phase2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#others"><span class="nav-number">4.4.</span> <span class="nav-text">Others</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#__unw_step"><span class="nav-number">4.4.1.</span> <span class="nav-text">__unw_step</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#__unw_get_proc_info"><span class="nav-number">4.4.2.</span> <span class="nav-text">__unw_get_proc_info</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#catching-and-handling-exceptions"><span class="nav-number">5.</span> <span class="nav-text">Catching and handling
+exceptions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#personality-routine"><span class="nav-number">5.1.</span> <span class="nav-text">Personality routine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#landing-pad"><span class="nav-number">5.2.</span> <span class="nav-text">Landing pad</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cfi-cie-and-fde"><span class="nav-number">5.3.</span> <span class="nav-text">CFI, CIE, and FDE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lsda"><span class="nav-number">5.4.</span> <span class="nav-text">LSDA</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#lsda-structure"><span class="nav-number">5.4.1.</span> <span class="nav-text">LSDA structure</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#lsda-parsing"><span class="nav-number">5.4.2.</span> <span class="nav-text">LSDA parsing</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rtti"><span class="nav-number">5.5.</span> <span class="nav-text">RTTI</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#defects-of-type_info"><span class="nav-number">5.5.1.</span> <span class="nav-text">Defects of type_info</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#class-related-type_info"><span class="nav-number">5.5.2.</span> <span class="nav-text">Class-related
+type_info</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#bullet1-is_equal"><span class="nav-number">5.5.3.</span> <span class="nav-text">bullet1: is_equal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#bullet2-__dynamic_cast_info"><span class="nav-number">5.5.4.</span> <span class="nav-text">bullet2: __dynamic_cast_info</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">6.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#qa"><span class="nav-number">7.</span> <span class="nav-text">QA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#a-tricky-c-exception-debugging-case"><span class="nav-number">7.1.</span> <span class="nav-text">A tricky C++ exception
+debugging case</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#is-two-phase-unwinding-necessary"><span class="nav-number">7.2.</span> <span class="nav-text">Is two-phase unwinding
+necessary?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#is-there-a-lower-cost-way-to-understand-exceptions"><span class="nav-number">7.3.</span> <span class="nav-text">Is there a
+lower-cost way to understand exceptions?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#foreign-exception-vs-native-exception"><span class="nav-number">7.4.</span> <span class="nav-text">Foreign Exception vs
+Native Exception</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#why-are-c-destructors-forbidden-from-throwing"><span class="nav-number">7.5.</span> <span class="nav-text">Why are C++
+destructors forbidden from throwing?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#does-objective-c-exception-handling-work-the-same-way"><span class="nav-number">7.6.</span> <span class="nav-text">Does
+Objective-C exception handling work the same way?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#what-about-swift-exceptions"><span class="nav-number">7.7.</span> <span class="nav-text">What about Swift exceptions?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#is-java-exception-handling-similar"><span class="nav-number">7.8.</span> <span class="nav-text">Is Java exception handling
+similar?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#how-should-we-treat-c-exceptions"><span class="nav-number">7.9.</span> <span class="nav-text">How should we treat C++
+exceptions?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">8.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

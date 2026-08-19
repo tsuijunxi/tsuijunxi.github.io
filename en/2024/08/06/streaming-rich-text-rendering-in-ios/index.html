@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content=",,,,,,,,,,,,,,,,,,,,,,,,,,,,," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Background When using ChatGPT or other LLMs, the model’s response is streamed out token by token instead of appearing as one complete paragraph. The model has to keep predicting what to output next, a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Streaming Rich Text Rendering in iOS">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Background When using ChatGPT or other LLMs, the model’s response is streamed out token by token instead of appearing as one complete paragraph. The model has to keep predicting what to output next, a">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/04.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
+<meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
+<meta property="article:modified_time" content="2026-08-19T09:15:24.170Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="Rich Text Streaming Rendering">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"/>
+
+
+
+
+
+  <title>Streaming Rich Text Rendering in iOS | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">Streaming Rich Text Rendering in iOS</h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <h2 id="background">Background</h2>
+<p>When using ChatGPT or other LLMs, the model’s response is streamed
+out token by token instead of appearing as one complete paragraph. The
+model has to keep predicting what to output next, and if the client
+waited until the whole answer was generated before displaying anything,
+the experience would be poor.</p>
+<p>To adapt to LLM streaming output, the client must also support
+streaming rendering. At the same time, to improve expressiveness, LLM
+output is usually rich text, such as Markdown or HTML, rather than plain
+text. Streaming output plus rich text puts real pressure on the
+client-side rendering capability.</p>
+<p>This article discusses how rich text streaming rendering is
+implemented on the client side in a real business scenario. The rich
+text here includes both <code>HTML</code> and <code>LaTeX</code>.</p>
+<h2 id="how-it-works">How it works</h2>
+<h3 id="streaming-request">Streaming request</h3>
+<p><a
+href="https://github.com/deanWombourne/AFNetworking-streaming">AFNetworking-streaming</a>
+provides an interface for chunked data responses. In simple terms, one
+request needs to handle multiple response callbacks and one final
+completion callback. When data first arrives,
+<code>headerCallback</code> is triggered once; as the server keeps
+sending data, <code>dataCallback</code> is triggered multiple times; and
+when sending ends, the final callback is triggered.</p>
+<p>The client receives the data stream through <code>dataCallback</code>
+and parses it according to the separator agreed with the server.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSURL</span> *url = [<span class="built_in">NSURL</span> URLWithString:<span class="string">@&quot;https://raw.githubusercontent.com&quot;</span>];</span><br><span class="line"><span class="keyword">self</span>.manager = [[DWHTTPStreamSessionManager alloc] initWithBaseURL:url];</span><br><span class="line"><span class="keyword">self</span>.manager.itemSerializerProvider = [[DWHTTPJSONItemSerializerProvider alloc] init];</span><br><span class="line"><span class="keyword">self</span>.manager.responseSerializer = [[DWDummyHTTPResponseSerializer alloc] init];</span><br><span class="line">[<span class="keyword">self</span>.manager GET:<span class="string">@&quot;deanWombourne/AFNetworking-streaming/master/Example/example.json&quot;</span></span><br><span class="line">           parameters:@&#123;&#125;</span><br><span class="line">                 data:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSDictionary</span> *dictionary) &#123;</span><br><span class="line">                     [<span class="keyword">self</span>.results addObject:dictionary];</span><br><span class="line">                     [<span class="keyword">self</span>.tableView reloadData];</span><br><span class="line">                 &#125;</span><br><span class="line">              success:^(<span class="built_in">NSURLSessionDataTask</span> *task) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response complete&quot;</span>);</span><br><span class="line">              &#125;</span><br><span class="line">              failure:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSError</span> *error) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response failed&quot;</span>);</span><br><span class="line">              &#125;];</span><br></pre></td></tr></table></figure>
+
+<h3 id="pseudo-stream-parsing">Pseudo-stream parsing</h3>
+<p>To support streaming rendering, we first need to support streaming
+parsing for rich text such as <code>HTML</code> and <code>LaTeX</code>.
+However, there is no true streaming parser on the client, and
+implementing a truly streaming parser would involve many difficulties.
+So the client chose a “pseudo-stream parsing” solution:</p>
+<p><strong>Every time the parser receives streamed text, it appends that
+text to the previously received text and parses everything again from
+the beginning.</strong></p>
+<h4 id="incomplete-tag-rules">Incomplete tag rules</h4>
+<p>Rich text has a certain format, which means at any given moment, the
+streamed text may be incomplete or syntactically invalid. In a
+non-streaming scenario this would be treated as an error, but in a
+streaming scenario it is normal. Therefore we need some
+exception-handling rules:</p>
+<ol type="1">
+<li>Closed tags are output, while unclosed tags are swallowed.
+<ol type="1">
+<li><code>&lt;div&gt;</code> is considered closed.
+<ol type="1">
+<li>If the text is <code>&lt;div&gt;123</code>, the output is
+<code>123</code>.</li>
+<li>If the text is
+<code>&lt;div&gt;&lt;span&gt;123&lt;/span&gt;&lt;b&gt;456</code>, the
+output is <code>123**456**</code>.</li>
+</ol></li>
+<li>But <code>&lt;div</code>, <code>&lt;di</code>, <code>&lt;d</code>,
+and <code>&lt;img src="http://</code> are incomplete and are
+swallowed.</li>
+</ol></li>
+<li>Leaf nodes are output normally.</li>
+</ol>
+<blockquote>
+<p>Here, “closed” means the opening half of an HTML tag is complete
+enough to be considered closed.</p>
+</blockquote>
+<h4 id="incomplete-formula-rules">Incomplete formula rules</h4>
+<p>The <code>tex</code> tag is special because its inner text must still
+be parsed by the <code>LaTeX</code> engine. Therefore whether it is
+finally output depends on whether the LaTeX text itself is syntactically
+valid.</p>
+<ol type="1">
+<li><code>&lt;tex&gt;\frac{1}{2}</code> has no
+<code>&lt;/tex&gt;</code>, but the inner text is complete, so it still
+renders normally.</li>
+<li><code>&lt;tex&gt;\frac{2}{&lt;/tex&gt;</code> has a complete tag,
+but the LaTeX text contains a syntax error, so it is swallowed.</li>
+</ol>
+<h3 id="pseudo-stream-rendering">Pseudo-stream rendering</h3>
+<p>iOS rich text rendering is based on <code>YYText</code>. If we
+implemented streaming rendering according to the true principle, we
+would need to heavily modify <code>YYText</code> so that it supports
+streaming rendering. That cost would be very high, so the client chose
+pseudo-stream rendering.</p>
+<h4 id="core-idea">Core idea</h4>
+<p>The core of pseudo-stream rendering can be summarized in one word:
+“cover”.</p>
+<p>Usually, given a piece of rich text, the parser generates an
+<code>NSAttributedString</code>, and the layout generated by
+<code>YYLabel</code> is deterministic. We can render everything first,
+add a mask above <code>YYLabel</code>, and then reveal one grid at a
+time like a scratch card. This creates the feeling of streaming.</p>
+<p>The mask solution is shown in the videos below. Video 1 is the debug
+version, and video 2 is the normal version.</p>
+<table><tr>
+<td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/07.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
+<td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/08.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
+</tr></table>
+
+<p>There is a red horizontal mask and a blue vertical mask. For every
+streamed character, the red mask shrinks to the right by one character
+width until the current line has fully streamed. At that point, the red
+mask moves to the next line, while the blue mask shrinks downward by one
+line height. During streaming, the <code>loading</code> indicator is
+always displayed at the leftmost edge of the red mask.</p>
+<blockquote>
+<p><strong>Note: the mask color must match the underlying view color and
+must not contain transparency.</strong></p>
+</blockquote>
+<h4 id="streaming-rendering-flow">Streaming rendering flow</h4>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/01.png" width="100%"/>
+
+<ol type="1">
+<li>The client sends an SSE request, meaning the real stream has
+started. At the same time, it informs the rendering engine, which marks
+pseudo-stream rendering as started and begins loading.</li>
+<li>During the stream, multiple real data callbacks arrive. On the first
+callback, the engine generates layout information for the real streamed
+data and starts a timer for pseudo-stream rendering. Every time new
+stream data arrives, it appends the new text to the previously received
+stream text, regenerates layout information, and replaces the previous
+layout. Internally, the streaming renderer only checks whether the
+current progress has exceeded the end of the layout. If not, it
+“scratches open” one more grid.</li>
+<li>When the real stream ends, the final layout is generated and
+updated, and the real stream is marked as finished. When the internal
+pseudo renderer finishes the currently available layout, it checks
+whether the real stream has ended. If yes, pseudo rendering ends;
+otherwise the engine waits for new real stream data.</li>
+<li>In some cases, pseudo-stream rendering needs to be interrupted
+directly. The corresponding API can be called; internally the engine
+stops the timer and adds <code>......</code> after the current position
+to indicate that the stream was interrupted.</li>
+</ol>
+<h4 id="card-expansion">Card expansion</h4>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/02.png" width="100%"/>
+
+<p>In business scenarios, streaming cards often appear inside scrolling
+lists. Unlike traditional cards, whose height is determined from outside
+to inside, the height of a streaming card is determined from inside to
+outside. Therefore, while streaming, the engine must constantly call
+back and notify the outer cell card of its width and height.</p>
+<p>In fact, updating only the cell height is not enough. A container is
+also needed for clipping. A mask alone is not enough; the unrevealed
+area must also be clipped away.</p>
+<blockquote>
+<p>If the streaming card is in a list, after updating the model height
+during streaming, do not call <code>reloadData</code> or
+<code>reloadItemsAtIndexPaths:</code> to refresh the cell. That will
+cause flickering. Use the following methods to update only the cell
+height without refreshing content.</p>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UITableView</span></span><br><span class="line">[<span class="keyword">self</span>.tableView beginUpdates];</span><br><span class="line">[<span class="keyword">self</span>.tableView endUpdates];</span><br><span class="line"></span><br><span class="line"><span class="comment">// UICollectionView</span></span><br><span class="line">[<span class="keyword">self</span>.collectionView performBatchUpdates:^&#123;&#125; completion:^(<span class="type">BOOL</span> finished) &#123;&#125;];</span><br></pre></td></tr></table></figure>
+
+<h2 id="pitfalls">Pitfalls</h2>
+<h3 id="latex-text-appears-first-then-renders-normally">LaTeX text
+appears first, then renders normally</h3>
+<p>Because data is returned as a stream, a complete formula may be cut
+into an intermediate state. On the client, this causes rendering
+flicker: part of the raw text is rendered first; after the client
+receives the complete data, the correct rendered result appears, causing
+a visual flash.</p>
+<p>The reason is this: if a formula nested inside <code>HTML</code> is
+expressed as <code>$xxx$</code>, before parser processing it is
+regex-matched into <code>&lt;tex&gt;xxx&lt;/tex&gt;</code>. However,
+during streaming, if only the first half of the data has arrived, such
+as <code>$(a-b)</code>, the match will not succeed. Therefore
+<code>$(a-b)</code> is treated as plain text and directly output. Later,
+when the data becomes complete, such as <code>$(a-b)^{2}$</code>, it is
+parsed and rendered correctly.</p>
+<p>The strategy is: for incomplete <code>$xx</code> formulas, the regex
+replaces them with <code>&lt;tex&gt;xx</code>. At that point, if
+<code>xx</code> cannot be parsed and rendered by the <code>LaTeX</code>
+engine, it is swallowed; otherwise it is output.</p>
+<p>But because some edge cases were not fully covered, iOS adopted a
+once-and-for-all solution: for incomplete <code>&lt;tex&gt;</code> tags
+such as <code>&lt;tex&gt;xx</code>, before encountering
+<code>&lt;/tex&gt;</code>, the content inside no longer goes through the
+<code>LaTeX</code> engine and returns empty. The streaming effect is
+that the formula start stays in a <code>loading</code> state.</p>
+<h3 id="text-justified-alignment">Text justified alignment</h3>
+<p>Usually, <code>YYLabel</code> provides a ready-made API for justified
+alignment: <code>view.textAlignment = NSTextAlignmentJustified</code>.
+However, this causes flickering during streaming rendering. The root
+cause is that justified alignment may adjust the position of text that
+has already been rendered. This creates text flicker. That alignment
+style is suitable for static cards, but not for streaming cards.</p>
+<h3 id="display-overlap">Display overlap</h3>
+<p>During streaming, the engine depends on <code>YYTextLayout</code> to
+get the position of the current character. However, in some line-wrap
+cases, the returned position information is wrong.</p>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/03.png" width="100%"/>
+
+<p>As shown in the figure, after the <code>N</code>th grid finishes
+streaming, the current line has already ended, so the next position
+should be the <code>N+2</code>th grid. But <code>YYTextLayout</code>
+returns the <code>N+1</code>th grid. This grid area is very large: it
+not only repeats the already streamed area, but also exposes the
+not-yet-streamed area too early. This causes the content to appear first
+and then get covered again, producing flicker.</p>
+<p>After investigation, this is related to the logic in
+<code>YYTextLayout</code> that calculates the union of
+<code>Rect</code>s. Some <code>Rect</code>s have width or height equal
+to <code>0</code>, and they do not need to participate in union
+calculation. Excluding them fixes the issue.</p>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/04.jpg" width="100%"/>
+
+<p>Modify <code>rectForRange:</code> as follows:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">CGRect</span>)rectForRange:(YYTextRange *)range &#123;</span><br><span class="line">    <span class="built_in">NSArray</span> *rects = [<span class="keyword">self</span> selectionRectsForRange:range];</span><br><span class="line">    <span class="keyword">if</span> (rects.count == <span class="number">0</span>) <span class="keyword">return</span> <span class="built_in">CGRectNull</span>;</span><br><span class="line">    <span class="built_in">CGRect</span> rectUnion = ((YYTextSelectionRect *)rects.firstObject).rect;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> i = <span class="number">1</span>; i &lt; rects.count; i++) &#123;</span><br><span class="line">        YYTextSelectionRect *rect = rects[i];</span><br><span class="line">        <span class="keyword">if</span> (fabs(<span class="built_in">CGRectGetWidth</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span> &amp;&amp; fabs(<span class="built_in">CGRectGetHeight</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span>) &#123;</span><br><span class="line">            rectUnion = <span class="built_in">CGRectUnion</span>(rectUnion, rect.rect);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> rectUnion;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="underline-spacing">Underline spacing</h3>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/05.png" width="100%"/>
+
+<p><code>YYText</code> cannot adjust the distance between text and
+underline, but this is a strong requirement in the business scenario.
+The solution is to modify <code>YYTextDrawDecoration</code> in
+<code>YYText</code> and add an underline offset.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>) decorationWithStyle: (YYTextLineStyle)style width: (<span class="keyword">nullable</span> <span class="built_in">NSNumber</span> *)width color: (<span class="keyword">nullable</span></span><br><span class="line"><span class="built_in">UIColor</span> *)color;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) YYTextLineStyle style;                <span class="comment">///&lt; line style</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *width;    <span class="comment">///&lt; line width (nil means automatic width)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *offset;   <span class="comment">///&lt; line offset(nil means 0, only for underline)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">UIColor</span> *color;     <span class="comment">///&lt; line color (nil means automatic color)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) YYTextShadow *shadow; <span class="comment">///&lt; line shadow</span></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<p>Then include <code>offset</code> in the underline’s y coordinate
+inside <code>YYTextDrawDecoration</code>.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    TRunGetPositions(run, <span class="built_in">CFRangeMake</span> (<span class="number">0</span>, <span class="number">1</span>), &amp;runPosition);</span><br><span class="line">    underlineStart.x = strikethroughStart.x = runPosition.x + line position.x;</span><br><span class="line">    length = <span class="built_in">CTRunGetTypographicBounds</span>|run, <span class="built_in">CFRangeMake</span>(<span class="number">0</span>, <span class="number">0</span>), <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// offset</span></span><br><span class="line">    <span class="keyword">if</span> (underline.offset) &#123;</span><br><span class="line">        underlineStart.y += underline.offset.floatValue;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (underlineOffset) &#123;</span><br><span class="line">        underlineStart.y += underline0ffset.floatValue;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
+
+<p>After the modification, the underline on the last line is often lost.
+The main reason is that if the underline spacing on the last line is too
+large, it exceeds the layout range and gets clipped. So the layout
+information also needs to be expanded. When the layout method finally
+determines the layout size, it should take this offset into account.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">+ (YYTextLayout *)layoutWithContainer:(YYTextContainer *)container text:(<span class="built_in">NSAttributedString</span> *)text range:(<span class="built_in">NSRange</span>)range &#123;</span><br><span class="line">......</span><br><span class="line">    &#123;</span><br><span class="line">        YYTextLine *lastLine = lines.lastObject;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(lastLine.CTLine);</span><br><span class="line">        <span class="keyword">if</span> (runs != <span class="literal">nil</span>) &#123;</span><br><span class="line">            <span class="built_in">CGFloat</span> underlinePositionCustom = <span class="number">0.</span>f;</span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, <span class="literal">NULL</span>, &amp;underlinePositionCustom, <span class="literal">NULL</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> maxUnderlineOffset = <span class="number">0.</span>f;</span><br><span class="line">            <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">                <span class="built_in">CTRunRef</span> run = <span class="built_in">CFArrayGetValueAtIndex</span>(runs, r);</span><br><span class="line">                <span class="built_in">CFIndex</span> glyphCount = <span class="built_in">CTRunGetGlyphCount</span>(run);</span><br><span class="line">                <span class="keyword">if</span> (glyphCount == <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">                <span class="built_in">NSDictionary</span> *attrs = (<span class="type">id</span>)<span class="built_in">CTRunGetAttributes</span>(run);</span><br><span class="line">                YYTextDecoration *underline = attrs[YYTextUnderlineAttributeName];</span><br><span class="line">                <span class="keyword">if</span> (underlinePositionCustom &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    maxUnderlineOffset = MAX(maxUnderlineOffset, fabs(underlinePositionCustom * <span class="number">-1</span> + underline.width.floatValue));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (maxUnderlineOffset &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">CGRect</span> tempRect = textBoundingRect;</span><br><span class="line">                tempRect.size.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingRect = tempRect;</span><br><span class="line">                </span><br><span class="line">                <span class="built_in">CGSize</span> tempSize = textBoundingSize;</span><br><span class="line">                tempSize.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingSize = tempSize;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    layout.frameSetter = ctSetter;</span><br><span class="line">    layout.frame = ctFrame;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">if</span> (lineOrigins) free(lineOrigins);</span><br><span class="line">    <span class="keyword">return</span> layout;</span><br></pre></td></tr></table></figure>
+
+<h3 id="underline-attachment">Underline attachment</h3>
+<p>Rich text contains formulas and images, which usually appear in
+<code>NSAttributedString</code> as <code>attachment</code>s. In some
+cases, a formula or image is obviously taller than normal text, so the
+underline has problems. As shown below, the underline passes directly
+through the formula, which clearly does not meet product
+requirements.</p>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/06.jpg" width="50%"/>
+
+<p>Therefore, <code>YYText</code> layout logic needs to be modified
+again. The core logic is: during layout of each line, get the
+<code>ascent</code> and <code>descent</code> of the
+<code>attachment</code>, then apply an offset based on the maximum
+<code>descent</code>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">static void YYTextGetRunsMaxMetricOfAttachment(CFArrayRef  _Nonnull runs, CGFloat * _Nullable xHeight, CGFloat * _Nonnull underlinePosition, CGFloat * _Nullable lineThickness) &#123;</span><br><span class="line">    CGFloat maxXHeight = 0;</span><br><span class="line">    CGFloat maxUnderlinePos = 0;</span><br><span class="line">    for (NSUInteger i = 0, max = CFArrayGetCount(runs); i &lt; max; i++) &#123;</span><br><span class="line">        CTRunRef run = CFArrayGetValueAtIndex(runs, i);</span><br><span class="line">        CFDictionaryRef attrs = CTRunGetAttributes(run);</span><br><span class="line">        if (attrs) &#123;</span><br><span class="line">            YYTextDecoration *underline = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextUnderlineAttributeName);</span><br><span class="line">            YYTextDecoration *attachment = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextAttachmentAttributeName);</span><br><span class="line">            YYTextRunDelegate *runDelegate = CTRunDelegateGetRefCon(CFDictionaryGetValue(attrs, kCTRunDelegateAttributeName));</span><br><span class="line">            if (underline &amp;&amp; attachment &amp;&amp; runDelegate) &#123;</span><br><span class="line">                if (runDelegate.descent * -1 &lt; maxUnderlinePos) &#123;</span><br><span class="line">                    maxUnderlinePos = runDelegate.descent * -1;</span><br><span class="line">                &#125;</span><br><span class="line">                if (runDelegate.ascent &lt; maxXHeight) &#123;</span><br><span class="line">                    maxXHeight = runDelegate.ascent;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (underlinePosition &amp;&amp; *underlinePosition &gt; maxUnderlinePos) &#123;</span><br><span class="line">        *underlinePosition = maxUnderlinePos;</span><br><span class="line">    &#125;</span><br><span class="line">    if (xHeight &amp;&amp; *xHeight &lt; maxXHeight) &#123;</span><br><span class="line">        *xHeight = maxXHeight;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> l = <span class="number">0</span>, lMax = layout.lines.count; l &lt; lMax; l++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cancel &amp;&amp; cancel()) <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        YYTextLine *line = lines[l];</span><br><span class="line">        <span class="keyword">if</span> (layout.truncatedLine &amp;&amp; layout.truncatedLine.index == line.index) line = layout.truncatedLine;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(line.CTLine);</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">            ......</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> xHeight, underlinePosition, lineThickness;</span><br><span class="line">            YYTextGetRunsMaxMetric(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// get the runs max metric of attachment</span></span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            ......  </span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>The premise of this fix is that <code>Attachment</code> must
+correctly set <code>ascent</code> and <code>descent</code>; otherwise
+the problem cannot be solved.</p>
+</blockquote>
+<h3 id="flicker--misalignment">Flicker + misalignment</h3>
+<p>From the phenomenon, the layout information used during streaming
+seems to differ from the layout information actually displayed, causing
+misalignment and flicker. Investigation showed that the problem was
+caused by frequent <code>YYText</code> refreshes in a short period of
+time. Therefore the original solution needed to be changed:</p>
+<p>When streamed text is received, do not immediately apply the newly
+generated layout information to the view. Instead, record that layout
+information. After the view finishes streaming the current layout, it
+checks whether layout information has been updated. If yes, it applies
+the new layout and continues streaming; otherwise pseudo-stream
+rendering is complete.</p>
+<p>During streaming of the current layout, new layout information may be
+updated multiple times and overwritten. This avoids frequent view
+refreshes, solves flicker and misalignment, and also improves
+performance.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (void)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    if (!self.isStreamingRendering) &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // relocate the animateView at the first time that the layout was set.</span><br><span class="line">    if (![[XXXTimer defaultTimer] hasTimerWithName:self.identify]) &#123;</span><br><span class="line">        [self updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [self.animateView locateInRect:CGRectMake(0, 0, 0, CGRectGetHeight(self.loadingView.frame))];</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // save the textlayout</span><br><span class="line">        self.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    // start rendering timer</span><br><span class="line">    [self startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)startRenderingTimer &#123;</span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [[XXXTimer defaultTimer] scheduledTimerWithName:<span class="keyword">self</span>.identify timeInterval:<span class="keyword">self</span>.renderingInterval queue:dispatch_get_main_queue() startImmediately:<span class="literal">YES</span> repeat:<span class="literal">YES</span> action:^&#123;</span><br><span class="line">            <span class="built_in">NSUInteger</span> length = <span class="keyword">self</span>.textLayout.text.yy_rangeOfAll.length;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">self</span>.rectIndex &lt; length) &#123;</span><br><span class="line">                [<span class="keyword">self</span> informChangeStreamingRenderingWithInfo];</span><br><span class="line">                <span class="keyword">self</span>.rectIndex++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">self</span>.tempTextLayout != <span class="literal">nil</span> &amp;&amp; <span class="keyword">self</span>.textLayout != <span class="keyword">self</span>.tempTextLayout) &#123;</span><br><span class="line">                    <span class="comment">// update the text layout and frame</span></span><br><span class="line">                    [<span class="keyword">self</span> updateTextLayoutAndFrame:<span class="keyword">self</span>.tempTextLayout];</span><br><span class="line">                    <span class="keyword">self</span>.tempTextLayout = <span class="literal">nil</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">                        <span class="comment">// wait</span></span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        [<span class="keyword">self</span> stopAnimation];</span><br><span class="line">                        [<span class="keyword">self</span> stopRenderingTimer];</span><br><span class="line">                        [<span class="keyword">self</span> informStopStreamingRenderingWithInfo];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="syncing-stream-interruption-progress-to-tts">Syncing stream
+interruption progress to TTS</h3>
+<p>In the business scenario, the original rich text usually needs to be
+parsed by the rendering engine and converted into readable text, which
+is then fed to the <code>TTS</code> engine. Usually this is fine. But in
+a streaming interruption scenario, the final displayed text ends with
+<code>...</code>, while the readable text may already have been fed to
+<code>TTS</code> as a whole. As a result, <code>TTS</code> reads more
+text than what streaming rendering displayed, and canceling the extra
+fed content is not easy.</p>
+<p>Therefore, the final solution is: for every rendered character, the
+rendering engine emits the corresponding text to <code>TTS</code> (which
+has its own internal cache queue). When streaming rendering is
+interrupted, the text fed to <code>TTS</code> also stops at that point.
+IM also records this <code>index</code>, so future replay can locate the
+same position, ensuring consistency between rendering and the final
+<code>TTS</code> text.</p>
+<h3 id="-problem"><code>$...$$...$</code> problem</h3>
+<p>This problem is complex, so let’s start with some background.
+Traditional TeX has two ways to typeset formulas:</p>
+<ul>
+<li><strong>inline math mode</strong>, where formulas are included in a
+paragraph. Early TeX used <code>$...$</code>.</li>
+<li><strong>display math mode</strong>, where formulas occupy their own
+line. Early TeX used <code>$$...$$</code>.</li>
+</ul>
+<p>Today, the standard best practice is to avoid using <code>$</code>
+characters to typeset formulas, and instead use LaTeX delimiters:</p>
+<ul>
+<li>For <strong>inline math mode</strong>, use <code>\(... \)</code> or
+<code>\begin{math}...\end{math}</code>, instead of
+<code>$...$</code>.</li>
+<li>For <strong>display math mode</strong>, use <code>\[... \]</code> or
+<code>\begin{displaymath}...\end{displaymath}</code>, instead of
+<code>$$...$$</code>.</li>
+</ul>
+<p>Back to the business scenario: LaTeX formulas are usually nested
+inside HTML, so HTML parsing must happen first. For easier parsing, a
+custom tag <code>&lt;tex&gt;...&lt;/tex&gt;</code> is used to represent
+LaTeX formulas.</p>
+<p>Even so, LaTeX parsing is not painless. The reason is that LaTeX text
+may contain HTML syntax markers. For example:
+<code>&lt;tex&gt;1\+2&lt;5&lt;/tex&gt;</code>. The <code>&lt;</code>
+inside the LaTeX text is meant for display; it is not an HTML tag
+marker. But the HTML parser treats it as a tag, causing parsing chaos.
+Therefore, before parsing, we need to regex-match
+<code>&lt;tex&gt;...&lt;/tex&gt;</code> and replace <code>&lt;</code>
+with <code>&amp;lt;</code> for escaping. Similar symbols include
+<code>&gt;</code>, <code>&amp;</code>, <code>"</code>, and
+<code>'</code>.</p>
+<p>After LLMs arrived, all the delimiter types mentioned above might be
+returned, so client rendering still had to support them. Taking
+<code>$...$</code> and <code>$$...$$</code> as examples, the initial
+client implementation was very simple: before parsing, first regex-match
+<code>$$...$$</code>, then match <code>$...$</code>, replace them with
+<code>&lt;tex&gt;...&lt;/tex&gt;</code>, and keep the rest of the logic
+unchanged. Everything was peaceful.</p>
+<p>There was actually an implicit assumption here: if HTML text wants to
+express the dollar sign <code>$</code>, it must use <code>\$</code>;
+otherwise a single dollar sign would misalign all subsequent
+parsing.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    <span class="comment">// replace the $$xxx$$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDoubleDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// replace the $xxx$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// process the excape in tex tag</span></span><br><span class="line">    [<span class="keyword">self</span> processExcapeInTexTag];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Until one day, the model returned <code>$...$$...$</code>, breaking
+that peace. Its intention was to express two consecutive formulas, but
+because the middle <code>$$</code> became coupled, the client regex
+logic failed. The client first tried to match <code>$$...$$</code> and
+failed, then matched <code>$...$</code>, and finally treated
+<code>...$$...</code> as LaTeX text, causing an error.</p>
+<p>The client eventually abandoned the regex matching approach and
+switched to a scan with stack push/pop:</p>
+<ol type="1">
+<li>When encountering <code>$</code>, check whether the stack already
+contains <code>$</code>. If yes, pop it first, and one formula is
+complete.</li>
+<li>Otherwise, consider whether the next character is <code>$</code>.
+<ol type="1">
+<li>If yes, combine into <code>$$</code>.
+<ol type="1">
+<li>Check whether the stack contains <code>$$</code>. If yes, pop it
+first, and one formula is complete.</li>
+<li>Otherwise, push <code>$$</code> to mark the start of a formula.</li>
+</ol></li>
+<li>Otherwise, push <code>$</code> to mark the start of a formula.</li>
+</ol></li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    .....</span><br><span class="line">    <span class="keyword">if</span> (curCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$&quot;</span>]) &#123;</span><br><span class="line">            [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">self</span>.index + <span class="number">1</span> &lt; <span class="keyword">self</span>.len) &#123;</span><br><span class="line">            <span class="type">wchar_t</span> nextCh = *(<span class="keyword">self</span>.str + <span class="keyword">self</span>.index + <span class="number">1</span>);</span><br><span class="line">            <span class="keyword">if</span> (nextCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$$&quot;</span>]) &#123;</span><br><span class="line">                    [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">self</span>.index += <span class="number">2</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">                <span class="keyword">self</span>.index++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> appendWideCharacter:curCh];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    .....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This stack-based scan brings flexibility and freedom. It can solve
+<code>$</code> and <code>$$</code> issues, and can also handle
+<code>\(...\)</code> and <code>\[...\]</code>. It also handles escaping
+of HTML syntax markers. All problems can be solved in one scan, which is
+difficult with the regex approach.</p>
+<p>In addition, the stack-based scan also brought a performance benefit:
+LaTeX preprocessing time dropped to <code>1/2</code> to <code>1/4</code>
+of the regex solution.</p>
+<h2 id="summary">Summary</h2>
+<p>The streaming rendering discussed above is built on top of
+<code>YYText</code>. Thanks to <code>YYText</code>’s good layout
+mechanism, we can quickly implement a pseudo-streaming effect and
+satisfy business needs. But we also encountered many problems and
+stepped into many pitfalls. Even so, the current pseudo-streaming
+solution still has some natural defects:</p>
+<ol type="1">
+<li>Because it is based on <code>YYText</code>, many problems still
+require modifying <code>YYText</code> source code. <code>YYText</code>
+cannot be treated as a black box, which raises the bar for future
+development and maintenance.</li>
+<li>The business side has weak layout control, especially for block
+elements such as tables and lists. The client struggles with these.
+Fundamentally, <code>YYText</code> is still mainly for text layout. For
+mixed image-text-table layout and nested layout, if we want to control
+details, <code>YYText</code> becomes limited, because
+<code>attachment</code> and <code>YYText</code> are separated, making it
+difficult to fully use <code>YYText</code>’s layout and rendering
+capability.</li>
+<li><code>HTML</code> and <code>LaTeX</code> are split at the rendering
+layer. A formula is embedded into <code>YYText</code> as a whole
+<code>attachment</code> and can only be output as a whole
+<code>View</code>, making it hard to achieve a streaming rendering
+effect.</li>
+</ol>
+<p>In the future, we may need to build a rendering engine that can
+integrate multiple rich-text syntaxes. Even though the upper-level
+syntaxes are different, the underlying rendering framework can be
+consistent. This would bring unified rendering capabilities and more
+flexible customization, providing greater possibilities for solving
+nested block rendering, formula streaming rendering, and similar
+problems.</p>
+<p>Some questions to think about:</p>
+<ol type="1">
+<li>Is it possible to build a truly streaming parser?</li>
+<li>Can the number of layout passes be reduced?</li>
+<li>Can we achieve truly streaming rendering?</li>
+</ol>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-it-works"><span class="nav-number">2.</span> <span class="nav-text">How it works</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#streaming-request"><span class="nav-number">2.1.</span> <span class="nav-text">Streaming request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-parsing"><span class="nav-number">2.2.</span> <span class="nav-text">Pseudo-stream parsing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-tag-rules"><span class="nav-number">2.2.1.</span> <span class="nav-text">Incomplete tag rules</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-formula-rules"><span class="nav-number">2.2.2.</span> <span class="nav-text">Incomplete formula rules</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-rendering"><span class="nav-number">2.3.</span> <span class="nav-text">Pseudo-stream rendering</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#core-idea"><span class="nav-number">2.3.1.</span> <span class="nav-text">Core idea</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#streaming-rendering-flow"><span class="nav-number">2.3.2.</span> <span class="nav-text">Streaming rendering flow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#card-expansion"><span class="nav-number">2.3.3.</span> <span class="nav-text">Card expansion</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pitfalls"><span class="nav-number">3.</span> <span class="nav-text">Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#latex-text-appears-first-then-renders-normally"><span class="nav-number">3.1.</span> <span class="nav-text">LaTeX text
+appears first, then renders normally</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text-justified-alignment"><span class="nav-number">3.2.</span> <span class="nav-text">Text justified alignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#display-overlap"><span class="nav-number">3.3.</span> <span class="nav-text">Display overlap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-spacing"><span class="nav-number">3.4.</span> <span class="nav-text">Underline spacing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-attachment"><span class="nav-number">3.5.</span> <span class="nav-text">Underline attachment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flicker--misalignment"><span class="nav-number">3.6.</span> <span class="nav-text">Flicker + misalignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syncing-stream-interruption-progress-to-tts"><span class="nav-number">3.7.</span> <span class="nav-text">Syncing stream
+interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#-problem"><span class="nav-number">3.8.</span> <span class="nav-text">$...$$...$ problem</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

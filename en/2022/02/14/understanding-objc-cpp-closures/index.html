@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content=",,,,,,,,,,,,,,,,,,,,,,,,,,,," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="This article also appears on WeChat: &lt;&lt;Understanding OC&#x2F;C++ Closures&gt;&gt;  Background Apple’s Objective-C compiler lets you mix C++ and Objective-C in the same source file. The combined lang">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Understanding OC&#x2F;C++ Closures">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="This article also appears on WeChat: &lt;&lt;Understanding OC&#x2F;C++ Closures&gt;&gt;  Background Apple’s Objective-C compiler lets you mix C++ and Objective-C in the same source file. The combined lang">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/11.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/12.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/13.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png">
+<meta property="article:published_time" content="2022-02-14T08:25:16.000Z">
+<meta property="article:modified_time" content="2026-08-19T05:03:36.296Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="Objective-C Block C++ Lambda">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/"/>
+
+
+
+
+
+  <title>Understanding OC/C++ Closures | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">Understanding OC/C++ Closures</h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <blockquote>
+<p>This article also appears on WeChat: <a
+href="https://mp.weixin.qq.com/s/NEvtm_yBMghyP_WTUATy8g">&lt;&lt;Understanding
+OC/C++ Closures&gt;&gt;</a></p>
+</blockquote>
+<h2 id="background">Background</h2>
+<p>Apple’s Objective-C compiler lets you mix <code>C++</code> and
+<code>Objective-C</code> in the same source file. The combined language
+is <code>Objective-C++</code>. Compared with ecosystems where
+<code>Swift</code>, <code>Kotlin</code>, or <code>Dart</code> have to
+bridge into <code>C++</code> through separate files and interop layers
+such as <code>JNI</code> or <code>FFI</code>, the single-file
+Objective-C and C++ mix is very pleasant.</p>
+<p>That said, mixed compilation does not mean the two languages gain
+each other’s features. <code>Objective-C++</code> does not add C++
+features to Objective-C, and it does not add Objective-C features to
+C++. For example, you cannot call a C++ object with Objective-C syntax,
+you cannot add a constructor or destructor to an Objective-C object, and
+you cannot swap <code>this</code> and <code>self</code>.</p>
+<p>The class systems remain separate: C++ classes cannot inherit from
+Objective-C classes, and Objective-C classes cannot inherit from C++
+classes.</p>
+<p>This article explores the confusing interaction between Objective-C
+<code>Block</code>s and C++ <code>lambda</code>s.</p>
+<blockquote>
+<p>Environment: <code>C++14</code>, Objective-C under <code>ARC</code>
+only.</p>
+</blockquote>
+<h2 id="basic-understanding">Basic understanding</h2>
+<p>Before going deeper, let’s compare the two.</p>
+<h3 id="syntax">Syntax</h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">^(<span class="type">int</span> x, NSString *y)&#123;&#125; <span class="comment">// ObjC, take int and NSString*</span></span><br><span class="line">[](<span class="type">int</span> x, std::string y)&#123;&#125; <span class="comment">// C++, take int and std::string</span></span><br><span class="line"></span><br><span class="line">^&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// ObjC, returns int</span></span><br><span class="line">[]&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// C++, returns int</span></span><br><span class="line"></span><br><span class="line">^<span class="type">int</span> &#123; <span class="keyword">if</span>(something) <span class="keyword">return</span> <span class="number">42</span>; <span class="keyword">else</span> <span class="keyword">return</span> <span class="number">43</span>; &#125;</span><br><span class="line">[]()-&gt;<span class="type">int</span> &#123; <span class="keyword">if</span>(something) <span class="keyword">return</span> <span class="number">42</span>; <span class="keyword">else</span> <span class="keyword">return</span> <span class="number">43</span>; &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="principle">Principle</h3>
+<p>For Objective-C <code>Block</code>s, see <a
+href="https://halfrost.com/ios_block">&lt;&lt;深入研究 Block
+捕获外部变量和 __block 实现原理&gt;&gt;</a> for the low-level story.
+Here we only expand the code enough to compare the two models.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)viewDidLoad &#123;</span><br><span class="line">    [<span class="variable language_">super</span> viewDidLoad];</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> x = <span class="number">3</span>;</span><br><span class="line">    <span class="type">void</span>(^block)(<span class="type">int</span>) = ^(<span class="type">int</span> a) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@&quot;%d&quot;</span>, x);</span><br><span class="line">    &#125;;</span><br><span class="line">    block(<span class="number">5</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After <code>clang -rewrite-objc</code>, we get:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">ViewController__viewDidLoad_block_impl_0</span> &#123;</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> __<span class="title">block_impl</span> <span class="title">impl</span>;</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> __<span class="title">ViewController__viewDidLoad_block_desc_0</span>* <span class="title">Desc</span>;</span></span><br><span class="line">  <span class="type">int</span> x;</span><br><span class="line">  __ViewController__viewDidLoad_block_impl_0(<span class="type">void</span> *fp, <span class="keyword">struct</span> __ViewController__viewDidLoad_block_desc_0 *desc, <span class="type">int</span> _x, <span class="type">int</span> flags=<span class="number">0</span>) : x(_x) &#123;</span><br><span class="line">    impl.isa = &amp;_NSConcreteStackBlock;</span><br><span class="line">    impl.Flags = flags;</span><br><span class="line">    impl.FuncPtr = fp;</span><br><span class="line">    Desc = desc;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> __ViewController__viewDidLoad_block_func_0(<span class="keyword">struct</span> __ViewController__viewDidLoad_block_impl_0 *__cself, <span class="type">int</span> a) &#123;</span><br><span class="line">   <span class="type">int</span> x = __cself-&gt;x; <span class="comment">// bound by copy</span></span><br><span class="line">   NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_st_jhg68rvj7sj064ft0rznckfh0000gn_T_ViewController_d02516_mii_0, x);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>C++</code> <code>lambda</code> uses a different mechanism. It
+is lowered into an anonymous C++ class. The article uses
+<code>cppinsights</code> to inspect the generated form.</p>
+<h3 id="captured-variables">Captured variables</h3>
+<p>The two constructs both capture variables, but the capture rules and
+generated types are different.</p>
+<h3 id="memory-management">Memory management</h3>
+<p>Objective-C blocks participate in ARC and object lifetime rules,
+while C++ lambdas follow normal C++ object semantics.</p>
+<h2 id="mixed-capture-problems">Mixed capture problems</h2>
+<h3 id="how-does-c-lambda-capture-objective-c-objects">How does
+<code>C++</code> <code>lambda</code> capture Objective-C objects?</h3>
+<h4 id="capture-by-value">Capture by value</h4>
+<p>Suppose an <code>OCClass</code> instance owns a
+<code>std::shared_ptr&lt;CppClass&gt;</code>, and that C++ object stores
+a callback lambda. Inside the lambda, we capture <code>self</code> by
+value.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CppClass</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">CppClass</span>() &#123;&#125;</span><br><span class="line">    ~<span class="built_in">CppClass</span>() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    std::function&lt;<span class="type">void</span>()&gt; callback;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">OCClass</span> </span>&#123;</span><br><span class="line">    std::shared_ptr&lt;CppClass&gt; cppObj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)dealloc &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;%s&quot;</span>, __FUNCTION__);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">instancetype</span>)init &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span> = [<span class="variable language_">super</span> init]) &#123;</span><br><span class="line">        cppObj = std::make_shared&lt;CppClass&gt;();</span><br><span class="line">        cppObj-&gt;callback = [<span class="keyword">self</span>]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> executeTask];</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)executeTask &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;execute task&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">OCClass *ocObj = [[OCClass alloc] init];</span><br></pre></td></tr></table></figure>
+
+<p>Unfortunately, this creates a retain cycle: <code>ocObj</code> owns
+<code>cppObj</code>, and <code>cppObj</code> owns <code>ocObj</code>
+through <code>callback</code>.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/01.png" />
+
+<p>Looking at the generated assembly, you can see that ARC semantics are
+triggered during capture, so <code>self</code> is automatically
+retained.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/02.png" />
+
+<p>These instructions increase the retain count of
+<code>self</code>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0x10cab31ea</span> &lt;<span class="number">+170</span>&gt;: movq   <span class="number">-0x8</span>(%rbp), %rdi</span><br><span class="line"><span class="number">0x10cab31ee</span> &lt;<span class="number">+174</span>&gt;: movq   <span class="number">0x5e7b</span>(%rip), %rax        ; (<span class="type">void</span> *)<span class="number">0x00007fff2018fa80</span>: objc_retain</span><br><span class="line"><span class="number">0x10cab31f5</span> &lt;<span class="number">+181</span>&gt;: callq  *%rax</span><br></pre></td></tr></table></figure>
+
+<p>Looking at the anonymous class parameter list, we can see that
+<code>self</code> is of type <code>OCClass *</code>, which is a pointer
+type.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/03.png" />
+
+<p>So we can model the capture like this. Under ARC, it behaves like a
+retain:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">__<span class="keyword">strong</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>) capture_self = <span class="keyword">self</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// expanded</span></span><br><span class="line">__<span class="keyword">strong</span> OCClass * capture_self = <span class="keyword">self</span>;</span><br></pre></td></tr></table></figure>
+
+<p>To solve the retain cycle, use <code>__weak</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">__weak __typeof(self) wself = self;</span><br><span class="line">cppObj-&gt;callback = [wself]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [wself executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<img src="/2022/02/14/深入理解-OC-C-闭包/04.png" />
+
+<p>Looking at the assembly again, the <code>objc_retain</code> logic is
+gone and <code>objc_copyWeak</code> appears instead.</p>
+<h4 id="capture-by-reference">Capture by reference</h4>
+<p>What if we capture <code>self</code> by reference instead?</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">cppObj-&gt;callback = [&amp;self]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [self executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The assembly no longer contains <code>objc_retain</code> either.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/05.png" />
+
+<p>Looking at the anonymous class parameter list, <code>self</code> is
+now <code>OCClass *&amp;</code>, which is a reference to a pointer.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/06.png" />
+
+<p>So reference capture does not retain <code>self</code>. You can think
+of it like this under ARC:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">__<span class="keyword">unsafe_unretained</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>)&amp; capture_self = <span class="keyword">self</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// expanded</span></span><br><span class="line">__<span class="keyword">unsafe_unretained</span> OCClass *&amp;capture_self = <span class="keyword">self</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="when-is-the-captured-objective-c-object-released">When is the
+captured Objective-C object released?</h4>
+<p>For this snippet:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">OCClass2 *oc2 = [[OCClass2 alloc] init];</span><br><span class="line">cppObj-&gt;callback = [oc2]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [oc2 <span class="keyword">class</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<img src="/2022/02/14/深入理解-OC-C-闭包/07.png" />
+
+<p>When <code>CppClass</code> is destroyed, its
+<code>std::function</code> is destroyed too, and that in turn releases
+the captured Objective-C object <code>oc2</code>.</p>
+<h4 id="conclusion">Conclusion</h4>
+<p><code>C++</code> lambdas are essentially anonymous struct types that
+store captured variables. ARC ensures that <code>C++</code> structs
+containing Objective-C object fields still follow ARC semantics:</p>
+<ol type="1">
+<li>The struct constructor initializes Objective-C object fields to
+<code>nil</code>.</li>
+<li>When such a field is assigned, the old value is released and the new
+one is retained (or copied for blocks).</li>
+<li>When the struct destructor runs, the Objective-C field is
+released.</li>
+</ol>
+<p><code>C++</code> lambdas can capture Objective-C objects either by
+value or by reference:</p>
+<ol type="1">
+<li>Reference capture is roughly equivalent to
+<code>__unsafe_unretained</code>, which is dangerous because of lifetime
+issues.</li>
+<li>Value capture is roughly equivalent to <code>__strong</code>, which
+can create retain cycles, so <code>__weak</code> may be needed.</li>
+</ol>
+<h3 id="how-does-an-objective-c-block-capture-c-objects">How does an
+Objective-C Block capture C++ objects?</h3>
+<p>Now let’s look at the reverse direction: how Objective-C
+<code>Block</code>s capture <code>C++</code> objects.</p>
+<p>In the code below, <code>HMRequestMonitor</code> is a
+<code>C++</code> struct. Its <code>WaitForDone</code> and
+<code>SignalDone</code> methods are used to implement
+synchronization.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">HMRequestMonitor</span>  &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">WaitForDone</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> is_done_.<span class="built_in">get</span>(); &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">SignalDone</span><span class="params">(<span class="type">bool</span> success)</span> </span>&#123; done_with_success_.<span class="built_in">set_value</span>(success); &#125;</span><br><span class="line">    <span class="function">ResponseStruct&amp; <span class="title">GetResponse</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> response_; &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    .....</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The <code>upload</code> method uses <code>HMRequestMonitor</code> to
+synchronously wait for a network response.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">hermas::ResponseStruct <span class="title">HMUploader::upload</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function"><span class="type">const</span> <span class="type">char</span>* url, </span></span></span><br><span class="line"><span class="params"><span class="function"><span class="type">const</span> <span class="type">char</span>* request_data, </span></span></span><br><span class="line"><span class="params"><span class="function"><span class="type">int64_t</span> len,</span></span></span><br><span class="line"><span class="params"><span class="function"><span class="type">const</span> <span class="type">char</span>* header_content_type, </span></span></span><br><span class="line"><span class="params"><span class="function"><span class="type">const</span> <span class="type">char</span>* header_content_encoding)</span> </span>&#123;</span><br><span class="line">    HMRequestModel *model = [[HMRequestModel alloc] init];</span><br><span class="line">    ......</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> monitor = std::<span class="built_in">make_shared</span>&lt;hermas::HMRequestMonitor&gt;();</span><br><span class="line">    <span class="function">std::weak_ptr&lt;hermas::HMRequestMonitor&gt; <span class="title">weakMonitor</span><span class="params">(monitor)</span></span>;</span><br><span class="line">    DataResponseBlock block = ^(NSError *error, id data, NSURLResponse *response) &#123;</span><br><span class="line">        weakMonitor.<span class="built_in">lock</span>()-&gt;<span class="built_in">SignalDone</span>(<span class="literal">true</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    [m_session_manager requestWithModel:model callBackWithResponse:block];</span><br><span class="line">    monitor-&gt;<span class="built_in">WaitForDone</span>();</span><br><span class="line">    <span class="keyword">return</span> monitor-&gt;<span class="built_in">GetResponse</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Here we directly use <code>std::weak_ptr</code>.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/08.png" />
+
+<img src="/2022/02/14/深入理解-OC-C-闭包/09.png" />
+
+<p>From the experiment we get:</p>
+<ol type="1">
+<li>The <code>C++</code> object is captured by the Objective-C
+<code>Block</code> and passed by value. A breakpoint shows that the
+<code>std::weak_ptr</code> copy constructor is called.</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">_Tp</span>&gt;</span><br><span class="line"><span class="keyword">inline</span></span><br><span class="line">weak_ptr&lt;_Tp&gt;::<span class="built_in">weak_ptr</span>(weak_ptr <span class="type">const</span>&amp; __r) _NOEXCEPT</span><br><span class="line">    : __ptr_(__r.__ptr_),</span><br><span class="line">      __cntrl_(__r.__cntrl_)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (__cntrl_)</span><br><span class="line">        __cntrl_-&gt;__add_weak();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>The weak reference count of <code>monitor</code> changes like this:
+<ul>
+<li>when <code>monitor</code> is created,
+<code>weak_count = 1</code>;</li>
+<li>when <code>weakMonitor</code> is created,
+<code>weak_count = 2</code>;</li>
+<li>after the Objective-C block captures it,
+<code>weak_count = 4</code>, because the weak pointer is copied twice:
+<ul>
+<li>once during capture;</li>
+<li>once more when the block is copied from stack to heap.</li>
+</ul></li>
+</ul></li>
+</ol>
+<blockquote>
+<p>Note that the <code>C++</code> weak count is a bit strange: its value
+equals <code>weak references + 1</code>. The reason is a bit involved;
+see
+https://stackoverflow.com/questions/5671241/how-does-weak-ptr-work</p>
+</blockquote>
+<p>If we do not use <code>std::weak_ptr</code> and instead capture
+<code>std::shared_ptr</code> directly, the strong reference count
+becomes <code>3</code>, and the logic is otherwise the same.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">std::shared_ptr&lt;hermas::HMRequestMonitor&gt; monitor = std::<span class="built_in">make_shared</span>&lt;hermas::HMRequestMonitor&gt;();</span><br><span class="line">DataResponseBlock block = ^(NSError * _Nonnull error, id  _Nonnull data, NSURLResponse * _Nonnull response) &#123;</span><br><span class="line">    monitor-&gt;<span class="built_in">SignalDone</span>(<span class="literal">true</span>);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(lldb) po monitor</span><br><span class="line">std::__1::shared_ptr&lt;hermas::HMRequestMonitor&gt;::element_type @ 0x00006000010dda58 strong=3 weak=1</span><br></pre></td></tr></table></figure>
+
+<h3 id="with-__block">With <code>__block</code></h3>
+<p>Can we use <code>__block</code> to modify the captured C++ variable?
+The experiment says yes.</p>
+<img src="/2022/02/14/深入理解-OC-C-闭包/10.png" />
+
+<img src="/2022/02/14/深入理解-OC-C-闭包/11.png" />
+
+<p>We can conclude:</p>
+<ol type="1">
+<li>Objective-C <code>Block</code>s can capture <code>C++</code> objects
+by reference.</li>
+<li>The weak reference count of <code>monitor</code> behaves like this:
+<ul>
+<li>when <code>monitor</code> is created,
+<code>weak_count = 1</code>;</li>
+<li>when <code>weakMonitor</code> is created,
+<code>weak_count = 2</code>;</li>
+<li>after the Objective-C <code>Block</code> captures it,
+<code>weak_count = 2</code>, because a move constructor is triggered and
+ownership is transferred without changing the reference count.</li>
+</ul></li>
+</ol>
+<img src="/2022/02/14/深入理解-OC-C-闭包/12.png" />
+
+<h4 id="questions-about-__block">Questions about
+<code>__block</code></h4>
+<p>Readers familiar with C++ may wonder: if the move constructor is
+triggered and ownership is transferred, does that mean
+<code>monitor</code> becomes <code>nullptr</code> and is effectively
+destroyed? Why can the sample still access <code>monitor</code>
+afterwards?</p>
+<p>Let’s verify it.</p>
+<blockquote>
+<p>After the first line below executes, the address of
+<code>monitor</code> is:</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(lldb) po &amp;monitor </span><br><span class="line">0x0000700001d959e8</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>When the block assignment happens, the <code>std::shared_ptr</code>
+move constructor is called:</p>
+</blockquote>
+<img src="/2022/02/14/深入理解-OC-C-闭包/13.png" />
+
+<img src="/2022/02/14/深入理解-OC-C-闭包/14.png" />
+
+<ol type="1">
+<li>The <code>this</code> pointer inside the move constructor is
+<code>0x0000600003b0c830</code>.</li>
+<li><code>__r</code> is also <code>0x0000700001d959e8</code>, which
+matches the original <code>monitor</code> address.</li>
+</ol>
+<blockquote>
+<p>After the block assignment finishes, printing <code>monitor</code>
+again shows that its address has changed and now matches the
+<code>this</code> pointer from the move constructor. That means
+<code>monitor</code> has become the object constructed at that new
+address.</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(lldb) po &amp;monitor </span><br><span class="line">0x0000600003b0c830</span><br></pre></td></tr></table></figure>
+
+<p>During the whole process, the <code>monitor</code> variable changes
+address and becomes a different <code>std::shared_ptr</code> object, so
+it can still be accessed afterward.</p>
+<h4 id="when-is-the-captured-c-object-released">When is the captured
+<code>C++</code> object released?</h4>
+<img src="/2022/02/14/深入理解-OC-C-闭包/15.png" />
+
+<p>When the Objective-C <code>Block</code> is released, the captured
+<code>C++</code> object is released as well.</p>
+<h4 id="capturing-shared_from_this">Capturing
+<code>shared_from_this</code></h4>
+<p><code>C++</code>’s <code>this</code> is just a pointer, so capturing
+it in an Objective-C <code>Block</code> is not fundamentally different
+from capturing an integer. The interesting case is
+<code>shared_from_this</code>, which is the smart-pointer version of
+<code>this</code>.</p>
+<blockquote>
+<p>A <code>C++</code> class must inherit from
+<code>std::enable_shared_from_this</code> and pass its own class type as
+the template parameter in order to use
+<code>shared_from_this</code>.</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CppClass</span> : <span class="keyword">public</span> std::enable_shared_from_this&lt;CppClass&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">CppClass</span>()&#123;&#125;</span><br><span class="line">    ~<span class="built_in">CppClass</span>() &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">attachOCBlock</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    OCClass2 *ocObj2;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dosomething</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CppClass::attachOCBlock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ocObj2 = [[OCClass2 alloc] init];</span><br><span class="line">    <span class="keyword">auto</span> shared_this = <span class="built_in">shared_from_this</span>();</span><br><span class="line">    ocObj<span class="number">2.</span>ocBlock = ^&#123;</span><br><span class="line">        shared_this-&gt;<span class="built_in">dosomething</span>();</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">OCClass2</span> : <span class="title">NSObject</span></span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">void</span> (^ocBlock)();</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">cppObj-&gt;<span class="built_in">attachOCBlock</span>();</span><br></pre></td></tr></table></figure>
+
+<p>From the earlier conclusion, capturing <code>shared_from_this</code>
+directly inside <code>attachOCBlock</code> also creates a retain cycle,
+so we should use <code>std::weak_ptr</code> instead:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">CppClass::attachOCBlock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ocObj2 = [[OCClass2 alloc] init];</span><br><span class="line">    std::weak_ptr&lt;CppClass&gt; weak_this = <span class="built_in">shared_from_this</span>();</span><br><span class="line">    ocObj<span class="number">2.</span>ocBlock = ^&#123;</span><br><span class="line">        weak_this.<span class="built_in">lock</span>()-&gt;<span class="built_in">dosomething</span>();</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="conclusion-1">Conclusion</h4>
+<p><code>OC</code> <code>Block</code>s can capture <code>C++</code>
+objects.</p>
+<ol type="1">
+<li>If you use normal capture for a stack <code>C++</code> object, the
+copy constructor is called.</li>
+<li>If you use <code>__block</code> to capture a stack <code>C++</code>
+object, the move constructor is called, and the
+<code>__block</code>-qualified <code>C++</code> object gets redirected
+during capture.</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<p>The article started with a simple comparison between <code>OC</code>
+<code>Block</code>s and <code>C++</code> <code>lambda</code>s across
+four dimensions: syntax, implementation model, capture rules, and memory
+management. It then focused on the mixed capture problems between
+<code>OC</code> and <code>C++</code> closures.</p>
+<p>The reason for going into this much detail is that I do not want to
+rely on guesswork or trial and error. Only by understanding the
+underlying mechanism can we write better <code>OC/C++</code> mixed code.
+I also hope this helps readers who have had the same confusion.</p>
+<p>For the whole <code>OC/C++</code> mixed world, this is only the tip
+of the iceberg. There are still many difficult problems ahead, and I
+hope to explore more of them in the future.</p>
+<h2 id="references">References</h2>
+<ol type="1">
+<li>https://isocpp.org/wiki/faq/objective-c</li>
+<li>http://www.philjordan.eu/article/mixing-objective-c-c++-and-objective-c++</li>
+<li>https://releases.llvm.org/12.0.0/tools/clang/docs/AutomaticReferenceCounting.html</li>
+<li>https://releases.llvm.org/12.0.0/tools/clang/docs/BlockLanguageSpec.html#c-extensions</li>
+<li>https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-lambdas-fight.html</li>
+</ol>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#basic-understanding"><span class="nav-number">2.</span> <span class="nav-text">Basic understanding</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#syntax"><span class="nav-number">2.1.</span> <span class="nav-text">Syntax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#principle"><span class="nav-number">2.2.</span> <span class="nav-text">Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#captured-variables"><span class="nav-number">2.3.</span> <span class="nav-text">Captured variables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-management"><span class="nav-number">2.4.</span> <span class="nav-text">Memory management</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mixed-capture-problems"><span class="nav-number">3.</span> <span class="nav-text">Mixed capture problems</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#how-does-c-lambda-capture-objective-c-objects"><span class="nav-number">3.1.</span> <span class="nav-text">How does
+C++ lambda capture Objective-C objects?</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#capture-by-value"><span class="nav-number">3.1.1.</span> <span class="nav-text">Capture by value</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#capture-by-reference"><span class="nav-number">3.1.2.</span> <span class="nav-text">Capture by reference</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#when-is-the-captured-objective-c-object-released"><span class="nav-number">3.1.3.</span> <span class="nav-text">When is the
+captured Objective-C object released?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#conclusion"><span class="nav-number">3.1.4.</span> <span class="nav-text">Conclusion</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#how-does-an-objective-c-block-capture-c-objects"><span class="nav-number">3.2.</span> <span class="nav-text">How does an
+Objective-C Block capture C++ objects?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#with-__block"><span class="nav-number">3.3.</span> <span class="nav-text">With __block</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#questions-about-__block"><span class="nav-number">3.3.1.</span> <span class="nav-text">Questions about
+__block</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#when-is-the-captured-c-object-released"><span class="nav-number">3.3.2.</span> <span class="nav-text">When is the captured
+C++ object released?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#capturing-shared_from_this"><span class="nav-number">3.3.3.</span> <span class="nav-text">Capturing
+shared_from_this</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#conclusion-1"><span class="nav-number">3.3.4.</span> <span class="nav-text">Conclusion</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">5.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">159k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
