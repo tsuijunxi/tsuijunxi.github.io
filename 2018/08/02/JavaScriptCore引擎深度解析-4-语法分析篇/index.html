@@ -90,7 +90,7 @@
 
 
 
-  <meta name="keywords" content="JavaScriptCore," />
+  <meta name="keywords" content="JavaScriptCore" />
 
 
 
@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .zgsqcnoteiyp{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
+<meta name="description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .giehsdxysukm{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JavaScriptCore引擎深度解析4-语法分析篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .zgsqcnoteiyp{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
+<meta property="og:description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .giehsdxysukm{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png">
@@ -379,6 +379,15 @@ mjx-container[display="true"] + br {
 </nav>
 
 
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <span class="active">中文</span>
+  
+  <span class="separator">/</span>
+  
+    <a href="/en/">EN</a>
+  
+</nav>
 
  </div>
     </header>
@@ -530,7 +539,7 @@ mjx-container[display="true"] + br {
         <h2 id="前言">前言</h2>
 <p>在<a
 href="http://tsuijunxi.github.io/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-3-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/">JavaScriptCore引擎深度解析3—词法分析篇</a>一文中，我们提到：<code>Lexer</code>是作为<code>Parser</code>的一个成员而存在的，主要目的就是为<code>Parser</code>提供一个个的<code>JSToken</code>，依赖图如下：</p>
-<style>.zgsqcnoteiyp{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png" class="zgsqcnoteiyp">
+<style>.giehsdxysukm{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png" class="giehsdxysukm">
 
 <p>可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…
 路漫漫其修远兮……
@@ -556,11 +565,11 @@ href="http://tsuijunxi.github.io/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params">x</span>) &#123;</span><br><span class="line">    <span class="keyword">var</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (x &gt; <span class="number">10</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span>(x &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            sum += x;</span><br><span class="line">            x--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>通过语法分析将得到如下的简化版本语法树：</p>
-<style>.owqdklxgwnmb{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png" class="owqdklxgwnmb">
+<style>.nsqyiaspqhwu{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png" class="nsqyiaspqhwu">
 
 <h3 id="语法树节点">语法树节点</h3>
 <p>在了解语法树细节之前，我们先来看下语法树的节点，如下图所示</p>
-<style>.lovfuvwgaqsu{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/02.png" class="lovfuvwgaqsu">
+<style>.gpivmsyhkclq{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/02.png" class="gpivmsyhkclq">
 
 <p><a
 href="http://on-img.com/chart_image/5ba2658fe4b0bd4db944af74.png">高清版本传送门</a></p>
@@ -734,7 +743,7 @@ href="http://esprima.org/demo/parse.html?">Esprima</a>语法分析后，会得�
 <code>while (!exprStack.isEmpty())</code>这个最后的while循环的目的是什么呢？</li>
 </ul>
 </blockquote>
-<style>.wsgsjleikmni{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/05.png" class="wsgsjleikmni">
+<style>.rebicvbanlnb{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/05.png" class="rebicvbanlnb">
 
 <p>如图所示，它的目的就是将<code>if ... else if ... else if... else</code>的结构变成一个标准的<code>if ... else</code>结构，方便语法树的处理</p>
 <blockquote>
@@ -742,7 +751,7 @@ href="http://esprima.org/demo/parse.html?">Esprima</a>语法分析后，会得�
 <li>再来看第二个问题：<code>if (!trailingElse)</code>，如果没有最后的else，这里要单独处理的目的是什么</li>
 </ul>
 </blockquote>
-<style>.zcbfinhujmnr{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/04.png" class="zcbfinhujmnr">
+<style>.yerguuimhvmn{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/04.png" class="yerguuimhvmn">
 
 <p>实际上有了第一个问题的铺垫，也不难理解了，它将不规范的<code>if ... else if ... else if</code>结构（不包含最后的else）变成标准的<code>if ... else if ... else if... else</code>结构了，方便第一个问题中while循环的处理。</p>
 <p>到了这里，不妨再回看下代码，应该会觉得比较清楚。</p>
@@ -778,42 +787,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
     
 </div>
 
-      <div>
-    
-
-    
-      <div>
-        
-<div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/">JavaScriptCore引擎深度解析4-语法分析篇</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2018年08月02日 - 00:08</p>
-  <p><span>最后更新:</span>2026年07月22日 - 01:07</p>
-  <p><span>原始链接:</span><a href="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/" title="JavaScriptCore引擎深度解析4-语法分析篇">https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/"  aria-label="复制成功！"></i></span>
-  </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
-</div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: '复制成功',
-          icon: "success", 
-          showConfirmButton: true
-          });
-  });
-    });  
-</script>
-
-
-      <div>
+      </div>
     
 
     
@@ -852,6 +826,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
     
       <div>
         
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
@@ -889,6 +864,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
 
     <footer class="post-footer">
       
+      
         <div class="post-tags">
           
             <a href="/tags/JavaScriptCore/" rel="tag"># JavaScriptCore</a>
@@ -900,6 +876,9 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
       
       
 
+      
+      
+      
       
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
@@ -920,6 +899,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
             
           </div>
         </div>
+      
       
 
       
@@ -995,6 +975,10 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
           </div>
 
           <nav class="site-state motion-element">
+
+            
+            
+            
 
             
               <div class="site-state-item site-state-posts">

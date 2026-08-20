@@ -90,7 +90,7 @@
 
 
 
-  <meta name="keywords" content="Objective-C Block C++ Lambda," />
+  <meta name="keywords" content="Objective-C Block C++ Lambda" />
 
 
 
@@ -389,6 +389,15 @@ mjx-container[display="true"] + br {
 </nav>
 
 
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <span class="active">中文</span>
+  
+  <span class="separator">/</span>
+  
+    <a href="/en/2022/02/14/understanding-objc-cpp-closures/">EN</a>
+  
+</nav>
 
  </div>
     </header>
@@ -615,16 +624,16 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">OCClass *ocObj = [[OCClass alloc] init];</span><br></pre></td></tr></table></figure>
 
 <p>不幸的是，这样的捕获方式会发生循环引用：<code>OCClass</code>对象<code>ocObj</code>持有<code>cppObj</code>，<code>cppObj</code>通过<code>callback</code>持有了<code>ocObj</code>。</p>
-<style>.qclhiugbrfvt{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png" class="qclhiugbrfvt">
+<style>.ssjudbtdhyqq{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png" class="ssjudbtdhyqq">
 
 <p>看下对应的汇编代码，可以发现捕获的时候，触发了ARC语义，自动对<code>self</code>进行了<code>retain</code>。</p>
-<style>.gfhvlknncjkx{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/02.png" class="gfhvlknncjkx">
+<style>.guximwygguna{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/02.png" class="guximwygguna">
 
 <p>这几行汇编代码对<code>self</code>增加引用计数</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0x10cab31ea</span> &lt;<span class="number">+170</span>&gt;: movq   <span class="number">-0x8</span>(%rbp), %rdi</span><br><span class="line"><span class="number">0x10cab31ee</span> &lt;<span class="number">+174</span>&gt;: movq   <span class="number">0x5e7b</span>(%rip), %rax        ; (<span class="type">void</span> *)<span class="number">0x00007fff2018fa80</span>: objc_retain</span><br><span class="line"><span class="number">0x10cab31f5</span> &lt;<span class="number">+181</span>&gt;: callq  *%rax</span><br></pre></td></tr></table></figure>
 
 <p>最后来看一下匿名类的参数，可以发现<code>self</code>是<code>OCClass *</code>类型，是一个指针类型。</p>
-<style>.wxrupwdepbld{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/03.png" class="wxrupwdepbld">
+<style>.qrcppxdrdmrr{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/03.png" class="qrcppxdrdmrr">
 
 <p>那么可以简单的认为捕获伪代码如下，在ARC语义下会发生retain行为</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">__<span class="keyword">strong</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>) capture_self = <span class="keyword">self</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 展开</span></span><br><span class="line">__<span class="keyword">strong</span> OCClass * capture_self = <span class="keyword">self</span>;</span><br></pre></td></tr></table></figure>
@@ -632,7 +641,7 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <p>为了解决循环引用的问题，可以使用<code>__weak</code>。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">__weak __typeof(self) wself = self;</span><br><span class="line">cppObj-&gt;callback = [wself]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [wself executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<style>.uidscdjeiegb{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/04.png" class="uidscdjeiegb">
+<style>.yvnewdminomf{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/04.png" class="yvnewdminomf">
 
 <p>再次观察汇编代码，发现前面的<code>objc_retain</code>逻辑已经消失，代替的逻辑为<code>objc_copyWeak</code></p>
 <h4 id="引用捕获oc对象">引用捕获OC对象</h4>
@@ -640,10 +649,10 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">`cppObj` = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">`cppObj`-&gt;callback = [&amp;self]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [self executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>可以看到汇编代码中同样没有<code>objc_retain</code>逻辑。</p>
-<style>.bpueyrsjyyfv{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/05.png" class="bpueyrsjyyfv">
+<style>.oxfedsxyisvf{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/05.png" class="oxfedsxyisvf">
 
 <p>最后来看一下匿名类的参数，可以发现<code>self</code>是<code>OCClass *&amp;</code>类型，是一个指针引用类型</p>
-<style>.rgdpbcnwnljr{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/06.png" class="rgdpbcnwnljr">
+<style>.qxklnkpterik{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/06.png" class="qxklnkpterik">
 
 <p>可以看到引用捕获并不会对<code>self</code>进行<code>retain</code>，可以简单的认为捕获伪代码如下，在<code>ARC</code>语义下不会发生<code>retain</code>行为。</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">__<span class="keyword">unsafe_unretained</span> __<span class="keyword">typeof</span>(<span class="keyword">self</span>)&amp; capture_self = <span class="keyword">self</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 展开</span></span><br><span class="line">__<span class="keyword">unsafe_unretained</span> OCClass *&amp;capture_self = <span class="keyword">self</span>;</span><br></pre></td></tr></table></figure>
@@ -652,7 +661,7 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <p>以这个代码片段为例：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">OCClass2 *oc2 = [[OCClass2 alloc] init];</span><br><span class="line">cppObj-&gt;callback = [oc2]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [oc2 <span class="keyword">class</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<style>.qskfbmyzoeix{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/07.png" class="qskfbmyzoeix">
+<style>.zjzdxawwyzuo{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/07.png" class="zjzdxawwyzuo">
 
 <p>可以看到，在<code>CppClass</code>的析构函数中对<code>std::function</code>进行了析构，而<code>std::function</code>则对其捕获的<code>OC</code>变量<code>oc2</code>进行了释放。</p>
 <h4 id="结论">结论</h4>
@@ -679,9 +688,9 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 
 <p>这里直接使用<code>std::weak_ptr</code></p>
 <h4 id="不使用__block">不使用__block</h4>
-<style>.cqrpxjnnvwdk{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/08.png" class="cqrpxjnnvwdk">
+<style>.ylkfnmvblmbi{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/08.png" class="ylkfnmvblmbi">
 
-<style>.kkhhglldtiol{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/09.png" class="kkhhglldtiol">
+<style>.tfnftoglwhof{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/09.png" class="tfnftoglwhof">
 
 <p>通过实验可以得到以下结论：</p>
 <ol type="1">
@@ -712,9 +721,9 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 
 <h4 id="使用__block">使用__block</h4>
 <p>那么是否可以使用<code>__block</code>修改被捕获的<code>C++</code>变量呢？通过实验发现是可行的。</p>
-<style>.ypratmyfmcvb{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/10.png" class="ypratmyfmcvb">
+<style>.qkolfdrfwiwx{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/10.png" class="qkolfdrfwiwx">
 
-<style>.plprnucxmgrb{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/11.png" class="plprnucxmgrb">
+<style>.hjxktuitpnrt{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/11.png" class="hjxktuitpnrt">
 
 <p>可以得到以下结论：</p>
 <ol type="1">
@@ -728,7 +737,7 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <li><code>OC</code> <code>Block</code>捕获后，<code>weak_count</code> =
 2，主要是由于移动构造函数被触发，只是所有权的转移，不会改变引用计数；</li>
 </ul>
-<style>.wymsfuuunqnw{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/12.png" class="wymsfuuunqnw">
+<style>.cknxhsygshyh{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/12.png" class="cknxhsygshyh">
 
 <h4 id="__block的疑问">__block的疑问</h4>
 <p>了解<code>C++</code>的同学可能会疑惑，这里既然是移动构造函数被触发，只是所有权发生了转移，意味着<code>monitor</code>作为右值被传递进来，已经变为<code>nullptr</code>被消亡，那么为什么示例中的<code>monitor</code>还可以继续访问？可以来验证一下：</p>
@@ -740,9 +749,9 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <blockquote>
 <p>当执行<code>block</code>赋值的时候，会调用到<code>std::shared_ptr</code>的移动构造函数中：</p>
 </blockquote>
-<style>.mqywiexdyjjg{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/13.png" class="mqywiexdyjjg">
+<style>.xqgltyvauxgg{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/13.png" class="xqgltyvauxgg">
 
-<style>.mideltnnwtre{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png" class="mideltnnwtre">
+<style>.bmxbrqtxmwyi{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png" class="bmxbrqtxmwyi">
 
 <ol type="1">
 <li>移动构造函数中的this地址为0x0000600003b0c830;</li>
@@ -756,7 +765,7 @@ id="c的lambda捕获oc对象"><code>C++</code>的<code>lambda</code>捕获OC对�
 <p>整个过程中，<code>monitor</code>前后地址发生了变化，分别是2个不同的<code>std::shared_ptr</code>对象，所以<code>monitor</code>还可以继续被访问。</p>
 <h4
 id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释放？</h4>
-<style>.uqmggasovjis{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png" class="uqmggasovjis">
+<style>.rvczrmiqnqsz{}</style><img src="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png" class="rvczrmiqnqsz">
 
 <p>同样在<code>OC</code>的<code>Block</code>释放的时候，会对其捕获的<code>C++</code>对象进行释放</p>
 <h4 id="捕获shared_from_this">捕获shared_from_this</h4>
@@ -804,42 +813,7 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
     
 </div>
 
-      <div>
-    
-
-    
-      <div>
-        
-<div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/">深入理解 OC/C++ 闭包</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2022年02月14日 - 16:02</p>
-  <p><span>最后更新:</span>2026年08月19日 - 12:08</p>
-  <p><span>原始链接:</span><a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/" title="深入理解 OC/C++ 闭包">https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/"  aria-label="复制成功！"></i></span>
-  </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
-</div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: '复制成功',
-          icon: "success", 
-          showConfirmButton: true
-          });
-  });
-    });  
-</script>
-
-
-      <div>
+      </div>
     
 
     
@@ -878,6 +852,7 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
     
       <div>
         
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
@@ -915,6 +890,7 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
 
     <footer class="post-footer">
       
+      
         <div class="post-tags">
           
             <a href="/tags/Objective-C-Block-C-Lambda/" rel="tag"># Objective-C Block C++ Lambda</a>
@@ -926,6 +902,9 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
       
       
 
+      
+      
+      
       
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
@@ -946,6 +925,7 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
             
           </div>
         </div>
+      
       
 
       
@@ -1021,6 +1001,10 @@ id="被捕获的c对象何时释放">被捕获的<code>C++</code>对象何时释
           </div>
 
           <nav class="site-state motion-element">
+
+            
+            
+            
 
             
               <div class="site-state-item site-state-posts">
