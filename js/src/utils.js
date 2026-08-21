@@ -327,7 +327,7 @@ $(document).ready(function () {
         $('.post-toc').css('width', 'calc(100% + ' + scrollbarWidth + 'px)');
       }
 
-    // Initialize Sidebar & TOC Height.
+    // Initialize Sidebar & hrefHeight.
     updateSidebarHeight(document.body.clientHeight - NexT.utils.getSidebarSchemePadding());
   }
 
