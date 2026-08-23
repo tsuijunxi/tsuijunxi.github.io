@@ -2,30 +2,117 @@
 
 $(document).ready(function () {
 
-  initScrollSpy();
+  initPostToc();
 
-  function initScrollSpy () {
+  function initPostToc () {
     var tocSelector = '.post-toc';
     var $tocElement = $(tocSelector);
     var activeCurrentSelector = '.active-current';
+    var tocItems = collectTocItems();
+    var ticking = false;
 
-    $tocElement
-      .on('activate.bs.scrollspy', function () {
-        var $currentActiveElement = $(tocSelector + ' .active').last();
+    if (!tocItems.length) return;
 
-        removeCurrentActiveClass();
-        $currentActiveElement.addClass('active-current');
-
-        // Scrolling to center active TOC element if TOC content is taller then viewport.
-        $tocElement.scrollTop($currentActiveElement.offset().top - $tocElement.offset().top + $tocElement.scrollTop() - ($tocElement.height() / 2));
-      })
-      .on('clear.bs.scrollspy', removeCurrentActiveClass);
-
-    $('body').scrollspy({ target: tocSelector });
+    updateActiveToc();
+    bindTocRefresh();
+    $(window).on('scroll resize', scheduleUpdateActiveToc);
 
     function removeCurrentActiveClass () {
       $(tocSelector + ' ' + activeCurrentSelector)
         .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function collectTocItems () {
+      return $(tocSelector + ' .nav-link').map(function () {
+        var href = this.getAttribute('href');
+        var id = href && href.charAt(0) === '#' ? decodeURIComponent(href.substring(1)) : '';
+        var target = id && document.getElementById(id);
+
+        return target ? {
+          link: this,
+          target: target
+        } : null;
+      }).get();
+    }
+
+    function scheduleUpdateActiveToc () {
+      if (ticking) return;
+
+      ticking = true;
+      window.requestAnimationFrame(function () {
+        ticking = false;
+        updateActiveToc();
+      });
+    }
+
+    function updateActiveToc () {
+      var activeItem = getActiveTocItem();
+      if (!activeItem) return;
+
+      var $currentActiveElement = $(activeItem.link).parent();
+
+      $(tocSelector + ' .active').removeClass('active');
+      removeCurrentActiveClass();
+      $currentActiveElement
+        .addClass('active-current')
+        .parentsUntil(tocSelector, '.nav-item')
+        .addClass('active');
+
+      keepActiveTocVisible($currentActiveElement);
+    }
+
+    function getActiveTocItem () {
+      var activeItem = tocItems[0];
+      var threshold = getScrollSpyOffset();
+
+      tocItems.forEach(function (item) {
+        if (item.target.getBoundingClientRect().top <= threshold) {
+          activeItem = item;
+        }
+      });
+
+      return activeItem;
+    }
+
+    function keepActiveTocVisible ($currentActiveElement) {
+      if (!$currentActiveElement.length || $tocElement[0].scrollHeight <= $tocElement.height()) return;
+
+      var itemTop = $currentActiveElement.position().top;
+      var itemBottom = itemTop + $currentActiveElement.outerHeight();
+      var visibleTop = 0;
+      var visibleBottom = $tocElement.height();
+
+      if (itemTop < visibleTop || itemBottom > visibleBottom) {
+        $tocElement.scrollTop(
+          itemTop +
+          $tocElement.scrollTop() -
+          ($tocElement.height() / 2)
+        );
+      }
+    }
+
+    function bindTocRefresh () {
+      function refresh () {
+        tocItems = collectTocItems();
+        scheduleUpdateActiveToc();
+      }
+
+      $(window).on('load', refresh);
+      $('.post-body img').on('load', refresh);
+      $('.post-body video').on('loadedmetadata loadeddata', refresh);
+
+      if (window.MathJax && MathJax.Hub && MathJax.Hub.Queue) {
+        MathJax.Hub.Queue(refresh);
+      }
+
+      setTimeout(refresh, 300);
+      setTimeout(refresh, 1000);
+    }
+
+    function getScrollSpyOffset () {
+      var sidebarOffset = (CONFIG.sidebar && CONFIG.sidebar.offset) || 0;
+
+      return Math.max(sidebarOffset + 120, 140);
     }
   }
 
@@ -72,10 +159,16 @@ $(document).ready(function () {
   // TOC item animation navigate & prevent #item selector in adress bar.
   $('.post-toc a').on('click', function (e) {
     e.preventDefault();
-    var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
-    // 对获取到的url进行重编码
-    targetSelector = decodeURI(this.getAttribute('href'));
-    var offset = $(targetSelector).offset().top;
+    var href = this.getAttribute('href');
+    var target = href && href.charAt(0) === '#' ?
+      document.getElementById(decodeURIComponent(href.substring(1))) :
+      null;
+
+    if (!target) return;
+
+    var sidebarOffset = (CONFIG.sidebar && CONFIG.sidebar.offset) || 0;
+    var scrollOffset = Math.max(sidebarOffset + 120, 140);
+    var offset = $(target).offset().top - scrollOffset;
 
     hasVelocity
       ? html.velocity('stop').velocity('scroll', {

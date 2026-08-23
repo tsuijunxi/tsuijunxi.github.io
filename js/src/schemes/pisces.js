@@ -1,9 +1,11 @@
 $(document).ready(function () {
 
   var sidebarInner = $('.sidebar-inner');
+  var recalculateTimer;
 
   initAffix();
   resizeListener();
+  layoutChangeListener();
 
   function initAffix () {
     var headerOffset = getHeaderOffset(),
@@ -52,6 +54,24 @@ $(document).ready(function () {
     $(window).off('.affix');
     sidebarInner.removeData('bs.affix').removeClass('affix affix-top affix-bottom');
     initAffix();
+  }
+
+  function scheduleRecalculateAffixPosition () {
+    clearTimeout(recalculateTimer);
+    recalculateTimer = setTimeout(recalculateAffixPosition, 120);
+  }
+
+  function layoutChangeListener () {
+    $(window).on('load resize', scheduleRecalculateAffixPosition);
+    $('.post-body img').on('load', scheduleRecalculateAffixPosition);
+    $('.post-body video').on('loadedmetadata loadeddata', scheduleRecalculateAffixPosition);
+
+    if (window.MathJax && MathJax.Hub && MathJax.Hub.Queue) {
+      MathJax.Hub.Queue(scheduleRecalculateAffixPosition);
+    }
+
+    setTimeout(scheduleRecalculateAffixPosition, 300);
+    setTimeout(scheduleRecalculateAffixPosition, 1000);
   }
 
 });

@@ -72,19 +72,19 @@
 
 <link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
 
 
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
 
 
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
 
 
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
 
 
-  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
 
 
 
@@ -126,7 +126,7 @@
   var CONFIG = {
     root: '',
     scheme: 'Gemini',
-    version: '5.1.4',
+    version: '5.1.4.1',
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
@@ -549,7 +549,7 @@ Greenblatt在2008建立的开源项目，它主要目的是开发一个基于Goo
 Chromium的Webbrowser控件。CEF支持一系列的编程语言和操作系统，并且能很容易地整合到新的或已有的工程中去。
 它的设计思想政治就是易用且兼顾性能。CEF基本的框架包含C/C++程序接口，通过本地库的接口来实现，而这个库则会隔离宿主程序和Chromium&amp;Webkit的操作细节。它在浏览器控件和宿主程序之间提供紧密的整合，它支持用户插件，协议，javascript对象以及javascript扩展，宿主程序可以随意地控件资源下载，导航和打印等，并且可以跟Google
 Chrome浏览器一样，支持高性能和Html5技术.</p>
-<style>.prnbcktfdwdt{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/01.png" class="prnbcktfdwdt">
+<style>.xbsltvkvqjst{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/01.png" class="xbsltvkvqjst">
 
 <p>CEFGlue的整体依赖如图所示，其中有两个棘手的问题亟待解决：</p>
 <blockquote>
@@ -635,7 +635,7 @@ workspace/chromium/src ninja -C out/Release cefclient cef_unittests</li>
 <li>具体依赖 ： CEFGlue–&gt;CEF–&gt;Chromium</li>
 </ul>
 </blockquote>
-<style>.lqouqgqppmjp{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/02.png" class="lqouqgqppmjp">
+<style>.glckmgthtvev{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/02.png" class="glckmgthtvev">
 
 <h2 id="js调用native功能">JS调用Native功能</h2>
 <p><code>Xilium CefGlue</code>是一款基于<code>Chromium Embedded Framework</code> (CEF)的开源WebKit内核浏览器项目，用.NET进行了各种封装，本身有很多优势，内核也在不断更新，具有良好的前景。但是，它有一个致命的问题：<code>CLR Object</code>无法很好的与网页前端<code>JavaScript</code>进行交互，实现方法非常复杂，非常繁琐。</p>
@@ -668,11 +668,11 @@ workspace/chromium/src ninja -C out/Release cefclient cef_unittests</li>
 不难发现：<strong>所谓的注册本质上不过是让V8的上下文记了个方法名字和对应的参数个数和类型，告诉V8引擎，如果碰到了注册的名字，通过Excute方法把方法名和参数传出来，然后进行本地方法的匹配和调用。至于Excute方法是被谁调用的，怎么调用的，V8引擎会搞定，无需我们关心</strong>。明白了核心原理，并且.NET有良好的反射特性，我们不难推理：<strong>给定一个CLR对象，我们可以通过反射技术分析它的方法列表，并且能拿到每一个方法对应的参数个数和参数类型列表，这样就可以自动地进行注册，实现一个通用的注册方案。</strong></p>
 <h4 id="多进程通信解决方案">多进程通信解决方案</h4>
 <p>CEF从3.0开始，就由原先的单进程模式变为多进程模式，例如：渲染模块是由专门的渲染进程来实现的，主进程（Browser进程）与渲染进程（Render进程）通过发送消息的机制实现进程之间的通信。因为注册对象只能在V8上下文中进行注册，而V8上下文只能被Render进程访问。如果想注册某一个Native对象，一般都会把Native对象在主进程里面进行序列化，然后通过发送消息的方式发送给渲染进程，渲染进程拿到消息，首先进行反序列化得到想要注册的对象，然后再进行注册。</p>
-<style>.godtugcnwihh{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/03.png" class="godtugcnwihh">
+<style>.lbuxesixlvec{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/03.png" class="lbuxesixlvec">
 
 <p>然而以上思路在实践中碰到了比较严重的问题：.NET中并非每个对象都支持序列化，尤其是我们无法去修改一个已经封装好的DLL库中的对象，所以以上方法行不通。中间也曾经考虑过共享内存的解决方案，但是发现最后都无法逃脱序列化这一步骤。</p>
 <p>经过进一步深入挖掘CEF注册内部机制，发现CEF注册的时候仅仅关心的是对象的方法名和属性名，并不在意该方法的具体实现，所以可以现在Browser进程内首先将对象保存到自己的对象池中，然后将对象的方法名（属性名）通过反射技术解析出来，并发送给Render进程。Render进程接收到对象的方法名（属性名）之后，会在Render进程的上下文中实现真正的注册。一旦JS中调用本地方法，在CefV8Handler的Execute触发，就会获取到对象的方法名和参数，此时Render进程将该对象的哈希值、方法名和参数一起发送给Browser进程。Browser进程拿到这个对象的方法名和参数，会在本地注册池内进行对相匹配，一旦找到对象，会在对象的方法中寻找最适合的方法进行匹配调用，相当于方法的执行完全跑到了Browser进程中，而在整个过程中Browser进程和Render进程之间通信的内容仅仅是对象的方法名，仅仅是一个字符串，这样就避免了对象的序列化。</p>
-<style>.jeovbqkjbomy{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/04.png" class="jeovbqkjbomy">
+<style>.onksfhxuwyeu{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/04.png" class="onksfhxuwyeu">
 
 <p>关于CEF多进程通信的问题，收集到几个对我有启发的英文片段：</p>
 <blockquote>
@@ -978,7 +978,7 @@ renderer with return value from your JS Cheers.</p>
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -989,7 +989,7 @@ renderer with return value from your JS Cheers.</p>
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/">
-                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1000,7 +1000,7 @@ renderer with return value from your JS Cheers.</p>
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1068,7 +1068,7 @@ renderer with return value from your JS Cheers.</p>
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">159k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -1093,7 +1093,7 @@ renderer with return value from your JS Cheers.</p>
 
 
 
-  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
 
 
 
@@ -1184,32 +1184,32 @@ renderer with return value from your JS Cheers.</p>
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
 
 
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
 
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
 
 
 

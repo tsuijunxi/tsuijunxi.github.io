@@ -72,19 +72,19 @@
 
 <link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
 
 
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
 
 
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
 
 
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
 
 
-  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
 
 
 
@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .ermiipfpkwmh{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
+<meta name="description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .hpqcvgechiyp{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JavaScriptCore引擎深度解析4-语法分析篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .ermiipfpkwmh{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
+<meta property="og:description" content="前言 在JavaScriptCore引擎深度解析3—词法分析篇一文中，我们提到：Lexer是作为Parser的一个成员而存在的，主要目的就是为Parser提供一个个的JSToken，依赖图如下： .hpqcvgechiyp{}  可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png">
@@ -127,7 +127,7 @@
   var CONFIG = {
     root: '',
     scheme: 'Gemini',
-    version: '5.1.4',
+    version: '5.1.4.1',
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
@@ -538,7 +538,7 @@ mjx-container[display="true"] + br {
         <h2 id="前言">前言</h2>
 <p>在<a
 href="http://tsuijunxi.github.io/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-3-%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/">JavaScriptCore引擎深度解析3—词法分析篇</a>一文中，我们提到：<code>Lexer</code>是作为<code>Parser</code>的一个成员而存在的，主要目的就是为<code>Parser</code>提供一个个的<code>JSToken</code>，依赖图如下：</p>
-<style>.ermiipfpkwmh{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png" class="ermiipfpkwmh">
+<style>.hpqcvgechiyp{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/01.png" class="hpqcvgechiyp">
 
 <p>可以看到，词法分析篇花费了大量篇幅，也仅仅是讲了讲图的上半部分，即使如此，有些东西都是浅尝辄止，还有很多东西都未能讲到，因为源码实在是过于庞大，我的能力又实在过于有限…
 路漫漫其修远兮……
@@ -564,11 +564,11 @@ href="http://tsuijunxi.github.io/2018/07/30/JavaScriptCore%E5%BC%95%E6%93%8E%E6%
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params">x</span>) &#123;</span><br><span class="line">    <span class="keyword">var</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (x &gt; <span class="number">10</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span>(x &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            sum += x;</span><br><span class="line">            x--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>通过语法分析将得到如下的简化版本语法树：</p>
-<style>.yexfskujqxpe{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png" class="yexfskujqxpe">
+<style>.laejbtnjnpkh{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/06.png" class="laejbtnjnpkh">
 
 <h3 id="语法树节点">语法树节点</h3>
 <p>在了解语法树细节之前，我们先来看下语法树的节点，如下图所示</p>
-<style>.dtojfowvioyv{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/02.png" class="dtojfowvioyv">
+<style>.suwarlovaibk{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/02.png" class="suwarlovaibk">
 
 <p><a
 href="http://on-img.com/chart_image/5ba2658fe4b0bd4db944af74.png">高清版本传送门</a></p>
@@ -742,7 +742,7 @@ href="http://esprima.org/demo/parse.html?">Esprima</a>语法分析后，会得�
 <code>while (!exprStack.isEmpty())</code>这个最后的while循环的目的是什么呢？</li>
 </ul>
 </blockquote>
-<style>.ifntonewhlmn{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/05.png" class="ifntonewhlmn">
+<style>.kjisxjggxkei{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/05.png" class="kjisxjggxkei">
 
 <p>如图所示，它的目的就是将<code>if ... else if ... else if... else</code>的结构变成一个标准的<code>if ... else</code>结构，方便语法树的处理</p>
 <blockquote>
@@ -750,7 +750,7 @@ href="http://esprima.org/demo/parse.html?">Esprima</a>语法分析后，会得�
 <li>再来看第二个问题：<code>if (!trailingElse)</code>，如果没有最后的else，这里要单独处理的目的是什么</li>
 </ul>
 </blockquote>
-<style>.yzkngitqbqyc{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/04.png" class="yzkngitqbqyc">
+<style>.jgwfhiapnctm{}</style><img src="/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-4-%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E7%AF%87/04.png" class="jgwfhiapnctm">
 
 <p>实际上有了第一个问题的铺垫，也不难理解了，它将不规范的<code>if ... else if ... else if</code>结构（不包含最后的else）变成标准的<code>if ... else if ... else if... else</code>结构了，方便第一个问题中while循环的处理。</p>
 <p>到了这里，不妨再回看下代码，应该会觉得比较清楚。</p>
@@ -984,7 +984,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -995,7 +995,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/">
-                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1006,7 +1006,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1074,7 +1074,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">159k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
@@ -1099,7 +1099,7 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
 
 
 
-  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
 
 
 
@@ -1190,32 +1190,32 @@ href="http://esprima.org/demo/parse.html?">这里</a>自己输入if语句看吧�
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
 
 
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
 
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
 
 
 
