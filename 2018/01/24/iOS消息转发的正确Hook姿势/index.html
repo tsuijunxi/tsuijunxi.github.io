@@ -378,6 +378,16 @@ mjx-container[display="true"] + br {
         </li>
       
         
+        <li class="menu-item menu-item-apps">
+          <a href="/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            作品
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-about">
           <a href="/about/" rel="section">
             
@@ -596,7 +606,7 @@ NSInvocation 对象保存了这个方法调用的所有信息，包括 Selector
 </ul>
 </blockquote>
 <p>用一张图表示下方法被JSPatch hook之后的状态</p>
-<style>.vmdpmlojpbxm{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/10.png" class="vmdpmlojpbxm">
+<style>.qkbwfhitsihg{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/10.png" class="qkbwfhitsihg">
 
 <h3 id="2aspects的hook原理">（2）Aspects的Hook原理</h3>
 <p>Aspects不光支持Hook类，还支持Hook对象，提供更小粒度的支持。对于对象的hook，
@@ -616,7 +626,7 @@ Aspects对于类的Hook与JSPatch的原理大同小异，核心代码如下：</
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> __ASPECTS_ARE_BEING_CALLED__(__<span class="keyword">unsafe_unretained</span> <span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSInvocation</span> *invocation) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(<span class="keyword">self</span>);</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(invocation);</span><br><span class="line">    SEL originalSelector = invocation.selector;</span><br><span class="line">    SEL aliasSelector = aspect_aliasForSelector(invocation.selector);</span><br><span class="line">    invocation.selector = aliasSelector;</span><br><span class="line">    AspectsContainer *objectContainer = objc_getAssociatedObject(<span class="keyword">self</span>, aliasSelector);</span><br><span class="line">    AspectsContainer *classContainer = aspect_getContainerForClass(object_getClass(<span class="keyword">self</span>), aliasSelector);</span><br><span class="line">    AspectInfo *info = [[AspectInfo alloc] initWithInstance:<span class="keyword">self</span> invocation:invocation];</span><br><span class="line">    <span class="built_in">NSArray</span> *aspectsToRemove = <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Before hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.beforeAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.beforeAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instead hooks.</span></span><br><span class="line">    <span class="type">BOOL</span> respondsToAlias = <span class="literal">YES</span>;</span><br><span class="line">    <span class="keyword">if</span> (objectContainer.insteadAspects.count || classContainer.insteadAspects.count) &#123;</span><br><span class="line">        aspect_invoke(classContainer.insteadAspects, info);</span><br><span class="line">        aspect_invoke(objectContainer.insteadAspects, info);</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        Class klass = object_getClass(invocation.target);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> ((respondsToAlias = [klass instancesRespondToSelector:aliasSelector])) &#123;</span><br><span class="line">                [invocation invoke];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">while</span> (!respondsToAlias &amp;&amp; (klass = class_getSuperclass(klass)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// After hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.afterAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.afterAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有找到对应的hooks，调用原有的转发（通常抛出异常）</span></span><br><span class="line">    <span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">        invocation.selector = originalSelector;</span><br><span class="line">        SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:originalForwardInvocationSEL]) &#123;</span><br><span class="line">            ((<span class="type">void</span>( *)(<span class="type">id</span>, SEL, <span class="built_in">NSInvocation</span> *))objc_msgSend)(<span class="keyword">self</span>, originalForwardInvocationSEL, invocation);</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Remove any hooks that are queued for deregistration.</span></span><br><span class="line">    [aspectsToRemove makeObjectsPerformSelector:<span class="keyword">@selector</span>(remove)];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>用一张图表示下方法被Aspect hook之后的状态</p>
-<style>.kqoftddboktz{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/11.png" class="kqoftddboktz">
+<style>.bmkykmlrssqg{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/11.png" class="bmkykmlrssqg">
 
 <h2 id="jspatch和aspects的hook混战">JSPatch和Aspects的Hook混战</h2>
 <p>如果项目中接入的第三方库，同时有多个库对类的forwardInvocation函数进行了Hook，那么就可能会引发各种各样的问题，接下来以Aspects和JSPatch为例，看看它俩直间的碰撞</p>
@@ -662,30 +672,30 @@ superTest]</td>
 <p>接下来我们逐步分析：</p>
 <h3 id="原始状态">原始状态</h3>
 <p>在没有任何hook动作之前，每个类的SEL和IMP的指向关系如下：</p>
-<style>.fmiatduwnhwx{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/02.png" class="fmiatduwnhwx">
+<style>.bsgttuziyeeu{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/02.png" class="bsgttuziyeeu">
 
 <h3 id="jspatch-hook">JSPatch hook</h3>
 <p>JSPatch的hook之后，类的SEL和IMP的指向示意图如下：</p>
-<style>.oyyshcyyvvky{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/03.png" class="oyyshcyyvvky">
+<style>.txckpobeysae{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/03.png" class="txckpobeysae">
 
 <h3 id="aspects-hook">Aspects hook</h3>
 <p>Aspects的hook之后，类的SEL和IMP的指向示意图如下：</p>
-<style>.sciybubtiyto{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/04.png" class="sciybubtiyto">
+<style>.figufdykkiek{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/04.png" class="figufdykkiek">
 
 <h3 id="jspatch先hookaspects再hook">JSPatch先hook，Aspects再hook</h3>
 <p>JSPatch先hook函数test，Aspects在此基础上再对test进行hook，之后类的SEL和IMP的指向示意图如下：（注：这个时候不可避免地存在覆盖问题）</p>
-<style>.efunucietsyv{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/05.png" class="efunucietsyv">
+<style>.gtjqtnwfpnbo{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/05.png" class="gtjqtnwfpnbo">
 
 <p>如果此时向test方法发消息，根据①的指向，理所当然会进行转发，由于此时的<code>SEL(forwardInvocation)</code>指向了<code>IMP(__ASPECTS_ARE_BEING_CALLED__)</code>，所以转发会走到<code>__ASPECTS_ARE_BEING_CALLED__</code>函数中，由于此时能找到test对应的替换block，所以就会执行该block，输出<code>aspects log</code>，原先JSPatch的hook的JS代码片被覆盖，执行不到。</p>
 <h3 id="aspects先hookjspatch再hook">Aspects先hook，JSPatch再hook</h3>
-<style>.ksljuvvvxalk{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png" class="ksljuvvvxalk">
+<style>.hpikimmlruxp{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png" class="hpikimmlruxp">
 
 <p>如果此时向test方法发消息，根据①的指向，理所当然会进行转发，由于此时的<code>SEL(forwardInvocation)</code>指向了<code>IMP(JPforwardInvocation)</code>，所以转发会走到<code>JPforwardInvocation</code>函数中，由于此时能找到test对应的JS代码块，所以就会执行该JS代码块，输出<code>jspatch log</code>，原先Aspects的hook的block被覆盖，执行不到。</p>
 <h3
 id="aspects先hookjspatch再hook且jspatch调用了selforigtest会发生crash">Aspects先hook，JSPatch再hook，且JSpatch调用了self.ORIGtest()，会发生crash</h3>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70095:30054488] -[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30</span><br><span class="line">JPAndAspects[70095:30054488] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;</span><br><span class="line">reason: &#x27;-[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30&#x27;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001074dd1ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000106b7af41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x000000010755da34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x000000010524cd01 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   CoreFoundation                      0x000000010746149c __invoking___ + 140</span><br><span class="line">    5   CoreFoundation                      0x0000000107461370 -[NSInvocation invoke] + 320</span><br><span class="line">    6   JPAndAspects                        0x000000010526ba4d JPExecuteORIGForwardInvocation + 429</span><br><span class="line">    7   JPAndAspects                        0x000000010525d38a JPForwardInvocation + 666</span><br><span class="line">    8   CoreFoundation                      0x000000010745fe08 ___forwarding___ + 760</span><br><span class="line">    9   CoreFoundation                      0x000000010745fa88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
 
-<style>.fauuaiwruhpd{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png" class="fauuaiwruhpd">
+<style>.mafjttjmoumv{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png" class="mafjttjmoumv">
 
 <p>JSPatch hook的代码片如下所示，调用了self.ORIGtest()</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MyClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">test</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;jspatch log&quot;</span>);</span><br><span class="line">            self.<span class="title class_">ORIGtest</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
@@ -720,7 +730,7 @@ id="aspects先hook父类test方法jspatch再hook子类同一方法且jspatch调�
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[73431:30359622] JSPatch.log: MySubClass jspatch log</span><br><span class="line">JPAndAspects[73431:30359622] -[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220</span><br><span class="line">JPAndAspects[73431:30359622] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;</span><br><span class="line">reason: &#x27;-[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220&#x27;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001044cf1ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000103b64f41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x000000010454fa34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x0000000102733da1 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   JPAndAspects                        0x0000000102752b81 JPExecuteORIGForwardInvocation + 577</span><br><span class="line">    5   JPAndAspects                        0x000000010274442a JPForwardInvocation + 666</span><br><span class="line">    6   CoreFoundation                      0x0000000104451e08 ___forwarding___ + 760</span><br><span class="line">    7   CoreFoundation                      0x0000000104451a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
 
 <p>我们先来看下hook后的状态信息</p>
-<style>.iwfxtvvlgmwx{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/07.png" class="iwfxtvvlgmwx">
+<style>.dvnqssqkmbmp{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/07.png" class="dvnqssqkmbmp">
 
 <p>为什么会crash呢？我们来分析一下：</p>
 <blockquote>
@@ -752,7 +762,7 @@ superTest]</h3>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[76443:30659220] -[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10</span><br><span class="line">JPAndAspects[76443:30659220] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;, </span><br><span class="line">reason: &#x27;-[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10&#x27;</span><br><span class="line">*** First throw call stack:</span><br><span class="line">(</span><br><span class="line">    0   CoreFoundation                      0x00000001029071ab __exceptionPreprocess + 171</span><br><span class="line">    1   libobjc.A.dylib                     0x0000000101f9cf41 objc_exception_throw + 48</span><br><span class="line">    2   CoreFoundation                      0x0000000102987a34 -[NSObject(NSObject) doesNotRecognizeSelector:] + 132</span><br><span class="line">    3   JPAndAspects                        0x0000000100b6bcb1 __ASPECTS_ARE_BEING_CALLED__ + 6129</span><br><span class="line">    4   CoreFoundation                      0x0000000102889e08 ___forwarding___ + 760</span><br><span class="line">    5   CoreFoundation                      0x0000000102889a88 _CF_forwarding_prep_0 + 120</span><br></pre></td></tr></table></figure>
 
 <p>我们先来看下hook后的状态信息</p>
-<style>.aqoffsocdbfq{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/08.png" class="aqoffsocdbfq">
+<style>.rjbtisfdbcmy{}</style><img src="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/08.png" class="rjbtisfdbcmy">
 
 <p>我们来分析下为什么会crash：</p>
 <blockquote>
@@ -1041,6 +1051,17 @@ forwardInvocation的继承被父类的hook和子类的hook打断了。所以解�
           
 
           
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/apps/">
+    <span class="sidebar-app-card-icon">
+      <img src="/apps/lesori.png" alt="Lensori">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">从技术文章里长出来的 App</span>
+    </span>
+  </a>
+</div>
 
         </div>
       </section>
