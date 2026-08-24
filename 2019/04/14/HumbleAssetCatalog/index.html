@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .rotbmgojpxci{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
+<meta name="description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .kopvhkmuubnt{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Humble Assets Catalog">
 <meta property="og:url" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .rotbmgojpxci{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
+<meta property="og:description" content="背景 QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。 首次分析解决 .kopvhkmuubnt{}  通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：[UIImage imageNamed:]，此时也就可以理解为什么只有首次才会出现卡顿了。 通过hook [UIImage imageNamed:]方法，直">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2019/04/14/HumbleAssetCatalog/03.png">
@@ -574,15 +574,15 @@ mjx-container[display="true"] + br {
         <h2 id="背景">背景</h2>
 <p>QQ阅读在首次启动，进入阅读页之后，呼出上下菜单，点击设置，会出现明显的卡顿现象，而之后再次操作便不会出现相同的问题。</p>
 <h2 id="首次分析解决">首次分析解决</h2>
-<style>.rotbmgojpxci{}</style><img src="/2019/04/14/HumbleAssetCatalog/02.png" class="rotbmgojpxci">
+<style>.kopvhkmuubnt{}</style><img src="/2019/04/14/HumbleAssetCatalog/02.png" class="kopvhkmuubnt">
 
 <p>通过Instrument测量发现，大量的时间都集中在加载图片的逻辑里：<code>[UIImage imageNamed:]</code>，此时也就可以理解为什么只有首次才会出现卡顿了。</p>
 <p>通过hook
 <code>[UIImage imageNamed:]</code>方法，直接将设置所使用到的图片全部截获输出，发现竟然需要这么多图片的加载</p>
-<style>.mvhanniwgnsk{}</style><img src="/2019/04/14/HumbleAssetCatalog/03.png" class="mvhanniwgnsk">
+<style>.fckeksrfpeis{}</style><img src="/2019/04/14/HumbleAssetCatalog/03.png" class="fckeksrfpeis">
 
 <p>首先想到的解决方案是异步加载这些本地资源的图片，但是感觉工作量很大，于是采取了另外一种方案：在进入阅读页的时候，添加一个观察着，在主线程空闲的时候，去主动预加载这些图片，直到这些图片全部加载完成，然后主动去除观察者</p>
-<style>.mttgcyjsixvn{}</style><img src="/2019/04/14/HumbleAssetCatalog/04.png" class="mttgcyjsixvn">
+<style>.rqnoyywgfquj{}</style><img src="/2019/04/14/HumbleAssetCatalog/04.png" class="rqnoyywgfquj">
 
 <p>优化之后直观上感觉好了一些，进行了数据对比</p>
 <table>
@@ -621,16 +621,16 @@ mjx-container[display="true"] + br {
 </ul>
 </blockquote>
 <p>关于第2点，怀疑是app在切后台的时候，UIImage的系统缓存会被清除，所以在阅读页切到前台的时候，再进行1次预加载</p>
-<style>.khqypuwsnxsa{}</style><img src="/2019/04/14/HumbleAssetCatalog/05.png" class="khqypuwsnxsa">
+<style>.cliwilbnnezf{}</style><img src="/2019/04/14/HumbleAssetCatalog/05.png" class="cliwilbnnezf">
 
 <p>关于第3点，怀疑是app在切换横竖屏的时候，UIImage的系统缓存会被清除</p>
-<style>.hifmkjgirncj{}</style><img src="/2019/04/14/HumbleAssetCatalog/06.png" class="hifmkjgirncj">
+<style>.houwjyimuwxc{}</style><img src="/2019/04/14/HumbleAssetCatalog/06.png" class="houwjyimuwxc">
 
 <p>另外还有一点，就是在内存紧张的情况下，UIImage的系统缓存会被清除。</p>
 <p>最后各种转屏，切后台，切夜间模式，杀掉重启，效果比原来稳定了许多，该方案目前有一个缺陷，就是如果用户从后台切到前台，迅速点击设置按钮，还是会有些卡顿，原因就是图片尚未预加载完毕，毕竟虽然这些图片的加载都是利用主线程的闲暇时间完成的，但是这些图片预加载的总时间一点都节省不下，这点时间代价还是要付出的</p>
 <h2 id="二次分析解决">二次分析解决</h2>
 <p>就在我以为问题已经解决的时候，另一个同学提出了将用到的图片资源简单地放到<code>image.xcassets</code>中就可以解决这样的性能问题。出于好奇，把前文中提到的所有图片（27张图片）都挪到了image.xcassets中，并写了一个test方法，同时加载这些图片，并且和未挪动之前进行了对比</p>
-<style>.rtiyjqtteryk{}</style><img src="/2019/04/14/HumbleAssetCatalog/07.png" class="rtiyjqtteryk">
+<style>.cgvfclautbzw{}</style><img src="/2019/04/14/HumbleAssetCatalog/07.png" class="cgvfclautbzw">
 
 <p>对比结果如下：</p>
 <table>
@@ -747,13 +747,13 @@ Compression是苹果新引入的一种压缩形式，这是一种灵活的压缩
 <li>压缩的大小能够提高15-20%</li>
 </ul>
 </blockquote>
-<style>.mpmujcgddzka{}</style><img src="/2019/04/14/HumbleAssetCatalog/08.png" class="mpmujcgddzka">
+<style>.vmxglnyqsepn{}</style><img src="/2019/04/14/HumbleAssetCatalog/08.png" class="vmxglnyqsepn">
 
-<style>.nilfyckudffq{}</style><img src="/2019/04/14/HumbleAssetCatalog/09.png" class="nilfyckudffq">
+<style>.buudqmstihjc{}</style><img src="/2019/04/14/HumbleAssetCatalog/09.png" class="buudqmstihjc">
 
 <h3 id="应用瘦身">应用瘦身</h3>
 <p>各取所需</p>
-<style>.pxdmlcpiwiir{}</style><img src="/2019/04/14/HumbleAssetCatalog/10.png" class="pxdmlcpiwiir">
+<style>.auaomuirtjgg{}</style><img src="/2019/04/14/HumbleAssetCatalog/10.png" class="auaomuirtjgg">
 
 <h3 id="结论1">结论1</h3>
 <p>可以看出，App
@@ -781,7 +781,7 @@ Materials)是从NeXTSTEP继承下来的一种文件格式，命令行输入：ma
 <p>该Asset Catalog包含以下文件： 1、a PNG with 3 resolutions @1x, @2x
 and @3x 2、a PDF 3、a text file 4、a jpg image 5、a color (red with 50%
 transparency)</p>
-<style>.mrlrernviayr{}</style><img src="/2019/04/14/HumbleAssetCatalog/12.png" class="mrlrernviayr">
+<style>.xxrvvoinalkf{}</style><img src="/2019/04/14/HumbleAssetCatalog/12.png" class="xxrvvoinalkf">
 
 <p>编译之后，Asset
 Catalog里面所有的资源都会被编译为Assets.car文件（后缀名的含义是:Compiled
@@ -797,7 +797,7 @@ Asset Catalogs） 命令行输入: assetutil -I Assets.car</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(csiHeader-&gt;pixelFormat == <span class="string">&#x27;ARGB&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA8 &#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGB5&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGBW&#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA16&#x27;</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">CUIThemePixelRendition</span> *<span class="title">themePixelRendition</span> =</span> (<span class="keyword">struct</span> CUIThemePixelRendition *)renditionBytes;</span><br><span class="line">    </span><br><span class="line">    <span class="type">uint32_t</span> compressionType = themePixelRendition-&gt;compressionType;</span><br><span class="line">    <span class="type">uint32_t</span> rawDataLength = themePixelRendition-&gt;rawDataLength;</span><br><span class="line">    <span class="type">uint8_t</span> * __unused rawDataBytes = themePixelRendition-&gt;rawData;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;\n\t\t Found ThemePixelRendition with size %u and compression %s\n&quot;</span>, rawDataLength, [GetRenditionCompressionDescription(compressionType) UTF8String]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>这个是图片对应的二进制流：</p>
-<style>.xfbqzimvwmmx{}</style><img src="/2019/04/14/HumbleAssetCatalog/11.png" class="xfbqzimvwmmx">
+<style>.djmoxenaarux{}</style><img src="/2019/04/14/HumbleAssetCatalog/11.png" class="djmoxenaarux">
 
 <p>依次解释颜色含义：</p>
 <blockquote>
@@ -828,7 +828,7 @@ engineering the .car file format)</p>
 <h3 id="调用栈">调用栈</h3>
 <p>通过hook
 <code>NSCache</code>的<code>setObject:forKey:cost:</code>方法，确认了<code>[UIImage imageNamed：]</code>的调用堆栈，从其中可以看到<code>UIAssetManager</code>的使用，也可以看到<code>CoreUI.framework</code>中的<code>CUICatalog</code>的使用</p>
-<style>.xnlctrsqbjuo{}</style><img src="/2019/04/14/HumbleAssetCatalog/13.png" class="xnlctrsqbjuo">
+<style>.lxiejesiwbgl{}</style><img src="/2019/04/14/HumbleAssetCatalog/13.png" class="lxiejesiwbgl">
 
 <h3 id="优先级">优先级</h3>
 <p>实现过程中，发现有个现象很有意思:普通文件夹中和assets中有两张命名一样的图片，只是内容不一样，这个时候用<code>[UIImage imageNamed:]</code>加载该文件名时，会显示assets中的图片</p>
@@ -848,32 +848,32 @@ engineering the .car file format)</p>
 
 <p>首次加载assets中的图片时，会首先触发car文件的打开操作。
 另外，car文件的加载属于懒加载方式，由于本次实验中启动的时候没有图片加载，所以没有看到car文件的加载，只有在首次读取加载图片的时候，才会触发car文件的读取。由于前文中提到无论图片是否在assets中，都要去<code>UIAssetManager</code>中查询一次，所以这里也同样，无论图片是否是来自assets中，都会触发car文件的打开操作</p>
-<style>.tbvwjpvseofu{}</style><img src="/2019/04/14/HumbleAssetCatalog/18.png" class="tbvwjpvseofu">
+<style>.ibjadgxebzoi{}</style><img src="/2019/04/14/HumbleAssetCatalog/18.png" class="ibjadgxebzoi">
 
 <p>注意图中的<code>Requested Bytes</code>，无论读取的图片的大小是多少，这里都统统是512
 Bytes（实验中在assets中添加了1张2M的图片，进行加载，这里仍然是512
 Bytes）</p>
 <p>同时也会 <strong>触发虚拟内存的映射</strong>，更准确的描述是：
 图片的加载逻辑<code>[UIImage imageNamed:@"title_page_card_placeholder"];</code>会触发<code>VM:CoreUI image file</code></p>
-<style>.frkyulfdjdhl{}</style><img src="/2019/04/14/HumbleAssetCatalog/16.png" class="frkyulfdjdhl">
+<style>.fnnchxqunmex{}</style><img src="/2019/04/14/HumbleAssetCatalog/16.png" class="fnnchxqunmex">
 
 <p>而图片的渲染逻辑<code>_tempView.image = image</code>则会触发<code>VM：IOSurface</code>，它的<code>Responsible Library</code>是<code>CoreUI</code>，<code>Responsible Caller</code>是<code>__csiCompressImageProviderCopyIOSurfaceWithOptions</code>。
 还记得前面提到的<code>CoreUI.framework</code>吗
 还记得前面提到的蓝色的184字节的csiheader吗？ 能对应起来吗？
 另外这里从命名上可以推测基本上是内存级拷贝了</p>
-<style>.dwkrtzgihtec{}</style><img src="/2019/04/14/HumbleAssetCatalog/17.png" class="dwkrtzgihtec">
+<style>.giehomnsmbol{}</style><img src="/2019/04/14/HumbleAssetCatalog/17.png" class="giehomnsmbol">
 
 <h4 id="读取普通文件夹中的图片">读取普通文件夹中的图片</h4>
 <p>（1）首先会触发I/O</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)touchesBegan:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;header&quot;</span>];<span class="comment">// header来自普通文件夹</span></span><br><span class="line">    _tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<style>.csdcfvnottbj{}</style><img src="/2019/04/14/HumbleAssetCatalog/19.png" class="csdcfvnottbj">
+<style>.xyqvrypnmzcu{}</style><img src="/2019/04/14/HumbleAssetCatalog/19.png" class="xyqvrypnmzcu">
 
 <p>（2）其次图片的加载逻辑<code>[UIImage imageNamed:@"header"];</code>会触发<code>VM:CoreUI image file</code>，这个和上面类似</p>
-<style>.tmlqjzrgwxvk{}</style><img src="/2019/04/14/HumbleAssetCatalog/22.png" class="tmlqjzrgwxvk">
+<style>.idnfsyuzilka{}</style><img src="/2019/04/14/HumbleAssetCatalog/22.png" class="idnfsyuzilka">
 
 <p>(3)图片的渲染逻辑<code>_tempView.image = image;</code>则会触发<code>VM:ImageIO_PNG_Data</code>，它的<code>Responsible Library</code>是<code>ImageIO</code>，<code>Responsible Caller</code>是<code>ImageIO_Malloc</code>，</p>
-<style>.ncyvbbsiykkj{}</style><img src="/2019/04/14/HumbleAssetCatalog/23.png" class="ncyvbbsiykkj">
+<style>.xijqjewybnmr{}</style><img src="/2019/04/14/HumbleAssetCatalog/23.png" class="xijqjewybnmr">
 
 <h3 id="结论3">结论3</h3>
 <p>（1）.car文件并不是整个文件都加载到内存中，而是在首次加载的时候使用了虚拟内存，在加载对应图片的时候，如果对应的物理页还尚未加载到内存，会产生一个缺页中断，等物理页加载到内存中，然后会使用<code>BOM.framework</code>寻找到对应的二进制流，
@@ -893,9 +893,9 @@ Bytes）</p>
 </blockquote>
 <p>直到后来，我做了一次详细的数据统计对比： 10张图，screen0 ~
 screen9，每张图片的的大小在1M左右，分别用如下3种方式加载：</p>
-<style>.idvjenewhpux{}</style><img src="/2019/04/14/HumbleAssetCatalog/30.png" class="idvjenewhpux">
+<style>.ysxvcqbsowzk{}</style><img src="/2019/04/14/HumbleAssetCatalog/30.png" class="ysxvcqbsowzk">
 
-<style>.oibjpzibnyxr{}</style><img src="/2019/04/14/HumbleAssetCatalog/31.png" class="oibjpzibnyxr">
+<style>.jyscmvwsdnkn{}</style><img src="/2019/04/14/HumbleAssetCatalog/31.png" class="jyscmvwsdnkn">
 
 <table>
 <thead>
@@ -982,7 +982,7 @@ screen9，每张图片的的大小在1M左右，分别用如下3种方式加载�
 </tbody>
 </table>
 <p>换个角度看一下上面的数据：</p>
-<style>.utkzfepebqvx{}</style><img src="/2019/04/14/HumbleAssetCatalog/56.png" class="utkzfepebqvx">
+<style>.cixtjcfvxaeb{}</style><img src="/2019/04/14/HumbleAssetCatalog/56.png" class="cixtjcfvxaeb">
 
 <table>
 <thead>
@@ -1019,37 +1019,37 @@ screen9，每张图片的的大小在1M左右，分别用如下3种方式加载�
 <h3
 id="imagewithcontentsoffile的加载过程"><code>imageWithContentsOfFile</code>的加载过程</h3>
 <p>这里分别前后加载了两张图片，分别代表首次加载和非首次加载</p>
-<style>.arscnlzedrjs{}</style><img src="/2019/04/14/HumbleAssetCatalog/45.png" class="arscnlzedrjs">
+<style>.qlpieylsopuo{}</style><img src="/2019/04/14/HumbleAssetCatalog/45.png" class="qlpieylsopuo">
 
-<style>.xfckgynqyqeq{}</style><img src="/2019/04/14/HumbleAssetCatalog/46.png" class="xfckgynqyqeq">
+<style>.pjlfrramesix{}</style><img src="/2019/04/14/HumbleAssetCatalog/46.png" class="pjlfrramesix">
 
 <p>时间对比下来，时间也就差了差不多2倍左右，这个和前面测出来的数据还是有一定的出入（暂时无法解释why），从堆栈来看，有区别的是这个地方：</p>
-<style>.ksrhwnqqsmtk{}</style><img src="/2019/04/14/HumbleAssetCatalog/52.png" class="ksrhwnqqsmtk">
+<style>.nugduoisxjih{}</style><img src="/2019/04/14/HumbleAssetCatalog/52.png" class="nugduoisxjih">
 
 <p>推测首次加载耗时长可能和一些必要初始化操作有一些关系</p>
 <h3
 id="imagenamed加载普通文件夹中的图片过程"><code>imageNamed</code>加载普通文件夹中的图片过程</h3>
-<style>.edoasfbckdqi{}</style><img src="/2019/04/14/HumbleAssetCatalog/47.png" class="edoasfbckdqi">
+<style>.otfyhcpemnbp{}</style><img src="/2019/04/14/HumbleAssetCatalog/47.png" class="otfyhcpemnbp">
 
 <p>可以看出，对于普通文件夹中的图片，<code>imageNamed</code>优先到assets中去寻找，并且寻找的这个过程<code>rendtionWithKey</code>占了绝大多数的时间，当然结果肯定是寻找不到的，最后还是会调用<code>UIAssetManager newAssetNamed:fromBundle:</code>方法从bundle中去寻找，这个过程与前面的推理是一致的，只是assets的寻找占用了如此之多的时间是我始料不及的。</p>
-<style>.ukicbqhclskh{}</style><img src="/2019/04/14/HumbleAssetCatalog/48.png" class="ukicbqhclskh">
+<style>.klqfnfrgsedx{}</style><img src="/2019/04/14/HumbleAssetCatalog/48.png" class="klqfnfrgsedx">
 
 <p>从图中可以看出<code>rendtionWithKey</code>占用耗时最多的3部分</p>
-<style>.obbmsdbfjrnb{}</style><img src="/2019/04/14/HumbleAssetCatalog/49.png" class="obbmsdbfjrnb">
+<style>.yxpouvticlvg{}</style><img src="/2019/04/14/HumbleAssetCatalog/49.png" class="yxpouvticlvg">
 
-<style>.bpgekfuedetm{}</style><img src="/2019/04/14/HumbleAssetCatalog/50.png" class="bpgekfuedetm">
+<style>.pucpbamdksfm{}</style><img src="/2019/04/14/HumbleAssetCatalog/50.png" class="pucpbamdksfm">
 
-<style>.vxtlitmgvdgx{}</style><img src="/2019/04/14/HumbleAssetCatalog/51.png" class="vxtlitmgvdgx">
+<style>.rbplewhxychf{}</style><img src="/2019/04/14/HumbleAssetCatalog/51.png" class="rbplewhxychf">
 
 <p>这个方法不知道苹果是否会进行优化？</p>
 <h3
 id="imagenamed加载assets中的图片过程"><code>imageNamed</code>加载assets中的图片过程</h3>
 <p>看完前面两位的表现，再来看下<code>imageNamed</code>加载assets中的图片为什么如此逆天，</p>
-<style>.swlpojcvgjfe{}</style><img src="/2019/04/14/HumbleAssetCatalog/53.png" class="swlpojcvgjfe">
+<style>.vhhqjzdoekrf{}</style><img src="/2019/04/14/HumbleAssetCatalog/53.png" class="vhhqjzdoekrf">
 
-<style>.clhsibjurhtv{}</style><img src="/2019/04/14/HumbleAssetCatalog/54.png" class="clhsibjurhtv">
+<style>.lovutanefoqd{}</style><img src="/2019/04/14/HumbleAssetCatalog/54.png" class="lovutanefoqd">
 
-<style>.tdftenqmdoki{}</style><img src="/2019/04/14/HumbleAssetCatalog/55.png" class="tdftenqmdoki">
+<style>.bhpslotxvpdp{}</style><img src="/2019/04/14/HumbleAssetCatalog/55.png" class="bhpslotxvpdp">
 
 <p>首次加载时间长的原因：
 （1）.car文件本身需要加载1次，需要进行I/O操作；
