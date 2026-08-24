@@ -118,7 +118,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/10.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/03.png">
 <meta property="article:published_time" content="2024-02-02T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-08-19T04:45:31.523Z">
+<meta property="article:modified_time" content="2026-08-24T16:06:37.313Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png">
@@ -477,8 +477,19 @@ mjx-container[display="true"] + br {
               
                 
                   <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                    <a href="/categories/LaTeX-TTS/" itemprop="url" rel="index">
-                      <span itemprop="name">LaTeX TTS</span>
+                    <a href="/categories/LaTeX/" itemprop="url" rel="index">
+                      <span itemprop="name">LaTeX</span>
+                    </a>
+                  </span>
+
+                  
+                  
+                    ， 
+                  
+                
+                  <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                    <a href="/categories/LaTeX/TTS/" itemprop="url" rel="index">
+                      <span itemprop="name">TTS</span>
                     </a>
                   </span>
 
@@ -609,7 +620,7 @@ Native 方案，性能比较差；
 <h3 id="接口实现">接口实现</h3>
 <p>以 <code>\sqrt[3]{(x-y)^3}=x-y</code> 为例，其生成的 Atom
 多叉树如下所示：</p>
-<style>.uhjytdqetxxm{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png" class="uhjytdqetxxm">
+<style>.gduvcbinowph{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png" class="gduvcbinowph">
 
 <p>那么这里面涉及到 5 种 Atom
 子类都需要去实现<code>getSpeechText</code>接口，下面的示例将看到一些简单的组装规则。</p>
@@ -665,7 +676,7 @@ Native 方案，性能比较差；
 <h3 id="推理提前截断">推理提前截断</h3>
 <p>有些符号看起来很简单，例如 \equalparallel
 这个命令，其渲染效果如图所示</p>
-<style>.odkllnrnllfd{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/05.png" class="odkllnrnllfd">
+<style>.jyggieusplpk{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/05.png" class="jyggieusplpk">
 
 <p>但是其渲染逻辑对应的<code>Atom</code>节点比较复杂：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">shared_ptr&lt;Atom&gt; Commands::CommandEqualParallel::<span class="built_in">newI</span>(<span class="type">const</span> std::shared_ptr&lt;TeXParser&gt; &amp;tp) {</span><br><span class="line">    std::shared_ptr&lt;RowAtom&gt; ra = <span class="built_in">make_shared_from_list</span>&lt;RowAtom&gt;({std::<span class="built_in">make_shared</span>&lt;SpaceAtom&gt;(Unit::MU, <span class="number">8.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>), SymbolAtom::<span class="built_in">get</span>(<span class="string">L"shortparallel"</span>)});</span><br><span class="line">    <span class="keyword">auto</span> raiseAtom = std::<span class="built_in">make_shared</span>&lt;RaiseAtom&gt;(ra, std::<span class="built_in">make_shared</span>&lt;TeXLength&gt;(Unit::MU, <span class="number">3.0</span>), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">auto</span> lapAtom = std::<span class="built_in">make_shared</span>&lt;LapedAtom&gt;(raiseAtom, <span class="string">L'r'</span>);</span><br><span class="line">    <span class="keyword">auto</span> raiseAtom2 = std::<span class="built_in">make_shared</span>&lt;RaiseAtom&gt;(SymbolAtom::<span class="built_in">get</span>(<span class="string">L"equals"</span>), std::<span class="built_in">make_shared</span>&lt;TeXLength&gt;(Unit::MU, <span class="number">-3.0</span>), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">auto</span> ra2 = <span class="built_in">make_shared_from_list</span>&lt;RowAtom&gt;({lapAtom, raiseAtom2});</span><br><span class="line">    <span class="keyword">auto</span> result = std::<span class="built_in">make_shared</span>&lt;TypedAtom&gt;(TYPE_RELATION, ra2);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br></pre></td></tr></table></figure>
@@ -681,7 +692,7 @@ Native 方案，性能比较差；
 
 <p>这个<code>latex</code>文本的最终渲染效果是：<span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.05ex;" xmlns="http://www.w3.org/2000/svg" width="4.743ex" height="1.645ex" role="img" focusable="false" viewBox="0 -705 2096.3 727"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="37^\circ\rm{C}"><g data-mml-node="msup" data-latex="37^\circ"><g data-mml-node="mn" data-latex="37"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path><path data-c="37" d="M475 604C482 613 485 626 485 644L243 644C174 644 135 648 128 657C125 660 122 667 120 676L89 676L55 464L88 464C98 520 106 550 112 555C115 558 146 560 205 560L401 560L295 410C214 295 174 171 174 36C174-3 190-22 223-22C256-22 272-3 272 36L272 87C272 239 296 349 343 416Z" transform="translate(500,0)"></path></g><g data-mml-node="mo" transform="translate(1033,403.1) scale(0.707)" data-latex="\circ"><path data-c="2218" d="M356 250C356 300 347 321 312 356C283 385 247 400 206 400C124 400 56 332 56 250C56 168 124 100 206 100C288 100 356 168 356 250M309 250C309 208 303 200 279 177C259 157 235 147 206 147C149 147 103 193 103 250C103 307 149 353 206 353C263 353 309 307 309 250Z"></path></g></g><g data-mml-node="TeXAtom" data-latex="{C}" data-mjx-texclass="ORD" transform="translate(1374.3,0)"><g data-mml-node="mi" data-latex="C"><path data-c="43" d="M665 443L665 677C665 696 660 705 650 705C643 705 637 700 631 691L584 622C554 653 522 675 487 689C461 700 433 705 403 705C306 705 223 670 156 598C89 526 56 441 56 342C56 243 89 158 155 87C222 14 305-22 403-22C474-22 536 3 588 53C640 103 665 163 665 234C665 248 659 255 648 255C638 255 633 251 633 242C633 241 633 239 632 236C626 116 540 17 415 17C378 17 341 27 302 47C210 97 166 193 166 341C166 481 215 589 302 636C341 656 378 666 414 666C538 666 609 553 626 435C627 422 634 415 645 415C665 415 665 423 665 443Z"></path></g></g></g></g></svg></mjx-container></span>，而语音文本应该为“37摄氏度”。</p>
 <p>对于渲染逻辑来说，实际上非常简单，挨着绘制3个节点即可（如栈所示），然而要推理<code>TTS</code>文本却比较麻烦，问题在于他们不在一颗节点上。如图所示，在<code>LaTeX</code>文本解析的过程中，实际上会生成一个“命令栈”，正常情况下这些命令正常出栈即可，然而此时由于命令和命令之间有一些关联关系，需要做一些特殊处理：</p>
-<style>.mmcstfswhyhw{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/04.png" class="mmcstfswhyhw">
+<style>.qjxpehdboufi{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/04.png" class="qjxpehdboufi">
 
 <p>在<code>CommandRm</code>进行闭合的时候，做一些判定。</p>
 <ol type="1">
@@ -764,7 +775,7 @@ Native 方案，性能比较差；
 <p>考虑下面的化学式：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\ce{H2SO4}</span><br></pre></td></tr></table></figure>
 
-<style>.sxuknaamgdtm{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/07.png" class="sxuknaamgdtm">
+<style>.jwkijobspiko{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/07.png" class="jwkijobspiko">
 
 <p>其生成的节点树如图所示，如果还是按照前文的树形遍历方法来读，很难将其与“硫酸”这个名字关联起来，这个矛盾也主要来自于树形结构和线性拆分查找之间的天然冲突。考虑到大部分化学的结构都比较扁平，大部分分子式的层次并不会特别深（这里面以<code>ScriptsAtom</code>居多，用于表达化学式的右下角标），所以可以考虑局部打平树结构，即在读<code>ScriptsAtom</code>的时候，不再去遍历其子节点，而是按照某种规则将其抹平为一层。</p>
 <p>具体规则如下，由于<code>ScriptsAtom</code>有<code>base</code>、<code>subscript</code>和<code>superscript</code>
@@ -772,7 +783,7 @@ Native 方案，性能比较差；
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ScriptsAtom</span> : <span class="keyword">public</span> Atom, <span class="keyword">public</span> HasTrueBase {</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; base;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; subscript;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; superscript;</span><br><span class="line">    ......</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">std::wstring <span class="title">ScriptsAtom::toString</span><span class="params">()</span> </span>{</span><br><span class="line">    std::wstring key = <span class="string">L""</span>;</span><br><span class="line">    <span class="keyword">if</span> (base != <span class="literal">nullptr</span>) key += base-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (subscript != <span class="literal">nullptr</span>) key += <span class="string">L"_"</span> + subscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (superscript != <span class="literal">nullptr</span>) key += <span class="string">L"^"</span> + superscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">return</span> key;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 
 <p>在这样的规则下，前面的树结构被打平为如下图所示：</p>
-<style>.mppuexruljmy{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/08.png" class="mppuexruljmy">
+<style>.bvotdpfchqnq{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/08.png" class="bvotdpfchqnq">
 
 <h3 id="化学式的识别">化学式的识别</h3>
 <p>在打平的基础上，遍历上述化学式的<code>TTS</code>文本结果依次为H_2、S、O_4，如何将这几个散装的文本转换为化学式的学名呢？字典映射可能是一种方式，但是仔细考虑会发现有很多问题无法解决：</p>
@@ -782,10 +793,10 @@ Native 方案，性能比较差；
 <li>如果没有学名，又如何回退呢？（毕竟H_2S也有对应的学名硫化氢）</li>
 </ol>
 <p>如果再仔细考虑下，会发现这里的问题和搜索引擎高度相似：当你输入某些字符的时候，搜索引擎就能展示一系列的联想词语。</p>
-<style>.iskesongiahs{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/06.png" class="iskesongiahs">
+<style>.grhtsapeoagw{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/06.png" class="grhtsapeoagw">
 
 <p>因此可以参考搜索引擎的做法，引入<code>Trie</code>树，来解决化学式学名的识别问题</p>
-<style>.dkztzwrvsfux{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/09.png" class="dkztzwrvsfux">
+<style>.dzldltzcpked{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/09.png" class="dzldltzcpked">
 
 <p>如图所示，这是构建的化学式学名的Trie树，每个节点都存储着一个名字（如果有的话），用来表达从根节点到当前节点的路径代表的化学式。而搜索过程采用贪婪的搜索算法：</p>
 <ol type="1">
@@ -819,7 +830,7 @@ Native 方案，性能比较差；
 
 <h3 id="化学方程式的识别">化学方程式的识别</h3>
 <p>在已经识别化学式的基础上，来进一步来识别化学方程式。相比于化学式，化学方程式包含了以下概念：</p>
-<style>.dujihpdjpxtr{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/10.png" class="dujihpdjpxtr">
+<style>.estnkolsmlkn{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/10.png" class="estnkolsmlkn">
 
 <p>因此定义了以下数据结构，并且把是否有<code>Equation</code>作为是否是化学方程式最根本的判断。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum class</span> <span class="title class_">ChemElementType</span> {</span><br><span class="line">    Molecular, <span class="comment">// 化学式</span></span><br><span class="line">    Coefficient, <span class="comment">// 系数</span></span><br><span class="line">    StateOfMatter, <span class="comment">// 物质状态</span></span><br><span class="line">    Combine, <span class="comment">// +</span></span><br><span class="line">    Equation, <span class="comment">// =、-&gt;</span></span><br><span class="line">    Condition, <span class="comment">// 加热、高温、催化剂等</span></span><br><span class="line">    Undefined,</span><br><span class="line">};</span><br></pre></td></tr></table></figure>
@@ -832,7 +843,7 @@ Native 方案，性能比较差；
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2</span>个过氧化钠和<span class="number">2</span>个水在加热的条件下反应生成<span class="number">4</span>个氢氧化钠和<span class="number">1</span>个氧气气体</span><br></pre></td></tr></table></figure>
 
 <h3 id="浓度的读法">浓度的读法</h3>
-<style>.uicfnbbrixqn{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/03.png" class="uicfnbbrixqn">
+<style>.teewkioxwzqv{}</style><img src="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/03.png" class="teewkioxwzqv">
 
 <p>离子浓度的读法不同于化学方程式，中间的等号就是表达等于的意思，所以只需要识别浓度<code>c(xxx)</code>即可，还是采用类似于绝对值的进栈出栈的方式，来判定是否在表达浓度，核心代码如下所示：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">std::vector&lt;std::shared_ptr&lt;Atom&gt;&gt; ChemTTSEngine::<span class="built_in">getElementsByAggregatingMolaritySymbols</span>(<span class="type">const</span> std::vector&lt;std::shared_ptr&lt;Atom&gt;&gt;&amp; elements) {</span><br><span class="line">    <span class="comment">// extract c(xxx)</span></span><br><span class="line">    std::stack&lt;std::shared_ptr&lt;Atom&gt;&gt; stack;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Atom&gt;&gt; atoms;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Atom&gt;&gt; newElements;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; elements.<span class="built_in">size</span>(); ++i) {</span><br><span class="line">        <span class="keyword">auto</span>&amp; e = elements[i];</span><br><span class="line">        <span class="keyword">if</span> (std::<span class="built_in">dynamic_pointer_cast</span>&lt;CharAtom&gt;(e) != <span class="literal">nullptr</span> &amp;&amp;</span><br><span class="line">            std::<span class="built_in">static_pointer_cast</span>&lt;CharAtom&gt;(e)-&gt;<span class="built_in">getCharacter</span>() == <span class="string">L'c'</span> &amp;&amp;</span><br><span class="line">            i + <span class="number">1</span> &lt; elements.<span class="built_in">size</span>() &amp;&amp;</span><br><span class="line">            std::<span class="built_in">dynamic_pointer_cast</span>&lt;SymbolAtom&gt;(elements[i<span class="number">+1</span>]) != <span class="literal">nullptr</span> &amp;&amp;</span><br><span class="line">            std::<span class="built_in">static_pointer_cast</span>&lt;SymbolAtom&gt;(elements[i<span class="number">+1</span>])-&gt;<span class="built_in">getUnicode</span>() == <span class="string">L'('</span>) {</span><br><span class="line">            stack.<span class="built_in">push</span>(elements[i<span class="number">+1</span>]);</span><br><span class="line">            stack.<span class="built_in">push</span>(elements[i]);</span><br><span class="line">            i += <span class="number">1</span>;</span><br><span class="line">        } <span class="keyword">else</span> <span class="keyword">if</span>(std::<span class="built_in">dynamic_pointer_cast</span>&lt;SymbolAtom&gt;(e) != <span class="literal">nullptr</span> &amp;&amp; std::<span class="built_in">static_pointer_cast</span>&lt;SymbolAtom&gt;(e)-&gt;<span class="built_in">getUnicode</span>() == <span class="string">L')'</span>) {</span><br><span class="line">            <span class="keyword">if</span> (!stack.<span class="built_in">empty</span>()) {</span><br><span class="line">                stack.<span class="built_in">pop</span>();</span><br><span class="line">                stack.<span class="built_in">pop</span>();</span><br><span class="line">                </span><br><span class="line">                std::shared_ptr&lt;RowAtom&gt; ra = std::<span class="built_in">make_shared</span>&lt;RowAtom&gt;(atoms);</span><br><span class="line">                ra-&gt;<span class="built_in">setMathMode</span>(<span class="literal">false</span>);</span><br><span class="line">                newElements.<span class="built_in">push_back</span>(std::<span class="built_in">make_shared</span>&lt;ContainerAtom&gt;(ra-&gt;<span class="built_in">simplify</span>(), ra-&gt;<span class="built_in">simplify</span>()-&gt;<span class="built_in">getSpeechText</span>() + <span class="string">L"的浓度"</span>));</span><br><span class="line">                atoms.<span class="built_in">clear</span>();</span><br><span class="line">            } <span class="keyword">else</span> {</span><br><span class="line">                newElements.<span class="built_in">push_back</span>(e);</span><br><span class="line">            }</span><br><span class="line">        } <span class="keyword">else</span> {</span><br><span class="line">            <span class="keyword">if</span> (stack.<span class="built_in">empty</span>()) {</span><br><span class="line">                newElements.<span class="built_in">push_back</span>(e);</span><br><span class="line">            } <span class="keyword">else</span> {</span><br><span class="line">                atoms.<span class="built_in">push_back</span>(e);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!stack.<span class="built_in">empty</span>()) {</span><br><span class="line">        <span class="keyword">while</span> (!stack.<span class="built_in">empty</span>()) {</span><br><span class="line">            newElements.<span class="built_in">push_back</span>(stack.<span class="built_in">top</span>());</span><br><span class="line">            stack.<span class="built_in">pop</span>();</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; ele : atoms) {</span><br><span class="line">            newElements.<span class="built_in">push_back</span>(ele);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> newElements;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
@@ -928,7 +939,7 @@ NH3·H2O，如果按照上述规则，最后的名称为“一水合氨气”，
   <p><span>本文标题:</span><a href="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/">关于 LaTeX 的 TTS 朗读这件事</a></p>
   <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
   <p><span>发布时间:</span>2024年02月02日 - 23:02</p>
-  <p><span>最后更新:</span>2026年08月19日 - 12:08</p>
+  <p><span>最后更新:</span>2026年08月25日 - 00:08</p>
   <p><span>原始链接:</span><a href="/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/" title="关于 LaTeX 的 TTS 朗读这件事">https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1082,7 +1093,7 @@ NH3·H2O，如果按照上述规则，最后的名称为“一水合氨气”，
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/">
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1113,7 +1124,7 @@ NH3·H2O，如果按照上述规则，最后的名称为“一水合氨气”，
 
           
 <div class="sidebar-app-card motion-element">
-  <a class="sidebar-app-card-link" href="/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:0;">
+  <a class="sidebar-app-card-link" href="/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
     <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
       <img src="/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
     </span>
