@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface Recently, to solve various tricky problems encountered during chapter splitting, I had to dig deep into TxtEngine and debug many implementation details. I had touched this engine before when s">
+<meta property="og:type" content="website">
+<meta property="og:title" content="How the TXT Engine Works">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2019/04/05/how-the-txt-engine-works/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface Recently, to solve various tricky problems encountered during chapter splitting, I had to dig deep into TxtEngine and debug many implementation details. I had touched this engine before when s">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2019-04-05T15:06:59.000Z">
+<meta property="article:modified_time" content="2026-08-28T17:08:21.468Z">
+<meta property="article:author" content="lingyun">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2019/04/05/how-the-txt-engine-works/"/>
+
+
+
+
+
+  <title>How the TXT Engine Works | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2019/04/05/how-the-txt-engine-works/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">How the TXT Engine Works</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-04-05T23:06:59+08:00">
+                2019-04-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  166k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  10:02
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>Recently, to solve various tricky problems encountered during chapter
+splitting, I had to dig deep into <code>TxtEngine</code> and debug many
+implementation details. I had touched this engine before when solving
+card-layout issues, but each time I only saw isolated pieces rather than
+the whole picture.</p>
+<p>To avoid being blocked by partial understanding, I decided to
+organize how this reading engine works from a more complete perspective,
+including file opening, layout, rendering, page turning, and related
+parts.</p>
+<h2 id="opening-a-file">Opening a File</h2>
+<h3 id="getting-file-size-and-file-stream">Getting File Size and File
+Stream</h3>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Given a file path, get the file size.</span></span><br><span class="line">_fileSize = [[[<span class="built_in">NSFileManager</span> defaultManager] attributesOfItemAtPath:filePath error:<span class="literal">nil</span>] fileSize];</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get the file stream. If the file is large, it needs to be read in batches.</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">long</span> readSize = (_fileSize &lt; QR_MAX_GUESS_LEN ? _fileSize:QR_MAX_GUESS_LEN);</span><br><span class="line"><span class="built_in">NSData</span>* data = [_fileHandle readDataOfLength:readSize];</span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span>* buff = (<span class="type">unsigned</span> <span class="type">char</span>*)[data bytes];</span><br></pre></td></tr></table></figure>
+
+<h3 id="encoding-detection">Encoding Detection</h3>
+<p>Before parsing the file stream, we need to determine its encoding. So
+how do we identify the encoding of a file?</p>
+<h4 id="identifying-files-with-a-bom">Identifying Files with a BOM</h4>
+<p>BOM stands for Byte Order Mark. It usually appears at the very
+beginning of a file and adds several extra invalid bytes to indicate the
+file’s encoding type. In some cases, the BOM also carries endian
+information. By reading the first few bytes of a file, we can determine
+how the file stream should be decoded.</p>
+<p>Common UTF encodings include the following. <code>UTF-16</code> and
+<code>UTF-32</code> also have big-endian and little-endian variants:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FF FE 00 00 : UTF-32/UCS-4, little endian</span><br><span class="line">00 00 FE FF : UTF-32/UCS-4, big endian</span><br><span class="line">FF FE : UTF-16, little endian</span><br><span class="line">FE FF : UTF-16, big endian</span><br><span class="line">EF BB BF : UTF-8, no endian distinction</span><br></pre></td></tr></table></figure>
+
+<p>Why does UTF-8 not have an endian problem? Because when a character
+is represented in UTF-8, its Unicode code point is encoded into a byte
+array. When writing that byte array to memory, the bytes are simply
+written one by one in array order. There is no high-byte or low-byte
+issue. Therefore, the UTF-8 byte sequence for a Chinese character is the
+same on any kind of CPU.</p>
+<p>On Microsoft Windows, UTF-8 files may include the BOM
+<code>EF BB BF</code>, even though UTF-8 does not need it. This does not
+mean UTF-8 needs byte order information; it only marks the file as
+UTF-8. In some cases, this extra marker can cause trouble, so encoding
+detection should account for it and avoid treating the BOM as part of
+the file’s actual text.</p>
+<p>At this point, when opening a file, if we see a BOM, we can identify
+whether the encoding is UTF-16, UTF-32, or UTF-8, and whether it is big
+endian or little endian.</p>
+<h4 id="identifying-files-without-a-bom">Identifying Files Without a
+BOM</h4>
+<p>For files without a BOM, how should we determine their encoding?</p>
+<p>Here, let us use UTF-8 and GBK as examples. GBK has no BOM. UTF-8
+allows a BOM, but usually does not include one.</p>
+<p>First, UTF-8:</p>
+<p>UTF-8, or Unicode Transformation Format 8-bit, is a multibyte
+encoding designed for international text. It uses 8 bits, that is one
+byte, for English characters, and usually 24 bits, or three bytes, for
+Chinese characters. UTF-8 contains the characters needed by countries
+around the world, so it is an international encoding with strong
+universality. It is a multibyte character set. A Unicode character may
+be represented by one or more bytes, and the byte patterns follow clear
+rules:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1 byte:  0xxxxxxx</span><br><span class="line">2 bytes: 110xxxxx 10xxxxxx</span><br><span class="line">3 bytes: 1110xxxx 10xxxxxx 10xxxxxx</span><br><span class="line">4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</span><br><span class="line">5 bytes: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx</span><br><span class="line">6 bytes: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx</span><br></pre></td></tr></table></figure>
+
+<p>By identifying the leading byte, we know how many bytes should be
+parsed as one unit. The leading byte can only match one of these forms,
+and every subsequent byte starts with <code>10</code>. The pattern is
+very obvious. So we can traverse the string according to these
+characteristics to determine whether it is UTF-8 encoded.</p>
+<p>Now GBK:</p>
+<p>GBK is an extension of the national standard GB2312 and is backward
+compatible with GB2312. GBK represents text using two bytes. Both
+Chinese and English characters are represented with double bytes, and
+the highest bit is set to 1 to distinguish Chinese. GBK encoding is
+based on location codes and uses double-byte encoding for Chinese
+characters and Chinese punctuation. The common encoding method is
+<code>0xA0 + area number</code>, <code>0xA0 + position number</code>.
+For example, the Chinese character “安” has the decimal location code
+1618, so its GBK encoding is <code>0xA0 + 16</code>,
+<code>0xA0 + 18</code>, which is <code>0xB0 0xB2</code>. Although GBK
+uses two-byte display, each byte also has a valid range. The overall GBK
+range is <code>0x8140</code> to <code>0xFEFE</code>; the first byte is
+between <code>0x81</code> and <code>0xFE</code>, and the second byte is
+between <code>0x40</code> and <code>0xFE</code>, excluding the
+<code>xx7F</code> line.</p>
+<p>From this, we can see that although GBK and UTF-8 files do not
+necessarily have markers, their encoded byte sequences have clear
+characteristics. We can usually identify whether a file is GBK or UTF-8
+by examining the byte sequence.</p>
+<p>However, this also introduces a certain <strong>performance
+cost</strong>. We have to check each character from beginning to end to
+determine whether it falls within the valid range of a given encoding.
+For example, the following code checks whether every character in the
+whole text conforms to UTF-8 rules:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> <span class="title function_">isUTF8</span><span class="params">( <span class="type">const</span> <span class="type">char</span> *str, <span class="type">int</span> length )</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> i, mode = <span class="number">0</span>, m2;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> ucs;</span><br><span class="line">    <span class="type">char</span> ch;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span>( i = <span class="number">0</span> ; i &lt; length - <span class="number">2</span> ; i++ )&#123;</span><br><span class="line">        ch = str[ i ];</span><br><span class="line">        <span class="keyword">if</span>( mode == <span class="number">0</span> )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0x80</span>) == <span class="number">0</span> ) <span class="keyword">continue</span>;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xe0</span>) == <span class="number">0xc0</span> )&#123; mode = m2 = <span class="number">1</span>; ucs = (ch&amp;<span class="number">0x1f</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xf0</span>) == <span class="number">0xe0</span> )&#123; mode = m2 = <span class="number">2</span>; ucs = (ch&amp;<span class="number">0x0f</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xf8</span>) == <span class="number">0xf0</span> )&#123; mode = m2 = <span class="number">3</span>; ucs = (ch&amp;<span class="number">0x07</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xfc</span>) == <span class="number">0xf8</span> )&#123; mode = m2 = <span class="number">4</span>; ucs = (ch&amp;<span class="number">0x03</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xfe</span>) == <span class="number">0xfc</span> )&#123; mode = m2 = <span class="number">5</span>; ucs = (ch&amp;<span class="number">0x01</span>); <span class="keyword">continue</span>; &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>( (ch&amp;<span class="number">0xc0</span>) != <span class="number">0x80</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            ucs &lt;&lt;= <span class="number">6</span>; ucs += (ch&amp;<span class="number">0x3f</span>);</span><br><span class="line">            mode--;</span><br><span class="line">            <span class="keyword">if</span>( !mode )&#123;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">1</span> &amp;&amp; ucs &lt; <span class="number">0x0000080</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">2</span> &amp;&amp; ucs &lt; <span class="number">0x0000800</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">3</span> &amp;&amp; ucs &lt; <span class="number">0x0010000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">4</span> &amp;&amp; ucs &lt; <span class="number">0x0200000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">if</span>( m2 == <span class="number">5</span> &amp;&amp; ucs &lt; <span class="number">0x4000000</span> ) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After obtaining the file encoding, byte order, and related
+information, we can determine some meaningless bytes such as
+<code>_docBOMSize</code>.</p>
+<h3 id="layout-settings">Layout Settings</h3>
+<blockquote>
+<ul>
+<li>Set the display area.</li>
+<li>Set the font type and font size.</li>
+<li>Set line height, line spacing, and paragraph spacing.</li>
+</ul>
+</blockquote>
+<p>The display area, line spacing, and paragraph spacing are relatively
+straightforward. Here we mainly focus on font registration, line height,
+and character width.</p>
+<h4 id="font-registration">Font Registration</h4>
+<p>If the font is built into the system, there is nothing special to do.
+But for non-system fonts, the font must first be loaded and
+registered:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Load font</span></span><br><span class="line">NSString *fontFilePath = [self getFontFilePath:fontType];</span><br><span class="line">NSString *url = [NSURL fileURLWithPath:fontFilePath];</span><br><span class="line">CGDataProviderRef fontDataProvider = CGDataProviderCreateWithURL((CFURLRef)url);</span><br><span class="line">CGFontRef newFont = CGFontCreateWithDataProvider(fontDataProvider);</span><br><span class="line">CGDataProviderRelease(fontDataProvider);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Register font</span></span><br><span class="line">CTFontManagerRegisterGraphicsFont(newFont, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get CTFontRef</span></span><br><span class="line">CTFontRef ctFont = CTFontCreateWithGraphicsFont(newFont, fontSize,<span class="literal">NULL</span>,<span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">return</span> ctFont;</span><br></pre></td></tr></table></figure>
+
+<h4 id="character-width-calculation">Character Width Calculation</h4>
+<p>The main character types involved in <code>TxtEngine</code> are ASCII
+characters, CJK characters, and punctuation marks. For each font, under
+a given line height, the corresponding character widths need to be
+calculated.</p>
+<blockquote>
+<ul>
+<li>QQ Reader currently provides multiple font choices. Besides the
+built-in system Heiti font, it also provides many downloadable fonts
+such as Hanyi Shusong, Hanyi Qihei, Hanyi Kaiti, Founder Lanting,
+Founder Shusong, Founder Cartoon, Founder Qiti, and Founder Xinghei.
+Since font registration is supported, new fonts can continue to be
+added.</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>For each font, <code>TxtEngine</code> supports font heights from 10
+to 55.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> CacheFontSizeMin               10  </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CacheFontSizeMax               55 </span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>For each font and each line height, the corresponding character
+widths need to be calculated and cached separately. This is done
+lazily.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">char</span>       _bak_ascii_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">256</span>][<span class="number">20</span>];     <span class="comment">// font size | ASCII character | font type</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span>       _bak_wchar_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">20</span>];          <span class="comment">// font size | font type</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span>       _bak_biaodian_width[CacheFontSizeMax-CacheFontSizeMin+<span class="number">1</span>][<span class="number">18</span>][<span class="number">20</span>];   <span class="comment">// font size | punctuation character | font type</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="ascii-character-width">ASCII Character Width</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache visible character width</span></span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; <span class="number">256</span>; ++i )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ( _bak_ascii_width[nFontSize - CacheFontSizeMin][i][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        _bak_ascii_width[ nFontSize - CacheFontSizeMin][i][nFontType] = font_character_width([_setting parseFont], (QWCHAR)(i));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>font_character_width</code> determines whether the current font
+type is a system font. If it is not, it also needs to locate the font
+file, load it, and register it. Finally, it returns the corresponding
+<code>CTFontRef</code>, and the character width is calculated from that
+<code>CTFontRef</code> and the character.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">font_string_width_byCTFont</span><span class="params">(CTFontRef ctFont, NSString* uniChar)</span></span><br><span class="line">&#123;</span><br><span class="line">    UniChar *characters;</span><br><span class="line">    CGGlyph *glyphs;</span><br><span class="line">    CFIndex count = [uniChar length] ;<span class="comment">//1;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Allocate our buffers for characters and glyphs.</span></span><br><span class="line">    characters = (UniChar *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(UniChar) * count);</span><br><span class="line">    <span class="comment">//assert(characters != NULL);</span></span><br><span class="line">    </span><br><span class="line">    glyphs = (CGGlyph *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(CGGlyph) * count);</span><br><span class="line">    <span class="comment">//assert(glyphs != NULL);</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Get the characters from the string.</span></span><br><span class="line">    CFStringGetCharacters((CFStringRef)uniChar, CFRangeMake(<span class="number">0</span>, count), characters);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Get the glyphs for the characters.</span></span><br><span class="line">    CTFontGetGlyphsForCharacters(ctFont, characters, glyphs, count);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Do something with the glyphs here, if a character is unmapped</span></span><br><span class="line">    CGSize *cSize = (CGSize *)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(CGSize)*count);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// English fonts may have fractional widths, so round here to avoid squeezing English text.</span></span><br><span class="line">    <span class="type">int</span> fontwidth = (<span class="type">int</span>) (<span class="number">0.5</span> + CTFontGetAdvancesForGlyphs(ctFont, kCTFontDefaultOrientation, glyphs, cSize, count) );</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Free our buffers</span></span><br><span class="line">    <span class="built_in">free</span>(characters);</span><br><span class="line">    <span class="built_in">free</span>(glyphs);</span><br><span class="line">    <span class="built_in">free</span>(cSize);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> fontwidth;</span><br><span class="line">   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="setting-chinese-character-width">Setting Chinese Character
+Width</h4>
+<p>CJK character width is basically fixed. Therefore, we only need to
+calculate and cache the width of one representative character instead of
+calculating every character’s width each time. This speeds up layout.
+Here, the second parameter of <code>font_character_width_2</code> uses
+the first CJK Unicode code point, <code>0x4E00</code>, to represent the
+width of all CJK symbols.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">(chr &gt;= <span class="number">0x4E00</span> &amp;&amp; chr &lt;= <span class="number">0x9FBF</span>)            <span class="comment">// 4E00-9FBF: CJK Unified Ideographs</span></span><br><span class="line">(chr &gt;= <span class="number">0xF900</span> &amp;&amp; chr &lt;= <span class="number">0xFAFF</span>)            <span class="comment">// F900-FAFF: CJK Compatibility Ideographs</span></span><br><span class="line">(chr &gt;= <span class="number">0xFE30</span> &amp;&amp; chr &lt;= <span class="number">0xFE4F</span>)            <span class="comment">// FE30-FE4F: CJK Compatibility Forms</span></span><br><span class="line">(chr &gt;= <span class="number">0xFF00</span> &amp;&amp; chr &lt;= <span class="number">0xFFEF</span>)            <span class="comment">// FF00-FFEF: Halfwidth and Fullwidth Forms, full-width punctuation and full-width ASCII</span></span><br><span class="line">(chr &gt;= <span class="number">0x3200</span> &amp;&amp; chr &lt;= <span class="number">0x32FF</span>)            <span class="comment">// 3200-32FF: Enclosed CJK Letters and Months</span></span><br><span class="line">(chr &gt;= <span class="number">0xAC00</span> &amp;&amp; chr &lt;= <span class="number">0xD7AF</span>)            <span class="comment">// Hangul syllables</span></span><br><span class="line">(chr &gt;= <span class="number">0x1100</span> &amp;&amp; chr &lt;= <span class="number">0x11FF</span>)            <span class="comment">// Hangul Jamo</span></span><br><span class="line">(chr &gt;= <span class="number">0x3130</span> &amp;&amp; chr &lt;= <span class="number">0x318F</span>)            <span class="comment">// Hangul Compatibility Jamo</span></span><br><span class="line">(chr &gt;= <span class="number">0x3040</span> &amp;&amp; chr &lt;= <span class="number">0x309F</span>)            <span class="comment">// Hiragana</span></span><br><span class="line">(chr &gt;= <span class="number">0x30A0</span> &amp;&amp; chr &lt;= <span class="number">0x30FF</span>)            <span class="comment">// Katakana</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache chinese character</span></span><br><span class="line"><span class="type">int</span> nChineseWidth = font_character_width_2([_setting parseFont], (QWCHAR)<span class="number">0x4E00</span> ,  nFontType);</span><br><span class="line"><span class="keyword">if</span> ( _bak_wchar_width[nFontSize - CacheFontSizeMin][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">&#123;</span><br><span class="line">    _bak_wchar_width[nFontSize - CacheFontSizeMin][nFontType] = nChineseWidth;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="setting-punctuation-width">Setting Punctuation Width</h4>
+<p>The punctuation marks used during layout, here mainly full-width
+punctuation because half-width punctuation should be included in ASCII,
+include the following:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Punctuation types</span></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">short</span> biaodian_array[] =</span><br><span class="line">&#123;</span><br><span class="line">    U_PUNCT_COMMA,                          <span class="comment">//  0xFF0C | ，</span></span><br><span class="line">    U_PUNCT_FULLPOINT,                      <span class="comment">//  0x3002 | 。</span></span><br><span class="line">    U_PUNCT_QUESTION,                       <span class="comment">//  0xFF1F | ？</span></span><br><span class="line">    U_PUNCT_SEMICOLON,                      <span class="comment">//  0xFF1B | ；</span></span><br><span class="line">    U_PUNCT_EXCLAMATION,                    <span class="comment">//  0xFF01 | ！</span></span><br><span class="line">    U_PUNCT_COLON,                          <span class="comment">//  0xFF1A | ：</span></span><br><span class="line">    U_PUNCT_PAUSE,                          <span class="comment">//  0x3001 | 、</span></span><br><span class="line">    U_PUNCT_LEFTSINGLEQUOTE,                <span class="comment">//  0x2018 | ‘</span></span><br><span class="line">    U_PUNCT_RIGHTSINGLEQUOTE,               <span class="comment">//  0x2019 | ’</span></span><br><span class="line">    U_PUNCT_LEFTDOUBLEQUOTE,                <span class="comment">//  0x201C | “</span></span><br><span class="line">    U_PUNCT_RIGHTDOUBLEQUOTE,               <span class="comment">//  0x201D | ”</span></span><br><span class="line">    U_PUNCT_LEFTBOOKQUOTE,                  <span class="comment">//  0x300A |《</span></span><br><span class="line">    U_PUNCT_RIGHTBOOKQUOTE,                 <span class="comment">//  0x300B | 》 </span></span><br><span class="line">    U_PUNCT_LEFTBRACKET,                    <span class="comment">//  0xFF08 |（</span></span><br><span class="line">    U_PUNCT_RIGHTBRACKET,                   <span class="comment">//  0xFF09 | ）</span></span><br><span class="line">    U_PUNCT_CONNECT,                        <span class="comment">//  0x002D | -</span></span><br><span class="line">    U_PUNCT_PERCENT,                        <span class="comment">//  0x0025 | %</span></span><br><span class="line">    U_PUNCT_SPACER,                         <span class="comment">//  0x00B7 | .</span></span><br><span class="line">    U_PUNCT_POZHE,                          <span class="comment">//  0x2014 | em dash</span></span><br><span class="line">    U_PUNCT_SHENGLUE,                       <span class="comment">//  0x2026 | ellipsis</span></span><br><span class="line">    U_PUNCT_LEFTANCIENTEQUOTE,              <span class="comment">//  0x300C | old-style left quote 「</span></span><br><span class="line">    U_PUNCT_RIGHTANCIENTEQUOTE              <span class="comment">//  0x300D | old-style right quote 」</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>For these punctuation marks, the engine calculates and caches each
+punctuation mark’s width under a certain font size. The calculation
+process is the same as the ASCII width calculation above.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cache biaodian character</span></span><br><span class="line"><span class="type">int</span> nLen = <span class="keyword">sizeof</span>( biaodian_array ) / <span class="keyword">sizeof</span> ( <span class="type">unsigned</span> <span class="type">short</span>) ;</span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; nLen; ++i )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ( _bak_biaodian_width[ nFontSize - CacheFontSizeMin][i][nFontType] == <span class="number">0xff</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        _bak_biaodian_width[ nFontSize - CacheFontSizeMin][i][nFontType] = font_character_width_2([_setting parseFont], (QWCHAR)(biaodian_array[i]) ,  nFontType);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="layout">Layout</h2>
+<p>After opening a file, the engine usually enters from an anchor. An
+anchor contains two parts: paragraph offset and line offset.</p>
+<h3 id="paragraph-splitting">Paragraph Splitting</h3>
+<p>If the paragraph linked list for the anchor has not been built yet,
+paragraph parsing is triggered. Paragraph splitting is based on these
+separators: <code>\n\r</code>, <code>\n</code>, <code>\r</code>, and
+<code>\r\n</code>. Each time, the engine searches the current data
+stream for the next separator. Once one is found, the start offset and
+size of a new paragraph can be determined from the offsets before and
+after it.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">BOOL</span>) NextBreaker:(<span class="type">unsigned</span> <span class="type">char</span> *) buffcountCharInWidth</span><br><span class="line">            buffSize:(<span class="type">unsigned</span> <span class="type">long</span>) buff_size</span><br><span class="line">             buffOff:(<span class="type">unsigned</span> <span class="type">long</span> )buff_off</span><br><span class="line">              brkOff:(<span class="type">unsigned</span> <span class="type">long</span> * )brk_off</span><br><span class="line">           skipBytes:(<span class="type">unsigned</span> <span class="type">long</span> * )skip_bytes</span><br></pre></td></tr></table></figure>
+
+<p>Take UTF-8 as an example:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;第1章 下辈子也不会爱上你\r\n6月6日，星期六。\r\n    这是一个十分吉利的日子，更是一个黄道吉日。\r\n    这一日，是京城有名的富家之女梁贝璇与其男友曹瑞年的婚礼，婚礼早就被各路媒体公布出去了，好多人的眼睛都在看着这一个家室及其不匹配的婚姻，所有人都报以怀疑的态度，只是没有人会主动说出来。\r\n    此时的梁贝璇坐在宽敞明亮、奢华至极的房间内，穿着洁白定制的婚纱，脸上带着甜蜜的梦幻般的笑容。\r\n    只是这样的笑容在她收到一个快递之后就彻底的失去了......\r\n</span><br></pre></td></tr></table></figure>
+
+<p>This is part of a chapter. How do we split it into paragraphs?
+Naturally, by traversing from front to back and looking for
+<code>\r\n</code> until the end.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> <span class="title function_">qr_utf8_next_breaker</span><span class="params">( <span class="type">unsigned</span> <span class="type">char</span> * buff, <span class="type">unsigned</span> <span class="type">long</span> buff_size, <span class="type">unsigned</span> <span class="type">long</span> * brk_off, <span class="type">unsigned</span> <span class="type">long</span> * skip_bytes )</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">bool</span> found = <span class="literal">false</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   offset;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( offset = <span class="number">0</span>; offset &lt; buff_size; ++offset )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// If we have reached the end of the binary stream, break.</span></span><br><span class="line">        <span class="comment">// End condition: buff[offset] == 0x00</span></span><br><span class="line">        <span class="keyword">if</span> ( qr_is_end_char( buff[offset] ) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// If \r is found, there are two cases: \r\n and \r</span></span><br><span class="line">        <span class="keyword">if</span> ( <span class="number">0x0D</span> == buff[offset] ) <span class="comment">// \r</span></span><br><span class="line">        &#123;</span><br><span class="line">            *brk_off = offset;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( (offset + <span class="number">1</span> &lt; buff_size) &amp;&amp; (<span class="number">0x0A</span> == buff[offset + <span class="number">1</span>]) )</span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">2</span>;  <span class="comment">// \r\n</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">1</span>; <span class="comment">// \r</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            found = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// If \n is found, there are two cases: \n\r and \n</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">0x0A</span> == buff[offset] ) <span class="comment">// \n</span></span><br><span class="line">        &#123;</span><br><span class="line">            *brk_off = offset;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( (offset + <span class="number">1</span> &lt; buff_size) &amp;&amp; (<span class="number">0x0D</span> == buff[offset + <span class="number">1</span>]) )</span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">2</span>; <span class="comment">// \n\r</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                *skip_bytes = offset + <span class="number">1</span>; <span class="comment">// \n</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            found = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Boundary check</span></span><br><span class="line">    <span class="keyword">if</span> (offset &gt;= buff_size)</span><br><span class="line">    &#123;</span><br><span class="line">        found = <span class="literal">false</span>;</span><br><span class="line">        *skip_bytes = buff_size;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> found;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After one traversal, we can find the start and end offsets of a
+paragraph.</p>
+<h3 id="getting-character-count-in-a-paragraph">Getting Character Count
+in a Paragraph</h3>
+<p>After obtaining the byte stream corresponding to a paragraph, we need
+to determine how many characters it contains.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)    CharCount:( <span class="type">unsigned</span> <span class="type">char</span> * )buff</span><br><span class="line">             buffSize:(<span class="type">unsigned</span> <span class="type">long</span>) buff_size</span><br><span class="line">            charCount:(<span class="type">unsigned</span> <span class="type">long</span> * )cnt</span><br></pre></td></tr></table></figure>
+
+<p>Still using UTF-8 as an example, in common cases each UTF-8 character
+may use one to three bytes:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1 byte:  0xxxxxxx  0000-0111, eight cases, all one byte</span><br><span class="line">2 bytes: 110xxxxx  1100 and 1101, indexes 12 and 13, both two bytes</span><br><span class="line">3 bytes: 1110xxxx  1110, one case, three bytes</span><br><span class="line">0 bytes: all other cases are zero bytes</span><br></pre></td></tr></table></figure>
+
+<p>With this foundation, we can use an array named <code>__bpc</code> to
+store byte counts. Take the high four bits of the first UTF-8 byte,
+convert it into an index, and directly obtain the corresponding byte
+count.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">long</span> __bpc[<span class="number">16</span>] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">0</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">qr_utf_char_bytes</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> ch)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="type">int</span>)(__bpc[ch &gt;&gt; <span class="number">4</span>]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Then we can quickly calculate the number of characters represented by
+a section of byte stream.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">long</span>   <span class="title function_">qr_utf8_charcnt</span><span class="params">( <span class="type">unsigned</span> <span class="type">char</span> * buff, <span class="type">unsigned</span> <span class="type">long</span> buff_size )</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   chr_cnt;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   offset;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   chr_bytes;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="number">0</span> == buff_size )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( chr_cnt = <span class="number">0</span>, offset = <span class="number">0</span>; offset &lt; buff_size; ++chr_cnt )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> ( qr_is_end_char( buff[offset] ) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        chr_bytes = qr_utf_char_bytes( buff[offset] );<span class="comment">//</span></span><br><span class="line">        <span class="keyword">if</span> ( chr_bytes == <span class="number">0</span> )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( offset + chr_bytes &gt; buff_size )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        offset += chr_bytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> chr_cnt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="generating-paragraph-structures">Generating Paragraph
+Structures</h3>
+<p><code>TxtEngine</code> has two paragraph structures: paragraph text,
+<code>__struct_TextPrgf_Text</code>, and paragraph attributes,
+<code>__struct_TextPrgf</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span>        <span class="title">TextPrgf_Text_t</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span> *      <span class="title">TextPrgf_Text_ptr_t</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Paragraph text data structure</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf_Text</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    TextPrgf_t            link;           <span class="comment">// Paragraph attributes</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        line_count;</span><br><span class="line">    TextLine_ptr_t        first_line;        <span class="comment">// [strong ref]</span></span><br><span class="line">    TextLine_ptr_t        last_line;        <span class="comment">// [strong ref]</span></span><br><span class="line">    </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span>      *wide_buff;        <span class="comment">// Paragraph text buffer (UCS2 encoding)</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        wide_size;        <span class="comment">// Size of paragraph text buffer</span></span><br><span class="line">    QRRect              *char_rects;     <span class="comment">// character drawrect array</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>       *charactersOffsets;  <span class="comment">// Byte offset of each character in the paragraph relative to the file start</span></span><br><span class="line">    <span class="type">long</span>                charactersCountAddOne;    <span class="comment">// Number of characters in the paragraph plus one</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span>            <span class="title">TextPrgf_t</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span> *          <span class="title">TextPrgf_ptr_t</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Paragraph attribute data structure</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">struct_TextPrgf</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    TextPrgf_ptr_t        prev;            <span class="comment">// [weak ref]</span></span><br><span class="line">    TextPrgf_ptr_t        next;            <span class="comment">// [weak ref]</span></span><br><span class="line">    </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        type;            <span class="comment">// QR_TEXT_PRGF_TYPE_XXX</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        attrib;            <span class="comment">// QR_TEXT_PRGF_ATTR_XXX</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        offset;            <span class="comment">// Offset in current charpter //..file</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        size;            <span class="comment">// Paragraph size in charpter //file</span></span><br><span class="line">    </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        page_index;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        charpter_index;</span><br><span class="line">    <span class="comment">// Index of chapter-tail page model</span></span><br><span class="line">    <span class="type">int</span>                 tail_index;</span><br><span class="line">    <span class="type">int</span>                 need_remove_para_space;<span class="comment">//0 means no, 1 means yes</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>One thing worth noting is that the first field of the paragraph text
+structure, <code>link</code>, is exactly the paragraph attribute type.
+So given a paragraph text structure:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__struct_TextPrgf_Text textPrgf_Text;</span><br></pre></td></tr></table></figure>
+
+<p>It can be directly cast:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__struct_TextPrgf textPrgf = (__struct_TextPrgf)textPrgf_Text;</span><br></pre></td></tr></table></figure>
+
+<p>Earlier, we parsed the paragraph’s start and end offsets, calculated
+its character count, and determined the amount of memory to allocate.
+Now we can create the paragraph:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Allocate space</span></span><br><span class="line">last_prgf = qr_alloc_prgf_text( chr_count+<span class="number">2</span> );<span class="comment">//add two space ericni</span></span><br><span class="line">last_prgf-&gt;need_remove_para_space = <span class="number">0</span>;</span><br><span class="line">last_prgf-&gt;tail_index = <span class="number">-1</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">TextPrgf_ptr_t <span class="title function_">qr_alloc_prgf_text</span><span class="params">( <span class="type">unsigned</span> <span class="type">long</span> char_cnt )</span></span><br><span class="line">&#123;</span><br><span class="line">    TextPrgf_Text_ptr_t  prgf = <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="number">0</span> == char_cnt )  <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    prgf = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(TextPrgf_Text_t));</span><br><span class="line">    </span><br><span class="line">    <span class="type">long</span> charactersCountAddOne = char_cnt + <span class="number">1</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;link.prev        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;link.next        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;link.type        = QR_TEXT_PRGF_TYPE_TEXT;</span><br><span class="line">    prgf-&gt;link.attrib    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;link.offset    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;link.size        = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;wide_buff        = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;char_rects    = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;wide_size        = QR_ROUND_UP_4( (charactersCountAddOne &lt;&lt; <span class="number">1</span>) );</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;line_count    = <span class="number">0</span>;</span><br><span class="line">    prgf-&gt;first_line    = <span class="literal">NULL</span>;</span><br><span class="line">    prgf-&gt;last_line        = <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;wide_buff = <span class="built_in">malloc</span>(prgf-&gt;wide_size);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// alloc memory for char_rects</span></span><br><span class="line">    prgf-&gt;char_rects = <span class="built_in">malloc</span>(charactersCountAddOne * <span class="keyword">sizeof</span>(QRRect));</span><br><span class="line">    <span class="built_in">memset</span>(prgf-&gt;char_rects, <span class="number">0</span>, charactersCountAddOne * <span class="keyword">sizeof</span>(QRRect));</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;charactersOffsets = <span class="built_in">malloc</span>(charactersCountAddOne * <span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">long</span>));</span><br><span class="line">    <span class="built_in">memset</span>(prgf-&gt;charactersOffsets, <span class="number">0</span>, charactersCountAddOne * <span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">long</span>));</span><br><span class="line">    </span><br><span class="line">    prgf-&gt;charactersCountAddOne = charactersCountAddOne;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> (TextPrgf_ptr_t)prgf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="calculating-character-offsets">Calculating Character
+Offsets</h3>
+<p>This step calculates the byte offset of each character relative to
+the file.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[_endcoder countCharactersOffset:&amp;_readCache[prgf_offset]</span><br><span class="line">                                  characters:chr_count</span><br><span class="line">                                    buffSize:prgf_size</span><br><span class="line">                                  baseOffset:file_offset + prgf_offset</span><br><span class="line">                            characterOffsets:text_prgf-&gt;charactersOffsets]; </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)_utf8CountCharactersOffset:(<span class="type">unsigned</span> <span class="type">char</span> *)buff</span><br><span class="line">                        characters:(<span class="type">unsigned</span> <span class="type">long</span>)characters</span><br><span class="line">                          buffSize:(<span class="type">unsigned</span> <span class="type">long</span>)buffSize</span><br><span class="line">                        baseOffset:(<span class="type">unsigned</span> <span class="type">long</span>)baseOffset</span><br><span class="line">                           offsets:(<span class="type">unsigned</span> <span class="type">long</span> *)offsets</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == buff || <span class="number">0</span> == buffSize || offsets == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> characterOffset = baseOffset;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// characterIndex &lt; characters prevents offsets from going out of bounds.</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">long</span> characterIndex = <span class="number">0</span>, offset = <span class="number">0</span>;offset &lt; buffSize &amp;&amp; characterIndex &lt; characters;++characterIndex) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (qr_is_end_char(buff[offset])) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        *(offsets + characterIndex) = characterOffset;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Each UTF-8 character may take one to three bytes.</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> characterBytes = qr_utf_char_bytes(buff[offset]);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (characterBytes == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (offset + characterBytes &gt; buffSize) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        offset += characterBytes;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Offset of the next character.</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        characterOffset += characterBytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="encoding-conversion">Encoding Conversion</h3>
+<p>Convert the character encoding to Unicode and store it in
+<code>&amp;text_prgf-&gt;wide_buff[0]</code>.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">BOOL</span>)    EncodeUCS2:( <span class="type">unsigned</span> <span class="type">short</span> *) dst_buff</span><br><span class="line">                    destSize:(<span class="type">unsigned</span> <span class="type">long</span> )dst_size</span><br><span class="line">                    srcBuff:(<span class="type">unsigned</span> <span class="type">char</span> *) src_buff</span><br><span class="line">                    srcSize:(<span class="type">unsigned</span> <span class="type">long</span>) src_size</span><br><span class="line">                    convLen:(<span class="type">unsigned</span> <span class="type">long</span> * )conv_len</span><br><span class="line">                    usedBytes:(<span class="type">unsigned</span> <span class="type">long</span> * )used_bytes</span><br></pre></td></tr></table></figure>
+
+<p>Here is an example that converts UTF-8 to Unicode:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">long</span> <span class="title function_">qr_utf8_to_ucs2</span><span class="params">( <span class="type">unsigned</span> <span class="type">short</span> * buff, <span class="type">unsigned</span> <span class="type">long</span> buff_size, <span class="type">unsigned</span> <span class="type">char</span> * utf8_str, <span class="type">unsigned</span> <span class="type">long</span> utf8_len,<span class="type">unsigned</span> <span class="type">long</span>* used_utf8_len )</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   conv_len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   char_cnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   char_bytes;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> * us_utf8_str = (<span class="type">unsigned</span> <span class="type">char</span>*)utf8_str;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>   i;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span>  tmp_ch = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == us_utf8_str || buff_size &lt; <span class="number">2</span> || <span class="number">0</span> == utf8_len )</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    *used_utf8_len =  <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( utf8_len &gt;= <span class="number">3</span> &amp;&amp; (us_utf8_str[<span class="number">0</span>] == <span class="number">0xEF</span> &amp;&amp; us_utf8_str[<span class="number">1</span>] == <span class="number">0xBB</span> &amp;&amp; us_utf8_str[<span class="number">2</span>] == <span class="number">0xBF</span>) )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// skip BOM</span></span><br><span class="line">        us_utf8_str += <span class="number">3</span>;</span><br><span class="line">        *used_utf8_len +=  <span class="number">3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; utf8_len; ++i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> ( <span class="string">&#x27;\0&#x27;</span> == *us_utf8_str ) <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        char_bytes = __utf8_bpc[((<span class="type">unsigned</span> <span class="type">char</span>)*us_utf8_str) &gt;&gt; <span class="number">4</span>];</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ( <span class="number">1</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            tmp_ch = (<span class="type">unsigned</span> <span class="type">short</span>)us_utf8_str[<span class="number">0</span>];</span><br><span class="line">            *used_utf8_len += char_bytes;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">2</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> ( <span class="string">&#x27;\0&#x27;</span> != us_utf8_str[<span class="number">1</span>] )</span><br><span class="line">            &#123;</span><br><span class="line">                tmp_ch = ((<span class="type">unsigned</span> <span class="type">short</span>)(us_utf8_str[<span class="number">0</span>] &amp; <span class="number">0x1F</span>) &lt;&lt; <span class="number">6</span>) | ((<span class="type">unsigned</span> <span class="type">short</span>)(us_utf8_str[<span class="number">1</span>] ^ <span class="number">0x80</span>));</span><br><span class="line">                *used_utf8_len += char_bytes;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( <span class="number">3</span> == char_bytes )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> ( <span class="string">&#x27;\0&#x27;</span> != us_utf8_str[<span class="number">1</span>] &amp;&amp; <span class="string">&#x27;\0&#x27;</span> != us_utf8_str[<span class="number">2</span>] )</span><br><span class="line">            &#123;</span><br><span class="line">                tmp_ch = ((<span class="type">unsigned</span> <span class="type">short</span>)(us_utf8_str[<span class="number">0</span>] &amp; <span class="number">0x0F</span>) &lt;&lt; <span class="number">12</span>) | ((<span class="type">unsigned</span> <span class="type">short</span>)(us_utf8_str[<span class="number">1</span>] ^ <span class="number">0x80</span>) &lt;&lt; <span class="number">6</span>) | ((<span class="type">unsigned</span> <span class="type">short</span>)(us_utf8_str[<span class="number">2</span>] ^ <span class="number">0x80</span>));</span><br><span class="line">                *used_utf8_len += char_bytes;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            *used_utf8_len += <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( char_cnt &gt;= ((buff_size / <span class="number">2</span>) - <span class="number">1</span>) )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        buff[char_cnt] = tmp_ch;</span><br><span class="line">        char_cnt += <span class="number">1</span>;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        conv_len += <span class="number">2</span>;</span><br><span class="line">        us_utf8_str += char_bytes;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    buff[char_cnt] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> conv_len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="determining-paragraph-type">Determining Paragraph Type</h3>
+<p>To determine the concrete type of a paragraph, the engine needs to
+identify paragraph categories.</p>
+<blockquote>
+<ul>
+<li>Determine whether a paragraph is the title of a chapter.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)isPrafChapterTitle:( TextPrgf_Text_ptr_t) text_prgf group:(TextPrgfGroup_ptr_t)groupPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (_isLocal || groupPtr == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    BOOL isTitle = NO;</span><br><span class="line">    <span class="keyword">if</span> (groupPtr-&gt;head == <span class="literal">NULL</span> &amp;&amp; groupPtr-&gt;tail == <span class="literal">NULL</span> &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span> &amp;&amp; _offset &lt;= <span class="number">4</span>) &#123;</span><br><span class="line">        <span class="comment">// Used to determine whether it is a title when jumping from the table of contents</span></span><br><span class="line">        <span class="comment">// or opening from the bookshelf and the group is still an empty linked list.</span></span><br><span class="line">        isTitle = YES;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (_offset &lt;= <span class="number">4</span> || groupPtr-&gt;head != <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// User relayout. At this point the group already has a linked list.</span></span><br><span class="line">        <span class="keyword">if</span> (( TextPrgf_Text_ptr_t)groupPtr -&gt;head == text_prgf &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span>) &#123;</span><br><span class="line">            isTitle = YES;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (_offset &gt; <span class="number">4</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// The user read from the middle of a chapter, returned to the bookshelf,</span></span><br><span class="line">        <span class="comment">// and then entered the reading page again.</span></span><br><span class="line">        <span class="keyword">if</span> (groupPtr-&gt;head == <span class="literal">NULL</span> &amp;&amp; groupPtr-&gt;tail == <span class="literal">NULL</span> &amp;&amp; text_prgf-&gt;link.offset == <span class="number">0</span>) &#123;</span><br><span class="line">            isTitle = YES;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> isTitle;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>Determine whether the paragraph is an author’s note. An author’s
+note may contain multiple paragraphs, and each paragraph ends with the
+special string <code>"\u3000\u2029\u3000"</code>. The first paragraph of
+an author’s note starts with <code>"\u2029\u3000\u2029"</code>.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Whether this is an author&#x27;s note</span></span><br><span class="line">- (BOOL)isAuthorTipsWithParagraphFirstPtr:(<span class="type">unsigned</span> <span class="type">char</span> *)firstPtr endPtr:(<span class="type">unsigned</span> <span class="type">char</span> *)endPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strlen</span>((<span class="type">const</span> <span class="type">char</span> *)endPtr) &lt; QRAuthorTipsBeforeEndMarkLength || _isLocal)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Author&#x27;s note ends with special characters &quot;\u3000\u2029\u3000&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (endPtr[<span class="number">0</span>] == <span class="number">0xe3</span> &amp;&amp; endPtr[<span class="number">1</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">2</span>] == <span class="number">0x80</span> &amp;&amp;</span><br><span class="line">            endPtr[<span class="number">3</span>] == <span class="number">0xe2</span> &amp;&amp; endPtr[<span class="number">4</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">5</span>] == <span class="number">0xa9</span> &amp;&amp;</span><br><span class="line">            endPtr[<span class="number">6</span>] == <span class="number">0xe3</span> &amp;&amp; endPtr[<span class="number">7</span>] == <span class="number">0x80</span> &amp;&amp; endPtr[<span class="number">8</span>] ==<span class="number">0x80</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Whether this is the first paragraph of an author&#x27;s note</span></span><br><span class="line">- (BOOL)isFirstParagOfAuthorTipsWithFirstPtr:(<span class="type">unsigned</span> <span class="type">char</span> *)firstPtr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strlen</span>((<span class="type">const</span> <span class="type">char</span> *)firstPtr) &lt; QRAuthorTipsBeforeEndMarkLength || _isLocal)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// The first paragraph of an author&#x27;s note starts with &quot;\u2029\u3000\u2029&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (firstPtr[<span class="number">0</span>] == <span class="number">0xe2</span> &amp;&amp; firstPtr[<span class="number">1</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">2</span>] == <span class="number">0xa9</span> &amp;&amp;</span><br><span class="line">            firstPtr[<span class="number">3</span>] == <span class="number">0xe3</span> &amp;&amp; firstPtr[<span class="number">4</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">5</span>] == <span class="number">0x80</span> &amp;&amp;</span><br><span class="line">            firstPtr[<span class="number">6</span>] == <span class="number">0xe2</span> &amp;&amp; firstPtr[<span class="number">7</span>] == <span class="number">0x80</span> &amp;&amp; firstPtr[<span class="number">8</span>] == <span class="number">0xa9</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>Determine whether the paragraph is <code>"(本章完)"</code>. This
+checks whether the content pointed to by <code>ptr</code> is
+<code>"(本章完)\r\n"</code>.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)isParagraphEndStr:(<span class="type">unsigned</span> <span class="type">char</span> *)ptr</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!ptr || _isLocal || <span class="built_in">strlen</span>((<span class="type">const</span> <span class="type">char</span> *)ptr) != <span class="number">13</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Determine whether the content pointed to by ptr is &quot;(本章完)\r\n&quot;</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">return</span> *ptr == <span class="string">&#x27;(&#x27;</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">1</span>) == <span class="number">0xe6</span> &amp;&amp; *(ptr + <span class="number">2</span>) == <span class="number">0x9c</span> &amp;&amp; *(ptr + <span class="number">3</span>) == <span class="number">0xac</span> &amp;&amp;        <span class="comment">// &quot;本&quot; utf8</span></span><br><span class="line">    *(ptr + <span class="number">4</span>) == <span class="number">0xe7</span> &amp;&amp; *(ptr + <span class="number">5</span>) == <span class="number">0xab</span> &amp;&amp; *(ptr + <span class="number">6</span>) == <span class="number">0xa0</span> &amp;&amp;        <span class="comment">// &quot;章&quot; utf8</span></span><br><span class="line">    *(ptr + <span class="number">7</span>) == <span class="number">0xe5</span> &amp;&amp; *(ptr + <span class="number">8</span>) == <span class="number">0xae</span> &amp;&amp; *(ptr + <span class="number">9</span>) == <span class="number">0x8c</span> &amp;&amp;        <span class="comment">// &quot;完&quot; utf8</span></span><br><span class="line">    *(ptr + <span class="number">10</span>) == <span class="string">&#x27;)&#x27;</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">11</span>) == <span class="string">&#x27;\r&#x27;</span> &amp;&amp;</span><br><span class="line">    *(ptr + <span class="number">12</span>) == <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="paragraph-line-breaking">Paragraph Line Breaking</h3>
+<p>For paragraph splitting, encoding conversion, and character-offset
+calculation, the work only needs to be done once. It does not need to be
+updated later because this information is relatively independent and
+does not depend on other layout conditions.</p>
+<p>However, laying out paragraph text according to the current font,
+direction, and other settings does depend on layout-related settings,
+such as drawing area size, orientation, font size, font color, line
+spacing, and paragraph spacing. Once any of these settings changes, the
+layout here also needs to be updated.</p>
+<p>The essence of layout is: according to the layout settings, generate
+line-by-line layout results from one paragraph. Note that height-offset
+information is not included here.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// This code omits the logic for detecting chapter titles.</span></span><br><span class="line">- (BOOL)relayoutTextPrgf:(TextPrgf_Text_ptr_t) text_prgf midOff:(<span class="type">unsigned</span> <span class="type">long</span>) mid_off group:(TextPrgfGroup_ptr_t)groupPtr</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//TODO： Layout one paragraph</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        ret_val;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        width;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        length;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        bound_w;</span><br><span class="line">    </span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        index;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        max_len;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>        offset;</span><br><span class="line">    TextLine_ptr_t        text_line;</span><br><span class="line">    QRFont*             doc_font;</span><br><span class="line">    QRFont*             doc_title_font = _titleSetting.font_obj ;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> != text_prgf-&gt;last_line )</span><br><span class="line">    &#123;</span><br><span class="line">        offset = text_prgf-&gt;last_line-&gt;offset;</span><br><span class="line">        <span class="keyword">if</span> ( offset + text_prgf-&gt;last_line-&gt;length &gt;= text_prgf-&gt;wide_size )</span><br><span class="line">            <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    doc_font = _setting.font_obj;</span><br><span class="line">    <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_AUTHOR == text_prgf-&gt;link.type ||</span><br><span class="line">        QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == text_prgf-&gt;link.type) &#123;</span><br><span class="line">        doc_font = [self authorTipsSetting].font_obj;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    max_len = text_prgf-&gt;wide_size / <span class="number">2</span>;</span><br><span class="line">    bound_w = _docBoundRc.w;</span><br><span class="line">    </span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// First perform line breaking for characters from 0 to mid_off.</span></span><br><span class="line">    <span class="keyword">if</span> ( mid_off &gt; <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> ( offset = <span class="number">0</span>; offset &lt; mid_off; offset += length, ++index )</span><br><span class="line">        &#123;</span><br><span class="line">            ret_val = [doc_font countCharInWidth:&amp;text_prgf-&gt;wide_buff[offset] rect:&amp;text_prgf-&gt;char_rects[offset] length:(mid_off - offset) maxWidth:bound_w outWidth:&amp;width count:&amp;length alignmeng:<span class="number">0</span>];</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( QR_OK != ret_val || <span class="number">0</span> == length ) <span class="keyword">break</span>;</span><br><span class="line">                </span><br><span class="line">            <span class="comment">// 20151023 lucas: English and number line breaking should not split words.</span></span><br><span class="line">            qr_relayout_english_2(&amp;text_prgf-&gt;wide_buff[offset] , mid_off - offset , <span class="number">0</span>, &amp;length);</span><br><span class="line">                </span><br><span class="line">            text_line = qr_alloc_line();</span><br><span class="line">            <span class="keyword">if</span> ( <span class="literal">NULL</span> == text_line ) <span class="keyword">break</span>;</span><br><span class="line">                </span><br><span class="line">            text_line-&gt;index    = index;</span><br><span class="line">            text_line-&gt;offset    = offset;</span><br><span class="line">            text_line-&gt;width    = width;</span><br><span class="line">            text_line-&gt;length    = length;</span><br><span class="line">            text_line-&gt;isCharpterTitle = <span class="number">0</span>;</span><br><span class="line">            qr_push_back_line( text_prgf, text_line );</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Then perform line breaking from mid_off to the end.</span></span><br><span class="line">    <span class="keyword">for</span> ( offset = mid_off; offset &lt; max_len; offset += length, ++index )</span><br><span class="line">    &#123;</span><br><span class="line">        ret_val = [doc_font countCharInWidth:&amp;text_prgf-&gt;wide_buff[offset] rect:&amp;text_prgf-&gt;char_rects[offset] length:(max_len - offset) maxWidth:bound_w outWidth:&amp;width count:&amp;length alignmeng:<span class="number">0</span>];</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ( QR_OK != ret_val || <span class="number">0</span> == length ) <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">// 20151023 lucas: English and number line breaking should not split words.</span></span><br><span class="line">        qr_relayout_english_2(&amp;text_prgf-&gt;wide_buff[offset] , max_len - offset , <span class="number">0</span>, &amp;length);</span><br><span class="line">    </span><br><span class="line">        text_line = qr_alloc_line();</span><br><span class="line">        <span class="keyword">if</span> ( <span class="literal">NULL</span> == text_line ) <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">        text_line-&gt;index    = index;</span><br><span class="line">        text_line-&gt;offset    = offset;</span><br><span class="line">        text_line-&gt;width    = width;</span><br><span class="line">        text_line-&gt;length    = length;</span><br><span class="line">    </span><br><span class="line">        text_line-&gt;isCharpterTitle = <span class="number">0</span>;</span><br><span class="line">        qr_push_back_line( text_prgf, text_line );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>First, why is <code>mid_off</code> introduced here?</p>
+<p>The main reason is that some paragraphs may cross page boundaries. In
+that case, if a rotation occurs, the current page continues to lay out
+from the starting anchor again. The last line of the paragraph that
+crossed into the previous page may not fill a full line. Therefore, this
+rule is introduced: for a paragraph crossing into the previous page, the
+last line is only laid out up to the character before the anchor. This
+means the last line of the previous page may break differently. For
+paragraphs that do not cross pages, <code>mid_off</code> is naturally 0,
+so the first half of the logic does not run.</p>
+<p>The core of line breaking is calculating the width of each character
+and deciding, based on the page width, whether a given character is the
+last character of the current line. This produces one line inside the
+paragraph.</p>
+<p>In addition to the normal calculation process, there are extra
+rules:</p>
+<ol type="1">
+<li>Filter out emoji characters.</li>
+<li>Punctuation rules for avoiding punctuation at line heads and tails:
+<ul>
+<li>If the current line ends with a left quote, left parenthesis, left
+book-title mark, left single quote, em dash, or ellipsis, move it to the
+next line.</li>
+<li>If the next line starts with two consecutive punctuation marks and
+the current line does not end with punctuation, move the last character
+of the current line to the next line to avoid punctuation appearing at
+the start of a line.</li>
+<li>If the next line starts with only one punctuation mark, move that
+punctuation mark up to the previous line.</li>
+</ul></li>
+<li>A comma or period at the end of a line counts as half width.</li>
+<li>After each line is laid out, spaces need to be considered and
+character <code>x</code> positions and widths are recalculated.</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">unsigned</span> <span class="type">long</span>)countCharInWidth:(<span class="type">unsigned</span> <span class="type">short</span>*)buff</span><br><span class="line">                             rect:(QRRect*)char_rects</span><br><span class="line">                           length:(<span class="type">unsigned</span> <span class="type">long</span>)len</span><br><span class="line">                         maxWidth:(<span class="type">unsigned</span> <span class="type">long</span>)max_width</span><br><span class="line">                         outWidth:(<span class="type">unsigned</span> <span class="type">long</span>*)pwidth</span><br><span class="line">                            count:(<span class="type">unsigned</span> <span class="type">long</span>*)char_cnt</span><br><span class="line">                        alignmeng:(<span class="type">unsigned</span> <span class="type">int</span>)text_align</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>           i;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>           t;</span><br><span class="line">    <span class="type">signed</span> <span class="type">long</span>         width = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>           count = <span class="number">0</span>;</span><br><span class="line">    <span class="type">double</span>                  space_all;</span><br><span class="line">    <span class="type">double</span>                  space_each;</span><br><span class="line">    <span class="type">bool</span>                    break_line = <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( nil == _setting || <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == pwidth || <span class="literal">NULL</span> == char_cnt )</span><br><span class="line">        <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(char_rects == <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> ( i = <span class="number">0</span>; <span class="string">&#x27;\0&#x27;</span> != buff[i] &amp;&amp; i &lt; len; ++i )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// Filter out emoji characters.</span></span><br><span class="line">            <span class="keyword">if</span>(buff[i]&gt;=<span class="number">0xe000</span>&amp;&amp;buff[i]&lt;=<span class="number">0xe5ff</span>)</span><br><span class="line">                buff[i] = <span class="number">0x0020</span>;<span class="comment">//space</span></span><br><span class="line">            </span><br><span class="line">            t = [self getCharWidth:buff[i]];</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ( width + t &gt; max_width ) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            width += t;</span><br><span class="line">            count += <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        *pwidth     = width;</span><br><span class="line">        *char_cnt   = count;</span><br><span class="line">        </span><br><span class="line">        [self reLayoutSkipHeadPunct:buff length:(<span class="type">unsigned</span>)len count:char_cnt width:pwidth];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> QR_OK;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; <span class="string">&#x27;\0&#x27;</span> != buff[i] &amp;&amp; i &lt; len; ++i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Filter out emoji characters.</span></span><br><span class="line">        <span class="keyword">if</span>(buff[i]&gt;=<span class="number">0xe000</span> &amp;&amp; buff[i]&lt;=<span class="number">0xe5ff</span>) buff[i] = <span class="number">0x0020</span>;<span class="comment">//space</span></span><br><span class="line">        </span><br><span class="line">        t = [self getCharWidth:buff[i]];</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Check whether this line is already full.</span></span><br><span class="line">        <span class="keyword">if</span> ( width + t &gt; max_width )</span><br><span class="line">        &#123;</span><br><span class="line">            break_line = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        (char_rects+i)-&gt;x = width;</span><br><span class="line">        (char_rects+i)-&gt;w = t;</span><br><span class="line">        </span><br><span class="line">        width += t;</span><br><span class="line">        count += <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    *pwidth     = width;</span><br><span class="line">    *char_cnt   = count;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If the text does not fill a line, return directly.</span></span><br><span class="line">    <span class="keyword">if</span> (!break_line)   <span class="keyword">return</span> QR_OK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Punctuation rules for avoiding punctuation at line heads and tails:</span></span><br><span class="line">    <span class="comment">// 1. If the current line ends with a left quote, left parenthesis, left book-title mark,</span></span><br><span class="line">    <span class="comment">//    left single quote, em dash, or ellipsis, move it to the next line.</span></span><br><span class="line">    <span class="comment">// 2. If the next line starts with two consecutive punctuation marks and the current line</span></span><br><span class="line">    <span class="comment">//    does not end with punctuation, move the last character of the current line to the next line.</span></span><br><span class="line">    <span class="comment">// 3. If the next line starts with only one punctuation mark, move it up to the previous line.</span></span><br><span class="line">    [self reLayoutSkipHeadPunct:buff length:(<span class="type">unsigned</span>)len count:char_cnt width:pwidth];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// A punctuation mark was added to the end of the line.</span></span><br><span class="line">    <span class="keyword">if</span>(*char_cnt&gt;count)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;x = width;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w = *pwidth - width;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// A line-ending comma or full stop counts as half width.</span></span><br><span class="line">    <span class="keyword">if</span>(buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_COMMA|| </span><br><span class="line">       buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_FULLPOINT||</span><br><span class="line">       buff[*char_cnt<span class="number">-1</span>] == U_PUNCT_PAUSE)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w /= <span class="number">2</span>;</span><br><span class="line">        *pwidth -= (char_rects+*char_cnt<span class="number">-1</span>)-&gt;w;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Recalculate character x positions and widths while accounting for spaces.</span></span><br><span class="line">    space_all = (<span class="type">double</span>)max_width - (*pwidth);</span><br><span class="line">    space_each = space_all/(*char_cnt);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; *char_cnt ; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        (char_rects+i)-&gt;x += (space_each*i);</span><br><span class="line">        <span class="keyword">if</span>(i &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            (char_rects+i<span class="number">-1</span>)-&gt;w = (char_rects+i)-&gt;x - (char_rects+i<span class="number">-1</span>)-&gt;x;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    (char_rects+i<span class="number">-1</span>)-&gt;w = max_width - (char_rects+i<span class="number">-1</span>)-&gt;x;<span class="comment">//last character width can&#x27;t be forget</span></span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> QR_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>English text has additional layout rules. Sometimes an English word
+or number is too long, and the last word or number of a line has not
+finished when the line reaches the edge. To avoid breaking a word or
+number across lines, the engine follows these rules:</p>
+<blockquote>
+<ul>
+<li>If the first character of the next line is not an English letter or
+number, the current line can fully contain the last word. This is
+normal, so return directly.</li>
+<li>If the first character of the next line is a number or English
+letter, check whether the last character of the current line is also a
+letter or number.</li>
+<li>If it is, count the length of the last word or number on the current
+line. If the word or number length is limited, move the front part of
+that word or number to the next line. Otherwise, do nothing.</li>
+<li>If it is not, do nothing.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">long</span> <span class="title function_">qr_relayout_english_2</span><span class="params">(<span class="type">unsigned</span> <span class="type">short</span> * buff, </span></span><br><span class="line"><span class="params">                                    <span class="type">unsigned</span> <span class="type">long</span> len,</span></span><br><span class="line"><span class="params">                                    <span class="type">unsigned</span> <span class="type">long</span> offsetX,</span></span><br><span class="line"><span class="params">                                    <span class="type">unsigned</span> <span class="type">long</span> * char_cnt )</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">signed</span> <span class="type">long</span>             i;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>           t;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span>           count = <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ( <span class="literal">NULL</span> == buff || <span class="literal">NULL</span> == char_cnt ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    i = *char_cnt;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (i &gt;= len || <span class="string">&#x27;\0&#x27;</span> == buff[i] ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// If the first character of the next line is not a number or English letter,</span></span><br><span class="line">    <span class="comment">// the current line can contain the last word normally, so return directly.</span></span><br><span class="line">    <span class="keyword">if</span> (qr_is_english_digist_letter(buff[i]) == QR_FAILED) <span class="comment">// lucas 1224</span></span><br><span class="line">        <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Otherwise, if the first character of the next line is a number or English letter,</span></span><br><span class="line">    <span class="comment">// count the length of the last word on the current line.</span></span><br><span class="line">    t = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> ( i = (*char_cnt) - <span class="number">1</span>; i &gt;= <span class="number">0</span> &amp;&amp; <span class="string">&#x27;\0&#x27;</span> != buff[i] ; --i )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (qr_is_english_digist_letter(buff[i]) == QR_FAILED)</span><br><span class="line">            <span class="keyword">if</span> (qr_is_skip_punct_letter_tail_forbid(buff[i]) == QR_FAILED) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        t++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (i &lt; <span class="number">0</span>  &amp;&amp; offsetX == <span class="number">0</span> ) <span class="keyword">return</span> QR_FAILED;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Move the front part of the word to the next line.</span></span><br><span class="line">    count = *char_cnt;</span><br><span class="line">    count -= t;</span><br><span class="line">    *char_cnt   = count;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If we trace back to the start of the line, and the word already has more than 10 characters</span></span><br><span class="line">    <span class="comment">// but still has not ended, restore it and do nothing.</span></span><br><span class="line">    <span class="keyword">if</span>(*char_cnt == <span class="number">0</span> &amp;&amp; t &gt; <span class="number">10</span>)<span class="comment">//连续英文超过10个就断开 ericni 2012.10.09</span></span><br><span class="line">        *char_cnt += t;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> QR_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="inserted-paragraph-handling">Inserted Paragraph Handling</h3>
+<p>The business layer may insert data into the layout.</p>
+<blockquote>
+<ul>
+<li>Some content needs to be inserted into the middle of a paragraph,
+such as “brilliant ideas”. Some needs to be inserted at the end of a
+paragraph, such as various business data at the end of a chapter: text
+ads, image ads, Q&amp;A, cards, Guangdiantong data, and so on.</li>
+<li>Some inserted paragraphs need to be laid out like normal text, such
+as author’s notes. Their layout rules are the same as body text, except
+that the font, font size, and color may differ. Others only need
+placeholders. The placeholder size is decided by the business layer.
+After layout is complete, the engine needs to pass the placeholder
+coordinates back to the business layer, and the business layer completes
+its own logic within the reserved area.</li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">TextPrgf_ptr_t custom_prgf = qr_alloc_prgf_space();</span><br><span class="line"><span class="keyword">if</span> (custom_prgf) &#123;</span><br><span class="line">    custom_prgf-&gt;type = QR_TEXT_PRGF_TYPE_CUSTOM;</span><br><span class="line">    custom_prgf-&gt;size = <span class="number">0</span>;</span><br><span class="line">    custom_prgf-&gt;tail_index = i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The insertion logic is as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)_insertPrgf:(TextPrgf_ptr_t)dstPrgf</span><br><span class="line">         beforePrgf:(TextPrgf_ptr_t)srcPrgf</span><br><span class="line">        atPrgfGroup:(TextPrgfGroup_ptr_t)prgfGroup</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (dstPrgf == <span class="literal">NULL</span> ||</span><br><span class="line">        srcPrgf == <span class="literal">NULL</span> ||</span><br><span class="line">        prgfGroup == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (srcPrgf == _currPage.beginPrgf &amp;&amp;</span><br><span class="line">        _currPage.beginLine.ref != <span class="literal">NULL</span> &amp;&amp;</span><br><span class="line">        _currPage.beginLine.ref-&gt;prev == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        _currPage.beginPrgf = dstPrgf;</span><br><span class="line">        [self setFirstLine:_currPage.beginPrgf];</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    _nextPage.isValid = NO;</span><br><span class="line">    _prevPage.isValid = NO;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (srcPrgf-&gt;prev == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (srcPrgf != prgfGroup-&gt;head) &#123;</span><br><span class="line">            <span class="comment">// src is not in prgfGroup.</span></span><br><span class="line">            <span class="comment">//</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        dstPrgf-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">        dstPrgf-&gt;next = srcPrgf;</span><br><span class="line">        srcPrgf-&gt;prev = dstPrgf;</span><br><span class="line">        prgfGroup-&gt;head = dstPrgf;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        dstPrgf-&gt;prev = srcPrgf-&gt;prev;</span><br><span class="line">        dstPrgf-&gt;next = srcPrgf;</span><br><span class="line">        srcPrgf-&gt;prev = dstPrgf;</span><br><span class="line">        dstPrgf-&gt;prev-&gt;next = dstPrgf;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    prgfGroup-&gt;count += <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="rendering">Rendering</h2>
+<p>With all the preparation from the layout process, rendering becomes
+relatively simple:</p>
+<ol type="1">
+<li>Prepare the canvas, pen, and color.</li>
+<li>Find the current page’s starting paragraph pointer and starting line
+pointer.</li>
+<li>Determine line height, line spacing, and paragraph spacing.</li>
+</ol>
+<p>The engine then draws characters line by line according to the
+<code>x</code> and <code>w</code> values calculated during layout, until
+the current canvas can no longer contain more content.</p>
+<p>Some code is omitted here to make the overall flow easier to
+follow:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><span class="line">- (BOOL)repaint:(QRCanvas *)canvas rect:(QRRect *)rect</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Prepare various data.</span></span><br><span class="line">    ...</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// Start drawing.</span></span><br><span class="line">    [canvas drawTextBatchStart:<span class="number">0</span> length:<span class="number">0</span> destinationRect:<span class="number">0</span> alignment:align_flag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Set height range.</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> yOffset = _docBoundRc.y;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> yOffsetMax = _docBoundRc.y+_docBoundRc.h-_fontHeight;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Set drawing area.</span></span><br><span class="line">    [self recalc];</span><br><span class="line">    draw_rect.x = _docBoundRc.x;</span><br><span class="line">    draw_rect.y = yOffset;</span><br><span class="line">    draw_rect.w = _docBoundRc.w;</span><br><span class="line">    draw_rect.h = _fontHeight;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Set pen color.</span></span><br><span class="line">    UIColor *lineColor =  [QRThemeColorWithKey(kGlobalQRReadViewTextSelectionMainColor) getValue];</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (; yOffset &lt; yOffsetMax &amp;&amp; <span class="literal">NULL</span> != p_curr_prgf;)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_SPACE == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// Ignore empty paragraph.</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_TEXT == p_curr_prgf-&gt;type ||</span><br><span class="line">                 QR_TEXT_PRGF_TYPE_AUTHOR == p_curr_prgf-&gt;type ||</span><br><span class="line">                 QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == p_curr_prgf-&gt;type)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// Get the line where drawing starts for a paragraph.</span></span><br><span class="line">            text_prgf = (TextPrgf_Text_ptr_t)p_curr_prgf;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (p_curr_prgf == _currPrgf) &#123;</span><br><span class="line">                p_curr_line = _currLine.ref;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                p_curr_line = text_prgf-&gt;first_line;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (text_prgf-&gt;line_count &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="type">unsigned</span> <span class="type">int</span> curLineH = <span class="number">0</span>;</span><br><span class="line">            QRSetting *fontSetting = nil;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Draw line by line.</span></span><br><span class="line">            <span class="keyword">for</span> (; yOffset &lt; yOffsetMax &amp;&amp; <span class="literal">NULL</span> != p_curr_line;) &#123;</span><br><span class="line">                draw_rect.y = yOffset;</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_AUTHOR == p_curr_prgf-&gt;type ||</span><br><span class="line">                         QR_TEXT_PRGF_TYPE_BUSINISS_TEXT == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">                    fontSetting = [self authorTipsSetting];</span><br><span class="line">                    curLineH = [self authorTipsLineHeight];</span><br><span class="line">                    [canvas setContentFont:[fontSetting getFontSize:FontState_Render] Type:[fontSetting getFontType:FontState_Render]];</span><br><span class="line">                    [canvas setPenColor:textcolor];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span> &#123;</span><br><span class="line">                    curLineH = _lineHeight;</span><br><span class="line">                    [canvas setContentFont:[_setting getFontSize:FontState_Render] Type:[_setting getFontType:FontState_Render]];</span><br><span class="line">                    fontSetting = _setting;</span><br><span class="line">                    [canvas setPenColor:textcolor];</span><br><span class="line">                &#125;</span><br><span class="line">                </span><br><span class="line">                QRFont *currentFont = fontSetting.font_obj;</span><br><span class="line">                <span class="type">unsigned</span> <span class="type">int</span> currentFontHeight = <span class="number">0</span>;</span><br><span class="line">                [currentFont getHeight:&amp;currentFontHeight];</span><br><span class="line">                draw_rect.h = currentFontHeight;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Draw one line of text.</span></span><br><span class="line">                [canvas drawTextBatchDoing:(text_prgf-&gt;wide_buff + p_curr_line-&gt;offset)</span><br><span class="line">                                    inRect:(QRRect *)(text_prgf-&gt;char_rects + p_curr_line-&gt;offset)</span><br><span class="line">                                    length:p_curr_line-&gt;length</span><br><span class="line">                           destinationRect:(QRRect *)&amp;draw_rect</span><br><span class="line">                                 alignment:align_flag];</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Increase offset.</span></span><br><span class="line">                yOffset += curLineH;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// If it overlaps with a highlight range, draw the highlight.</span></span><br><span class="line">                <span class="comment">// Full-text search highlighting goes here. Code omitted.</span></span><br><span class="line">                ...</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Paragraph comment bubble drawing. Code omitted.</span></span><br><span class="line">                ...</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Move to the next line.</span></span><br><span class="line">                p_curr_line = p_curr_line-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Paragraph spacing offset.</span></span><br><span class="line">            <span class="keyword">if</span> (p_curr_prgf-&gt;need_remove_para_space == <span class="number">1</span>) &#123;</span><br><span class="line">                yOffset -= _lineSpace/<span class="number">2</span>;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                yOffset += _paraSpace;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_BOTTOMMENU == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// Draw bottom 4-tab entry. Code omitted.</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_EXCELLENTPARACOMMENT == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// Draw &quot;brilliant idea&quot;. Code omitted.</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (QR_TEXT_PRGF_TYPE_CUSTOM == p_curr_prgf-&gt;type) &#123;</span><br><span class="line">            <span class="comment">// Custom module. Code omitted.</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Move to the next paragraph.</span></span><br><span class="line">        p_curr_prgf = p_curr_prgf-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// End drawing.</span></span><br><span class="line">    [canvas drawTextBatchEnd:<span class="number">0</span> length:<span class="number">0</span> destinationRect:<span class="number">0</span> alignment:<span class="number">0</span>];</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> YES;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>The final real drawing still uses the system method:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[text drawAtPoint:<span class="built_in">CGPointMake</span>(x, y) withAttributes:@&#123;<span class="built_in">NSFontAttributeName</span> : gc-&gt;fontBatch, <span class="built_in">NSForegroundColorAttributeName</span> : textColor&#125;];</span><br></pre></td></tr></table></figure>
+
+<p>There are a few extra details worth noting:</p>
+<ol type="1">
+<li>Highlight areas need to be drawn, such as note underlines. So after
+each line is drawn, a check must be performed.</li>
+<li>At the end of each text paragraph, the engine checks whether a
+paragraph-comment bubble needs to be drawn.</li>
+<li>When customized business content appears in the middle, the engine
+reserves space according to the given height.</li>
+</ol>
+<h2 id="page-turning">Page Turning</h2>
+<p>After the current page has been rendered, moving to the next or
+previous page requires finding the starting anchor of that page.
+<code>TxtEngine</code> mainly uses these methods:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">BOOL</span>)moveNextPage;</span><br><span class="line">- (<span class="type">BOOL</span>)movePrevPage;</span><br><span class="line">- (<span class="type">BOOL</span>)isTop;</span><br><span class="line">- (<span class="type">BOOL</span>)isBottom;</span><br></pre></td></tr></table></figure>
+
+<p>The logic of the first two methods is roughly the same as the
+rendering method. The difference is that they only calculate the Y
+offset and do not actually draw.</p>
+<ol type="1">
+<li><code>moveNextPage</code>: starting from the current page anchor,
+lay out line by line to the end of the current page, then find the
+starting paragraph offset and line offset of the next page.</li>
+<li><code>movePrevPage</code>: starting from the current page anchor,
+lay out backwards to the beginning of the previous page, then find the
+starting paragraph offset and line offset of the previous page.</li>
+</ol>
+<p>There are several flaws here:</p>
+<blockquote>
+<ul>
+<li>Since the current page has already been rendered, finding the
+starting anchor of the next page should be quick using the current
+page’s tail pointer. There is no need to run a large loop again.
+Unfortunately, although <code>TxtPage</code> was introduced long ago and
+already contains the tail pointer, it was not used. This is what Siyu is
+currently working on.</li>
+<li>Determining whether the current page is the end of the chapter,
+<code>isBottom</code>, should also only require checking the tail
+pointer. Unfortunately, <code>isBottom</code> also runs a large
+loop.</li>
+<li>None of these methods caches anything after finishing the loop,
+causing the large loop to run many times.</li>
+<li>The two loops above and the rendering loop have certain differences,
+which sometimes leads to missing paragraphs or repeated layout.</li>
+</ul>
+</blockquote>
+<p>If <code>TxtPage</code> can record the current page’s start pointer
+and end pointer, then each page’s layout and rendering process only
+needs to run once. This removes a lot of unnecessary performance cost,
+ensures that rendering and layout results are consistent, and avoids
+many annoying layout issues.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">TxtPage</span> : <span class="title">NSObject</span></span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   TextPrgf_ptr_t beginPrgf;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   LinePos_t      beginLine;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   TextPrgf_ptr_t endPrgf;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">assign</span>)   LinePos_t      endLine</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="paragraph-cache">Paragraph Cache</h3>
+<p>When turning pages forward and backward, the engine often first needs
+to determine whether the paragraphs already built in memory are
+sufficient to construct the previous or next page.</p>
+<ol type="1">
+<li>In some cases, the chapter file is large and cannot be read entirely
+at once.</li>
+<li>In some cases, the reader enters from an anchor in the middle of a
+chapter. At that point, only the data stream after the current anchor is
+loaded. When turning to the previous page, the engine needs to load the
+data stream before the anchor and build the previous paragraphs.</li>
+</ol>
+<p>The threshold used here is <code>cache_bytes = 8 * 1024</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Function: whether the available cache from top to bottom is enough.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">- (BOOL)enoughUp2down:(TextPrgf_ptr_t)from_prgf cacheBytes:(<span class="type">unsigned</span> <span class="type">long</span>)cache_bytes</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == from_prgf) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == _prgfGroup.tail) &#123;</span><br><span class="line">        <span class="keyword">return</span> NO;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If it is already the last paragraph, identified by offset.</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.tail-&gt;offset + _prgfGroup.tail-&gt;size &gt;= _fileSize) &#123;</span><br><span class="line">        <span class="keyword">return</span> YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If it is already the last paragraph, identified by type.</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.tail-&gt;type == QR_TEXT_PRGF_TYPE_BOTTOMMENU) &#123;</span><br><span class="line">        <span class="keyword">return</span> YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Determine whether the offset gap between the last paragraph and the current paragraph is greater than 8 * 1024.</span></span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> temp_size = (<span class="type">long</span> <span class="type">long</span>)(_prgfGroup.tail-&gt;offset + _prgfGroup.tail-&gt;size) - (<span class="type">long</span> <span class="type">long</span>)(from_prgf-&gt;offset + from_prgf-&gt;size);</span><br><span class="line">    <span class="keyword">return</span> temp_size &gt;= (<span class="type">long</span> <span class="type">long</span>)cache_bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Function: whether the available cache from bottom to top is enough.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">- (BOOL)enoughDown2up:(TextPrgf_ptr_t)from_prgf cacheBytes:(<span class="type">unsigned</span> <span class="type">long</span>)cache_bytes</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> temp_size;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">NULL</span> == _prgfGroup.head) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == from_prgf) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If the current paragraph is already the first paragraph, there is no previous data to cache.</span></span><br><span class="line">    <span class="keyword">if</span> (_prgfGroup.head-&gt;offset &lt;= _docBOMSize) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Determine whether the gap between the current paragraph offset and the first paragraph offset is greater than 8 * 1024.</span></span><br><span class="line">    temp_size = from_prgf-&gt;offset - _prgfGroup.head-&gt;offset;</span><br><span class="line">    <span class="keyword">return</span> (temp_size &gt;= cache_bytes ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>The newly loaded cache is immediately parsed into a paragraph linked
+list, including paragraph splitting, encoding conversion,
+character-offset calculation, and line layout according to the current
+font, direction, and other conditions. Finally, the newly parsed
+<code>prgf_group</code> is merged into the global paragraph group
+<code>_prgfGroup</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qr_merge_front_prgf( &amp;_prgfGroup, &amp;prgf_group );</span><br></pre></td></tr></table></figure>
+
+<p>Online-book chapter files are usually small, so in most cases the
+paragraph linked list for a chapter can be cached in memory. But when
+the file is large, such as an imported book, the paragraph linked list
+cannot always stay in memory. The engine needs to cache paragraphs
+within a certain distance before and after the current reading offset,
+and paragraphs outside that range need to be cleared.</p>
+<p>For the concrete logic, see:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>) recycleFromTop:(<span class="type">unsigned</span> <span class="type">long</span>) recycle_size;</span><br><span class="line">- (<span class="type">void</span>) recycleFromBottom:(<span class="type">unsigned</span> <span class="type">long</span> )recycle_size;</span><br></pre></td></tr></table></figure>
+
+<h3 id="general-idea">General Idea</h3>
+<p>For online books, chapter files are generally small, so we can try a
+new approach:</p>
+<p><strong>Read the entire chapter file at once, split paragraphs,
+convert encoding, break lines, paginate from beginning to end according
+to the current settings, and cache the pagination results. During
+rendering, use the page number to directly obtain the page’s start and
+end pointers and draw from them. This removes the difference between
+forward and backward page turning, and avoids missing paragraphs or
+repeated layout.</strong></p>
+<h2 id="chapter-splitting">Chapter Splitting</h2>
+<p>What is chapter splitting? Some files may contain multiple chapters,
+and apart from the file itself there may be no other information. In
+that case, chapter information has to be determined from the file
+content, including the number of chapters, each chapter title, content,
+and starting offset.</p>
+<p>This process is essentially searching for patterns like
+<code>"第xxx章（章节回卷篇部）"</code>. The process of searching for
+these characters is very similar to searching for <code>\n\r</code>
+earlier.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">short</span>    __charset_spc[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Half-width space, TAB, full-width space</span></span><br><span class="line">    <span class="number">0x0020</span>,<span class="number">0x0009</span>,<span class="number">0x3000</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">short</span>    __charset_1st[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 第</span></span><br><span class="line">    <span class="number">0x7B2C</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">short</span>    __charset_2nd[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 零一二三四五六七八九十百千零壹贰叁肆伍陆柒捌玖拾佰仟0123456789</span></span><br><span class="line">    <span class="number">0x96F6</span>,<span class="number">0x4E00</span>,<span class="number">0x4E8C</span>,<span class="number">0x4E09</span>,<span class="number">0x56DB</span>,<span class="number">0x4E94</span>,<span class="number">0x516D</span>,<span class="number">0x4E03</span>,<span class="number">0x516B</span>,<span class="number">0x4E5D</span>,</span><br><span class="line">    <span class="number">0x5341</span>,<span class="number">0x767E</span>,<span class="number">0x5343</span>,<span class="number">0x96F6</span>,<span class="number">0x58F9</span>,<span class="number">0x8D30</span>,<span class="number">0x53C1</span>,<span class="number">0x8086</span>,<span class="number">0x4F0D</span>,<span class="number">0x9646</span>,</span><br><span class="line">    <span class="number">0x67D2</span>,<span class="number">0x634C</span>,<span class="number">0x7396</span>,<span class="number">0x62FE</span>,<span class="number">0x4F70</span>,<span class="number">0x4EDF</span>,<span class="number">0x0030</span>,<span class="number">0x0031</span>,<span class="number">0x0032</span>,<span class="number">0x0033</span>,</span><br><span class="line">    <span class="number">0x0034</span>,<span class="number">0x0035</span>,<span class="number">0x0036</span>,<span class="number">0x0037</span>,<span class="number">0x0038</span>,<span class="number">0x0039</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">short</span>    __charset_3rd[] =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 章节回卷篇部</span></span><br><span class="line">    <span class="number">0x7AE0</span>,<span class="number">0x8282</span>,<span class="number">0x56DE</span>,<span class="number">0x5377</span>,<span class="number">0x7BC7</span>,<span class="number">0x90E8</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="summary">Summary</h2>
+<p>This article still has many shortcomings and will be improved
+later.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2019/04/05/how-the-txt-engine-works/">How the TXT Engine Works</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2019-04-05 23:06</p>
+  <p><span>Updated:</span>2026-08-29 01:08</p>
+  <p><span>Original link:</span><a href="/en/2019/04/05/how-the-txt-engine-works/" title="How the TXT Engine Works">https://tsuijunxi.github.io/en/2019/04/05/how-the-txt-engine-works/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2019/04/05/how-the-txt-engine-works/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2019/01/01/refactoring-txt-engine-chapter-switching/" rel="next" title="Refactoring TXT Engine Chapter Switching">
+                <i class="fa fa-chevron-left"></i> Refactoring TXT Engine Chapter Switching
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2019/04/14/humble-asset-catalog/" rel="prev" title="Humble Asset Catalog">
+                Humble Asset Catalog <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#opening-a-file"><span class="nav-number">2.</span> <span class="nav-text">Opening a File</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#getting-file-size-and-file-stream"><span class="nav-number">2.1.</span> <span class="nav-text">Getting File Size and File
+Stream</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#encoding-detection"><span class="nav-number">2.2.</span> <span class="nav-text">Encoding Detection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#identifying-files-with-a-bom"><span class="nav-number">2.2.1.</span> <span class="nav-text">Identifying Files with a BOM</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#identifying-files-without-a-bom"><span class="nav-number">2.2.2.</span> <span class="nav-text">Identifying Files Without a
+BOM</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#layout-settings"><span class="nav-number">2.3.</span> <span class="nav-text">Layout Settings</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#font-registration"><span class="nav-number">2.3.1.</span> <span class="nav-text">Font Registration</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#character-width-calculation"><span class="nav-number">2.3.2.</span> <span class="nav-text">Character Width Calculation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ascii-character-width"><span class="nav-number">2.3.3.</span> <span class="nav-text">ASCII Character Width</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#setting-chinese-character-width"><span class="nav-number">2.3.4.</span> <span class="nav-text">Setting Chinese Character
+Width</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#setting-punctuation-width"><span class="nav-number">2.3.5.</span> <span class="nav-text">Setting Punctuation Width</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#layout"><span class="nav-number">3.</span> <span class="nav-text">Layout</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#paragraph-splitting"><span class="nav-number">3.1.</span> <span class="nav-text">Paragraph Splitting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getting-character-count-in-a-paragraph"><span class="nav-number">3.2.</span> <span class="nav-text">Getting Character Count
+in a Paragraph</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#generating-paragraph-structures"><span class="nav-number">3.3.</span> <span class="nav-text">Generating Paragraph
+Structures</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#calculating-character-offsets"><span class="nav-number">3.4.</span> <span class="nav-text">Calculating Character
+Offsets</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#encoding-conversion"><span class="nav-number">3.5.</span> <span class="nav-text">Encoding Conversion</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#determining-paragraph-type"><span class="nav-number">3.6.</span> <span class="nav-text">Determining Paragraph Type</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#paragraph-line-breaking"><span class="nav-number">3.7.</span> <span class="nav-text">Paragraph Line Breaking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#inserted-paragraph-handling"><span class="nav-number">3.8.</span> <span class="nav-text">Inserted Paragraph Handling</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rendering"><span class="nav-number">4.</span> <span class="nav-text">Rendering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#page-turning"><span class="nav-number">5.</span> <span class="nav-text">Page Turning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#paragraph-cache"><span class="nav-number">5.1.</span> <span class="nav-text">Paragraph Cache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#general-idea"><span class="nav-number">5.2.</span> <span class="nav-text">General Idea</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#chapter-splitting"><span class="nav-number">6.</span> <span class="nav-text">Chapter Splitting</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

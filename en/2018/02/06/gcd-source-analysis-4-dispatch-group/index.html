@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="GCD" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface This article mainly analyzes the underlying implementation of dispatch_group, including several important functions:  dispatch_group_create dispatch_group_enter dispatch_group_leave dispatch_g">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GCD Source Analysis 4 - dispatch_group">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/02/06/gcd-source-analysis-4-dispatch-group/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface This article mainly analyzes the underlying implementation of dispatch_group, including several important functions:  dispatch_group_create dispatch_group_enter dispatch_group_leave dispatch_g">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-02-06T04:50:22.000Z">
+<meta property="article:modified_time" content="2026-08-28T18:40:03.976Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="GCD">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/02/06/gcd-source-analysis-4-dispatch-group/"/>
+
+
+
+
+
+  <title>GCD Source Analysis 4 - dispatch_group | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/02/06/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%904%20%E2%80%94%E2%80%94%20dispatch-group%E7%AF%87/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/02/06/gcd-source-analysis-4-dispatch-group/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD Source Analysis 4 - dispatch_group</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-02-06T12:50:22+08:00">
+                2018-02-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  34k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  2:02
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/02/06/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%904%20%E2%80%94%E2%80%94%20dispatch-group%E7%AF%87/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>This article mainly analyzes the underlying implementation of
+<code>dispatch_group</code>, including several important functions:</p>
+<ul>
+<li><code>dispatch_group_create</code></li>
+<li><code>dispatch_group_enter</code></li>
+<li><code>dispatch_group_leave</code></li>
+<li><code>dispatch_group_wait</code></li>
+<li><code>dispatch_group_notify</code></li>
+<li><code>dispatch_group_async</code></li>
+</ul>
+<hr />
+<h2 id="related-api-analysis">Related API Analysis</h2>
+<h3 id="dispatch_group_create">dispatch_group_create</h3>
+<p>This was mentioned once in the opening article, mainly when analyzing
+the essence of <code>dispatch_group_s</code>. We learned that
+<code>dispatch_group_t</code> is essentially a semaphore whose value is
+<code>LONG_MAX</code>. So it is easy to imagine that semaphore behavior
+is inseparable from the analysis of <code>dispatch_group_t</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dispatch_group_t</span></span><br><span class="line"><span class="title function_">dispatch_group_create</span><span class="params">(<span class="type">void</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="type">dispatch_group_t</span>)dispatch_semaphore_create(LONG_MAX);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The low-level implementation of semaphores is analyzed in a separate
+article.</p>
+<h3 id="dispatch_group_enter">dispatch_group_enter</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_enter</span><span class="params">(<span class="type">dispatch_group_t</span> dg)</span>&#123;</span><br><span class="line">    <span class="type">dispatch_semaphore_t</span> dsema = (<span class="type">dispatch_semaphore_t</span>)dg;</span><br><span class="line">    dispatch_semaphore_wait(dsema, DISPATCH_TIME_FOREVER);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>First, <code>dispatch_group_t</code> is converted into
+<code>dispatch_semaphore_t</code>, and then
+<code>dispatch_semaphore_wait</code> is called.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> <span class="title function_">dispatch_semaphore_wait</span><span class="params">(<span class="type">dispatch_semaphore_t</span> dsema, <span class="type">dispatch_time_t</span> timeout)</span>&#123;</span><br><span class="line">    <span class="comment">// If the semaphore value after -1 is still &gt;= 0, a resource is available.</span></span><br><span class="line">    <span class="keyword">if</span> (dispatch_atomic_dec(&amp;dsema-&gt;dsema_value) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _dispatch_semaphore_wait_slow(dsema, timeout);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This function atomically decrements the semaphore value. If it is
+greater than or equal to 0, a resource is available and it returns
+directly. Otherwise it calls <code>_dispatch_semaphore_wait_slow</code>,
+waiting for a signal in the FIFO queue until <code>timeout</code>. For
+details about <code>_dispatch_semaphore_wait_slow</code>, see the
+<code>dispatch_semaphore</code> article.</p>
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dispatch_group_enter</span><br><span class="line">└──dispatch_semaphore_wait</span><br><span class="line">    └──_dispatch_semaphore_wait_slow</span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_group_leave">dispatch_group_leave</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_leave</span><span class="params">(<span class="type">dispatch_group_t</span> dg)</span>&#123;</span><br><span class="line">    <span class="type">dispatch_semaphore_t</span> dsema = (<span class="type">dispatch_semaphore_t</span>)dg;</span><br><span class="line">    dispatch_semaphore_signal(dsema);</span><br><span class="line">    <span class="keyword">if</span> (dsema-&gt;dsema_value == dsema-&gt;dsema_orig) &#123;</span><br><span class="line">        _dispatch_group_wake(dsema);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This indicates that one block task in the group has completed, and
+sends a wake-up signal when necessary. In
+<code>dispatch_group_leave</code>, the group’s semaphore is incremented
+by 1. Then it checks whether the current semaphore value is equal to the
+original group semaphore value. If they are equal, it means the tasks
+are complete, and the wake-up flow <code>_dispatch_group_wake</code>
+begins.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> _dispatch_group_wake(<span class="type">dispatch_semaphore_t</span> dsema)&#123;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sema_notify_s</span> *<span class="title">tmp</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sema_notify_s</span> *<span class="title">head</span> =</span> dispatch_atomic_xchg(&amp;dsema-&gt;dsema_notify_head, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="type">long</span> rval = dispatch_atomic_xchg(&amp;dsema-&gt;dsema_group_waiters, <span class="number">0</span>);</span><br><span class="line">    <span class="type">bool</span> do_rel = head;</span><br><span class="line">    <span class="type">long</span> kr;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// wake any &quot;group&quot; waiter or notify blocks</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (rval) &#123;</span><br><span class="line">        _dispatch_semaphore_create_port(&amp;dsema-&gt;dsema_waiter_port);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            kr = semaphore_signal(dsema-&gt;dsema_waiter_port);</span><br><span class="line">            DISPATCH_SEMAPHORE_VERIFY_KR(kr);</span><br><span class="line">        &#125; <span class="keyword">while</span> (--rval);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span> (head) &#123;</span><br><span class="line">        dispatch_async_f(head-&gt;dsn_queue, head-&gt;dsn_ctxt, head-&gt;dsn_func);</span><br><span class="line">        _dispatch_release(head-&gt;dsn_queue);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            tmp = head-&gt;dsn_next;</span><br><span class="line">        &#125; <span class="keyword">while</span> (!tmp &amp;&amp; !dispatch_atomic_cmpxchg(&amp;dsema-&gt;dsema_notify_tail, head, <span class="literal">NULL</span>));</span><br><span class="line">        <span class="built_in">free</span>(head);</span><br><span class="line">        head = tmp;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (do_rel) &#123;</span><br><span class="line">        _dispatch_release(dsema);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>_dispatch_group_wake</code> mainly does two things:</p>
+<ul>
+<li>It wakes semaphores through <code>semaphore_signal</code>.</li>
+<li>It calls <code>dispatch_async_f</code> in sequence.</li>
+</ul>
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dispatch_group_leave</span><br><span class="line">└──_dispatch_group_wake</span><br><span class="line">    └──semaphore_signal</span><br><span class="line">    └──dispatch_async_f</span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_group_wait">dispatch_group_wait</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> <span class="title function_">dispatch_group_wait</span><span class="params">(<span class="type">dispatch_group_t</span> dg, <span class="type">dispatch_time_t</span> timeout)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_semaphore_t</span> dsema = (<span class="type">dispatch_semaphore_t</span>)dg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dsema-&gt;dsema_value == dsema-&gt;dsema_orig) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (timeout == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> KERN_OPERATION_TIMED_OUT;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _dispatch_group_wait_slow(dsema, timeout);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_NOINLINE</span><br><span class="line"><span class="type">static</span> <span class="type">long</span> _dispatch_group_wait_slow(<span class="type">dispatch_semaphore_t</span> dsema, <span class="type">dispatch_time_t</span> timeout)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">mach_timespec_t</span> _timeout;</span><br><span class="line">    <span class="type">kern_return_t</span> kr;</span><br><span class="line">    <span class="type">uint64_t</span> nsec;</span><br><span class="line">    <span class="type">long</span> orig;</span><br><span class="line">    </span><br><span class="line">again:</span><br><span class="line">    <span class="comment">// check before we cause another signal to be sent by incrementing dsema-&gt;dsema_group_waiters</span></span><br><span class="line">    <span class="keyword">if</span> (dsema-&gt;dsema_value == dsema-&gt;dsema_orig) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_group_wake(dsema);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Mach semaphores appear to sometimes spuriously wake up.  Therefore,</span></span><br><span class="line">    <span class="comment">// we keep a parallel count of the number of times a Mach semaphore is</span></span><br><span class="line">    <span class="comment">// signaled.</span></span><br><span class="line">    dispatch_atomic_inc(&amp;dsema-&gt;dsema_group_waiters);</span><br><span class="line">    <span class="comment">// check the values again in case we need to wake any threads</span></span><br><span class="line">    <span class="keyword">if</span> (dsema-&gt;dsema_value == dsema-&gt;dsema_orig) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_group_wake(dsema);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_semaphore_create_port(&amp;dsema-&gt;dsema_waiter_port);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">switch</span> (timeout) &#123;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            nsec = _dispatch_timeout(timeout);</span><br><span class="line">            _timeout.tv_sec = (<span class="keyword">typeof</span>(_timeout.tv_sec))(nsec / NSEC_PER_SEC);</span><br><span class="line">            _timeout.tv_nsec = (<span class="keyword">typeof</span>(_timeout.tv_nsec))(nsec % NSEC_PER_SEC);</span><br><span class="line">            kr = slowpath(semaphore_timedwait(dsema-&gt;dsema_waiter_port, _timeout));</span><br><span class="line">        &#125; <span class="keyword">while</span> (kr == KERN_ABORTED);</span><br><span class="line">        <span class="keyword">if</span> (kr != KERN_OPERATION_TIMED_OUT) &#123;</span><br><span class="line">            DISPATCH_SEMAPHORE_VERIFY_KR(kr);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_TIME_NOW:</span><br><span class="line">        <span class="keyword">while</span> ((orig = dsema-&gt;dsema_group_waiters)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (dispatch_atomic_cmpxchg(&amp;dsema-&gt;dsema_group_waiters, orig, orig - <span class="number">1</span>)) &#123;</span><br><span class="line">                <span class="keyword">return</span> KERN_OPERATION_TIMED_OUT;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_TIME_FOREVER:</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            kr = semaphore_wait(dsema-&gt;dsema_waiter_port);</span><br><span class="line">        &#125; <span class="keyword">while</span> (kr == KERN_ABORTED);</span><br><span class="line">        DISPATCH_SEMAPHORE_VERIFY_KR(kr);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">goto</span> again;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dispatch_group_wait</span><br><span class="line">└──_dispatch_group_wait_slow</span><br><span class="line">    └──semaphore_timedwait</span><br><span class="line">    └──semaphore_wait</span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_group_notify">dispatch_group_notify</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_notify</span><span class="params">(<span class="type">dispatch_group_t</span> dg, <span class="type">dispatch_queue_t</span> dq, <span class="type">dispatch_block_t</span> db)</span>&#123;</span><br><span class="line">    dispatch_group_notify_f(dg, dq, _dispatch_Block_copy(db), _dispatch_call_block_and_release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_notify_f</span><span class="params">(<span class="type">dispatch_group_t</span> dg, <span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">void</span> (*func)(<span class="type">void</span> *))</span>&#123;</span><br><span class="line">    <span class="type">dispatch_semaphore_t</span> dsema = (<span class="type">dispatch_semaphore_t</span>)dg;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sema_notify_s</span> *<span class="title">dsn</span>, *<span class="title">prev</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// FIXME -- this should be updated to use the continuation cache</span></span><br><span class="line">    <span class="keyword">while</span> (!(dsn = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(*dsn)))) &#123;</span><br><span class="line">        sleep(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dsn-&gt;dsn_next = <span class="literal">NULL</span>;</span><br><span class="line">    dsn-&gt;dsn_queue = dq;</span><br><span class="line">    dsn-&gt;dsn_ctxt = ctxt;</span><br><span class="line">    dsn-&gt;dsn_func = func;</span><br><span class="line">    _dispatch_retain(dq);</span><br><span class="line"></span><br><span class="line">    prev = dispatch_atomic_xchg(&amp;dsema-&gt;dsema_notify_tail, dsn);</span><br><span class="line">    <span class="keyword">if</span> (fastpath(prev)) &#123;</span><br><span class="line">        prev-&gt;dsn_next = dsn;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        _dispatch_retain(dg);</span><br><span class="line">        dsema-&gt;dsema_notify_head = dsn;</span><br><span class="line">        <span class="keyword">if</span> (dsema-&gt;dsema_value == dsema-&gt;dsema_orig) &#123;</span><br><span class="line">            _dispatch_group_wake(dsema);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dispatch_group_notify</span><br><span class="line">└──dispatch_group_notify_f</span><br><span class="line">    └──_dispatch_group_wake</span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_group_async">dispatch_group_async</h3>
+<p>First, use this pseudocode to understand the execution flow of
+<code>dispatch_group_async</code> intuitively:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Pseudocode, for understanding only.</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_async</span><span class="params">(<span class="type">dispatch_group_t</span> group, <span class="type">dispatch_queue_t</span> <span class="built_in">queue</span>, <span class="type">dispatch_block_t</span> block)</span></span><br><span class="line">&#123;</span><br><span class="line">    dispatch_retain(group);</span><br><span class="line">    dispatch_group_enter(group);</span><br><span class="line">    dispatch_async(<span class="built_in">queue</span>, ^&#123;</span><br><span class="line">        block();</span><br><span class="line">        dispatch_group_leave(group);</span><br><span class="line">        dispatch_release(group);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The actual source code:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_async</span><span class="params">(<span class="type">dispatch_group_t</span> dg, <span class="type">dispatch_queue_t</span> dq, <span class="type">dispatch_block_t</span> db)</span>&#123;</span><br><span class="line">    dispatch_group_async_f(dg, dq, _dispatch_Block_copy(db), _dispatch_call_block_and_release);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">dispatch_group_async_f</span><span class="params">(<span class="type">dispatch_group_t</span> dg, <span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">void</span> (*func)(<span class="type">void</span> *))</span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc;</span><br><span class="line"></span><br><span class="line">    _dispatch_retain(dg);</span><br><span class="line">    dispatch_group_enter(dg);</span><br><span class="line"></span><br><span class="line">    dc = _dispatch_continuation_alloc_cacheonly() ?: _dispatch_continuation_alloc_from_heap();</span><br><span class="line"></span><br><span class="line">    dc-&gt;do_vtable = (<span class="type">void</span> *)(DISPATCH_OBJ_ASYNC_BIT|DISPATCH_OBJ_GROUP_BIT);</span><br><span class="line">    dc-&gt;dc_func = func;</span><br><span class="line">    dc-&gt;dc_ctxt = ctxt;</span><br><span class="line">    dc-&gt;dc_group = dg;</span><br><span class="line"></span><br><span class="line">    _dispatch_queue_push(dq, dc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>dispatch_group_async</code> is a wrapper around
+<code>dispatch_group_async_f</code>.</p>
+<p>Inside <code>dispatch_group_async_f</code>, the main operations
+are:</p>
+<ul>
+<li>Call <code>dispatch_group_enter</code> to manage the semaphore
+reference count.</li>
+<li>Create a <code>dispatch_continuation_t</code> to record the group
+the block belongs to, its context, invocation function, and related
+information.</li>
+<li>Call <code>_dispatch_queue_push</code> to enqueue the
+<code>dispatch_continuation_t</code>.</li>
+</ul>
+<p>Do you still remember the implementation of
+<code>dispatch_async_f</code>?</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_async_f</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">dispatch_function_t</span> func)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = fastpath(_dispatch_continuation_alloc_cacheonly());</span><br><span class="line">    <span class="keyword">if</span> (!dc) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_async_f_slow(dq, ctxt, func);</span><br><span class="line">    &#125;</span><br><span class="line">    dc-&gt;do_vtable = (<span class="type">void</span> *)DISPATCH_OBJ_ASYNC_BIT;</span><br><span class="line">    dc-&gt;dc_func = func;</span><br><span class="line">    dc-&gt;dc_ctxt = ctxt;</span><br><span class="line">    _dispatch_queue_push(dq, dc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can see that <code>dispatch_group_async_f</code> and
+<code>dispatch_async_f</code> are highly similar. The main difference is
+that <code>dispatch_group_async_f</code> calls
+<code>dispatch_group_enter</code> first.</p>
+<p>At this point, we have only seen the first half of the pseudocode.
+Where does the second half happen?</p>
+<p>It actually corresponds to the logic inside
+<code>_dispatch_continuation_pop</code>. Pay attention to the last few
+lines. This article will not analyze
+<code>_dispatch_continuation_pop</code> in detail; this is only for
+understanding.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span> _dispatch_continuation_pop(<span class="type">dispatch_object_t</span> dou)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = dou._dc;</span><br><span class="line">    <span class="type">dispatch_group_t</span> dg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (DISPATCH_OBJ_IS_VTABLE(dou._do)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_queue_invoke(dou._dq);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ((<span class="type">long</span>)dou._do-&gt;do_vtable &amp; DISPATCH_OBJ_ASYNC_BIT) &#123;</span><br><span class="line">        _dispatch_continuation_free(dc);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((<span class="type">long</span>)dou._do-&gt;do_vtable &amp; DISPATCH_OBJ_GROUP_BIT) &#123;</span><br><span class="line">        dg = dc-&gt;dc_group;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        dg = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    dc-&gt;dc_func(dc-&gt;dc_ctxt);</span><br><span class="line">    <span class="keyword">if</span> (dg) &#123;</span><br><span class="line">        dispatch_group_leave(dg);</span><br><span class="line">        _dispatch_release(dg);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This function, including <code>_dispatch_queue_push</code> and
+<code>_dispatch_continuation_pop</code>, was already analyzed in the
+<code>dispatch_queue</code> article, so the details are not repeated
+here.</p>
+<h2 id="summary">Summary</h2>
+<p>Many functions called in the group article overlap with the queue
+article. For repeated parts, refer to the analysis in the queue
+article.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/02/06/gcd-source-analysis-4-dispatch-group/">GCD Source Analysis 4 - dispatch_group</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-02-06 12:50</p>
+  <p><span>Updated:</span>2026-08-29 02:40</p>
+  <p><span>Original link:</span><a href="/en/2018/02/06/gcd-source-analysis-4-dispatch-group/" title="GCD Source Analysis 4 - dispatch_group">https://tsuijunxi.github.io/en/2018/02/06/gcd-source-analysis-4-dispatch-group/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/02/06/gcd-source-analysis-4-dispatch-group/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/" rel="next" title="GCD Source Analysis 3 - dispatch_queue">
+                <i class="fa fa-chevron-left"></i> GCD Source Analysis 3 - dispatch_queue
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/02/08/gcd-source-analysis-5-dispatch-semaphore/" rel="prev" title="GCD Source Analysis 5 - dispatch_semaphore">
+                GCD Source Analysis 5 - dispatch_semaphore <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#related-api-analysis"><span class="nav-number">2.</span> <span class="nav-text">Related API Analysis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_create"><span class="nav-number">2.1.</span> <span class="nav-text">dispatch_group_create</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_enter"><span class="nav-number">2.2.</span> <span class="nav-text">dispatch_group_enter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_leave"><span class="nav-number">2.3.</span> <span class="nav-text">dispatch_group_leave</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_wait"><span class="nav-number">2.4.</span> <span class="nav-text">dispatch_group_wait</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_notify"><span class="nav-number">2.5.</span> <span class="nav-text">dispatch_group_notify</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_group_async"><span class="nav-number">2.6.</span> <span class="nav-text">dispatch_group_async</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">3.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -112,7 +112,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/02.png">
 <meta property="article:published_time" content="2018-08-09T16:34:33.000Z">
-<meta property="article:modified_time" content="2026-08-24T16:06:37.302Z">
+<meta property="article:modified_time" content="2026-08-28T17:54:30.959Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="JavaScriptCore ByteCode">
 <meta name="twitter:card" content="summary">
@@ -308,7 +308,7 @@ mjx-container[display="true"] + br {
   
   <span class="separator">/</span>
   
-    <a href="/en/">EN</a>
+    <a href="/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/">EN</a>
   
 </nav>
 
@@ -549,6 +549,20 @@ mjx-container[display="true"] + br {
     <div class="post-body" itemprop="articleBody">
 
       
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <span class="active">中文</span>
+          
+          
+            <span class="separator">/</span>
+            
+              <a href="/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/">English</a>
+            
+          
+        </nav>
+      
 
       
       
@@ -561,7 +575,7 @@ href="http://tsuijunxi.github.io/2018/08/02/JavaScriptCore%E5%BC%95%E6%93%8E%E6%
 <h2 id="codecache">CodeCache</h2>
 <p>在<a
 href="http://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-1-%E5%BC%80%E7%AF%87/">开篇</a>中，我们提到如下的图：</p>
-<style>.vtyofyadivly{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/03.png" class="vtyofyadivly">
+<style>.hsvshenpwedk{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/03.png" class="hsvshenpwedk">
 
 <p>当语法分析结束后，就该<code>CodeCache</code>大显身手了，从名字就可以推断出，它负责CodeBlock的缓存处理</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CodeCache</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">CodeCache</span>();</span><br><span class="line">    ~<span class="built_in">CodeCache</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function">UnlinkedProgramCodeBlock* <span class="title">getProgramCodeBlock</span><span class="params">(VM&amp;, ProgramExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedEvalCodeBlock* <span class="title">getEvalCodeBlock</span><span class="params">(VM&amp;, EvalExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;, EvalContextType, <span class="type">const</span> VariableEnvironment*)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedModuleProgramCodeBlock* <span class="title">getModuleProgramCodeBlock</span><span class="params">(VM&amp;, ModuleProgramExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedFunctionExecutable* <span class="title">getFunctionExecutableFromGlobalCode</span><span class="params">(VM&amp;, <span class="type">const</span> Identifier&amp;, <span class="type">const</span> SourceCode&amp;, ParserError&amp;)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">UnlinkedCodeBlockType</span>, <span class="keyword">class</span> <span class="title class_">ExecutableType</span>&gt; </span><br><span class="line">    <span class="function">UnlinkedCodeBlockType* <span class="title">getGlobalCodeBlock</span><span class="params">(VM&amp;, ExecutableType*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;, EvalContextType, <span class="type">const</span> VariableEnvironment*)</span></span>;</span><br><span class="line"></span><br><span class="line">    CodeCacheMap m_sourceCode;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
@@ -621,13 +635,13 @@ href="http://tsuijunxi.github.io/2018/07/19/JavaScriptCore%E5%BC%95%E6%93%8E%E6%
 <p><code>ExecState</code>是执行脚本的对象，由<code>GlobalObject</code>管理的，负责记录脚本执行上下文</p>
 <h4 id="node">Node</h4>
 <p>在语法分析篇中，我们提到了<code>Node</code>的继承图，其中本文提到的4中<code>Node</code>均继承自<code>ScopeNode</code>，而<code>ScopeNode</code>继承自<code>StatementNode</code>，显然这4种<code>Node</code>属于基本语句，并且和区域范围有关。</p>
-<style>.hiqvedgoahoe{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/01.png" class="hiqvedgoahoe">
+<style>.jhrvuwijtojy{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/01.png" class="jhrvuwijtojy">
 
 <h4 id="unlinkedcodeblock">UnlinkedCodeBlock</h4>
 <p><code>UnlinkedCodeBlock</code>是代码管理类，主要有<code>UnlinkedProgramCodeBlock</code>、<code>UnlinkedFunctionCodeBlock</code>、<code>UnlinkedEvalCodeBlock</code>和<code>UnlinkedModuleProgramCodeBlock</code>4种。它存储的是
 <strong>编译后的<code>ByteCode</code></strong>
 ，它的继承层级如下图所示：</p>
-<style>.kfgrnzbhcstz{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/02.png" class="kfgrnzbhcstz">
+<style>.aocsciishbzt{}</style><img src="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/02.png" class="aocsciishbzt">
 
 <p>与之对应的还有一个<code>CodeBlock</code>，主要用于<code>LLint</code>和<code>JIT</code>，它的继承层级和<code>UnlinkedCodeBlock</code>极其类似，我们后续的系列篇章中会提到。</p>
 <h4 id="variableenvironment">VariableEnvironment</h4>
@@ -751,7 +765,7 @@ href="http://es6.ruanyifeng.com/#docs/generator">Genetator</a>
   <p><span>本文标题:</span><a href="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/">JavaScriptCore引擎深度解析5-字节码生成篇（上）</a></p>
   <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
   <p><span>发布时间:</span>2018年08月10日 - 00:08</p>
-  <p><span>最后更新:</span>2026年08月25日 - 00:08</p>
+  <p><span>最后更新:</span>2026年08月29日 - 01:08</p>
   <p><span>原始链接:</span><a href="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/" title="JavaScriptCore引擎深度解析5-字节码生成篇（上）">https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/"  aria-label="复制成功！"></i></span>
   </p>
@@ -948,7 +962,7 @@ href="http://es6.ruanyifeng.com/#docs/generator">Genetator</a>
     </span>
     <span class="sidebar-app-card-body">
       <span class="sidebar-app-card-title">Lensori</span>
-      <span class="sidebar-app-card-desc">从技术文章里长出来的 App</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
     </span>
   </a>
 </div>

@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore ByteCode" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface After JavaScript source code goes through lexical analysis and syntax analysis, it produces a syntax tree. The next task is to convert that syntax tree into bytecode, which is the subject of t">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface After JavaScript source code goes through lexical analysis and syntax analysis, it produces a syntax tree. The next task is to convert that syntax tree into bytecode, which is the subject of t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/02.png">
+<meta property="article:published_time" content="2018-08-09T16:34:33.000Z">
+<meta property="article:modified_time" content="2026-08-28T17:54:31.057Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="JavaScriptCore ByteCode">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/03.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/"/>
+
+
+
+
+
+  <title>JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-10T00:34:33+08:00">
+                2018-08-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS / C++</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  74k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  4:30
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/08/10/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>After JavaScript source code goes through <a
+href="/en/2018/07/30/javascriptcore-deep-dive-3-lexical-analysis/">lexical
+analysis</a> and <a
+href="/en/2018/08/02/javascriptcore-deep-dive-4-syntax-analysis/">syntax
+analysis</a>, it produces a syntax tree. The next task is to convert
+that syntax tree into bytecode, which is the subject of this
+article.</p>
+<p>This whole process is essentially a step every programming language
+must go through: <strong>compilation</strong>. But unlike many languages
+such as C, C++, and Objective-C, after JavaScript compilation finishes,
+it does not generate object code or an executable file stored on disk.
+The generated bytecode may be interpreted line by line by the virtual
+machine immediately, or it may be cached and later converted into native
+code through JIT.</p>
+<h2 id="codecache">CodeCache</h2>
+<p>In the <a
+href="/en/2018/07/19/javascriptcore-deep-dive-1-introduction/">opening
+article</a>, we mentioned the following diagram:</p>
+<img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/03.png" width="100%"/>
+
+<p>After syntax analysis finishes, it is time for <code>CodeCache</code>
+to show up. As the name suggests, it is responsible for caching
+<code>CodeBlock</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CodeCache</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">CodeCache</span>();</span><br><span class="line">    ~<span class="built_in">CodeCache</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function">UnlinkedProgramCodeBlock* <span class="title">getProgramCodeBlock</span><span class="params">(VM&amp;, ProgramExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedEvalCodeBlock* <span class="title">getEvalCodeBlock</span><span class="params">(VM&amp;, EvalExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;, EvalContextType, <span class="type">const</span> VariableEnvironment*)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedModuleProgramCodeBlock* <span class="title">getModuleProgramCodeBlock</span><span class="params">(VM&amp;, ModuleProgramExecutable*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, DebuggerMode, ParserError&amp;)</span></span>;</span><br><span class="line">    <span class="function">UnlinkedFunctionExecutable* <span class="title">getFunctionExecutableFromGlobalCode</span><span class="params">(VM&amp;, <span class="type">const</span> Identifier&amp;, <span class="type">const</span> SourceCode&amp;, ParserError&amp;)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">UnlinkedCodeBlockType</span>, <span class="keyword">class</span> <span class="title class_">ExecutableType</span>&gt; </span><br><span class="line">    <span class="function">UnlinkedCodeBlockType* <span class="title">getGlobalCodeBlock</span><span class="params">(VM&amp;, ExecutableType*, <span class="type">const</span> SourceCode&amp;, JSParserBuiltinMode, JSParserStrictMode, DebuggerMode, ParserError&amp;, EvalContextType, <span class="type">const</span> VariableEnvironment*)</span></span>;</span><br><span class="line"></span><br><span class="line">    CodeCacheMap m_sourceCode;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>m_sourceCode</code> is a container used to store
+<code>CodeBlock</code>.</li>
+<li><code>CodeCache</code> has four <code>getXXXCodeBlock</code> methods
+for retrieving different kinds of <code>CodeBlock</code>. The first
+three eventually call <code>getGlobalCodeBlock</code>.</li>
+</ul>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">UnlinkedCodeBlockType</span>, <span class="keyword">class</span> <span class="title class_">ExecutableType</span>&gt;</span><br><span class="line"><span class="function">UnlinkedCodeBlockType* <span class="title">CodeCache::getGlobalCodeBlock</span><span class="params">(VM&amp; vm, ExecutableType* executable, <span class="type">const</span> SourceCode&amp; source, JSParserBuiltinMode builtinMode, JSParserStrictMode strictMode, DebuggerMode debuggerMode, ParserError&amp; error, EvalContextType evalContextType, <span class="type">const</span> VariableEnvironment* variablesUnderTDZ)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate key.</span></span><br><span class="line">    <span class="function">SourceCodeKey <span class="title">key</span><span class="params">(source, String(), CacheTypes&lt;UnlinkedCodeBlockType&gt;::codeType, builtinMode, strictMode, derivedContextType, evalContextType, isArrowFunctionContext)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Look up cache.</span></span><br><span class="line">    SourceCodeValue* cache = m_sourceCode.<span class="built_in">findCacheAndUpdateAge</span>(key);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If hit, return UnlinkedCodeBlock directly.</span></span><br><span class="line">    <span class="keyword">if</span> (cache &amp;&amp; canCache) &#123;</span><br><span class="line">        UnlinkedCodeBlockType* unlinkedCodeBlock = <span class="built_in">jsCast</span>&lt;UnlinkedCodeBlockType*&gt;(cache-&gt;cell.<span class="built_in">get</span>());</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> unlinkedCodeBlock;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Otherwise, define an UnlinkedCodeBlock to store bytecode generated by BytecodeGenerator.</span></span><br><span class="line">    UnlinkedCodeBlockType* unlinkedCodeBlock = UnlinkedCodeBlockType::<span class="built_in">create</span>(&amp;vm, executable-&gt;<span class="built_in">executableInfo</span>(), debuggerMode);</span><br><span class="line">    unlinkedCodeBlock-&gt;<span class="built_in">recordParse</span>(rootNode-&gt;<span class="built_in">features</span>(), rootNode-&gt;<span class="built_in">hasCapturedVariables</span>(), rootNode-&gt;<span class="built_in">firstLine</span>() - source.<span class="built_in">firstLine</span>(), lineCount, unlinkedEndColumn);</span><br><span class="line">    unlinkedCodeBlock-&gt;<span class="built_in">setSourceURLDirective</span>(source.<span class="built_in">provider</span>()-&gt;<span class="built_in">sourceURL</span>());</span><br><span class="line">    unlinkedCodeBlock-&gt;<span class="built_in">setSourceMappingURLDirective</span>(source.<span class="built_in">provider</span>()-&gt;<span class="built_in">sourceMappingURL</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Call BytecodeGenerator to generate bytecode.</span></span><br><span class="line">    error = BytecodeGenerator::<span class="built_in">generate</span>(vm, rootNode.<span class="built_in">get</span>(), unlinkedCodeBlock, debuggerMode, variablesUnderTDZ);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add cache for later lookup.</span></span><br><span class="line">    m_sourceCode.<span class="built_in">addCache</span>(key, <span class="built_in">SourceCodeValue</span>(vm, unlinkedCodeBlock, m_sourceCode.<span class="built_in">age</span>()));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return UnlinkedCodeBlock.</span></span><br><span class="line">    <span class="keyword">return</span> unlinkedCodeBlock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>getFunctionExecutableFromGlobalCode</code> is special:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">UnlinkedFunctionExecutable* <span class="title">CodeCache::getFunctionExecutableFromGlobalCode</span><span class="params">(VM&amp; vm, <span class="type">const</span> Identifier&amp; name, <span class="type">const</span> SourceCode&amp; source, ParserError&amp; error)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">bool</span> isArrowFunctionContext = <span class="literal">false</span>;</span><br><span class="line">    <span class="comment">// Define key.</span></span><br><span class="line">    <span class="function">SourceCodeKey <span class="title">key</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        source, name.string(), SourceCodeType::FunctionType,</span></span></span><br><span class="line"><span class="params"><span class="function">        JSParserBuiltinMode::NotBuiltin,</span></span></span><br><span class="line"><span class="params"><span class="function">        JSParserStrictMode::NotStrict,</span></span></span><br><span class="line"><span class="params"><span class="function">        DerivedContextType::None,</span></span></span><br><span class="line"><span class="params"><span class="function">        EvalContextType::None,</span></span></span><br><span class="line"><span class="params"><span class="function">        isArrowFunctionContext)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Look up cache.</span></span><br><span class="line">    SourceCodeValue* cache = m_sourceCode.<span class="built_in">findCacheAndUpdateAge</span>(key);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If hit.</span></span><br><span class="line">    <span class="keyword">if</span> (cache) &#123;</span><br><span class="line">        UnlinkedFunctionExecutable* executable = <span class="built_in">jsCast</span>&lt;UnlinkedFunctionExecutable*&gt;(cache-&gt;cell.<span class="built_in">get</span>());</span><br><span class="line">        source.<span class="built_in">provider</span>()-&gt;<span class="built_in">setSourceURLDirective</span>(executable-&gt;<span class="built_in">sourceURLDirective</span>());</span><br><span class="line">        source.<span class="built_in">provider</span>()-&gt;<span class="built_in">setSourceMappingURLDirective</span>(executable-&gt;<span class="built_in">sourceMappingURLDirective</span>());</span><br><span class="line">        <span class="keyword">return</span> executable;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    JSTextPosition positionBeforeLastNewline;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate ProgramNode.</span></span><br><span class="line">    std::unique_ptr&lt;ProgramNode&gt; program = <span class="built_in">parse</span>&lt;ProgramNode&gt;(</span><br><span class="line">        &amp;vm, source, <span class="built_in">Identifier</span>(), JSParserBuiltinMode::NotBuiltin,</span><br><span class="line">        JSParserStrictMode::NotStrict, SourceParseMode::ProgramMode, SuperBinding::NotNeeded,</span><br><span class="line">        error, &amp;positionBeforeLastNewline);</span><br><span class="line">    <span class="keyword">if</span> (!program) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// This function assumes an input string that would result in a single function declaration.</span></span><br><span class="line">    StatementNode* statement = program-&gt;<span class="built_in">singleStatement</span>();</span><br><span class="line">    <span class="keyword">if</span> (!statement || !statement-&gt;<span class="built_in">isBlock</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    StatementNode* funcDecl = <span class="built_in">static_cast</span>&lt;BlockNode*&gt;(statement)-&gt;<span class="built_in">singleStatement</span>();</span><br><span class="line">    <span class="keyword">if</span> (!funcDecl || !funcDecl-&gt;<span class="built_in">isFuncDeclNode</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    FunctionMetadataNode* metadata = <span class="built_in">static_cast</span>&lt;FuncDeclNode*&gt;(funcDecl)-&gt;<span class="built_in">metadata</span>();</span><br><span class="line">    <span class="keyword">if</span> (!metadata)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    </span><br><span class="line">    metadata-&gt;<span class="built_in">overrideName</span>(name);</span><br><span class="line">    metadata-&gt;<span class="built_in">setEndPosition</span>(positionBeforeLastNewline);</span><br><span class="line">    <span class="comment">// The Function constructor only has access to global variables, so no variables will be under TDZ.</span></span><br><span class="line">    VariableEnvironment emptyTDZVariables;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Define UnlinkedFunctionExecutable.</span></span><br><span class="line">    UnlinkedFunctionExecutable* functionExecutable = UnlinkedFunctionExecutable::<span class="built_in">create</span>(&amp;vm, source, metadata, UnlinkedNormalFunction, ConstructAbility::CanConstruct, emptyTDZVariables, DerivedContextType::None);</span><br><span class="line"></span><br><span class="line">    functionExecutable-&gt;<span class="built_in">setSourceURLDirective</span>(source.<span class="built_in">provider</span>()-&gt;<span class="built_in">sourceURL</span>());</span><br><span class="line">    functionExecutable-&gt;<span class="built_in">setSourceMappingURLDirective</span>(source.<span class="built_in">provider</span>()-&gt;<span class="built_in">sourceMappingURL</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add cache.</span></span><br><span class="line">    m_sourceCode.<span class="built_in">addCache</span>(key, <span class="built_in">SourceCodeValue</span>(vm, functionExecutable, m_sourceCode.<span class="built_in">age</span>()));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return.</span></span><br><span class="line">    <span class="keyword">return</span> functionExecutable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>It does not return a <code>CodeBlock</code>; it returns an
+<code>UnlinkedFunctionExecutable</code>. However, inside
+<code>UnlinkedFunctionExecutable</code>, the method
+<code>generateUnlinkedFunctionCodeBlock</code> also calls
+<code>BytecodeGenerator::generate</code>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> UnlinkedFunctionCodeBlock* <span class="title">generateUnlinkedFunctionCodeBlock</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    VM&amp; vm, UnlinkedFunctionExecutable* executable, <span class="type">const</span> SourceCode&amp; source,</span></span></span><br><span class="line"><span class="params"><span class="function">    CodeSpecializationKind kind, DebuggerMode debuggerMode,</span></span></span><br><span class="line"><span class="params"><span class="function">    UnlinkedFunctionKind functionKind, ParserError&amp; error, SourceParseMode parseMode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    JSParserBuiltinMode builtinMode = executable-&gt;<span class="built_in">isBuiltinFunction</span>() ? JSParserBuiltinMode::Builtin : JSParserBuiltinMode::NotBuiltin;</span><br><span class="line">    JSParserStrictMode strictMode = executable-&gt;<span class="built_in">isInStrictContext</span>() ? JSParserStrictMode::Strict : JSParserStrictMode::NotStrict;</span><br><span class="line"></span><br><span class="line">    std::unique_ptr&lt;FunctionNode&gt; function = <span class="built_in">parse</span>&lt;FunctionNode&gt;(</span><br><span class="line">        &amp;vm, source, executable-&gt;<span class="built_in">name</span>(), builtinMode, strictMode, executable-&gt;<span class="built_in">parseMode</span>(), executable-&gt;<span class="built_in">superBinding</span>(), error, <span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!function) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    function-&gt;<span class="built_in">finishParsing</span>(executable-&gt;<span class="built_in">name</span>(), executable-&gt;<span class="built_in">functionMode</span>());</span><br><span class="line">    executable-&gt;<span class="built_in">recordParse</span>(function-&gt;<span class="built_in">features</span>(), function-&gt;<span class="built_in">hasCapturedVariables</span>());</span><br><span class="line"></span><br><span class="line">    <span class="type">bool</span> isClassContext = executable-&gt;<span class="built_in">superBinding</span>() == SuperBinding::Needed;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate an UnlinkedFunctionCodeBlock.</span></span><br><span class="line">    UnlinkedFunctionCodeBlock* result = UnlinkedFunctionCodeBlock::<span class="built_in">create</span>(&amp;vm, FunctionCode, <span class="built_in">ExecutableInfo</span>(function-&gt;<span class="built_in">usesEval</span>(), function-&gt;<span class="built_in">isStrictMode</span>(), kind == CodeForConstruct, functionKind == UnlinkedBuiltinFunction, executable-&gt;<span class="built_in">constructorKind</span>(), executable-&gt;<span class="built_in">superBinding</span>(), parseMode, executable-&gt;<span class="built_in">derivedContextType</span>(), <span class="literal">false</span>, isClassContext, EvalContextType::FunctionEvalContext), debuggerMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Call BytecodeGenerator to generate bytecode.</span></span><br><span class="line">    error = BytecodeGenerator::<span class="built_in">generate</span>(vm, function.<span class="built_in">get</span>(), result, debuggerMode, executable-&gt;<span class="built_in">parentScopeTDZVariables</span>());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (error.<span class="built_in">isValid</span>()) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After following this path, it becomes clear that exploring
+<code>BytecodeGenerator</code> is especially important.</p>
+<h2 id="bytecodegenerator">BytecodeGenerator</h2>
+<p><code>BytecodeGenerator</code> means exactly what its name says: it
+generates bytecode. It exposes a class method named
+<code>generate</code>. Inside, it calls the constructor to create a
+temporary <code>BytecodeGenerator</code>, then calls its parameterless
+<code>generate</code> method. The return value indicates whether a parse
+error occurred, while the actual bytecode result is stored in the third
+parameter, <code>CodeBlock</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Args&gt;</span></span><br><span class="line"><span class="function"><span class="type">static</span> ParserError <span class="title">generate</span><span class="params">(VM&amp; vm, Args&amp;&amp; ...args)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> bytecodeGenerator = std::<span class="built_in">make_unique</span>&lt;BytecodeGenerator&gt;(vm, std::forward&lt;Args&gt;(args)...);</span><br><span class="line">    <span class="keyword">return</span> bytecodeGenerator-&gt;<span class="built_in">generate</span>(); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Next, let’s look at several of its private constructors:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BytecodeGenerator</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">BytecodeGenerator</span>(VM&amp;, ProgramNode*, UnlinkedProgramCodeBlock*, DebuggerMode, <span class="type">const</span> VariableEnvironment*);</span><br><span class="line">    <span class="built_in">BytecodeGenerator</span>(VM&amp;, FunctionNode*, UnlinkedFunctionCodeBlock*, DebuggerMode, <span class="type">const</span> VariableEnvironment*);</span><br><span class="line">    <span class="built_in">BytecodeGenerator</span>(VM&amp;, EvalNode*, UnlinkedEvalCodeBlock*, DebuggerMode, <span class="type">const</span> VariableEnvironment*);</span><br><span class="line">    <span class="built_in">BytecodeGenerator</span>(VM&amp;, ModuleProgramNode*, UnlinkedModuleProgramCodeBlock*, DebuggerMode, <span class="type">const</span> VariableEnvironment*);</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">BytecodeGenerator</span>();</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Strong&lt;UnlinkedCodeBlock&gt; m_codeBlock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>BytecodeGenerator</code> needs the following parameters. Except
+for <code>DebuggerMode</code>, any one of them could easily take an
+entire article to explain, so I will keep this brief.</p>
+<blockquote>
+<ul>
+<li><code>VM</code>: the virtual machine.</li>
+<li><code>Node</code>: one of <code>ProgramNode</code>,
+<code>FunctionNode</code>, <code>EvalNode</code>, or
+<code>ModuleProgramNode</code>.</li>
+<li><code>UnlinkedCodeBlock</code>: corresponding to the node, one of
+<code>UnlinkedProgramCodeBlock</code>,
+<code>UnlinkedFunctionCodeBlock</code>,
+<code>UnlinkedEvalCodeBlock</code>, or
+<code>UnlinkedModuleProgramCodeBlock</code>.</li>
+<li><code>DebuggerMode</code>: whether it is in debug mode.</li>
+<li><code>VariableEnvironment</code>: the variable environment.</li>
+</ul>
+</blockquote>
+<h3 id="parameter-analysis">Parameter Analysis</h3>
+<h4 id="vm">VM</h4>
+<p>As shown by the <code>VMType</code> enum, there are three types of
+VM:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="title class_">VMType</span> &#123; Default, APIContextGroup, APIShared &#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// WebCore has a one-to-one mapping of threads to VMs;</span><br><span class="line">// either create() or createLeaked() should only be called once</span><br><span class="line">// on a thread, this is the &#x27;default&#x27; VM .</span><br><span class="line">// API contexts created using the new context group aware interface</span><br><span class="line">// create APIContextGroup objects which require less locking of JSC</span><br><span class="line">// than the old singleton APIShared VM created for use by</span><br><span class="line">// the original API.</span><br></pre></td></tr></table></figure>
+
+<p>The definition of <code>VM</code> is shown below. Its constructor is
+private and cannot be accessed externally. I also list several members
+that I consider important:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">VM</span> : <span class="keyword">public</span> ThreadSafeRefCounted&lt;VM&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// APIShared creation mode: singleton.</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">isSharedInstance</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> vmType == APIShared; &#125;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">usingAPI</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> vmType != Default; &#125;</span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="type">static</span> <span class="type">bool</span> <span class="title">sharedInstanceExists</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="type">static</span> VM&amp; <span class="title">sharedInstance</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Default creation mode.</span></span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="type">static</span> Ref&lt;VM&gt; <span class="title">create</span><span class="params">(HeapType = SmallHeap)</span></span>;</span><br><span class="line">    <span class="function">JS_EXPORT_PRIVATE <span class="type">static</span> Ref&lt;VM&gt; <span class="title">createLeaked</span><span class="params">(HeapType = SmallHeap)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// APIContextGroup creation mode.</span></span><br><span class="line">    <span class="function"><span class="type">static</span> Ref&lt;VM&gt; <span class="title">createContextGroup</span><span class="params">(HeapType = SmallHeap)</span></span>;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// Lock.</span></span><br><span class="line">    RefPtr&lt;JSLock&gt; m_apiLock;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ExecutableAllocator executableAllocator;</span><br><span class="line">    Heap heap;</span><br><span class="line">    VMType vmType;</span><br><span class="line">    VMEntryFrame* topVMEntryFrame;</span><br><span class="line">    ExecState* topCallFrame;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// A large number of Structure objects.</span></span><br><span class="line">    Strong&lt;Structure&gt; structureStructure;</span><br><span class="line">    Strong&lt;Structure&gt; structureRareDataStructure;</span><br><span class="line">    Strong&lt;Structure&gt; terminatedExecutionErrorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; stringStructure;</span><br><span class="line">    Strong&lt;Structure&gt; propertyNameIteratorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; propertyNameEnumeratorStructure;</span><br><span class="line">    Strong&lt;Structure&gt; customGetterSetterStructure;</span><br><span class="line">    Strong&lt;Structure&gt; scopedArgumentsTableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; apiWrapperStructure;</span><br><span class="line">    Strong&lt;Structure&gt; JSScopeStructure;</span><br><span class="line">    Strong&lt;Structure&gt; executableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; nativeExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; evalExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; programExecutableStructure;</span><br><span class="line">    Strong&lt;Structure&gt; functionExecutableStructure;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    PrototypeMap prototypeMap;</span><br><span class="line">    SourceProviderCacheMap sourceProviderCacheMap;</span><br><span class="line">    Interpreter* interpreter;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    ExecState* newCallFrameReturnValue;</span><br><span class="line">    ExecState* callFrameForCatch;</span><br><span class="line"></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p><code>ExecState</code> is the object that executes scripts. It is
+managed by <code>GlobalObject</code> and records the script execution
+context.</p>
+<h4 id="node">Node</h4>
+<p>In the syntax-analysis article, we mentioned the inheritance graph of
+<code>Node</code>. The four kinds of <code>Node</code> discussed here
+all inherit from <code>ScopeNode</code>, and <code>ScopeNode</code>
+inherits from <code>StatementNode</code>. Obviously, these four node
+types are basic statements and are related to scope.</p>
+<img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/01.png" width="100%"/>
+
+<h4 id="unlinkedcodeblock">UnlinkedCodeBlock</h4>
+<p><code>UnlinkedCodeBlock</code> is a code-management class. It mainly
+has four variants: <code>UnlinkedProgramCodeBlock</code>,
+<code>UnlinkedFunctionCodeBlock</code>,
+<code>UnlinkedEvalCodeBlock</code>, and
+<code>UnlinkedModuleProgramCodeBlock</code>. It stores <strong>compiled
+bytecode</strong>. Its inheritance hierarchy is shown below:</p>
+<img src="/2018/08/10/JavaScriptCore引擎深度解析-5-字节码生成篇/02.png" width="100%"/>
+
+<p>There is also a corresponding <code>CodeBlock</code>, mainly used by
+<code>LLInt</code> and <code>JIT</code>. Its inheritance hierarchy is
+extremely similar to <code>UnlinkedCodeBlock</code>; later articles in
+the series will cover it.</p>
+<h4 id="variableenvironment">VariableEnvironment</h4>
+<p><code>VariableEnvironment</code> has a very important member
+variable, <code>m_map</code>, which stores marked variables:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map m_map;</span><br></pre></td></tr></table></figure>
+
+<p>Its key is of type <code>UniquedStringImpl*</code>, and its value is
+the enum type <code>Traits</code>:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="title class_">Traits</span> : <span class="type">uint16_t</span> </span><br><span class="line">&#123;</span><br><span class="line">    IsCaptured = <span class="number">1</span> &lt;&lt; <span class="number">0</span>,</span><br><span class="line">    IsConst = <span class="number">1</span> &lt;&lt; <span class="number">1</span>,</span><br><span class="line">    IsVar = <span class="number">1</span> &lt;&lt; <span class="number">2</span>,</span><br><span class="line">    IsLet = <span class="number">1</span> &lt;&lt; <span class="number">3</span>,</span><br><span class="line">    IsExported = <span class="number">1</span> &lt;&lt; <span class="number">4</span>,</span><br><span class="line">    IsImported = <span class="number">1</span> &lt;&lt; <span class="number">5</span>,</span><br><span class="line">    IsImportedNamespace = <span class="number">1</span> &lt;&lt; <span class="number">6</span>,</span><br><span class="line">    IsFunction = <span class="number">1</span> &lt;&lt; <span class="number">7</span>,</span><br><span class="line">    IsParameter = <span class="number">1</span> &lt;&lt; <span class="number">8</span>,</span><br><span class="line">    IsSloppyModeHoistingCandidate = <span class="number">1</span> &lt;&lt; <span class="number">9</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>It also has several important methods for capturing and marking
+variables:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCapturedVariables</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">captures</span><span class="params">(UniquedStringImpl* identifier)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">markVariableAsCapturedIfDefined</span><span class="params">(<span class="type">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">markVariableAsCaptured</span><span class="params">(<span class="type">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">markAllVariablesAsCaptured</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">markVariableAsImported</span><span class="params">(<span class="type">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">markVariableAsExported</span><span class="params">(<span class="type">const</span> RefPtr&lt;UniquedStringImpl&gt;&amp; identifier)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>From these method names and enum values, we can roughly infer that it
+marks variable context: whether a variable is captured by a closure,
+imported, exported, and so on.</p>
+<h3 id="generate">generate</h3>
+<p>Now it is time to analyze the core <code>generate</code>
+function.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ParserError <span class="title">BytecodeGenerator::generate</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Set this register.</span></span><br><span class="line">    m_codeBlock-&gt;<span class="built_in">setThisRegister</span>(m_thisRegister.<span class="built_in">virtualRegister</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Set the special arguments parameter and ordinary parameters.</span></span><br><span class="line">    <span class="keyword">if</span> (m_needToInitializeArguments)</span><br><span class="line">        <span class="built_in">initializeVariable</span>(<span class="built_in">variable</span>(<span class="built_in">propertyNames</span>().arguments), m_argumentsRegister);</span><br><span class="line">    <span class="keyword">if</span> (m_restParameter)</span><br><span class="line">        m_restParameter-&gt;<span class="built_in">emit</span>(*<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// If this is not a constructor, call emitBytecode to generate bytecode.</span></span><br><span class="line">    <span class="type">bool</span> callingClassConstructor = <span class="built_in">constructorKind</span>() != ConstructorKind::None &amp;&amp; !<span class="built_in">isConstructor</span>();</span><br><span class="line">    <span class="keyword">if</span> (!callingClassConstructor)</span><br><span class="line">        m_scopeNode-&gt;<span class="built_in">emitBytecode</span>(*<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Store the generated bytecode instructions into m_codeBlock.</span></span><br><span class="line">    m_codeBlock-&gt;<span class="built_in">setInstructions</span>(std::<span class="built_in">make_unique</span>&lt;UnlinkedInstructionStream&gt;(m_instructions));</span><br><span class="line">    m_codeBlock-&gt;<span class="built_in">shrinkToFit</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Exception handling.</span></span><br><span class="line">    <span class="keyword">if</span> (m_expressionTooDeep)</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">ParserError</span>(ParserError::OutOfMemory);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">ParserError</span>(ParserError::ErrorNone);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="emitbytecode">emitBytecode</h3>
+<p>The four node types mentioned above all inherit from
+<code>ScopeNode</code>, so we can analyze this through polymorphism.</p>
+<h4 id="programnode">ProgramNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ProgramNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">emitProgramNodeBytecode</span>(generator, *<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">emitProgramNodeBytecode</span><span class="params">(BytecodeGenerator&amp; generator, ScopeNode&amp; scopeNode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; dstRegister = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">    generator.<span class="built_in">emitLoad</span>(dstRegister.<span class="built_in">get</span>(), <span class="built_in">jsUndefined</span>());</span><br><span class="line">    generator.<span class="built_in">emitProfileControlFlow</span>(scopeNode.<span class="built_in">startStartOffset</span>());</span><br><span class="line">    scopeNode.<span class="built_in">emitStatementsBytecode</span>(generator, dstRegister.<span class="built_in">get</span>());</span><br><span class="line">    generator.<span class="built_in">emitEnd</span>(dstRegister.<span class="built_in">get</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ProgramNode::emitBytecode</span><br><span class="line">└──emitProgramNodeBytecode</span><br><span class="line">    └──emitStatementsBytecode</span><br></pre></td></tr></table></figure>
+
+<h4 id="moduleprogramnode">ModuleProgramNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ModuleProgramNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">emitProgramNodeBytecode</span>(generator, *<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ModuleProgramNode</code> and <code>ProgramNode</code> therefore
+share the same <code>emitBytecode</code> call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ModuleProgramNode::emitBytecode</span><br><span class="line">└──emitProgramNodeBytecode</span><br><span class="line">    └──emitStatementsBytecode</span><br></pre></td></tr></table></figure>
+
+<h4 id="evalnode">EvalNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">EvalNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RefPtr&lt;RegisterID&gt; dstRegister = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">    generator.<span class="built_in">emitLoad</span>(dstRegister.<span class="built_in">get</span>(), <span class="built_in">jsUndefined</span>());</span><br><span class="line">    <span class="built_in">emitStatementsBytecode</span>(generator, dstRegister.<span class="built_in">get</span>());</span><br><span class="line">    generator.<span class="built_in">emitEnd</span>(dstRegister.<span class="built_in">get</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Call stack:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EvalNode::emitBytecode</span><br><span class="line">└──emitStatementsBytecode</span><br></pre></td></tr></table></figure>
+
+<h4 id="functionnode">FunctionNode</h4>
+<p>Bytecode generation for <code>FunctionNode</code> is more
+complicated. It distinguishes several parse modes:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum class</span> <span class="title class_">SourceParseMode</span> : <span class="type">uint8_t</span> &#123;</span><br><span class="line">    NormalFunctionMode,</span><br><span class="line">    GeneratorBodyMode,</span><br><span class="line">    GeneratorWrapperFunctionMode,</span><br><span class="line">    GetterMode,</span><br><span class="line">    SetterMode,</span><br><span class="line">    MethodMode,</span><br><span class="line">    ArrowFunctionMode,</span><br><span class="line">    ProgramMode,</span><br><span class="line">    ModuleAnalyzeMode,</span><br><span class="line">    ModuleEvaluateMode</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The first seven modes all fall under the function category.
+<code>GeneratorWrapperFunctionMode</code> and
+<code>GeneratorBodyMode</code> are handled separately, while the others
+take the default path.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FunctionNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (generator.<span class="built_in">parseMode</span>()) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::GeneratorWrapperFunctionMode: </span><br><span class="line">        &#123;</span><br><span class="line">            StatementNode* singleStatement = <span class="keyword">this</span>-&gt;<span class="built_in">singleStatement</span>();</span><br><span class="line">            ExprStatementNode* exprStatement = <span class="built_in">static_cast</span>&lt;ExprStatementNode*&gt;(singleStatement);</span><br><span class="line">            ExpressionNode* expr = exprStatement-&gt;<span class="built_in">expr</span>();</span><br><span class="line">            FuncExprNode* funcExpr = <span class="built_in">static_cast</span>&lt;FuncExprNode*&gt;(expr);</span><br><span class="line"></span><br><span class="line">            RefPtr&lt;RegisterID&gt; next = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">            generator.<span class="built_in">emitNode</span>(next.<span class="built_in">get</span>(), funcExpr);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (generator.<span class="built_in">superBinding</span>() == SuperBinding::Needed) &#123;</span><br><span class="line">                RefPtr&lt;RegisterID&gt; homeObject = <span class="built_in">emitHomeObjectForCallee</span>(generator);</span><br><span class="line">                <span class="built_in">emitPutHomeObject</span>(generator, next.<span class="built_in">get</span>(), homeObject.<span class="built_in">get</span>());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// <span class="doctag">FIXME:</span> Currently, we just create an object and store generator related fields as its properties for ease.</span></span><br><span class="line">            <span class="comment">// But to make it efficient, we will introduce JSGenerator class, add opcode new_generator and use its C++ fields instead of these private properties.</span></span><br><span class="line">            <span class="comment">// https://bugs.webkit.org/show_bug.cgi?id=151545</span></span><br><span class="line"></span><br><span class="line">            generator.<span class="built_in">emitDirectPutById</span>(generator.<span class="built_in">generatorRegister</span>(), generator.<span class="built_in">propertyNames</span>().generatorNextPrivateName, next.<span class="built_in">get</span>(), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            generator.<span class="built_in">emitDirectPutById</span>(generator.<span class="built_in">generatorRegister</span>(), generator.<span class="built_in">propertyNames</span>().generatorThisPrivateName, generator.<span class="built_in">thisRegister</span>(), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            RegisterID* initialState = generator.<span class="built_in">emitLoad</span>(<span class="literal">nullptr</span>, <span class="built_in">jsNumber</span>(<span class="number">0</span>));</span><br><span class="line">            generator.<span class="built_in">emitDirectPutById</span>(generator.<span class="built_in">generatorRegister</span>(), generator.<span class="built_in">propertyNames</span>().generatorStatePrivateName, initialState, PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">            generator.<span class="built_in">emitDirectPutById</span>(generator.<span class="built_in">generatorRegister</span>(), generator.<span class="built_in">propertyNames</span>().generatorFramePrivateName, generator.<span class="built_in">emitLoad</span>(<span class="literal">nullptr</span>, <span class="built_in">jsNull</span>()), PropertyNode::KnownDirect);</span><br><span class="line"></span><br><span class="line">           </span><br><span class="line">            generator.<span class="built_in">emitReturn</span>(generator.<span class="built_in">generatorRegister</span>());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> SourceParseMode::GeneratorBodyMode: </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;Label&gt; generatorBodyLabel = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">            &#123;</span><br><span class="line">                RefPtr&lt;RegisterID&gt; condition = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">                generator.<span class="built_in">emitEqualityOp</span>(op_stricteq, condition.<span class="built_in">get</span>(), generator.<span class="built_in">generatorResumeModeRegister</span>(), generator.<span class="built_in">emitLoad</span>(<span class="literal">nullptr</span>, <span class="built_in">jsNumber</span>(<span class="built_in">static_cast</span>&lt;<span class="type">int32_t</span>&gt;(JSGeneratorFunction::GeneratorResumeMode::NormalMode))));</span><br><span class="line">                generator.<span class="built_in">emitJumpIfTrue</span>(condition.<span class="built_in">get</span>(), generatorBodyLabel.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">                RefPtr&lt;Label&gt; throwLabel = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">                generator.<span class="built_in">emitEqualityOp</span>(op_stricteq, condition.<span class="built_in">get</span>(), generator.<span class="built_in">generatorResumeModeRegister</span>(), generator.<span class="built_in">emitLoad</span>(<span class="literal">nullptr</span>, <span class="built_in">jsNumber</span>(<span class="built_in">static_cast</span>&lt;<span class="type">int32_t</span>&gt;(JSGeneratorFunction::GeneratorResumeMode::ThrowMode))));</span><br><span class="line">                generator.<span class="built_in">emitJumpIfTrue</span>(condition.<span class="built_in">get</span>(), throwLabel.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">                generator.<span class="built_in">emitReturn</span>(generator.<span class="built_in">generatorValueRegister</span>());</span><br><span class="line"></span><br><span class="line">                generator.<span class="built_in">emitLabel</span>(throwLabel.<span class="built_in">get</span>());</span><br><span class="line">                generator.<span class="built_in">emitThrow</span>(generator.<span class="built_in">generatorValueRegister</span>());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            generator.<span class="built_in">emitLabel</span>(generatorBodyLabel.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">            <span class="built_in">emitStatementsBytecode</span>(generator, generator.<span class="built_in">ignoredResult</span>());</span><br><span class="line"></span><br><span class="line">            RefPtr&lt;Label&gt; done = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">            generator.<span class="built_in">emitLabel</span>(done.<span class="built_in">get</span>());</span><br><span class="line">            generator.<span class="built_in">emitReturn</span>(generator.<span class="built_in">emitLoad</span>(<span class="literal">nullptr</span>, <span class="built_in">jsUndefined</span>()));</span><br><span class="line">            generator.<span class="built_in">endGenerator</span>(done.<span class="built_in">get</span>());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// Once again, it reaches emitStatementsBytecode.</span></span><br><span class="line">            <span class="built_in">emitStatementsBytecode</span>(generator, generator.<span class="built_in">ignoredResult</span>());</span><br><span class="line"></span><br><span class="line">            StatementNode* singleStatement = <span class="keyword">this</span>-&gt;<span class="built_in">singleStatement</span>();</span><br><span class="line">            ReturnNode* returnNode = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Check for a return statement at the end of a function composed of a single block.</span></span><br><span class="line">            <span class="keyword">if</span> (singleStatement &amp;&amp; singleStatement-&gt;<span class="built_in">isBlock</span>()) &#123;</span><br><span class="line">                StatementNode* lastStatementInBlock = <span class="built_in">static_cast</span>&lt;BlockNode*&gt;(singleStatement)-&gt;<span class="built_in">lastStatement</span>();</span><br><span class="line">                <span class="keyword">if</span> (lastStatementInBlock &amp;&amp; lastStatementInBlock-&gt;<span class="built_in">isReturnNode</span>())</span><br><span class="line">                    returnNode = <span class="built_in">static_cast</span>&lt;ReturnNode*&gt;(lastStatementInBlock);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// If there is no return we must automatically insert one.</span></span><br><span class="line">            <span class="keyword">if</span> (!returnNode) </span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">if</span> (generator.<span class="built_in">constructorKind</span>() == ConstructorKind::Derived &amp;&amp; generator.<span class="built_in">needsToUpdateArrowFunctionContext</span>() &amp;&amp; generator.<span class="built_in">isSuperCallUsedInInnerArrowFunction</span>())</span><br><span class="line">                    generator.<span class="built_in">emitLoadThisFromArrowFunctionLexicalEnvironment</span>(); <span class="comment">// Arrow function can invoke &#x27;super&#x27; in constructor and before leave constructor we need load &#x27;this&#x27; from lexical arrow function environment</span></span><br><span class="line">                </span><br><span class="line">                RegisterID* r0 = generator.<span class="built_in">isConstructor</span>() ? generator.<span class="built_in">thisRegister</span>() : generator.<span class="built_in">emitLoad</span>(<span class="number">0</span>, <span class="built_in">jsUndefined</span>());</span><br><span class="line">                generator.<span class="built_in">emitProfileType</span>(r0, ProfileTypeBytecodeFunctionReturnStatement); <span class="comment">// Do not emit expression info for this profile because it&#x27;s not in the user&#x27;s source code.</span></span><br><span class="line">                </span><br><span class="line">                generator.<span class="built_in">emitReturn</span>(r0);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Both <code>GeneratorWrapperFunctionMode</code> and
+<code>GeneratorBodyMode</code> contain <code>Generator</code>, so they
+are probably related to the ES6 <a
+href="http://es6.ruanyifeng.com/#docs/generator">Generator</a> function.
+Briefly:</p>
+<p>In form, a Generator function is still an ordinary function, but it
+has two characteristics. First, there is an asterisk between the
+<code>function</code> keyword and the function name. Second, the
+function body uses <code>yield</code> expressions to define different
+internal states.</p>
+<p><code>GeneratorBodyMode</code> looks like this:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span>* <span class="title function_">helloWorldGenerator</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">yield</span> <span class="string">&#x27;hello&#x27;</span>;</span><br><span class="line">  <span class="keyword">yield</span> <span class="string">&#x27;world&#x27;</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&#x27;ending&#x27;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> hw = <span class="title function_">helloWorldGenerator</span>();</span><br></pre></td></tr></table></figure>
+
+<p><code>GeneratorWrapperFunctionMode</code> looks like this:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> *<span class="title function_">gen</span>(<span class="params">a, b = hello()</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> </span><br><span class="line">    &#123;</span><br><span class="line">        @<span class="attr">generatorNext</span>: <span class="keyword">function</span> (<span class="params">@generator, @generatorState, @generatorValue, @generatorResumeMode</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="variable language_">arguments</span>;  <span class="comment">// This `arguments` should reference to the gen&#x27;s arguments.</span></span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is only a brief introduction. I will not go deeper here, because
+the real focus is bytecode generation.</p>
+<p>No matter which of the above nodes calls <code>emitBytecode</code>,
+the flow eventually reaches <code>emitStatementsBytecode</code>. After
+all, whether it is <code>ProgramNode</code>, <code>EvalNode</code>, or
+<code>FunctionNode</code>, it is composed of basic statements.
+Therefore, bytecode generation eventually becomes related to the various
+<code>Node</code> types discussed in the syntax-analysis article.</p>
+<p>It is also reasonable to infer that
+<code>emitStatementsBytecode</code> is only a starting point, not the
+end. Inside it, many recursive and looping calls may still be waiting
+for us.</p>
+<h2 id="to-be-continued">To Be Continued</h2>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/">JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-08-10 00:34</p>
+  <p><span>Updated:</span>2026-08-29 01:54</p>
+  <p><span>Original link:</span><a href="/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/" title="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1">https://tsuijunxi.github.io/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/JavaScriptCore-ByteCode/" rel="tag"># JavaScriptCore ByteCode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/08/02/javascriptcore-deep-dive-4-syntax-analysis/" rel="next" title="JavaScriptCore Deep Dive 4 - Syntax Analysis">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore Deep Dive 4 - Syntax Analysis
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/" rel="prev" title="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2">
+                JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#codecache"><span class="nav-number">2.</span> <span class="nav-text">CodeCache</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bytecodegenerator"><span class="nav-number">3.</span> <span class="nav-text">BytecodeGenerator</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#parameter-analysis"><span class="nav-number">3.1.</span> <span class="nav-text">Parameter Analysis</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#vm"><span class="nav-number">3.1.1.</span> <span class="nav-text">VM</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#node"><span class="nav-number">3.1.2.</span> <span class="nav-text">Node</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unlinkedcodeblock"><span class="nav-number">3.1.3.</span> <span class="nav-text">UnlinkedCodeBlock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#variableenvironment"><span class="nav-number">3.1.4.</span> <span class="nav-text">VariableEnvironment</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#generate"><span class="nav-number">3.2.</span> <span class="nav-text">generate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#emitbytecode"><span class="nav-number">3.3.</span> <span class="nav-text">emitBytecode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#programnode"><span class="nav-number">3.3.1.</span> <span class="nav-text">ProgramNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#moduleprogramnode"><span class="nav-number">3.3.2.</span> <span class="nav-text">ModuleProgramNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#evalnode"><span class="nav-number">3.3.3.</span> <span class="nav-text">EvalNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#functionnode"><span class="nav-number">3.3.4.</span> <span class="nav-text">FunctionNode</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#to-be-continued"><span class="nav-number">4.</span> <span class="nav-text">To Be Continued</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="TXT Engine Chapter Switching" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface For many historical reasons, the TXT engine in the QQ Reader iOS app could only load, lay out, and render a single file at a time. When switching online chapters, the app had to close the engi">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Refactoring TXT Engine Chapter Switching">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2019/01/01/refactoring-txt-engine-chapter-switching/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface For many historical reasons, the TXT engine in the QQ Reader iOS app could only load, lay out, and render a single file at a time. When switching online chapters, the app had to close the engi">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/01.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/06.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/09.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/before.gif">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/after.gif">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/21.png">
+<meta property="article:published_time" content="2019-01-01T03:37:00.000Z">
+<meta property="article:modified_time" content="2026-08-28T17:23:06.240Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="TXT Engine Chapter Switching">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2019/01/01/refactoring-txt-engine-chapter-switching/"/>
+
+
+
+
+
+  <title>Refactoring TXT Engine Chapter Switching | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2019/01/01/refactoring-txt-engine-chapter-switching/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Refactoring TXT Engine Chapter Switching</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-01-01T11:37:00+08:00">
+                2019-01-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS / C++</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  100k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  6:03
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>For many historical reasons, the TXT engine in the QQ Reader iOS app
+could only load, lay out, and render a single file at a time. When
+switching online chapters, the app had to close the engine for the
+current chapter, clean up all business data, reload the engine for the
+new chapter, and request the new chapter’s business data again.</p>
+<p>This caused two serious problems:</p>
+<blockquote>
+<ul>
+<li>When turning pages back and forth around the boundary between two
+chapters, the engine had to repeatedly open and close chapters, which
+was expensive.</li>
+<li>In 3D page-turning mode, chapter switching required forced page
+turns. In other words, the user could not fully control the 3D effect
+through gestures, and there was no chance to cancel the turn and roll
+back.</li>
+</ul>
+</blockquote>
+<p>So we needed to refactor the TXT engine’s multi-chapter switching
+process and support seamless chapter switching with minimal cost.</p>
+<p>The original motivation for this refactor was actually to see whether
+we could remove the top crash in RDM.</p>
+<p>All pain comes from not having enough knowledge of, or enough respect
+for, history.</p>
+<h2 id="current-state">Current State</h2>
+<h3 id="overall-architecture">Overall Architecture</h3>
+<img src="/2019/01/01/Txt引擎之切章重构之路/01.png" width="100%"/>
+
+<blockquote>
+<ul>
+<li><code>TextBaseViewController</code> holds
+<code>QRReadingDataSource</code>. <code>QRReadingDataSource</code> is
+responsible for loading chapter data and various business data.</li>
+<li><code>QRReadingDataSource</code> holds <code>ReaderRender</code>,
+and <code>ReaderRender</code> also holds it back.
+<code>ReaderRender</code> is responsible for page drawing, including
+views corresponding to various business data.</li>
+<li>Everything related to the engine is operated through
+<code>Hub</code>. At the bottom, <code>TextEngine</code> is responsible
+for loading, laying out, and rendering concrete chapter files.</li>
+<li>The view controllers for 3D page turning, smooth page turning, and
+cover page turning all weakly hold <code>TextBaseViewController</code>
+directly and call methods on it. As a result,
+<code>TextBaseViewController</code> has to expose many interfaces for
+them.</li>
+</ul>
+</blockquote>
+<p>All those ownership and reverse-ownership relationships made the
+coupling painfully deep.</p>
+<h3 id="file-opening-flow">File Opening Flow</h3>
+<img src="/2019/01/01/Txt引擎之切章重构之路/02.png" width="80%"/>
+
+<blockquote>
+<ul>
+<li>The call hierarchy for opening a file is too deep. Some logic lives
+in <code>OpenBookManager</code>, some in
+<code>TextBaseViewController</code>, and the flow is scattered. Because
+of that, notifications are used for synchronization. This kind of
+dispersed logic is very tiring to read.</li>
+<li>Chapter loading contains preload logic, but it only covers chapter
+data. Paid preview information is not cached, so every time the reader
+turns to a new chapter, a symbolic loading state appears.</li>
+<li>Other business logic is scattered across
+<code>TextBaseViewController</code> and
+<code>QRReadingDataSource</code>. There is no unified synchronization
+mechanism. Every kind of business data is requested separately, and each
+response may refresh the reading page to some degree, increasing refresh
+pressure.</li>
+</ul>
+</blockquote>
+<h3 id="hub-calls">Hub Calls</h3>
+<p>The Hub mechanism essentially turns the underlying
+<code>TextEngine</code> into a singleton, which means it can be called
+from almost anywhere without restraint. An initial count looked like
+this:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QRReadingDataSource</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>ReaderRender</td>
+<td style="text-align: right;">33</td>
+</tr>
+<tr>
+<td>TextBaseViewController</td>
+<td style="text-align: right;">47</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-refactoring-path">The Refactoring Path</h2>
+<h3 id="establishing-the-cache-model">Establishing the Cache Model</h3>
+<p>To avoid unnecessary waste when switching to the next chapter, we
+cannot immediately close the previous chapter’s information. Instead, we
+need to cache it. If the user turns back, we can reuse the cache without
+reopening the chapter. This also improves the page-turning experience,
+so a cache model naturally emerged.</p>
+<h4 id="three-engine-architecture">Three-Engine Architecture</h4>
+<p>The first idea was a three-engine architecture: create an engine
+wrapper named <code>QRTextEngine</code>, and let it hold three
+<code>TextEngine</code> instances internally to implement preloading and
+chapter switching.</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/03.png" width="60%"/>
+
+<p>When the current chapter is close to its final page, for example when
+progress reaches 80%, preload logic is triggered.
+<code>nextTextEngine</code> asynchronously loads the next chapter on a
+background thread. When the reader really switches to the next chapter,
+we only need to point <code>curTextEngine</code> to
+<code>nextTextEngine</code> to complete the engine switch.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">QRTextEngine</span>()&lt;<span class="title">TextEngineDelegate</span>&gt;</span>&#123;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *preEngine;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *curEngine;</span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>,<span class="keyword">strong</span>) TextEngine *nextEngine;</span><br><span class="line">...</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)switchToNextEngine</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> syncPerformBlockOnEngineQueue:^&#123;</span><br><span class="line">        <span class="keyword">self</span>.preEngine = <span class="keyword">self</span>.curEngine;</span><br><span class="line">        <span class="keyword">self</span>.curEngine = <span class="keyword">self</span>.nextEngine;</span><br><span class="line">        <span class="keyword">self</span>.nextEngine = <span class="literal">nil</span>;</span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In practice, however, this cache model had several problems:</p>
+<blockquote>
+<ul>
+<li>Not every chapter has chapter data. Some chapters may not be paid
+for, so there may be no file at all. In that case,
+<code>TextEngine</code> is empty and switching fails.</li>
+<li>Paid preview information is not cached. It has to be requested every
+time, wasting a lot of traffic and creating an uncomfortable loading
+wait.</li>
+<li>States such as <code>[engine nil engine]</code> and
+<code>[nil engine nil]</code> can appear. If switching logic is not
+controlled carefully, things become inconsistent. To work around this,
+we had to perform a fake file open.</li>
+<li>The cache was not thorough enough. Business cache logic for chapters
+still had to be handled elsewhere. A unified behavior was split
+apart.</li>
+</ul>
+</blockquote>
+<h4 id="three-model-architecture">Three-Model Architecture</h4>
+<p>After discovering the limitations of the three-engine architecture, I
+introduced a three-model architecture:</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/04.png" width="60%"/>
+
+<p>The model no longer refers only to an engine. It becomes a chapter
+model, <code>QRTextReaderChapterModel</code>. It includes not only
+<code>TextEngine</code>, but also authorization information such as paid
+previews, and even various chapter-level business data such as chapter
+comments and paragraph comments.</p>
+<p>The problems in the previous three-engine design are then naturally
+solved:</p>
+<blockquote>
+<ul>
+<li>Every chapter now has data. Downloaded chapters have renderable
+chapter data, while unavailable chapters have paid-preview data. Page
+switching becomes possible in any direction.</li>
+<li>Paid preview information is cached and can be requested only once
+within a given time window.</li>
+<li>Business data cache logic is handled uniformly. The reading page is
+refreshed only after all business data returns, reducing refresh
+pressure.</li>
+</ul>
+</blockquote>
+<h3 id="refactored-class-diagram">Refactored Class Diagram</h3>
+<p>Once the cache model was established, the overall architecture of the
+refactor was basically determined.</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/05.png" width="100%"/>
+
+<p><a
+href="https://www.processon.com/view/link/5ba1b3a1e4b08faf8c5b4022">High-resolution
+diagram</a></p>
+<blockquote>
+<ul>
+<li>For TXT books, opening a book no longer directly calls
+<code>OpenBookManager</code>. <code>OpenBookManager</code> is now only
+responsible for creating the view controller, passing
+<code>BookInfo</code> to it, and pushing it.</li>
+<li>The original <code>QRReadingDataSource</code> and
+<code>ReaderRender</code> are removed. The new manager class,
+<code>QRTextReaderManager</code>, takes over the core logic.</li>
+<li>Page-turning view controllers no longer weakly hold
+<code>TextBaseViewController</code> directly. Instead, they receive
+<code>QRTextReaderManager</code> and call its interfaces.</li>
+<li>The three-model architecture is managed directly by
+<code>QRTextReaderManager</code>. Therefore,
+<code>QRTextReaderManager</code> is responsible for creating,
+preloading, switching, and destroying the three models.</li>
+<li><code>QRTextReaderChapterModel</code> is responsible for chapter
+file requests and loading, <code>TextEngine</code> initialization,
+paid-preview requests and cache management, business data requests and
+loading, and calling <code>QRTextEngine</code> to lay out and render
+pages.</li>
+</ul>
+</blockquote>
+<h4 id="qrtextreadermanager">QRTextReaderManager</h4>
+<p><code>QRTextReaderManager</code> coordinates the TXT reading
+logic.</p>
+<p>In the earliest design, I used the three-engine architecture, where
+<code>QRTextEngine</code> directly held three <code>TxtEngine</code>
+engines and handled their creation, preloading, switching, and
+destruction. But this did not handle chapter network states well, such
+as paid chapters, login-required chapters, or removed chapters. To solve
+various strange issues and ensure continuity during internal engine
+switching, I even introduced the idea of opening a fake engine.
+Eventually I abandoned it, because the real problem was in the overall
+structure. Patching it would only lead us deeper into trouble.</p>
+<p>So the original three-engine architecture became a three-model
+architecture. The old version was managed by <code>QRTextEngine</code>,
+while the new three-model architecture is managed directly by
+<code>QRTextReaderManager</code>. Therefore,
+<code>QRTextReaderManager</code> needs to handle creation, preloading,
+switching, and destruction of these three models.</p>
+<p>There were also many fields in <code>TextBaseViewController</code>
+used for logic checks. Since <code>QRTextReaderManager</code> now
+carries that logic, those fields need to move downward into the
+manager.</p>
+<h4 id="qrtextreaderchaptermodel">QRTextReaderChapterModel</h4>
+<p><code>QRTextReaderChapterModel</code> is the core support for
+coordinating TXT reading logic.</p>
+<p>The final design wraps <code>QRTextReaderChapterModel</code> around
+<code>QRTextEngine</code>. This class contains both chapter
+network-state information, <code>authorizeInfo</code>, and local file
+information plus the <code>engine</code> used to load the file. These
+two states are mutually exclusive. At any given moment, only one can
+exist, and there is a transition from network state to local state.</p>
+<blockquote>
+<ul>
+<li>In network state, <code>QRTextReaderChapterModel</code> uses the
+information in <code>authorizeInfo</code> to generate a view.</li>
+<li>In local state, <code>QRTextReaderChapterModel</code> uses the
+<code>engine</code> to lay out and render page images, adds headers and
+footers, and generates a view. It also calls
+<code>QRTextBusinessManager</code> to asynchronously load and manage
+various business data. After the data returns, it refreshes the reading
+page uniformly.</li>
+</ul>
+</blockquote>
+<p>Note: all chapter loading, including preloading, should go through
+<code>QRTextReaderChapterModel</code>. Only then can each chapter’s
+state be clearly tracked, preventing duplicate loading and resource
+waste.</p>
+<p>How should the page be refreshed after all business data returns?
+Here I used a simple approach:</p>
+<p>Each type of business data has a dedicated property marking its
+state. When it is marked <code>YES</code>, it attempts to call
+<code>handleBusinessDataIfNecessary</code>. That method checks whether
+all business data is ready and then triggers one unified callback
+refresh. The prerequisite is that all business-data callbacks run on the
+main thread.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">@weakify(<span class="keyword">self</span>)</span><br><span class="line">[<span class="keyword">self</span>.businessMgr loadAllBusinessDataWithReadyCallback:^(<span class="built_in">NSError</span> *error, <span class="built_in">NSDictionary</span>* dic) &#123;</span><br><span class="line">            </span><br><span class="line">            @strongify(<span class="keyword">self</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Process all data for each chapter together.</span></span><br><span class="line">            [<span class="keyword">self</span> handleTailPagePlaceholder];</span><br><span class="line">            [<span class="keyword">self</span> handleChapterCommentResponse:dic];</span><br><span class="line">            [<span class="keyword">self</span> handleExcellentParaComment];</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Engine</span></span><br><span class="line">            <span class="keyword">if</span>(<span class="keyword">self</span>.loadPoint == QRChapterLoadPointType_End)&#123;</span><br><span class="line">                [<span class="keyword">self</span> turnToFinalPage];</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Clear cache after business data returns.</span></span><br><span class="line">            [<span class="keyword">self</span> flushPageCache];</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// After all business data returns, notify the delegate and check whether the reading page needs refresh.</span></span><br><span class="line">            <span class="built_in">NSDictionary</span>* result = @&#123;QROnlineReadingResultKeys.result:@(QRReadOnlineBookResult_Opened)&#125;;</span><br><span class="line">            [<span class="keyword">self</span>.delegate chapterModel:<span class="keyword">self</span> didFinishLoadWithResult:result];</span><br><span class="line">            </span><br><span class="line">        &#125;];</span><br></pre></td></tr></table></figure>
+
+<h4 id="qrtextbusinessmanager">QRTextBusinessManager</h4>
+<p><code>QRTextBusinessManager</code> carries all business logic for a
+TXT chapter, including chapter comments, paragraph comments, author
+Q&amp;A, ads, voting, red packets, and so on. In practice, it is also a
+simple wrapper. Each business type still has its own class.</p>
+<p>After a chapter’s information, either network-state information or a
+local file, becomes ready, <code>QRTextBusinessManager</code> is used to
+load business data. <code>QRTextReaderChapterModel</code> also records
+the state of each business data request: not requested, requesting, or
+finished.</p>
+<blockquote>
+<ul>
+<li>QA: author Q&amp;A, chapter business.</li>
+<li>Advertisements: ad data, chapter business.</li>
+<li>InteractionBar: bottom area of the chapter tail page, including
+rewards, recommendation tickets, monthly tickets, red packets;
+book-level business.</li>
+<li>Comments: chapter comments, chapter business.</li>
+<li>ParagraphTailMark: paragraph comments, chapter business.</li>
+</ul>
+</blockquote>
+<p>After the git branch merge, new business items were added to the tail
+page, such as Guangdiantong ads and cards. Card data uses the
+<code>chapterall</code> protocol and returns together with other
+business data. Guangdiantong ads use an independent protocol and have
+more complex business logic, so their logic was placed separately in
+<code>QRChapterBusinessManager+GDTAd.h</code>. Like the other business
+data, it is processed uniformly when the callback returns.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)setAlreadyGetGDTTailAd:(<span class="type">BOOL</span>)alreadyGetGDTTailAd</span><br><span class="line">&#123;</span><br><span class="line">    _alreadyGetGDTTailAd = alreadyGetGDTTailAd;</span><br><span class="line">    [<span class="keyword">self</span> handleBusinessDataIfNecessary];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="qrtextengine-wrapper">QRTextEngine Wrapper</h4>
+<p>This is a simple wrapper around <code>TextEngine</code>. It mainly
+replaces the role of the original <code>EngineModule</code>, but it is
+no longer a singleton.</p>
+<h4 id="chapter-loading-logic">Chapter Loading Logic</h4>
+<p>All chapter loading and preloading should start from
+<code>QRTextReaderChapterModel</code>. It is the entry point. Once
+loading starts, the state of <code>QRTextReaderChapterModel</code> must
+be updated continuously.</p>
+<p>In the latest code, there is only one trigger point for preloading:
+<strong>when the chapter ID changes or when <code>onlineTag</code> is
+modified</strong>.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)setOnlineTag:(OnlineTag *)onlineTag</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(!onlineTag) &#123;  <span class="keyword">return</span>;  &#125;</span><br><span class="line">    _onlineTag = onlineTag;</span><br><span class="line">    </span><br><span class="line">    _chapterModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:onlineTag];</span><br><span class="line">    <span class="keyword">if</span>(_chapterModel.bookInfo != <span class="literal">nil</span>)&#123;</span><br><span class="line">        <span class="keyword">self</span>.bookInfo = _chapterModel.bookInfo;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Report</span></span><br><span class="line">    [<span class="keyword">self</span> reportOnlineBookWithTag:_onlineTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Save reading history. lucas</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.onlineTag.onlineBookInfo) &#123;</span><br><span class="line">        [[QRScanHistoryService sharedScanHistoryService] recordScanHistoryItem:<span class="keyword">self</span>.onlineTag.onlineBookInfo];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">NSArray</span> *allKeys = [<span class="keyword">self</span>.chapterModels allKeys];</span><br><span class="line">    <span class="built_in">NSInteger</span> chapterId = [@(<span class="keyword">self</span>.chapterModel.chapterId) integerValue];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSNumber</span> *key <span class="keyword">in</span> allKeys)&#123;</span><br><span class="line">        <span class="built_in">NSInteger</span> keyValue = [key integerValue];</span><br><span class="line">        <span class="keyword">if</span> (ABS(keyValue - chapterId) &gt; <span class="number">1</span>)&#123;</span><br><span class="line">            [<span class="keyword">self</span>.chapterModels removeObjectForKey:key];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Async preload logic</span></span><br><span class="line">    [<span class="keyword">self</span> asyncPerformBlockOnChapterProloadQueue:^&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// After chapter switching, keep at most one page cache for previous and next chapters.</span></span><br><span class="line">        QRTextReaderChapterModel* preModel = [<span class="keyword">self</span>.chapterModels qr_safeObjectForKey:@(chapterId<span class="number">-1</span>)];</span><br><span class="line">        [preModel removeAllPageCacheExceptTheLastOne];</span><br><span class="line">        QRTextReaderChapterModel* nextModel = [<span class="keyword">self</span>.chapterModels qr_safeObjectForKey:@(chapterId+<span class="number">1</span>)];</span><br><span class="line">        [nextModel removeAllPageCacheExceptTheFirstOne];</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.onlineTag.onlineBookInfo.chapterid &lt; <span class="keyword">self</span>.onlineTag.onlineBookInfo.totalChapter)&#123;</span><br><span class="line">            OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">            [nextOnlineTag resetProgress];</span><br><span class="line">            nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            QRTextReaderChapterModel* nextModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            <span class="keyword">if</span>(<span class="literal">nil</span> == nextModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.onlineTag.toReadingCharpterId &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            OnlineTag* prevOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Prev];</span><br><span class="line">            [prevOnlineTag resetProgress];</span><br><span class="line">            prevOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            QRTextReaderChapterModel* preModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:prevOnlineTag];</span><br><span class="line">            <span class="keyword">if</span>(<span class="literal">nil</span> == preModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:prevOnlineTag];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The preloaded content includes two parts:</p>
+<blockquote>
+<ul>
+<li>Chapter information, which may be a file or paid-preview
+information.</li>
+<li>All business data related to the chapter. These business types are
+complex, and some of them already affect page layout.</li>
+</ul>
+</blockquote>
+<p><code>QRTextReaderChapterModel</code> records the current preload
+progress at all times.</p>
+<h3 id="refactoring-the-file-opening-flow">Refactoring the File Opening
+Flow</h3>
+<img src="/2019/01/01/Txt引擎之切章重构之路/06.jpg" width="100%"/>
+
+<p><a
+href="https://www.processon.com/view/link/5ba4c96be4b075b9fe52fa9a">High-resolution
+diagram</a></p>
+<ol type="1">
+<li>Remove the notifications accumulated along the way and use callbacks
+instead, gathering logic that was previously scattered by
+notifications.</li>
+<li>Remove the preload logic in <code>QROnlineReadingModule</code>,
+which was responsible for pre-downloading free chapters. Now the preload
+entry point should always start from
+<code>QRTextReaderChapterModel</code>, and
+<code>QRTextReaderChapterModel</code> should record chapter state.</li>
+</ol>
+<p>In theory, <code>QROnlineReadingModule</code> should not know the
+<code>OnlineTag</code> of the current reading chapter.</p>
+<p>The expected logic is: given an <code>OnlineTag</code>, it is only
+responsible for cache lookup, starting downloads, and network-result
+callbacks. The final result should be passed back to
+<code>QRTextReaderChapterModel</code>.</p>
+<blockquote>
+<ul>
+<li>If the current chapter is chapter 0, it represents the cover. Return
+directly and finish.</li>
+<li>If the current chapter has already been downloaded, return the
+chapter file path to <code>QRTextReaderChapterModel</code> and
+finish.</li>
+<li>Otherwise, make a network request for the current chapter
+information and wait for the result:</li>
+</ul>
+<blockquote>
+<ul>
+<li>If the result is a downloaded chapter file, follow step 2.</li>
+<li>If authorization is required, such as payment, login, or removed
+content, return the result to
+<code>QRTextReaderChapterModel</code>.</li>
+</ul>
+</blockquote>
+</blockquote>
+<h3 id="removing-hub">Removing Hub</h3>
+<blockquote>
+<ul>
+<li>For imported books, add <code>QRTextEngineParser</code> to handle
+parsing logic.</li>
+<li>For chapter layout and rendering, use the <code>QRTextEngine</code>
+member named <code>engine</code> inside
+<code>QRTextReaderChapterModel</code>. The original Hub was essentially
+a singleton that could be used without limits from any file in the
+project. Now <code>engine</code> exists as a member of
+<code>curChapterModel</code>, so <code>QRTextReaderManager</code> needs
+to wrap engine operations and expose the external engine interfaces.
+<code>engine</code> no longer talks directly to the outside world.</li>
+<li>For statistics, Hub’s original statistics logic lived in
+<code>StatisticModule</code>. To completely remove <code>Hub</code>, add
+<code>QRStatisticManager</code> and move most of the original
+<code>StatisticModule</code> logic into it. The remaining small pieces
+call <code>QRBookManager</code> or <code>AppPersist</code>
+directly.</li>
+</ul>
+</blockquote>
+<p>Note: during replacement, pay attention to Hub’s input parameter
+<code>inputMessage</code> and output parameter
+<code>outputMessage</code>. The distinction is sometimes unclear, and
+<code>inputMessage</code> can also be used as an output parameter. Be
+careful here.</p>
+<h3 id="page-turning">Page Turning</h3>
+<h4 id="checks-before-page-turning">Checks Before Page Turning</h4>
+<p>No matter which page-turning mode is used, checks are required before
+turning:</p>
+<blockquote>
+<ul>
+<li>Whether the current page supports turning backward. If the current
+page is already the cover or first page, it cannot continue
+backward.</li>
+<li>Whether the current page supports turning forward. If the current
+page is already the last page of the last chapter, it cannot continue
+forward.</li>
+<li>If the current page is loading, page turning is disabled.</li>
+<li>Page-turn frequency control.</li>
+</ul>
+</blockquote>
+<p>For details, see:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TextBaseViewController+PageViewController.h</span></span><br><span class="line">- (<span class="type">BOOL</span>)gestureRecognizerShouldBegin:(<span class="built_in">UIGestureRecognizer</span> *)gestureRecognizer</span><br></pre></td></tr></table></figure>
+
+<h4 id="page-turning-logic">Page-Turning Logic</h4>
+<p>Page turning may produce the following behaviors:</p>
+<ol type="1">
+<li>If turning within the same chapter, <code>TextEngine</code> switches
+to the corresponding page index and renders in real time.</li>
+<li>If turning across chapters, there are three cases:
+<ul>
+<li>If chapter data is already ready, <code>TextEngine</code> switches
+to the corresponding page index, or uses preloaded paid-preview data,
+and renders in real time.</li>
+<li>If the chapter has not been loaded, first show a loading page, then
+load chapter data and refresh through callback after completion.</li>
+<li>If the chapter is currently loading, first show a loading page and
+set a flag that a refresh is needed. After loading completes, refresh
+back.</li>
+</ul></li>
+</ol>
+<p>Here is an example of <strong>switching to the next
+chapter</strong>:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)gotoNextChapter</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(!<span class="keyword">self</span>.isOnlineRead) &#123; <span class="keyword">return</span>;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">@synchronized</span>(<span class="keyword">self</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Note: switching onlineTag here must be locked.</span></span><br><span class="line">        OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">        [nextOnlineTag resetProgress];</span><br><span class="line">        nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Note: this triggers preload logic.</span></span><br><span class="line">        <span class="keyword">self</span>.onlineTag = nextOnlineTag;</span><br><span class="line">        </span><br><span class="line">        QRTextReaderChapterModel* chapterModel = [<span class="keyword">self</span> chapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">        <span class="keyword">if</span>(<span class="literal">nil</span> == chapterModel || chapterModel.type == QRChapterModelState_Failure)&#123;</span><br><span class="line">            <span class="keyword">if</span>(chapterModel)&#123;</span><br><span class="line">                [<span class="keyword">self</span>.chapterModels qr_safeRemoveObjectForKey:@(chapterModel.chapterId)];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// Create ChapterModel.</span></span><br><span class="line">            chapterModel = [<span class="keyword">self</span> createChapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">            chapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Need to request network data.</span></span><br><span class="line">            [<span class="keyword">self</span> proloadChapterModelWithOnlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            chapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            <span class="keyword">if</span>(chapterModel.type == QRChapterModelState_Loading)&#123;</span><br><span class="line">                <span class="comment">// Refresh the loading page first.</span></span><br><span class="line">                [<span class="keyword">self</span>.delegate refreshReadingPageIfNecessary];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="comment">// ChapterModel has already been preloaded and is ready.</span></span><br><span class="line">                <span class="keyword">if</span>(chapterModel.type == QRChapterModelState_Rended)&#123;</span><br><span class="line">                    <span class="comment">// The chapter file exists and the engine is ready.</span></span><br><span class="line">                    <span class="keyword">if</span>(![<span class="keyword">self</span>.chapterModel isPageTop])&#123;</span><br><span class="line">                        [<span class="keyword">self</span>.chapterModel turnToFirstPage];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;   </span><br><span class="line">        &#125;   </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3d-page-turning">3D Page Turning</h4>
+<p>For gesture-based page turning, the handling is relatively simple.
+There is no need to care about the user’s swipe area.
+<code>UIPageViewController</code> automatically determines whether the
+user is turning forward or backward, and eventually calls several
+important delegate methods:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UIPageViewControllerDelegate</span></span><br><span class="line">- (<span class="type">void</span>)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController didFinishAnimating:(<span class="type">BOOL</span>)finished previousViewControllers:(<span class="built_in">NSArray</span> *)previousViewControllers transitionCompleted:(<span class="type">BOOL</span>)completed</span><br><span class="line"></span><br><span class="line"><span class="comment">// UIPageViewControllerDataSource</span></span><br><span class="line">- (<span class="built_in">UIViewController</span> *)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController viewControllerBeforeViewController:(<span class="built_in">UIViewController</span> *)viewController;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">UIViewController</span> *)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController viewControllerAfterViewController:(<span class="built_in">UIViewController</span> *)viewController;</span><br></pre></td></tr></table></figure>
+
+<p>Gesture-driven 3D page turning supports rollback: the 3D animation
+can reach halfway and then return. But page-turning logic has already
+happened when the 3D animation starts, so if the animation rolls back,
+the page index must be corrected. The reason is that the data source has
+already changed at animation start, so when rolling back, the data
+source needs to be restored.</p>
+<p>Under the new architecture, there are two cases:</p>
+<ol type="1">
+<li>If rollback happens within the same chapter, adjust the page index
+inside the chapter.</li>
+<li>If rollback happens across chapters, it involves switching between
+chapter models.</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// When preVC&#x27;s chapterId differs from ReaderManager&#x27;s chapterId,</span></span><br><span class="line"><span class="comment">// switch the chapter engine. If they are the same, only switch the page index.</span></span><br><span class="line">- (<span class="type">void</span>)resumePageWithCurrentId:(<span class="built_in">NSInteger</span>)currentId</span><br><span class="line">                     previousId:(<span class="built_in">NSInteger</span>)previousId</span><br><span class="line">                  previousIndex:(<span class="built_in">NSInteger</span>)previousIndex</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(previousId &lt; currentId)&#123;</span><br><span class="line">        <span class="comment">// Switch engine layer back to the original chapter. Page index does not need to change.</span></span><br><span class="line">        [<span class="keyword">self</span> gotoLastChapter];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(previousId &gt; currentId)&#123;</span><br><span class="line">        <span class="comment">// Switch engine layer back to the original chapter. Page index does not need to change.</span></span><br><span class="line">        [<span class="keyword">self</span> gotoNextChapter];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="comment">// Switch back to the original page index within the chapter.</span></span><br><span class="line">        [<span class="keyword">self</span>.chapterModel resumePage];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>There is another problem with 3D gesture page turning: network-result
+callbacks may refresh the page during the 3D animation, causing strange
+behavior. The solution is to avoid refreshing directly at that moment.
+Instead, store the refresh logic as a block and execute it after the
+page-turn animation finishes.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> (^refreshBlock)() = ^&#123;...&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(_pageViewControllerDelegate.pageAnimationFinished)&#123;</span><br><span class="line">    refreshBlock();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span>&#123;</span><br><span class="line">    <span class="comment">// If 3D page turning is in progress, refreshing directly may cause logic errors.</span></span><br><span class="line">    <span class="comment">// It needs to be done after the animation ends.</span></span><br><span class="line">    [_pageViewControllerDelegate.callbackBlocks addObject:[refreshBlock <span class="keyword">copy</span>]];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)pageViewController:(<span class="built_in">UIPageViewController</span> *)pageViewController didFinishAnimating:(<span class="type">BOOL</span>)finished previousViewControllers:(<span class="built_in">NSArray</span> *)previousViewControllers transitionCompleted:(<span class="type">BOOL</span>)completed</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">self</span>.pageAnimationFinished = <span class="literal">YES</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span>(completed)&#123;</span><br><span class="line">        <span class="keyword">while</span>(<span class="keyword">self</span>.callbackBlocks.count &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="type">id</span> obj = [<span class="keyword">self</span>.callbackBlocks qr_safeObjectAtIndex:<span class="number">0</span>];</span><br><span class="line">            <span class="type">void</span> (^block)() = (<span class="type">void</span>(^)())(obj);</span><br><span class="line">            block();</span><br><span class="line">            [<span class="keyword">self</span>.callbackBlocks qr_safeRemoveObjectAtIndex:<span class="number">0</span>];</span><br><span class="line">            [block release];<span class="comment">// MRC</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>For tap-based page turning, the logic is more complex. First, we need
+to understand how <code>UIPageViewController</code> handles tap
+areas:</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/07.png" width="50%"/>
+
+<p>Only taps in the sky-blue areas on the left and right trigger the
+same logic as gestures in <code>UIPageViewController</code>. Other areas
+do not respond, so custom handling is required there. Depending on the
+required region, we call the following method to turn forward or
+backward:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)setViewControllers:(<span class="keyword">nullable</span> <span class="built_in">NSArray</span>&lt;<span class="built_in">UIViewController</span> *&gt; *)viewControllers direction:(<span class="built_in">UIPageViewControllerNavigationDirection</span>)direction animated:(<span class="type">BOOL</span>)animated completion:(<span class="type">void</span> (^ __<span class="keyword">nullable</span>)(<span class="type">BOOL</span> finished))completion;</span><br></pre></td></tr></table></figure>
+
+<p>This introduces two concepts: <strong>system tap area</strong> and
+<strong>custom tap area</strong>.</p>
+<p>Area detection:</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/08.png" width="60%"/>
+
+<p>For concrete tap-area detection logic, see:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- (QRTurnDirection)system3DAreaDirectionWithRect:(<span class="built_in">CGRect</span>)rect point:(<span class="built_in">CGPoint</span>)point;</span><br><span class="line">- (QRTurnDirection)customAreaDirectionWithRect:(<span class="built_in">CGRect</span>)rect point:(<span class="built_in">CGPoint</span>)point;</span><br></pre></td></tr></table></figure>
+
+<h4 id="page-turning-without-animation">Page Turning Without
+Animation</h4>
+<p>No-animation page turning is based on 3D page turning with the
+animation removed:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">self</span> loadPageViewControllerWithStyle:<span class="built_in">UIPageViewControllerTransitionStylePageCurl</span></span><br><span class="line">                                  orientation:<span class="built_in">UIPageViewControllerNavigationOrientationHorizontal</span>];</span><br><span class="line">_pageViewAnimateNone = <span class="literal">YES</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Disable swiping in no-animation mode.</span></span><br><span class="line"><span class="keyword">for</span> (<span class="built_in">UIGestureRecognizer</span> *gestureRecognizer <span class="keyword">in</span> _pageViewController.gestureRecognizers)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ([gestureRecognizer isKindOfClass:[<span class="built_in">UIPanGestureRecognizer</span> <span class="keyword">class</span>]]) &#123;</span><br><span class="line">        gestureRecognizer.enabled = <span class="literal">NO</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Add left and right swipe gestures.</span></span><br><span class="line"><span class="built_in">UISwipeGestureRecognizer</span> *swipeLeft = [[[<span class="built_in">UISwipeGestureRecognizer</span> alloc] initWithTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(swipeTurnNextPage)] autorelease];</span><br><span class="line">swipeLeft.direction = <span class="built_in">UISwipeGestureRecognizerDirectionLeft</span>;</span><br><span class="line">swipeLeft.delegate = <span class="keyword">self</span>;</span><br><span class="line">[_pageViewController.view addGestureRecognizer:swipeLeft];</span><br><span class="line"></span><br><span class="line"><span class="built_in">UISwipeGestureRecognizer</span> *swipeRight = [[[<span class="built_in">UISwipeGestureRecognizer</span> alloc] initWithTarget:<span class="keyword">self</span> action:<span class="keyword">@selector</span>(swipeTurnPreviousPage)] autorelease];</span><br><span class="line">swipeRight.direction = <span class="built_in">UISwipeGestureRecognizerDirectionRight</span>;</span><br><span class="line">swipeRight.delegate = <span class="keyword">self</span>;</span><br><span class="line">[_pageViewController.view addGestureRecognizer:swipeRight];</span><br></pre></td></tr></table></figure>
+
+<p>The tap areas are shown below:</p>
+<img src="/2019/01/01/Txt引擎之切章重构之路/09.png" width="60%"/>
+
+<h4 id="smooth-page-turning">Smooth Page Turning</h4>
+<p>Smooth page turning mainly uses two views, one above and one below,
+and preloads the previous and next pages in real time. This refactor
+mainly changed the preload logic.</p>
+<p>Originally, <code>nextPageInfo</code> could only get next-page
+information within the current chapter and could not cross chapter
+boundaries. Now that the engine layer supports opening multiple
+chapters, we can consider fetching the next chapter’s information across
+chapter boundaries. If the next chapter has already been downloaded, the
+already-opened engine can lay it out, render it, and return the result.
+Otherwise, it preloads and waits for callback refresh.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">- (QRReadingPageInfo *)nextPageInfo</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>([<span class="keyword">self</span>.chapterModel hasNextPage])</span><br><span class="line">    &#123;</span><br><span class="line">        QRReadingPageInfo *pageInfo = [<span class="keyword">self</span>.chapterModel nextPageInfo];</span><br><span class="line">        </span><br><span class="line">        @weakify(<span class="keyword">self</span>)</span><br><span class="line">        [<span class="keyword">self</span> checkIfHitNextPageInsertLogic:<span class="keyword">self</span>.chapterModel.pageIndex</span><br><span class="line">                                  succBlock:^(<span class="built_in">NSInteger</span> hitPageIndex) &#123;</span><br><span class="line">                                      @strongify(<span class="keyword">self</span>)</span><br><span class="line">                                      pageInfo.pageDrawResultItem = [<span class="keyword">self</span> cachePageImageWithIndex:hitPageIndex];</span><br><span class="line">                                      </span><br><span class="line">                                  &#125;</span><br><span class="line">                                  failBlock:^(<span class="type">id</span>  _Nullable insertItem) &#123;</span><br><span class="line">                                      @strongify(<span class="keyword">self</span>)</span><br><span class="line">                                      <span class="keyword">if</span>(insertItem) &#123;</span><br><span class="line">                                          pageInfo.pageDrawResultItem = [<span class="keyword">self</span>.chapterModel imageForCoverPage];</span><br><span class="line">                                          pageInfo.insertItem = insertItem;</span><br><span class="line">                                      &#125;</span><br><span class="line">                                  &#125;];</span><br><span class="line">        <span class="keyword">return</span> pageInfo;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Get the ChapterModel for the next chapter. It must be available here;</span></span><br><span class="line">        <span class="comment">// if not, load it immediately.</span></span><br><span class="line">        QRTextReaderChapterModel* nextChapterModel = [<span class="keyword">self</span> chapterModelWithChapterId:<span class="keyword">self</span>.chapterModel.chapterId+<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">if</span>(nextChapterModel)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>(![nextChapterModel isPageTop])&#123;</span><br><span class="line">                [nextChapterModel turnToFirstPage];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> [nextChapterModel curPageInfo];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            OnlineTag* nextOnlineTag = [<span class="keyword">self</span> onlineTagWithTag:<span class="keyword">self</span>.onlineTag direction:QRTurnDirection_Next];</span><br><span class="line">            [nextOnlineTag resetProgress];</span><br><span class="line">            nextOnlineTag.rightParameter = CHAPTER_CUR;</span><br><span class="line">            nextChapterModel = [<span class="keyword">self</span> createChapterModelWithOnlineTag:nextOnlineTag];</span><br><span class="line">            nextChapterModel.loadPoint = QRChapterLoadPointType_Start;</span><br><span class="line">            [nextChapterModel proloadChapterData];</span><br><span class="line">            <span class="keyword">return</span> [nextChapterModel curPageInfo];</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Unlike 3D page turning, when smooth page turning crosses chapters,
+the next page fetched during the animation is only preloaded data. The
+real switch to the next chapter does not happen during the animation. In
+3D page turning, the chapter has already switched during the animation.
+This is why 3D page turning needs to adjust the page index when rolling
+back, while smooth page turning does not.</p>
+<p>The real chapter switch for smooth page turning is triggered by the
+callback after the animation finishes:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)dragAnimationFinished:(<span class="type">BOOL</span>)popSuccess toNext:(<span class="type">BOOL</span>)toNext</span><br><span class="line">&#123;</span><br><span class="line">    ... </span><br><span class="line">    <span class="keyword">if</span> (toNext)        <span class="comment">// Turn to next page</span></span><br><span class="line">    &#123;</span><br><span class="line">        [<span class="keyword">self</span>.dataSource didTrunPageToNext];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        [<span class="keyword">self</span>.dataSource didTrunPageToPrev];</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br><span class="line">        </span><br></pre></td></tr></table></figure>
+
+<h4 id="cover-page-turning">Cover Page Turning</h4>
+<p>Cover page turning is similar to smooth page turning overall. During
+the animation, it only takes preloaded data and does not perform the
+real page turn. The real turn happens after the animation completes:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)didCoverFinish&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    [<span class="keyword">self</span>.dataSource didTrunPageToNext];</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>The online cover-turning effect always felt visually a bit laggy. To
+improve user experience, I used a small-step, high-frequency strategy:
+reduce the step size and increase refresh frequency.</p>
+<p>The left side is the online effect, and the right side is the
+optimized effect.</p>
+<div style="float:left;border:solid 1px 000;margin:10px;"><img src="/2019/01/01/Txt引擎之切章重构之路/before.gif"  width="300" height="590"></div>
+
+<div style="float:left;border:solid 1px 000;margin:10px;"><img src="/2019/01/01/Txt引擎之切章重构之路/after.gif" width="300" height="590"></div>
+<div style="float:none;clear:both;">
+</div>
+
+<h3 id="insert-page-logic">Insert Page Logic</h3>
+<p>After the git version was merged, insert-page logic was added. Some
+ad pages are often inserted between original reading pages. But this
+insert-page logic was coupled with the original page-turning logic, so
+the first thing I did was separate them: <strong>split page-turning
+logic from insert-page logic</strong>.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)didTrunPageToPrev</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span> invokePrevPageInsertLogic:<span class="keyword">self</span>.chapterModel.pageIndex block:^&#123;</span><br><span class="line">        <span class="keyword">if</span>(<span class="keyword">self</span>.isOnlineRead)&#123;</span><br><span class="line">            [<span class="keyword">self</span> didTrunPageToPrevInOnlineReadMode];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            [<span class="keyword">self</span> didTrunPageToPrevInLocalReadMode];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;];  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)invokePrevPageInsertLogic:(<span class="built_in">NSInteger</span>)pageIndex block:(<span class="type">void</span>(^)())block</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage.integerValue == pageIndex - <span class="number">1</span>) &#123;</span><br><span class="line">            QRSafelyDoBlock0(block);</span><br><span class="line">            [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">            <span class="keyword">self</span>.accumulatePageIndex--;</span><br><span class="line">            [<span class="keyword">self</span>.insertManager pageDirection:QRTurnPageDirectionToPrevious];</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.insertTransitionInfo.previousPage.integerValue == pageIndex) &#123;</span><br><span class="line">            [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">            [<span class="keyword">self</span>.insertManager pageDirection:QRTurnPageDirectionToPrevious];</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.nextPage = @(pageIndex);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.previousPage = @(pageIndex - <span class="number">1</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.nextPageAd = @(<span class="keyword">self</span>.accumulatePageIndex);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.previousPageAd = @(<span class="keyword">self</span>.accumulatePageIndex - <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">self</span>.insertTransitionInfo.turnPageDirection = QRTurnPageDirectionToPrevious;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="keyword">self</span> canInsertAD] &amp;&amp; [<span class="keyword">self</span>.insertManager currentPageShouldInsertByTransitionInfo:<span class="keyword">self</span>.insertTransitionInfo]) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    QRSafelyDoBlock0(block);</span><br><span class="line">    [<span class="keyword">self</span> cleanUpInsertPage];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This allows insert-page logic to be plugged in like a plugin. The
+original page-turning logic is passed to the insert manager as a block,
+so future changes inside insert-page logic will not affect page-turning
+logic, and vice versa.</p>
+<p>For more details, see <code>QRTextReaderManager+Insert.m</code>.</p>
+<p>At the same time, the continuation logic involved in insert pages
+will be redesigned and implemented together with Siyu.</p>
+<h3 id="page-cache">Page Cache</h3>
+<h4 id="a-global-view-of-cache">A Global View of Cache</h4>
+<p>In the chapter-switching version, the words preload and cache appear
+repeatedly. But these caches are not immutable. Sometimes they need to
+be updated. For example, when options are changed and the current page
+needs to be updated, the page currently displayed and other preloaded
+page caches must all be updated.</p>
+<p>So we need a <strong>global view of cache</strong>.</p>
+<p>Here are some examples:</p>
+<blockquote>
+<ul>
+<li>Suppose the reader reaches a paid-preview page, and both the
+previous and next chapters are also paid-preview pages. If the user taps
+purchase, the current chapter model needs to be removed, rebuilt,
+reloaded, and rendered again. But if auto-purchase happens to be enabled
+when the user taps purchase, the other two preloaded paid-preview pages
+should also become invalid and be removed from cache. Similarly, if
+auto-purchase is deliberately disabled during purchase, the
+auto-purchase flag in other preloaded paid-preview pages should also be
+turned off.</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>Suppose three consecutive chapters have all been rendered. If the
+font size changes or the device rotates, then besides the current
+chapter, the other two cached chapter models should first clear their
+rendered pages and then update their engine settings. Otherwise,
+problems will appear.</li>
+</ul>
+</blockquote>
+<h4 id="mode-changes">Mode Changes</h4>
+<ol type="1">
+<li>Changes in the following information all need to call
+<code>relayoutReaderEngine</code> to refresh the reading page:</li>
+</ol>
+<blockquote>
+<ul>
+<li>Reading mode changes: 3D, smooth, no effect, cover page turning,
+TTS.</li>
+<li>Rotation.</li>
+<li>Font changes and font-size changes.</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)relayoutReaderEngine    <span class="comment">// The reading engine needs relayout when switching reading mode.</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:</span><br><span class="line">     ^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull model, <span class="type">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>(<span class="literal">nil</span> == model.engine) <span class="keyword">return</span>;</span><br><span class="line">        </span><br><span class="line">        QRTextEngine* engine = model.engine;</span><br><span class="line">        QRBookMarkInfo *bookMark = [engine getBookMark];</span><br><span class="line">        </span><br><span class="line">        <span class="type">BOOL</span> isLandscape = <span class="built_in">UIInterfaceOrientationIsLandscape</span>(<span class="keyword">self</span>.curOrientation);</span><br><span class="line">        <span class="built_in">CGRect</span> rect = [<span class="keyword">self</span> getBoundRect:isLandscape isFullScreen:<span class="literal">NO</span>];</span><br><span class="line">        <span class="built_in">CGRect</span> fullRect = [<span class="keyword">self</span> getBoundRect:isLandscape isFullScreen:<span class="literal">YES</span>];</span><br><span class="line">        </span><br><span class="line">        [engine setOwnRect:&amp;rect fullRect:&amp;fullRect];<span class="comment">// Update drawing area.</span></span><br><span class="line">        [engine recalcPageSize];<span class="comment">// Update page size.</span></span><br><span class="line">        [engine relayout];<span class="comment">// Relayout.</span></span><br><span class="line">        [engine goToBookMark:bookMark];<span class="comment">// Reposition.</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span>(model.onlineTag &amp;&amp; model.onlineTag.onlineBookInfo.chapterid &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="comment">// Business data must be handled after relayout, otherwise paragraphs may be lost.</span></span><br><span class="line">            [model handleTailPagePlaceholder];</span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The key point here is:</p>
+<p><strong>Business data handling through
+<code>handleTailPagePlaceholder</code> must be called after
+<code>relayout</code>; otherwise paragraphs may be lost. This is because
+<code>handleTailPagePlaceholder</code> inserts custom business
+paragraphs into an already-built paragraph linked list, while
+<code>relayout</code> discards all paragraphs and rebuilds them from
+chapter data.</strong></p>
+<h4 id="layout-setting-changes">Layout Setting Changes</h4>
+<p><code>QRSetting</code> exists as a <code>setting</code> property of
+<code>QRTextReadManager</code>. If the user changes layout settings and
+causes it to change, corresponding handling is required.</p>
+<ol type="1">
+<li>Clear previously laid-out page caches:</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)flushPageCache</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull obj, <span class="type">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        [obj flushPageCache];</span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2" type="1">
+<li>Update all loaded <code>TextEngine</code> instances:</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)setSetting:(QRSetting *)setting</span><br><span class="line">&#123;</span><br><span class="line">    _setting = setting;</span><br><span class="line">    [<span class="keyword">self</span> updateEngineSetting:setting];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)updateEngineSetting:(QRSetting*)setting</span><br><span class="line">&#123;</span><br><span class="line">    [<span class="keyword">self</span>.lock lock];</span><br><span class="line">    [<span class="keyword">self</span>.chapterModels enumerateKeysAndObjectsUsingBlock:^(<span class="built_in">NSNumber</span> * _Nonnull key, QRTextReaderChapterModel * _Nonnull obj, <span class="type">BOOL</span> * _Nonnull stop) &#123;</span><br><span class="line">        [obj flushPageCache];</span><br><span class="line">        [obj.engine setSetting:setting];</span><br><span class="line">    &#125;];</span><br><span class="line">    [<span class="keyword">self</span>.lock unlock];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="screen-rotation">Screen Rotation</h4>
+<p>Rotation changes the drawing area, so rendered pages need to be
+cleared and redrawn.</p>
+<p>P.S. There had long been an online issue where paragraph comments
+disappeared during rotation. The root cause was that rotation triggered
+relayout.</p>
+<p>The workaround was to perform a round trip:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)resumeEngineState</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">self</span>.isPageTop)&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageTop];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">self</span>.isPageBottom)&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageBottom];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        [<span class="keyword">self</span> scrollPageUp:<span class="number">1</span>];</span><br><span class="line">        [<span class="keyword">self</span> scrollPageDown:<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Later, I found that the main branch had already fixed this issue, so
+this change could be reverted.</p>
+<h4 id="page-changes-caused-by-business-data">Page Changes Caused by
+Business Data</h4>
+<ol type="1">
+<li>Clear rendered page caches.</li>
+<li>Update business placeholders.</li>
+</ol>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Set the placeholder area for the chapter tail page.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line">- (<span class="type">void</span>)handleTailPagePlaceholder</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Reward</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="built_in">NSValue</span> *placeholderForInteraction =</span><br><span class="line">    [<span class="keyword">self</span> placeholderForInteraction:<span class="keyword">self</span>.bookInfo</span><br><span class="line">                          onlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Author Q&amp;A</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="built_in">NSValue</span> *placeholderForQA =</span><br><span class="line">    [<span class="keyword">self</span> placeholderForQA:<span class="keyword">self</span>.bookInfo</span><br><span class="line">                 onlineTag:<span class="keyword">self</span>.onlineTag];</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="clearing-cache-during-page-turning">Clearing Cache During Page
+Turning</h4>
+<img src="/2019/01/01/Txt引擎之切章重构之路/10.png" width="80%"/>
+
+<ol type="1">
+<li>The current chapter keeps at most three page caches. Once there are
+more than three, caches are cleared.</li>
+<li>Preloaded previous and next chapters each keep at most one page. If
+the chapter has no data and the engine is <code>nil</code>, this may be
+zero.</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<p>The TXT chapter-switching refactor continued intermittently for more
+than half a year and went through two versions.</p>
+<p>The first version was experimental and relatively lightweight. It did
+not touch the core architecture, so progress was fast, but it also had
+many issues. Because the refactor was not thorough enough, we hit
+performance bottlenecks that could not be improved no matter how much we
+optimized. So I made the painful decision to overturn it and start a
+more complete 2.0 refactor. During that process, I discussed it many
+times with Feng and tried many approaches. I also learned quite a few
+lessons from it.</p>
+<p>Version 2.0 went through more than 40 days of compile errors, black
+pages when it first started running, and stumbling crashes. At the time
+of writing, progress was about 70-80%. The remaining work has been
+shelved since mainline 7.0 development started.</p>
+<p>Before migrating to git, the code was merged again and then migrated
+to git.</p>
+<h2 id="notes">Notes</h2>
+<p>SVN address for version 1.0, with 52 commits:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_1.0</span><br></pre></td></tr></table></figure>
+
+<p>SVN address for version 2.0, with 22 commits:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://bj-scm.tencent.com/mqq/mqq_book_rep/QQReader_iPhone_proj/branches/QQReader_TxtMultiChaptersLoad_3.0</span><br></pre></td></tr></table></figure>
+
+<p>Git address, with 34 commits:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">http://git.code.oa.com/qq_reader_mobile_tech_ios/QQReader_iPhone_Proj</span><br><span class="line">branch: QQReaderTXTEngine</span><br></pre></td></tr></table></figure>
+
+<h2 id="pitfall-notes">Pitfall Notes</h2>
+<h3 id="1-broken-layout-for-brilliant-ideas">1. Broken Layout for
+“Brilliant Ideas”</h3>
+<img src="/2019/01/01/Txt引擎之切章重构之路/21.png" width="50%"/>
+
+<p>After investigation, I found a problem in this piece of code:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">- (TextPrgf_ptr_t)_paragraphWithIdentifier:(NSInteger)paraIdentifier</span><br><span class="line">                                  paraList:(NSArray&lt;NSNumber *&gt; *)paraList</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (paraList.count &lt;= paraIdentifier ||</span><br><span class="line">        paraIdentifier &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Find the offset of the paragraph corresponding to paraIdentifier.</span></span><br><span class="line">    NSInteger paraOffset = [paraList objectAtIndex:paraIdentifier].integerValue;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Search forward from _prgfGroup.head.</span></span><br><span class="line">    TextPrgf_ptr_t paragraph = _prgfGroup.head;</span><br><span class="line">    <span class="keyword">for</span> (; paragraph != <span class="literal">NULL</span>;) &#123;</span><br><span class="line">        <span class="keyword">if</span> (paragraph-&gt;offset &gt;= paraOffset &amp;&amp;</span><br><span class="line">            paraOffset &lt;= paragraph-&gt;offset + paragraph-&gt;size) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        paragraph = paragraph-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paragraph;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Here, <code>paraIdentifier</code> represents the paragraph index.
+<code>paraList</code> stores the offset of each paragraph in the current
+chapter in order. But if the reader opens the book from the middle of a
+chapter, a complete paragraph linked list cannot be built. This means
+<code>_prgfGroup.head</code> starts from a paragraph in the middle.</p>
+<p>According to the logic above, if <code>paraOffset</code> is smaller
+than <code>_prgfGroup.head</code>, then the final <code>paragraph</code>
+found is wrong. That wrong paragraph did not reserve layout space for
+“brilliant ideas”, so position overlap and broken layout appeared.</p>
+<p>Once the cause was found, the fix was simple: after finding the
+paragraph offset corresponding to <code>paraIdentifier</code>, compare
+it with <code>_prgfGroup.head</code>’s offset first. If it is smaller,
+return <code>NULL</code> directly.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Find the offset of the paragraph corresponding to paraIdentifier.</span></span><br><span class="line">NSInteger paraOffset = [paraList objectAtIndex:paraIdentifier].integerValue;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(paraOffset &lt; _prgfGroup.head-&gt;offset)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>Why did this problem not happen on the main branch? After
+investigation, the reason was that the main-branch code pre-rendered the
+previous page while rendering the current page. This built the paragraph
+linked list before the current anchor. Since online-book chapter files
+are usually small, <code>_prgfGroup.head</code> would then be built as
+the first paragraph of the chapter, so the issue above would not
+appear.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (![<span class="keyword">self</span> isTopPage])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// There is an implicit rule in txtengine&#x27;s parsePrgf:lineOffset:prgfSize:policy:prgfGroup:</span></span><br><span class="line">    <span class="comment">// it assumes one previous page of content will be cached.</span></span><br><span class="line">    <span class="comment">// Therefore, this cache logic cannot be changed casually.</span></span><br><span class="line">    <span class="comment">// add by zxf at 15/11/2017 for paragraph comment</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    [<span class="keyword">self</span> cachePageImageWithIndex:currentPageIndex - <span class="number">1</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-preload-hang">2. Preload Hang</h3>
+<p>During chapter switching, intermittent hangs often occurred. Through
+logging and debugging, I found that the chapter-file download
+<strong>completion callback</strong> sometimes ran before the
+<strong>progress callback</strong>:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-04-18 16:11:18.942489+0800 QQReaderUI[97099:5778241] end callback: 异常：0, 8192, &lt;NSHTTPURLResponse: 0x600003c3ccc0&gt;  &#123; Status Code: 200, Headers &#123;</span><br><span class="line">2019-04-18 16:11:18.947396+0800 QQReaderUI[97099:5777779] progress callback: 进度 8192, 8192 , &lt;NSMutableURLRequest: 0x600003f044f0&gt;</span><br></pre></td></tr></table></figure>
+
+<p>At this point, the data had not actually been fully received, but a
+callback had already triggered a refresh, causing the hang. A normal
+chapter download should look like this:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-04-18 16:11:51.987733+0800 QQReaderUI[97099:5777779] progress callback: 进度 9216, 9216 , &lt;NSMutableURLRequest: 0x600003f3ab10&gt; </span><br><span class="line">2019-04-18 16:13:11.827501+0800 QQReaderUI[97099:5778430] end callback: 正常：9216, 9216, &lt;NSHTTPURLResponse: 0x600003dc10c0&gt;  &#123; Status Code: 200, Headers &#123;</span><br></pre></td></tr></table></figure>
+
+<p>The cause was related to callbacks in <code>QQHttpClient</code>.</p>
+<blockquote>
+<ul>
+<li>A session instance can set <code>completionQueue</code>, and
+callback blocks will execute on that queue.</li>
+<li>If <code>completionQueue</code> is not set:</li>
+<li>If <code>[QQHttpClient enqueueRequestSession:session]</code> is
+called on the main thread, callbacks run on the main thread.</li>
+<li>If <code>[QQHttpClient enqueueRequestSession:session]</code> is
+called on a background thread, callbacks run on the default concurrent
+queue.</li>
+</ul>
+</blockquote>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!session.completionQueue)&#123;</span><br><span class="line">    <span class="keyword">if</span> ([<span class="built_in">NSThread</span> isMainThread])&#123;</span><br><span class="line">        session.completionQueue = dispatch_get_main_queue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        session.completionQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Because this was preload logic, the network request was initiated on
+a background thread and <code>completionQueue</code> was not set
+beforehand. So callbacks defaulted to a background thread. However, the
+progress callback in <code>QQHttpClientSession</code> actively switched
+to the main thread, causing the progress callback to happen after the
+completion callback.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">self</span>.downloadProgress)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> totalRead = <span class="keyword">self</span>.totalBytesRead + _partialDownloadSize;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> expectedLength = <span class="keyword">self</span>.response.expectedContentLength + _partialDownloadSize;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Switch to main thread proactively here.</span></span><br><span class="line">    <span class="built_in">dispatch_async</span>(dispatch_get_main_queue(), ^&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.downloadProgress)&#123;</span><br><span class="line">            <span class="keyword">self</span>.downloadProgress(length, totalRead, expectedLength);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In theory, this should not automatically switch to the main thread.
+Whether on the main thread or a background thread, the progress callback
+and completion callback should stay on the same thread. But because the
+code was old and not suitable for broad changes, the solution here was
+to uniformly set chapter-download network callbacks to the main
+thread.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Set callback queue to main queue.</span></span><br><span class="line">session.completionQueue = dispatch_get_main_queue();</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-heap-corruption">3. Heap Corruption</h3>
+<p>Recently, the reading page had been crashing frequently. The timing
+and location were very random, and each time it printed this
+message:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">QQReaderUI(1728,0x10ab9eb80) malloc: Heap corruption detected, free list is damaged at 0x282ecaac0</span><br><span class="line">*** Incorrect guard value: 10804049344</span><br><span class="line">QQReaderUI(1728,0x10ab9eb80) malloc: *** set a breakpoint in malloc_error_break to debug</span><br></pre></td></tr></table></figure>
+
+<p>Setting up exception capture did not help and provided no useful
+clues.</p>
+<p>Eventually, through the coincidence of a dead loop, I found the
+problem:</p>
+<p><strong>The tail-page logic inside <code>TxtEngine</code> contains
+various priority rules. “Author’s notes” are technically business data,
+but they happen to live inside chapter data. Every time chapter layout
+finishes, the parsed author’s notes need to be passed out to the
+business layer, where priority sorting is performed. Later, the engine
+asks for the sorted data. In some cases, however, the engine needs to
+relayout and releases the previously passed-out author’s-note data.
+Since an author’s note itself is a C struct pointer, the outside
+business layer has no way to know that the engine has released it. The
+real root cause is still a bug in the code. The next time the engine
+asks for data, the business layer passes an already released invalid
+pointer back to the engine. The engine then performs illegal memory
+operations, causing a crash.</strong></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2019/01/01/refactoring-txt-engine-chapter-switching/">Refactoring TXT Engine Chapter Switching</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2019-01-01 11:37</p>
+  <p><span>Updated:</span>2026-08-29 01:23</p>
+  <p><span>Original link:</span><a href="/en/2019/01/01/refactoring-txt-engine-chapter-switching/" title="Refactoring TXT Engine Chapter Switching">https://tsuijunxi.github.io/en/2019/01/01/refactoring-txt-engine-chapter-switching/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2019/01/01/refactoring-txt-engine-chapter-switching/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/TXT-Engine-Chapter-Switching/" rel="tag"># TXT Engine Chapter Switching</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/11/13/removing-snow-with-a-kalman-filter/" rel="next" title="Removing Snow with a Kalman Filter">
+                <i class="fa fa-chevron-left"></i> Removing Snow with a Kalman Filter
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2019/04/05/how-the-txt-engine-works/" rel="prev" title="How the TXT Engine Works">
+                How the TXT Engine Works <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#current-state"><span class="nav-number">2.</span> <span class="nav-text">Current State</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#overall-architecture"><span class="nav-number">2.1.</span> <span class="nav-text">Overall Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#file-opening-flow"><span class="nav-number">2.2.</span> <span class="nav-text">File Opening Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hub-calls"><span class="nav-number">2.3.</span> <span class="nav-text">Hub Calls</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#the-refactoring-path"><span class="nav-number">3.</span> <span class="nav-text">The Refactoring Path</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#establishing-the-cache-model"><span class="nav-number">3.1.</span> <span class="nav-text">Establishing the Cache Model</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#three-engine-architecture"><span class="nav-number">3.1.1.</span> <span class="nav-text">Three-Engine Architecture</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#three-model-architecture"><span class="nav-number">3.1.2.</span> <span class="nav-text">Three-Model Architecture</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#refactored-class-diagram"><span class="nav-number">3.2.</span> <span class="nav-text">Refactored Class Diagram</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#qrtextreadermanager"><span class="nav-number">3.2.1.</span> <span class="nav-text">QRTextReaderManager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#qrtextreaderchaptermodel"><span class="nav-number">3.2.2.</span> <span class="nav-text">QRTextReaderChapterModel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#qrtextbusinessmanager"><span class="nav-number">3.2.3.</span> <span class="nav-text">QRTextBusinessManager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#qrtextengine-wrapper"><span class="nav-number">3.2.4.</span> <span class="nav-text">QRTextEngine Wrapper</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#chapter-loading-logic"><span class="nav-number">3.2.5.</span> <span class="nav-text">Chapter Loading Logic</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#refactoring-the-file-opening-flow"><span class="nav-number">3.3.</span> <span class="nav-text">Refactoring the File Opening
+Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#removing-hub"><span class="nav-number">3.4.</span> <span class="nav-text">Removing Hub</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#page-turning"><span class="nav-number">3.5.</span> <span class="nav-text">Page Turning</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#checks-before-page-turning"><span class="nav-number">3.5.1.</span> <span class="nav-text">Checks Before Page Turning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#page-turning-logic"><span class="nav-number">3.5.2.</span> <span class="nav-text">Page-Turning Logic</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3d-page-turning"><span class="nav-number">3.5.3.</span> <span class="nav-text">3D Page Turning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#page-turning-without-animation"><span class="nav-number">3.5.4.</span> <span class="nav-text">Page Turning Without
+Animation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#smooth-page-turning"><span class="nav-number">3.5.5.</span> <span class="nav-text">Smooth Page Turning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cover-page-turning"><span class="nav-number">3.5.6.</span> <span class="nav-text">Cover Page Turning</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#insert-page-logic"><span class="nav-number">3.6.</span> <span class="nav-text">Insert Page Logic</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#page-cache"><span class="nav-number">3.7.</span> <span class="nav-text">Page Cache</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#a-global-view-of-cache"><span class="nav-number">3.7.1.</span> <span class="nav-text">A Global View of Cache</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mode-changes"><span class="nav-number">3.7.2.</span> <span class="nav-text">Mode Changes</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#layout-setting-changes"><span class="nav-number">3.7.3.</span> <span class="nav-text">Layout Setting Changes</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#screen-rotation"><span class="nav-number">3.7.4.</span> <span class="nav-text">Screen Rotation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#page-changes-caused-by-business-data"><span class="nav-number">3.7.5.</span> <span class="nav-text">Page Changes Caused by
+Business Data</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clearing-cache-during-page-turning"><span class="nav-number">3.7.6.</span> <span class="nav-text">Clearing Cache During Page
+Turning</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#notes"><span class="nav-number">5.</span> <span class="nav-text">Notes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pitfall-notes"><span class="nav-number">6.</span> <span class="nav-text">Pitfall Notes</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-broken-layout-for-brilliant-ideas"><span class="nav-number">6.1.</span> <span class="nav-text">1. Broken Layout for
+“Brilliant Ideas”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-preload-hang"><span class="nav-number">6.2.</span> <span class="nav-text">2. Preload Hang</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-heap-corruption"><span class="nav-number">6.3.</span> <span class="nav-text">3. Heap Corruption</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

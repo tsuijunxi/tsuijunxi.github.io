@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JavaScriptCore ByteCode" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface The previous article covered four kinds of Node inherited from ScopeNode: ProgramNode, EvalNode, FunctionNode, and ModuleProgramNode. Their bytecode generation eventually reaches emitStatement">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface The previous article covered four kinds of Node inherited from ScopeNode: ProgramNode, EvalNode, FunctionNode, and ModuleProgramNode. Their bytecode generation eventually reaches emitStatement">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/08.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/09.png">
+<meta property="article:published_time" content="2018-08-14T16:34:33.000Z">
+<meta property="article:modified_time" content="2026-08-28T17:49:20.485Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="JavaScriptCore ByteCode">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/04.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/"/>
+
+
+
+
+
+  <title>JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/08/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%AD%EF%BC%89/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-15T00:34:33+08:00">
+                2018-08-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/C/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS / C++</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  61k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  3:41
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/08/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%AD%EF%BC%89/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>The previous article covered four kinds of <code>Node</code>
+inherited from <code>ScopeNode</code>: <code>ProgramNode</code>,
+<code>EvalNode</code>, <code>FunctionNode</code>, and
+<code>ModuleProgramNode</code>. Their bytecode generation eventually
+reaches <code>emitStatementsBytecode</code>.</p>
+<h2 id="bytecode-instruction-set">Bytecode Instruction Set</h2>
+<p>Before continuing the analysis, let’s first get a rough sense of what
+bytecode looks like:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;section&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;Bytecodes&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;emitInHFile&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span> <span class="attr">&quot;emitInASMFile&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span> </span><br><span class="line">        <span class="attr">&quot;macroNameComponent&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;BYTECODE&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;asmPrefix&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;llint_&quot;</span><span class="punctuation">,</span> </span><br><span class="line">        <span class="attr">&quot;bytecodes&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_enter&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">1</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_get_scope&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">2</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_create_direct_arguments&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">2</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_create_scoped_arguments&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_create_cloned_arguments&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">2</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_create_this&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">5</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_to_this&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">4</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_check_tdz&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">2</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_new_object&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">4</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_new_array&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">5</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_new_array_with_size&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">4</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_new_array_buffer&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">5</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_new_regexp&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_mov&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_not&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;op_eq&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;length&quot;</span> <span class="punctuation">:</span> <span class="number">4</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            ...</span><br></pre></td></tr></table></figure>
+
+<p>You can see the instruction name and length. The final bytecode is a
+collection of instructions like these. The complete instruction set can
+be found in <code>JavaScriptCore/bytecode/BytecodeList.json</code>.</p>
+<h2 id="emitstatementsbytecode">emitStatementsBytecode</h2>
+<p>Now let’s look at the long-awaited
+<code>emitStatementsBytecode</code>. It is a method on
+<code>ScopeNode</code>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span> <span class="title">ScopeNode::emitStatementsBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!m_statements) <span class="keyword">return</span>;</span><br><span class="line">    m_statements-&gt;<span class="built_in">emitBytecode</span>(generator, dst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The type of <code>m_statements</code> is <code>SourceElements</code>.
+Its definition is shown below. It is a singly linked list whose node
+type is <code>StatementNode</code>. This means the stored nodes can be
+<code>StatementNode</code> itself or subclasses of
+<code>StatementNode</code>. It also tells us that a
+<code>ScopeNode</code> is composed of linked <code>StatementNode</code>
+instances.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SourceElements</span> <span class="keyword">final</span> : <span class="keyword">public</span> ParserArenaFreeable &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="built_in">SourceElements</span>();</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">append</span><span class="params">(StatementNode*)</span></span>;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">emitBytecode</span><span class="params">(BytecodeGenerator&amp;, RegisterID* destination)</span></span>;</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        StatementNode* m_head;</span><br><span class="line">        StatementNode* m_tail;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The list is traversed, and bytecode is generated for every node:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span> <span class="title">SourceElements::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (StatementNode* statement = m_head; statement; statement = statement-&gt;<span class="built_in">next</span>())</span><br><span class="line">        generator.<span class="built_in">emitNodeInTailPosition</span>(dst, statement);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">emitNodeInTailPosition</span><span class="params">(RegisterID* dst, StatementNode* statementNode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Node::emitCode assumes that dst, if provided, is either a local or a referenced temporary.</span></span><br><span class="line">    statementNode-&gt;<span class="built_in">emitBytecode</span>(*<span class="keyword">this</span>, dst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The actual type of <code>statementNode</code> can be any of the
+following <code>Node</code> types, all inherited from
+<code>StatementNode</code>:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">IfElseNode</span><br><span class="line">DoWhileNode</span><br><span class="line">WhileNode</span><br><span class="line">ForNode</span><br><span class="line">SwitchNode</span><br><span class="line">ClassDecNode</span><br><span class="line">DeclarationStatement</span><br><span class="line">ForInNode</span><br><span class="line">ForOfNode</span><br><span class="line">ContinueNode</span><br><span class="line">BreakNode</span><br><span class="line">ReturnNode</span><br><span class="line">FuncDeclNode</span><br><span class="line">BlockNode</span><br><span class="line">ModuleDeclarationNode</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="statementnode">StatementNode</h2>
+<img src="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/04.png" width="60%"/>
+
+<p><code>StatementNode</code> mainly describes language structures:</p>
+<ol type="1">
+<li>Sequential structures: <code>ClassDeclNode</code>,
+<code>DeclarationStateMentNode</code>, and so on.</li>
+<li>Conditional structures: <code>IFElseNode</code>,
+<code>SwitchNode</code>, and so on.</li>
+<li>Loop structures: <code>WhileNode</code>, <code>ForNode</code>,
+<code>DoWhileNode</code>, and so on.</li>
+</ol>
+<p>Next, I will pick several representative nodes and analyze how their
+bytecode is generated.</p>
+<p><strong>Backpatching</strong></p>
+<p>Unlike sequential structures, conditional and loop structures do not
+directly produce concrete logical instructions. They mainly generate
+jump instructions to control program flow.</p>
+<p>When a jump instruction is generated, its destination may not be
+known immediately. So the target label is left unspecified for the
+moment. Once the correct target label can be determined, the instruction
+is patched with that target label. This technique is called
+backpatching.</p>
+<h3 id="conditional-structures">Conditional Structures</h3>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// Returns the next available temporary register. Registers returned by</span><br><span class="line">// newTemporary require a modified form of reference counting: any</span><br><span class="line">// register with a refcount of 0 is considered &quot;available&quot;, meaning that</span><br><span class="line">// the next instruction may overwrite it.</span><br></pre></td></tr></table></figure>
+
+<h4 id="ifelsenode">IfElseNode</h4>
+<p>As mentioned in the parsing article, the parser normalizes
+<code>IfStatement</code> inside <code>parseIfStatement</code>. Now let’s
+see how it generates bytecode.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">IfElseNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// generator.newLabel creates a new temporary label variable L and returns its address.</span></span><br><span class="line">    RefPtr&lt;Label&gt; beforeThen = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">    RefPtr&lt;Label&gt; beforeElse = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">    RefPtr&lt;Label&gt; afterElse = generator.<span class="built_in">newLabel</span>();</span><br><span class="line"></span><br><span class="line">    Label* trueTarget = beforeThen.<span class="built_in">get</span>();</span><br><span class="line">    Label* falseTarget = beforeElse.<span class="built_in">get</span>();</span><br><span class="line">    FallThroughMode fallThroughMode = FallThroughMeansTrue;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If this is break or continue.</span></span><br><span class="line">    <span class="type">bool</span> didFoldIfBlock = <span class="built_in">tryFoldBreakAndContinue</span>(generator, m_ifBlock, trueTarget, fallThroughMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for condition expression m_condition.</span></span><br><span class="line">    <span class="comment">// It may generate goto-like instructions:</span></span><br><span class="line">    <span class="comment">// if m_condition is true, jump to trueTarget; otherwise jump to falseTarget.</span></span><br><span class="line">    <span class="comment">// At this point, trueTarget and falseTarget may not yet be known. They are</span></span><br><span class="line">    <span class="comment">// resolved after the whole if-else block is complete. This uses backpatching.</span></span><br><span class="line">    generator.<span class="built_in">emitNodeInConditionContext</span>(m_condition, trueTarget, falseTarget, fallThroughMode);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch the address of beforeThen, marking the target for m_condition == true.</span></span><br><span class="line">    <span class="comment">// Notice this only changes beforeThen&#x27;s value; it does not add an instruction.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(beforeThen.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Normal if-else.</span></span><br><span class="line">    <span class="keyword">if</span> (!didFoldIfBlock) &#123;</span><br><span class="line">        <span class="comment">// Generate bytecode for the if block.</span></span><br><span class="line">        generator.<span class="built_in">emitNodeInTailPosition</span>(dst, m_ifBlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// After the if block finishes, jump to afterElse, which is the next</span></span><br><span class="line">        <span class="comment">// instruction after the whole if-else block.</span></span><br><span class="line">        <span class="comment">// Notice: this is a jump instruction, goto afterElse.</span></span><br><span class="line">        <span class="keyword">if</span> (m_elseBlock)</span><br><span class="line">            generator.<span class="built_in">emitJump</span>(afterElse.<span class="built_in">get</span>());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Fill beforeElse&#x27;s address, marking the false branch target.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(beforeElse.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for the else block if it exists.</span></span><br><span class="line">    <span class="keyword">if</span> (m_elseBlock) &#123;</span><br><span class="line">        generator.<span class="built_in">emitNodeInTailPosition</span>(dst, m_elseBlock);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch afterElse as the next instruction after the whole if-else block.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(afterElse.<span class="built_in">get</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Here is the SDT for <code>IfElseNode</code>:</p>
+<img src="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/08.png" width="60%"/>
+
+<h4 id="switchnode">SwitchNode</h4>
+<p><code>SwitchNode</code> is familiar enough. Let’s look at how it
+generates bytecode.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SwitchNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    LabelScopePtr scope = generator.<span class="built_in">newLabelScope</span>(LabelScope::Switch);</span><br><span class="line"></span><br><span class="line">    RefPtr&lt;RegisterID&gt; r0 = generator.<span class="built_in">emitNode</span>(m_expr);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Push itself as a scope.</span></span><br><span class="line">    generator.<span class="built_in">pushLexicalScope</span>(<span class="keyword">this</span>, BytecodeGenerator::TDZCheckOptimization::DoNotOptimize, BytecodeGenerator::NestedScopeType::IsNested);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode inside switch&#123;&#125;.</span></span><br><span class="line">    m_block-&gt;<span class="built_in">emitBytecodeForBlock</span>(generator, r<span class="number">0.</span><span class="built_in">get</span>(), dst);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Pop scope.</span></span><br><span class="line">    generator.<span class="built_in">popLexicalScope</span>(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch the scope address. The jump target for break inside switch</span></span><br><span class="line">    <span class="comment">// is the address after the switch block. Since SwitchNode has now been</span></span><br><span class="line">    <span class="comment">// fully analyzed, its address can be patched.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(scope-&gt;<span class="built_in">breakTarget</span>());</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>switch {}</code> contains multiple <code>case</code> clauses
+and possibly a <code>default</code> clause.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum</span> <span class="title class_">SwitchType</span> </span><br><span class="line">&#123; </span><br><span class="line">    SwitchNone,</span><br><span class="line">    SwitchImmediate, </span><br><span class="line">    SwitchCharacter, </span><br><span class="line">    SwitchString </span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CaseBlockNode::emitBytecodeForBlock</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* switchExpression, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RefPtr&lt;Label&gt; defaultLabel;</span><br><span class="line">    Vector&lt;RefPtr&lt;Label&gt;, <span class="number">8</span>&gt; labelVector;</span><br><span class="line">    Vector&lt;ExpressionNode*, <span class="number">8</span>&gt; literalVector;</span><br><span class="line">    <span class="type">int32_t</span> min_num = std::numeric_limits&lt;<span class="type">int32_t</span>&gt;::<span class="built_in">max</span>();</span><br><span class="line">    <span class="type">int32_t</span> max_num = std::numeric_limits&lt;<span class="type">int32_t</span>&gt;::<span class="built_in">min</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Determine switchType.</span></span><br><span class="line">    SwitchInfo::SwitchType switchType = <span class="built_in">tryTableSwitch</span>(literalVector, min_num, max_num);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (switchType != SwitchInfo::SwitchNone) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// For SwitchImmediate, SwitchCharacter, and SwitchString, generate</span></span><br><span class="line">        <span class="comment">// corresponding case jump labels and the default label.</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">uint32_t</span> i = <span class="number">0</span>; i &lt; literalVector.<span class="built_in">size</span>(); i++)</span><br><span class="line">            labelVector.<span class="built_in">append</span>(generator.<span class="built_in">newLabel</span>());</span><br><span class="line">        defaultLabel = generator.<span class="built_in">newLabel</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Generate op_switch_imm, op_switch_char, or op_switch_string</span></span><br><span class="line">        <span class="comment">// instruction for comparison.</span></span><br><span class="line">        generator.<span class="built_in">beginSwitch</span>(switchExpression, switchType);</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// For SwitchNone, generate normal conditional jumps.</span></span><br><span class="line">        <span class="keyword">for</span> (ClauseListNode* list = m_list1; list; list = list-&gt;<span class="built_in">getNext</span>()) </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; clauseVal = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">            <span class="comment">// Generate bytecode for the constant expression.</span></span><br><span class="line">            generator.<span class="built_in">emitNode</span>(clauseVal.<span class="built_in">get</span>(), list-&gt;<span class="built_in">getClause</span>()-&gt;<span class="built_in">expr</span>());</span><br><span class="line">            <span class="comment">// Generate bytecode to compare the switch expression with the clause value.</span></span><br><span class="line">            generator.<span class="built_in">emitBinaryOp</span>(op_stricteq, clauseVal.<span class="built_in">get</span>(), clauseVal.<span class="built_in">get</span>(), switchExpression, <span class="built_in">OperandTypes</span>());</span><br><span class="line">            <span class="comment">// Generate a label for jumping.</span></span><br><span class="line">            labelVector.<span class="built_in">append</span>(generator.<span class="built_in">newLabel</span>());</span><br><span class="line">            <span class="comment">// If comparison succeeds, jump to the corresponding label.</span></span><br><span class="line">            generator.<span class="built_in">emitJumpIfTrue</span>(clauseVal.<span class="built_in">get</span>(), labelVector[labelVector.<span class="built_in">size</span>() - <span class="number">1</span>].<span class="built_in">get</span>());</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Same as above.</span></span><br><span class="line">        <span class="keyword">for</span> (ClauseListNode* list = m_list2; list; list = list-&gt;<span class="built_in">getNext</span>()) &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; clauseVal = generator.<span class="built_in">newTemporary</span>();</span><br><span class="line">            generator.<span class="built_in">emitNode</span>(clauseVal.<span class="built_in">get</span>(), list-&gt;<span class="built_in">getClause</span>()-&gt;<span class="built_in">expr</span>());</span><br><span class="line">            generator.<span class="built_in">emitBinaryOp</span>(op_stricteq, clauseVal.<span class="built_in">get</span>(), clauseVal.<span class="built_in">get</span>(), switchExpression, <span class="built_in">OperandTypes</span>());</span><br><span class="line">            labelVector.<span class="built_in">append</span>(generator.<span class="built_in">newLabel</span>());</span><br><span class="line">            generator.<span class="built_in">emitJumpIfTrue</span>(clauseVal.<span class="built_in">get</span>(), labelVector[labelVector.<span class="built_in">size</span>() - <span class="number">1</span>].<span class="built_in">get</span>());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Set jump for the default label.</span></span><br><span class="line">        defaultLabel = generator.<span class="built_in">newLabel</span>();</span><br><span class="line">        generator.<span class="built_in">emitJump</span>(defaultLabel.<span class="built_in">get</span>());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">size_t</span> i = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// Cases before default.</span></span><br><span class="line">    <span class="keyword">for</span> (ClauseListNode* list = m_list1; list; list = list-&gt;<span class="built_in">getNext</span>()) &#123;</span><br><span class="line">        <span class="comment">// Backpatch case label address.</span></span><br><span class="line">        generator.<span class="built_in">emitLabel</span>(labelVector[i++].<span class="built_in">get</span>());</span><br><span class="line">        <span class="comment">// Generate bytecode for the case clause.</span></span><br><span class="line">        list-&gt;<span class="built_in">getClause</span>()-&gt;<span class="built_in">emitBytecode</span>(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (m_defaultClause) &#123;</span><br><span class="line">        <span class="comment">// Backpatch default label address.</span></span><br><span class="line">        generator.<span class="built_in">emitLabel</span>(defaultLabel.<span class="built_in">get</span>());</span><br><span class="line">        <span class="comment">// Generate bytecode for the default clause.</span></span><br><span class="line">        m_defaultClause-&gt;<span class="built_in">emitBytecode</span>(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Cases after default.</span></span><br><span class="line">    <span class="keyword">for</span> (ClauseListNode* list = m_list2; list; list = list-&gt;<span class="built_in">getNext</span>()) &#123;</span><br><span class="line">        generator.<span class="built_in">emitLabel</span>(labelVector[i++].<span class="built_in">get</span>());</span><br><span class="line">        list-&gt;<span class="built_in">getClause</span>()-&gt;<span class="built_in">emitBytecode</span>(generator, dst);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If there is no default, set its jump address to the end of switch.</span></span><br><span class="line">    <span class="keyword">if</span> (!m_defaultClause)</span><br><span class="line">        generator.<span class="built_in">emitLabel</span>(defaultLabel.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (switchType != SwitchInfo::SwitchNone) &#123;</span><br><span class="line">        generator.<span class="built_in">endSwitch</span>(labelVector.<span class="built_in">size</span>(), labelVector.<span class="built_in">data</span>(), literalVector.<span class="built_in">data</span>(), defaultLabel.<span class="built_in">get</span>(), min_num, max_num);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">switch E</span><br><span class="line">    begin</span><br><span class="line">        case V1 : S1</span><br><span class="line">        case V2 : S2</span><br><span class="line">        ...</span><br><span class="line">        case Vn-1 : Sn-1</span><br><span class="line">        default : Sn</span><br><span class="line">    end</span><br></pre></td></tr></table></figure>
+
+<p>In the ordinary case, <code>SwitchNode</code> might be translated
+sequentially like this, which is relatively inefficient:</p>
+<img src="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/07.png" width="50%"/>
+
+<p>JavaScriptCore uses another translation strategy for
+<code>SwitchNode</code>. During code generation, if the number of
+branches falls within a relatively small range, the conditional jump
+sequence can be translated into a more efficient n-way branch.</p>
+<img src="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/06.png" width="100%"/>
+
+<p>You can see that the jump table for <code>SwitchNone</code> differs
+from the other three modes. Its jump table appears earlier, but there is
+no essential difference.</p>
+<h3 id="loop-structures">Loop Structures</h3>
+<h4 id="whilenode">WhileNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WhileNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Generate a scope label for continue and break.</span></span><br><span class="line">    LabelScopePtr scope = generator.<span class="built_in">newLabelScope</span>(LabelScope::Loop);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate the start-address label for the loop body.</span></span><br><span class="line">    RefPtr&lt;Label&gt; topOfLoop = generator.<span class="built_in">newLabel</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for the condition expression. If true, jump to topOfLoop;</span></span><br><span class="line">    <span class="comment">// otherwise jump to breakTarget.</span></span><br><span class="line">    generator.<span class="built_in">emitNodeInConditionContext</span>(m_expr, topOfLoop.<span class="built_in">get</span>(), scope-&gt;<span class="built_in">breakTarget</span>(), FallThroughMeansTrue);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch the start address.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(topOfLoop.<span class="built_in">get</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Insert the op_loop_hint instruction.</span></span><br><span class="line">    generator.<span class="built_in">emitLoopHint</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Generate bytecode for the loop body.</span></span><br><span class="line">    generator.<span class="built_in">emitNodeInTailPosition</span>(dst, m_statement);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch continueTarget.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(scope-&gt;<span class="built_in">continueTarget</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for the condition expression again. If true, jump to</span></span><br><span class="line">    <span class="comment">// topOfLoop; otherwise jump to breakTarget.</span></span><br><span class="line">    generator.<span class="built_in">emitNodeInConditionContext</span>(m_expr, topOfLoop.<span class="built_in">get</span>(), scope-&gt;<span class="built_in">breakTarget</span>(), FallThroughMeansFalse);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Backpatch breakTarget.</span></span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(scope-&gt;<span class="built_in">breakTarget</span>());</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Here is the SDT for <code>WhileNode</code>:</p>
+<img src="/2018/09/15/JavaScriptCore引擎深度解析-5-字节码生成篇（下）/09.png" width="75%"/>
+
+<p><code>break</code> and <code>continue</code> appear often in loops.
+Let’s see how their bytecode is generated.</p>
+<h4 id="breaknode">BreakNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">BreakNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    LabelScopePtr scope = generator.<span class="built_in">breakTarget</span>(m_ident);</span><br><span class="line">    generator.<span class="built_in">emitPopScopes</span>(generator.<span class="built_in">scopeRegister</span>(), scope-&gt;<span class="built_in">scopeDepth</span>());</span><br><span class="line">    generator.<span class="built_in">emitJump</span>(scope-&gt;<span class="built_in">breakTarget</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="continuenode">ContinueNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ContinueNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    LabelScopePtr scope = generator.<span class="built_in">continueTarget</span>(m_ident);</span><br><span class="line">    generator.<span class="built_in">emitPopScopes</span>(generator.<span class="built_in">scopeRegister</span>(), scope-&gt;<span class="built_in">scopeDepth</span>());</span><br><span class="line">    generator.<span class="built_in">emitJump</span>(scope-&gt;<span class="built_in">continueTarget</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Both eventually add a jump instruction, jumping to the
+<code>breakTarget</code> or <code>continueTarget</code> of their owning
+scope.</p>
+<p>You can also see that scopes are popped. This is easy to understand:
+<code>break</code> and <code>continue</code> are only valid in specific
+contexts, such as loop structures and <code>switch</code> structures.
+Once either is triggered, execution may leave the current
+<code>switch</code> or loop scope directly.</p>
+<h3 id="sequential-structures">Sequential Structures</h3>
+<p>Unlike the previous two categories, sequential structures produce
+more concrete and detailed bytecode.</p>
+<h4 id="classdeclnode">ClassDeclNode</h4>
+<p>The bytecode-generation statement for class declaration node
+<code>ClassDeclNode</code> is only one familiar line:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ClassDeclNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    generator.<span class="built_in">emitNode</span>(dst, m_classDeclaration);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The type of <code>m_classDeclaration</code> is
+<code>ClassExprNode</code>, a subclass of <code>ExpressionNode</code>.
+The bytecode generation of this expression will be analyzed in detail
+later.</p>
+<h4 id="returnnode">ReturnNode</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ReturnNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Ignore return value.</span></span><br><span class="line">    <span class="keyword">if</span> (dst == generator.<span class="built_in">ignoredResult</span>()) dst = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for the expression after return.</span></span><br><span class="line">    RefPtr&lt;RegisterID&gt; returnRegister = m_value ? </span><br><span class="line">    generator.<span class="built_in">emitNodeInTailPosition</span>(dst, m_value) : </span><br><span class="line">    generator.<span class="built_in">emitLoad</span>(dst, <span class="built_in">jsUndefined</span>());</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    generator.<span class="built_in">emitReturn</span>(returnRegister.<span class="built_in">get</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">RegisterID* <span class="title">BytecodeGenerator::emitReturn</span><span class="params">(RegisterID* src)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// There is actually special handling here for constructors.</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate bytecode for a unary operator.</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">emitUnaryNoDstOp</span>(op_ret, src);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">RegisterID* <span class="title">BytecodeGenerator::emitUnaryNoDstOp</span><span class="params">(OpcodeID opcodeID, RegisterID* src)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">emitOpcode</span>(opcodeID);</span><br><span class="line">    <span class="built_in">instructions</span>().<span class="built_in">append</span>(src-&gt;<span class="built_in">index</span>());</span><br><span class="line">    <span class="keyword">return</span> src;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>You can see that an <code>op_ret</code> instruction is inserted into
+<code>instructions</code>, and the following
+<code>src-&gt;index()</code> is the offset of <code>src</code> in the
+virtual register <code>VirtualRegister</code>.</p>
+<h4 id="labelnode">LabelNode</h4>
+<p>The bytecode for <code>LabelNode</code> is simple. It mainly
+generates a jump label.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">LabelNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID* dst)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    LabelScopePtr scope = generator.<span class="built_in">newLabelScope</span>(LabelScope::NamedLabel, &amp;m_name);</span><br><span class="line">    generator.<span class="built_in">emitNodeInTailPosition</span>(dst, m_statement);</span><br><span class="line">    generator.<span class="built_in">emitLabel</span>(scope-&gt;<span class="built_in">breakTarget</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="funcdeclnode">FuncDeclNode</h4>
+<p>A function declaration is essentially function registration.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FuncDeclNode::emitBytecode</span><span class="params">(BytecodeGenerator&amp; generator, RegisterID*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    generator.<span class="built_in">hoistSloppyModeFunctionIfNecessary</span>(<span class="built_in">metadata</span>()-&gt;<span class="built_in">ident</span>());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">BytecodeGenerator::hoistSloppyModeFunctionIfNecessary</span><span class="params">(<span class="type">const</span> Identifier&amp; functionName)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (m_scopeNode-&gt;<span class="built_in">hasSloppyModeHoistedFunction</span>(functionName.<span class="built_in">impl</span>()))</span><br><span class="line">    &#123;</span><br><span class="line">        Variable currentFunctionVariable = <span class="built_in">variable</span>(functionName);</span><br><span class="line">        RefPtr&lt;RegisterID&gt; currentValue;</span><br><span class="line">        <span class="keyword">if</span> (RegisterID* local = currentFunctionVariable.<span class="built_in">local</span>())</span><br><span class="line">            currentValue = local;</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">        &#123;</span><br><span class="line">            RefPtr&lt;RegisterID&gt; scope = <span class="built_in">emitResolveScope</span>(<span class="literal">nullptr</span>, currentFunctionVariable);</span><br><span class="line">            currentValue = <span class="built_in">emitGetFromScope</span>(<span class="built_in">newTemporary</span>(), scope.<span class="built_in">get</span>(), currentFunctionVariable, DoNotThrowIfNotFound);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Locate the symbol table.</span></span><br><span class="line">        SymbolTableStackEntry&amp; varScope = m_symbolTableStack[*m_varScopeSymbolTableIndex];</span><br><span class="line">        SymbolTable* varSymbolTable = varScope.m_symbolTable;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Lock.</span></span><br><span class="line">        <span class="function">ConcurrentJITLocker <span class="title">locker</span><span class="params">(ConcurrentJITLocker::NoLockingNecessary)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Find the function&#x27;s symbol entry.</span></span><br><span class="line">        SymbolTableEntry entry = varSymbolTable-&gt;<span class="built_in">get</span>(locker, functionName.<span class="built_in">impl</span>());</span><br><span class="line">        <span class="type">bool</span> isLexicallyScoped = <span class="literal">false</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="built_in">emitPutToScope</span>(varScope.m_scope, <span class="built_in">variableForLocalEntry</span>(functionName, entry, varScope.m_symbolTableConstantIndex, isLexicallyScoped), currentValue.<span class="built_in">get</span>(), DoNotThrowIfNotFound, InitializationMode::NotInitialization);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="to-be-continued">To Be Continued</h2>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/">JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-08-15 00:34</p>
+  <p><span>Updated:</span>2026-08-29 01:49</p>
+  <p><span>Original link:</span><a href="/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/" title="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 2">https://tsuijunxi.github.io/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/08/15/javascriptcore-deep-dive-5-bytecode-generation-part-2/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/JavaScriptCore-ByteCode/" rel="tag"># JavaScriptCore ByteCode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/08/10/javascriptcore-deep-dive-5-bytecode-generation-part-1/" rel="next" title="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1">
+                <i class="fa fa-chevron-left"></i> JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 1
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/09/15/javascriptcore-deep-dive-5-bytecode-generation-part-3/" rel="prev" title="JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 3">
+                JavaScriptCore Deep Dive 5 - Bytecode Generation, Part 3 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bytecode-instruction-set"><span class="nav-number">2.</span> <span class="nav-text">Bytecode Instruction Set</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#emitstatementsbytecode"><span class="nav-number">3.</span> <span class="nav-text">emitStatementsBytecode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#statementnode"><span class="nav-number">4.</span> <span class="nav-text">StatementNode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#conditional-structures"><span class="nav-number">4.1.</span> <span class="nav-text">Conditional Structures</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ifelsenode"><span class="nav-number">4.1.1.</span> <span class="nav-text">IfElseNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#switchnode"><span class="nav-number">4.1.2.</span> <span class="nav-text">SwitchNode</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#loop-structures"><span class="nav-number">4.2.</span> <span class="nav-text">Loop Structures</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#whilenode"><span class="nav-number">4.2.1.</span> <span class="nav-text">WhileNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#breaknode"><span class="nav-number">4.2.2.</span> <span class="nav-text">BreakNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#continuenode"><span class="nav-number">4.2.3.</span> <span class="nav-text">ContinueNode</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sequential-structures"><span class="nav-number">4.3.</span> <span class="nav-text">Sequential Structures</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#classdeclnode"><span class="nav-number">4.3.1.</span> <span class="nav-text">ClassDeclNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#returnnode"><span class="nav-number">4.3.2.</span> <span class="nav-text">ReturnNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#labelnode"><span class="nav-number">4.3.3.</span> <span class="nav-text">LabelNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#funcdeclnode"><span class="nav-number">4.3.4.</span> <span class="nav-text">FuncDeclNode</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#to-be-continued"><span class="nav-number">5.</span> <span class="nav-text">To Be Continued</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -118,7 +118,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png">
 <meta property="article:published_time" content="2022-11-23T09:53:47.000Z">
-<meta property="article:modified_time" content="2026-08-24T16:07:48.212Z">
+<meta property="article:modified_time" content="2026-08-29T17:49:53.574Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
@@ -485,7 +485,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  83k
+                  84k
                 </span>
               
 
@@ -501,7 +501,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  5:03
+                  5:04
                 </span>
               
             </div>
@@ -609,11 +609,7 @@ cannot be preempted while executing in its critical section.</p>
 hint. In our case, once a thread acquires <code>_rwlock</code> through
 <code>pthread_rwlock_wrlock</code>, we temporarily boost its QoS, then
 restore the original QoS after releasing the lock.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">        </span><br><span class="line">        qos_class_t oldQos = qos_class_self();</span><br><span class="line">        <span class="type">BOOL</span> needRecover = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Temporarily boost thread priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; oldQos &lt; QOS_CLASS_USER_INTERACTIVE) &#123;</span><br><span class="line">            <span class="type">int</span> ret = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, <span class="number">0</span>);</span><br><span class="line">            needRecover = (ret == <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Restore priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; needRecover) &#123;</span><br><span class="line">            pthread_set_qos_class_self_np(oldQos, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>One thing to note: this has to be done with <code>pthread</code>
-APIs. <code>NSThread</code> APIs do not work here.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NSThread.h</span></span><br><span class="line"><span class="comment">// To be deprecated; use qualityOfService below</span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">double</span> threadPriority API_AVAILABLE(macos(<span class="number">10.6</span>), ios(<span class="number">4.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br><span class="line"><span class="comment">// read-only after the thread is started</span></span><br><span class="line"><span class="keyword">@property</span> <span class="built_in">NSQualityOfService</span> qualityOfService API_AVAILABLE(macos(<span class="number">10.10</span>), ios(<span class="number">8.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">        </span><br><span class="line">        qos_class_t oldQos = qos_class_self();</span><br><span class="line">        <span class="type">BOOL</span> needRecover = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Temporarily boost thread priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; oldQos &lt; QOS_CLASS_USER_INTERACTIVE) &#123;</span><br><span class="line">            <span class="type">int</span> ret = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, <span class="number">0</span>);</span><br><span class="line">            needRecover = (ret == <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Restore priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; needRecover) &#123;</span><br><span class="line">            pthread_set_qos_class_self_np(oldQos, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">One thing to note: <span class="variable language_">this</span> has to be done with `pthread` APIs. `<span class="built_in">NSThread</span>` APIs <span class="keyword">do</span> not work here.</span><br><span class="line"></span><br><span class="line">```objc</span><br><span class="line"><span class="comment">// NSThread.h</span></span><br><span class="line"><span class="comment">// To be deprecated; use qualityOfService below</span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">double</span> threadPriority API_AVAILABLE(macos(<span class="number">10.6</span>), ios(<span class="number">4.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br><span class="line"><span class="comment">// read-only after the thread is started</span></span><br><span class="line"><span class="keyword">@property</span> <span class="built_in">NSQualityOfService</span> qualityOfService API_AVAILABLE(macos(<span class="number">10.10</span>), ios(<span class="number">8.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br></pre></td></tr></table></figure>
 
 <h3 id="demo-verification">Demo verification</h3>
 <p>To see whether manually adjusting thread priority helps, I ran a
@@ -1133,7 +1129,7 @@ infect each other with their low priority</a></li>
   <p><span>Title:</span><a href="/en/2022/11/23/priority-inversion-in-practice/">Priority Inversion in Practice</a></p>
   <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
   <p><span>Published:</span>2022-11-23 17:53</p>
-  <p><span>Updated:</span>2026-08-25 00:07</p>
+  <p><span>Updated:</span>2026-08-30 01:49</p>
   <p><span>Original link:</span><a href="/en/2022/11/23/priority-inversion-in-practice/" title="Priority Inversion in Practice">https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/index.html</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/index.html"  aria-label="Copied"></i></span>
   </p>
@@ -1276,7 +1272,7 @@ infect each other with their low priority</a></li>
               
                 <a href="/en/archives/">
               
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -1287,7 +1283,7 @@ infect each other with their low priority</a></li>
               
               <div class="site-state-item site-state-categories">
                 <a href="/en/categories/">
-                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">categories</span>
                 </a>
               </div>
@@ -1298,7 +1294,7 @@ infect each other with their low priority</a></li>
               
               <div class="site-state-item site-state-tags">
                 <a href="/en/tags/">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -1324,7 +1320,7 @@ infect each other with their low priority</a></li>
     </span>
     <span class="sidebar-app-card-body">
       <span class="sidebar-app-card-title">Lensori</span>
-      <span class="sidebar-app-card-desc">An app from my engineering notes</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
     </span>
   </a>
 </div>

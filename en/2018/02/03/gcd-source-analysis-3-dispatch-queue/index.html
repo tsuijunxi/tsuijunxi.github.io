@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="GCD" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface Queues are one of the key parts of this GCD source-code analysis series. Queue Definition dispatch_queue_s is a structure, defined as follows: 12345struct dispatch_queue_s &#123;    DISPATCH_S">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GCD Source Analysis 3 - dispatch_queue">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface Queues are one of the key parts of this GCD source-code analysis series. Queue Definition dispatch_queue_s is a structure, defined as follows: 12345struct dispatch_queue_s &#123;    DISPATCH_S">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/02/03/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903%20%E2%80%94%E2%80%94%20dispatch-queue%E7%AF%87/01.png">
+<meta property="article:published_time" content="2018-02-02T16:35:26.000Z">
+<meta property="article:modified_time" content="2026-08-29T17:19:50.516Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="GCD">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/02/03/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903%20%E2%80%94%E2%80%94%20dispatch-queue%E7%AF%87/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/"/>
+
+
+
+
+
+  <title>GCD Source Analysis 3 - dispatch_queue | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/02/03/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903%20%E2%80%94%E2%80%94%20dispatch-queue%E7%AF%87/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD Source Analysis 3 - dispatch_queue</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-02-03T00:35:26+08:00">
+                2018-02-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  108k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  6:34
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/02/03/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%903%20%E2%80%94%E2%80%94%20dispatch-queue%E7%AF%87/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>Queues are one of the key parts of this GCD source-code analysis
+series.</p>
+<h2 id="queue-definition">Queue Definition</h2>
+<p><code>dispatch_queue_s</code> is a structure, defined as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> &#123;</span></span><br><span class="line">    DISPATCH_STRUCT_HEADER(dispatch_queue_s, dispatch_queue_vtable_s);</span><br><span class="line">    DISPATCH_QUEUE_HEADER;</span><br><span class="line">    <span class="type">char</span> dq_label[DISPATCH_QUEUE_MIN_LABEL_SIZE];   <span class="comment">// must be last</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The structure contains two macros and one <code>dq_label</code>.</p>
+<h3 id="dispatch_struct_header">DISPATCH_STRUCT_HEADER</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_STRUCT_HEADER(x, y)        \</span></span><br><span class="line"><span class="meta">    const struct y *do_vtable;      \   <span class="comment">// operation functions for this dispatch_object_s</span></span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">x</span> *<span class="title">volatile</span> <span class="title">do_next</span>;</span>     \   <span class="comment">// linked-list next pointer</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> do_ref_cnt;        \   <span class="comment">// reference count</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> do_xref_cnt;       \   <span class="comment">// external reference count</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> do_suspend_cnt;    \   <span class="comment">// suspend count, used as a pause flag</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *<span class="title">do_targetq</span>;</span>\   <span class="comment">// target queue where this struct x runs</span></span><br><span class="line">    <span class="type">void</span> *do_ctxt;                  \   <span class="comment">// context, the parameter to pass through</span></span><br><span class="line">    <span class="type">void</span> *do_finalizer</span><br></pre></td></tr></table></figure>
+
+<p>In GCD, many structure definitions call
+<code>DISPATCH_STRUCT_HEADER</code>, passing the structure name as the
+first macro parameter <code>x</code>. The second macro parameter
+<code>y</code> is usually <code>dispatch_queue_vtable_s</code>.</p>
+<p><code>struct x *volatile do_next</code> means that <code>x</code>
+only affects the pointer type of <code>do_next</code>, which can be
+understood as preparation for later linked-list operations. In the queue
+definition, it expands to:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *<span class="title">volatile</span> <span class="title">do_next</span>;</span></span><br></pre></td></tr></table></figure>
+
+<p>The second parameter <code>y</code> only affects the pointer type of
+<code>do_vtable</code>. Here it expands to:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_vtable_s</span> *<span class="title">do_vtable</span>;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>dispatch_queue_vtable_s</code> contains operation functions for
+this <code>dispatch_object_s</code> or its subclasses. GCD also defines
+shorter macros for these operations to make invocation more
+convenient:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">long</span> <span class="type">const</span> do_type;    \                           <span class="comment">// concrete data type</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> *<span class="type">const</span> do_kind; \                                <span class="comment">// type description string</span></span><br><span class="line"><span class="type">size_t</span> (*<span class="type">const</span> do_debug)(<span class="keyword">struct</span> x *, <span class="type">char</span> *, <span class="type">size_t</span>);   \   <span class="comment">// obtains debug information</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> *(*<span class="title">const</span> <span class="title">do_invoke</span>)(<span class="keyword">struct</span> <span class="title">x</span> *);</span>\   <span class="comment">// wakes or invokes the queue; global and main queues use NULL</span></span><br><span class="line"><span class="type">bool</span> (*<span class="type">const</span> do_probe)(<span class="keyword">struct</span> x *); \                       <span class="comment">// checks whether some values in the object meet certain conditions</span></span><br><span class="line"><span class="type">void</span> (*<span class="type">const</span> do_dispose)(<span class="keyword">struct</span> x *)                        <span class="comment">// disposes the queue, usually by calling the finalizer</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_queue_header">DISPATCH_QUEUE_HEADER</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_QUEUE_HEADER \</span></span><br><span class="line"><span class="meta">    uint32_t dq_running; \</span></span><br><span class="line"><span class="meta">    uint32_t dq_width; \</span></span><br><span class="line"><span class="meta">    struct dispatch_object_s *dq_items_tail; \</span></span><br><span class="line"><span class="meta">    struct dispatch_object_s *volatile dq_items_head; \</span></span><br><span class="line"><span class="meta">    unsigned long dq_serialnum; \</span></span><br><span class="line"><span class="meta">    void *dq_finalizer_ctxt; \</span></span><br><span class="line"><span class="meta">    dispatch_queue_finalizer_function_t dq_finalizer_func</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="dq_label">dq_label</h3>
+<p><code>dq_label</code> is the queue name, whose maximum length cannot
+exceed <code>DISPATCH_QUEUE_MIN_LABEL_SIZE = 64</code>.</p>
+<h2 id="getting-queues">Getting Queues</h2>
+<p>There are several common ways to obtain GCD queues.</p>
+<h3 id="main-queue-dispatch_get_main_queue">Main Queue:
+dispatch_get_main_queue</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> dispatch_get_main_queue() (&amp;_dispatch_main_q)</span></span><br></pre></td></tr></table></figure>
+
+<p><code>dispatch_get_main_queue</code> is actually a macro that returns
+the address of the structure <code>_dispatch_main_q</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> _<span class="title">dispatch_main_q</span> =</span> &#123;</span><br><span class="line">    .do_vtable = &amp;_dispatch_queue_vtable,</span><br><span class="line">    .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">    .do_targetq = &amp;_dispatch_root_queues[DISPATCH_ROOT_QUEUE_COUNT / <span class="number">2</span>],</span><br><span class="line"></span><br><span class="line">    .dq_label = <span class="string">&quot;com.apple.main-thread&quot;</span>,</span><br><span class="line">    .dq_running = <span class="number">1</span>,</span><br><span class="line">    .dq_width = <span class="number">1</span>,</span><br><span class="line">    .dq_serialnum = <span class="number">1</span>,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_vtable">do_vtable</h4>
+<p>The main queue’s function pointer <code>do_vtable</code> points to
+<code>_dispatch_queue_vtable</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_vtable_s</span> _<span class="title">dispatch_queue_vtable</span> =</span> &#123;</span><br><span class="line">    .do_type = DISPATCH_QUEUE_TYPE,</span><br><span class="line">    .do_kind = <span class="string">&quot;queue&quot;</span>,</span><br><span class="line">    .do_dispose = _dispatch_queue_dispose,</span><br><span class="line">    .do_invoke = (<span class="type">void</span> *)dummy_function_r0,</span><br><span class="line">    .do_probe = (<span class="type">void</span> *)dummy_function_r0,</span><br><span class="line">    .do_debug = dispatch_queue_debug,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_ref_cnt-and-do_xref_cnt">do_ref_cnt and do_xref_cnt</h4>
+<p>These two values are related to memory management of GCD objects. A
+GCD object can be released only when both values become 0. In the main
+queue, both values are <code>DISPATCH_OBJECT_GLOBAL_REFCNT</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_OBJECT_GLOBAL_REFCNT   (~0u)</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> _dispatch_retain(<span class="type">dispatch_object_t</span> dou)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (dou._do-&gt;do_ref_cnt == DISPATCH_OBJECT_GLOBAL_REFCNT) &#123;</span><br><span class="line">        <span class="keyword">return</span>; <span class="comment">// global object</span></span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">dispatch_release</span><span class="params">(<span class="type">dispatch_object_t</span> dou)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">typeof</span>(dou._do-&gt;do_xref_cnt) oldval;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dou._do-&gt;do_xref_cnt == DISPATCH_OBJECT_GLOBAL_REFCNT) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>From <code>_dispatch_retain</code> and <code>dispatch_release</code>,
+we can see that the main queue lives with the application and is not
+affected by retain and release.</p>
+<h4 id="do_targetq">do_targetq</h4>
+<p>The target queue is important. Non-global queues, such as the manager
+queue, usually need to be pushed into a global queue for processing, so
+their <code>target_queue</code> must be specified.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_ROOT_QUEUE_COUNT 6</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.do_targetq = &amp;_dispatch_root_queues[DISPATCH_ROOT_QUEUE_COUNT / 2],</span><br><span class="line">.do_targetq = &amp;_dispatch_root_queues[3],</span><br></pre></td></tr></table></figure>
+
+<p>This points to the global queue named
+<code>com.apple.root.default-overcommit-priority</code>.</p>
+<h3 id="manager-queue-_dispatch_mgr_q">Manager Queue:
+_dispatch_mgr_q</h3>
+<p><strong>Note: this queue is used internally by GCD and is not exposed
+publicly.</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> _<span class="title">dispatch_mgr_q</span> =</span> &#123;</span><br><span class="line">    .do_vtable = &amp;_dispatch_queue_mgr_vtable,</span><br><span class="line">    .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">    .do_targetq = &amp;_dispatch_root_queues[DISPATCH_ROOT_QUEUE_COUNT - <span class="number">1</span>],</span><br><span class="line"></span><br><span class="line">    .dq_label = <span class="string">&quot;com.apple.libdispatch-manager&quot;</span>,</span><br><span class="line">    .dq_width = <span class="number">1</span>,</span><br><span class="line">    .dq_serialnum = <span class="number">2</span>,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_vtable-1">do_vtable</h4>
+<p>The manager queue’s <code>do_vtable</code> points to
+<code>_dispatch_queue_mgr_vtable</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_vtable_s</span> _<span class="title">dispatch_queue_mgr_vtable</span> =</span> &#123;</span><br><span class="line">    .do_type = DISPATCH_QUEUE_MGR_TYPE,</span><br><span class="line">    .do_kind = <span class="string">&quot;mgr-queue&quot;</span>,</span><br><span class="line">    .do_invoke = _dispatch_mgr_invoke,</span><br><span class="line">    .do_debug = dispatch_queue_debug,</span><br><span class="line">    .do_probe = _dispatch_mgr_wakeup,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_ref_cnt-and-do_xref_cnt-1">do_ref_cnt and do_xref_cnt</h4>
+<p>Refer to the main queue section.</p>
+<h4 id="do_targetq-1">do_targetq</h4>
+<p>It points to the global queue named
+<code>com.apple.root.high-overcommit-priority</code>.</p>
+<h3 id="global-queue-dispatch_get_global_queue">Global Queue:
+dispatch_get_global_queue</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> &#123;</span></span><br><span class="line">    DISPATCH_QUEUE_PRIORITY_HIGH = <span class="number">2</span>,</span><br><span class="line">    DISPATCH_QUEUE_PRIORITY_DEFAULT = <span class="number">0</span>,</span><br><span class="line">    DISPATCH_QUEUE_PRIORITY_LOW = <span class="number">-2</span>,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">dispatch_queue_t</span> <span class="title function_">dispatch_get_global_queue</span><span class="params">(<span class="type">long</span> priority, <span class="type">unsigned</span> <span class="type">long</span> flags)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (flags &amp; ~DISPATCH_QUEUE_OVERCOMMIT) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _dispatch_get_root_queue(priority, flags &amp; DISPATCH_QUEUE_OVERCOMMIT);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">dispatch_queue_t</span> _dispatch_get_root_queue(<span class="type">long</span> priority, <span class="type">bool</span> overcommit)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (overcommit) <span class="keyword">switch</span> (priority) &#123;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_LOW:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_DEFAULT:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">3</span>];</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_HIGH:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">5</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">switch</span> (priority) &#123;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_LOW:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">0</span>];</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_DEFAULT:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_QUEUE_PRIORITY_HIGH:</span><br><span class="line">        <span class="keyword">return</span> &amp;_dispatch_root_queues[<span class="number">4</span>];</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The libdispatch version analyzed here defines six global queues.
+Newer versions have eight global queues.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_s</span> _<span class="title">dispatch_root_queues</span>[] =</span> &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">0</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.low-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">4</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">1</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.low-overcommit-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">5</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">2</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.default-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">6</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">3</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.default-overcommit-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">7</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">4</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.high-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">8</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_queue_root_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_suspend_cnt = DISPATCH_OBJECT_SUSPEND_LOCK,</span><br><span class="line">        .do_ctxt = &amp;_dispatch_root_queue_contexts[<span class="number">5</span>],</span><br><span class="line"></span><br><span class="line">        .dq_label = <span class="string">&quot;com.apple.root.high-overcommit-priority&quot;</span>,</span><br><span class="line">        .dq_running = <span class="number">2</span>,</span><br><span class="line">        .dq_width = UINT32_MAX,</span><br><span class="line">        .dq_serialnum = <span class="number">9</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_vtable-2">do_vtable</h4>
+<p>The global queue’s function pointer <code>do_vtable</code> points to
+<code>_dispatch_queue_root_vtable</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_queue_vtable_s</span> _<span class="title">dispatch_queue_root_vtable</span> =</span> &#123;</span><br><span class="line">    .do_type = DISPATCH_QUEUE_GLOBAL_TYPE,</span><br><span class="line">    .do_kind = <span class="string">&quot;global-queue&quot;</span>,</span><br><span class="line">    .do_debug = dispatch_queue_debug,</span><br><span class="line">    .do_probe = _dispatch_queue_wakeup_global,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="do_ref_cnt-and-do_xref_cnt-2">do_ref_cnt and do_xref_cnt</h4>
+<p>Refer to the main queue section.</p>
+<h4 id="do_ctxt">do_ctxt</h4>
+<p>Notice that the global queue has a <code>do_ctxt</code>. This is the
+context, the parameter we want to pass through.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> MAX_THREAD_COUNT 255</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_root_queue_context_s</span> _<span class="title">dispatch_root_queue_contexts</span>[] =</span> &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">0</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">1</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">2</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">3</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">4</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .dgq_thread_mediator = &amp;_dispatch_thread_mediator[<span class="number">5</span>],</span><br><span class="line">        .dgq_thread_pool_size = MAX_THREAD_COUNT,</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>_dispatch_thread_mediator</code> is defined as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_semaphore_s</span> _<span class="title">dispatch_thread_mediator</span>[] =</span> &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_semaphore_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        .do_vtable = &amp;_dispatch_semaphore_vtable,</span><br><span class="line">        .do_ref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">        .do_xref_cnt = DISPATCH_OBJECT_GLOBAL_REFCNT,</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The original source contains six entries with the same shape; the key
+idea is that each root queue context owns a mediator semaphore and a
+thread-pool size.</p>
+<h3 id="custom-queues">Custom Queues</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dispatch_queue_t</span> <span class="title function_">dispatch_queue_create</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *label, <span class="type">dispatch_queue_attr_t</span> attr)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> dq;</span><br><span class="line">    <span class="type">size_t</span> label_len;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!label) &#123;</span><br><span class="line">        label = <span class="string">&quot;&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    label_len = <span class="built_in">strlen</span>(label);</span><br><span class="line">    <span class="keyword">if</span> (label_len &lt; (DISPATCH_QUEUE_MIN_LABEL_SIZE - <span class="number">1</span>)) &#123;</span><br><span class="line">        label_len = (DISPATCH_QUEUE_MIN_LABEL_SIZE - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dq = <span class="built_in">calloc</span>(<span class="number">1ul</span>, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> dispatch_queue_s) - DISPATCH_QUEUE_MIN_LABEL_SIZE + label_len + <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (slowpath(!dq)) &#123;</span><br><span class="line">        <span class="keyword">return</span> dq;</span><br><span class="line">    &#125;</span><br><span class="line">    _dispatch_queue_init(dq);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">strcpy</span>(dq-&gt;dq_label, label);</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> DISPATCH_NO_LEGACY</span></span><br><span class="line">    <span class="keyword">if</span> (slowpath(attr)) &#123;</span><br><span class="line">        dq-&gt;do_targetq = _dispatch_get_root_queue(attr-&gt;qa_priority, attr-&gt;qa_flags &amp; DISPATCH_QUEUE_OVERCOMMIT);</span><br><span class="line">        </span><br><span class="line">        dq-&gt;dq_finalizer_ctxt = attr-&gt;finalizer_ctxt;</span><br><span class="line">        dq-&gt;dq_finalizer_func = attr-&gt;finalizer_func;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __BLOCKS__</span></span><br><span class="line">        <span class="keyword">if</span> (attr-&gt;finalizer_func == (<span class="type">void</span>*)_dispatch_call_block_and_release2) &#123;</span><br><span class="line">            dq-&gt;dq_finalizer_ctxt = Block_copy(dq-&gt;dq_finalizer_ctxt);</span><br><span class="line">            <span class="keyword">if</span> (!(dq-&gt;dq_finalizer_ctxt)) &#123;</span><br><span class="line">                <span class="keyword">goto</span> out_bad;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> dq;</span><br><span class="line"></span><br><span class="line">out_bad:</span><br><span class="line">    <span class="built_in">free</span>(dq);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="_dispatch_queue_init">_dispatch_queue_init</h4>
+<p>Now look at the inline function
+<code>_dispatch_queue_init</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">inline</span> <span class="type">void</span> _dispatch_queue_init(<span class="type">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    dq-&gt;do_vtable = &amp;_dispatch_queue_vtable;</span><br><span class="line">    dq-&gt;do_next = DISPATCH_OBJECT_LISTLESS;</span><br><span class="line">    dq-&gt;do_ref_cnt = <span class="number">1</span>;</span><br><span class="line">    dq-&gt;do_xref_cnt = <span class="number">1</span>;</span><br><span class="line">    dq-&gt;do_targetq = _dispatch_get_root_queue(<span class="number">0</span>, <span class="literal">true</span>);</span><br><span class="line">    dq-&gt;dq_running = <span class="number">0</span>;</span><br><span class="line">    dq-&gt;dq_width = <span class="number">1</span>;</span><br><span class="line">    dq-&gt;dq_serialnum = dispatch_atomic_inc(&amp;_dispatch_queue_serial_numbers) - <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>From the previous code, global queues all have <code>dq_width</code>
+equal to <code>UINT32_MAX</code>, while
+<code>_dispatch_queue_init</code> sets <code>dq_width</code> to 1. This
+means a custom queue defaults to a serial queue.</p>
+<p>Also,
+<code>dq-&gt;do_targetq = _dispatch_get_root_queue(0, true)</code>
+involves an important GCD queue/block model: the target queue. Blocks
+submitted to any queue are eventually placed on its target queue for
+execution. For a normal serial queue, the target queue is an
+overcommit-capable global queue, and the global queue is backed by a
+thread pool.</p>
+<p>Borrowing a classic Apple diagram:</p>
+<img src="/2018/02/03/GCD源码分析3 —— dispatch-queue篇/01.png" width="75%"/>
+
+<p>Other fields can mostly be understood from the previous sections.
+Here, focus on <code>dq_serialnum</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">long</span> _dispatch_queue_serial_numbers = <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// skip zero</span><br><span class="line">// 1 - main_q</span><br><span class="line">// 2 - mgr_q</span><br><span class="line">// 3 - _unused_</span><br><span class="line">// 4,5,6,7,8,9 - global queues</span><br></pre></td></tr></table></figure>
+
+<p>Zero is skipped, 3 is unused, 1 is used by the main queue, 2 by the
+manager queue, and 4 to 9 by global queues. Custom queues start from 10.
+Each time a custom queue is created,
+<code>_dispatch_queue_serial_numbers</code> is updated atomically and
+then decremented by 1, which guarantees that every custom queue has a
+unique <code>dq_serialnum</code>.</p>
+<h4 id="special-handling-of-dispatch_queue_attr_t">Special Handling of
+dispatch_queue_attr_t</h4>
+<p>If an <code>attr</code> parameter is passed while creating a custom
+queue, it indicates overcommit support. An overcommit queue means that
+whenever a task is submitted, the system opens a new thread to handle
+it, avoiding overload on a single thread.</p>
+<p>Also, if
+<code>finalizer_func == _dispatch_call_block_and_release2</code>,
+<code>dq_finalizer_ctxt</code> needs to be retained.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_call_block_and_release2(<span class="type">void</span> *block, <span class="type">void</span> *ctxt)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">void</span> (^b)(<span class="type">void</span>*) = block;</span><br><span class="line">    b(ctxt);</span><br><span class="line">    Block_release(b);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="common-api-analysis">Common API Analysis</h2>
+<h3 id="dispatch_async">dispatch_async</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_async</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> (^work)(<span class="type">void</span>))</span></span><br><span class="line">&#123;</span><br><span class="line">    dispatch_async_f(dq, _dispatch_Block_copy(work), _dispatch_call_block_and_release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>dispatch_async</code> mainly prepares its parameters and then
+calls <code>dispatch_async_f</code>.</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li><code>_dispatch_Block_copy</code> creates a copy of the incoming
+block on the heap, or increases its reference count, ensuring that the
+block is not destroyed before execution.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li><code>_dispatch_call_block_and_release</code>, as the name suggests,
+calls the block and then releases it.</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_call_block_and_release(<span class="type">void</span> *block)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">void</span> (^b)(<span class="type">void</span>) = block;</span><br><span class="line">    b();</span><br><span class="line">    Block_release(b);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="dispatch_async_f">dispatch_async_f</h4>
+<p>Now analyze <code>dispatch_async_f</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_async_f</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">dispatch_function_t</span> func)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = fastpath(_dispatch_continuation_alloc_cacheonly());</span><br><span class="line">    <span class="keyword">if</span> (!dc) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_async_f_slow(dq, ctxt, func);</span><br><span class="line">    &#125;</span><br><span class="line">    dc-&gt;do_vtable = (<span class="type">void</span> *)DISPATCH_OBJ_ASYNC_BIT;</span><br><span class="line">    dc-&gt;dc_func = func;</span><br><span class="line">    dc-&gt;dc_ctxt = ctxt;</span><br><span class="line">    _dispatch_queue_push(dq, dc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>First look at <code>_dispatch_continuation_alloc_cacheonly</code>.
+Its purpose is to fetch a <code>dispatch_continuation_t</code> structure
+from the thread’s TLS, or thread-local storage. Each thread has its own
+private storage, and that storage is not used by other threads.</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">dispatch_continuation_t</span> _dispatch_continuation_alloc_cacheonly(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = fastpath(_dispatch_thread_getspecific(dispatch_cache_key));</span><br><span class="line">    <span class="keyword">if</span> (dc) &#123;</span><br><span class="line">        _dispatch_thread_setspecific(dispatch_cache_key, dc-&gt;do_next);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol start="2" type="1">
+<li>If the current thread’s TLS does not contain a
+<code>dispatch_continuation_t</code>,
+<code>_dispatch_async_f_slow()</code> is used.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>If <code>dc</code> is not empty, set its <code>do_vtable</code> to
+<code>DISPATCH_OBJ_ASYNC_BIT</code>, mainly for type distinction. Store
+the incoming block in <code>dc_ctxt</code> as context, set
+<code>dc_func</code> to <code>_dispatch_call_block_and_release</code>,
+and finally call <code>_dispatch_queue_push</code> to enqueue it.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p><code>DISPATCH_OBJ_ASYNC_BIT</code> is a macro used to distinguish
+async, group, and barrier:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_OBJ_ASYNC_BIT      0x1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_OBJ_BARRIER_BIT    0x2</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DISPATCH_OBJ_GROUP_BIT      0x4</span></span><br></pre></td></tr></table></figure>
+
+<p>Continue into <code>_dispatch_async_f_slow</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_NOINLINE <span class="type">static</span> <span class="type">void</span> _dispatch_async_f_slow(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *context, <span class="type">dispatch_function_t</span> func)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = fastpath(_dispatch_continuation_alloc_from_heap());</span><br><span class="line"></span><br><span class="line">    dc-&gt;do_vtable = (<span class="type">void</span> *)DISPATCH_OBJ_ASYNC_BIT;</span><br><span class="line">    dc-&gt;dc_func = func;</span><br><span class="line">    dc-&gt;dc_ctxt = context;</span><br><span class="line"></span><br><span class="line">    _dispatch_queue_push(dq, dc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dispatch_continuation_t</span> _dispatch_continuation_alloc_from_heap(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">static</span> <span class="type">dispatch_once_t</span> pred;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc;</span><br><span class="line">    dispatch_once_f(&amp;pred, <span class="literal">NULL</span>, _dispatch_ccache_init);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (!(dc = fastpath(malloc_zone_calloc(_dispatch_ccache_zone, <span class="number">1</span>, ROUND_UP_TO_CACHELINE_SIZE(<span class="keyword">sizeof</span>(*dc)))))) &#123;</span><br><span class="line">        sleep(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After obtaining a <code>dispatch_continuation_t</code> from the heap,
+it sets the same fields as above and then enters
+<code>_dispatch_queue_push</code>.</p>
+<h4 id="_dispatch_queue_push">_dispatch_queue_push</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> _dispatch_queue_push(x, y) _dispatch_queue_push_list((x), (y), (y))</span></span><br></pre></td></tr></table></figure>
+
+<p><code>_dispatch_queue_push</code> is a macro. It actually calls
+<code>_dispatch_queue_push_list</code>.</p>
+<h4 id="_dispatch_queue_push_list">_dispatch_queue_push_list</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span></span><br><span class="line">_dispatch_queue_push_list(<span class="type">dispatch_queue_t</span> dq, <span class="type">dispatch_object_t</span> _head, <span class="type">dispatch_object_t</span> _tail)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *<span class="title">prev</span>, *<span class="title">head</span> =</span> _head._do, *tail = _tail._do;</span><br><span class="line">    tail-&gt;do_next = <span class="literal">NULL</span>;</span><br><span class="line">    prev = fastpath(dispatch_atomic_xchg(&amp;dq-&gt;dq_items_tail, tail));</span><br><span class="line">    <span class="keyword">if</span> (prev) &#123;</span><br><span class="line">        prev-&gt;do_next = head;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        _dispatch_queue_push_list_slow(dq, head);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>_dispatch_queue_push_list</code> is an inline function, which
+suggests it is called very frequently. Inline functions are common in
+kernel-style code and are efficient, though they can increase binary
+size: a classic space-for-time tradeoff.</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>If the queue is not empty, place <code>dc</code> at the tail and
+redirect <code>dq-&gt;dq_items_tail</code>. Since there are already
+tasks before it, inserting at the tail is enough.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>Why is this a redirection? According to the definition of
+<code>dispatch_atomic_xchg</code>, it “sets <code>*p</code> to
+<code>n</code> and returns the previous value of <code>*p</code>”.
+Therefore,
+<code>dispatch_atomic_xchg(&amp;dq-&gt;dq_items_tail, tail)</code> is
+equivalent to setting <code>dq-&gt;dq_items_tail = tail</code>, while
+<code>prev</code> is the old tail element and
+<code>prev-&gt;do_next = head</code> links the new node at the end.</p>
+<blockquote>
+<ul>
+<li><ol start="2" type="1">
+<li>If the queue is empty, call
+<code>_dispatch_queue_push_list_slow</code>:</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_queue_push_list_slow(<span class="type">dispatch_queue_t</span> dq, <span class="keyword">struct</span> dispatch_object_s *obj)</span><br><span class="line">&#123;</span><br><span class="line">    _dispatch_retain(dq);</span><br><span class="line">    dq-&gt;dq_items_head = obj;</span><br><span class="line">    _dispatch_wakeup(dq);</span><br><span class="line">    _dispatch_release(dq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>_dispatch_queue_push_list_slow</code> sets
+<code>dq-&gt;dq_items_head</code> to <code>dc</code>, then calls
+<code>_dispatch_wakeup</code> to wake the queue. It calls
+<code>_dispatch_wakeup</code> because the queue is empty, no task is
+running, and the queue is sleeping.</p>
+<h4 id="_dispatch_wakeup">_dispatch_wakeup</h4>
+<p>Now analyze <strong>how a queue is woken up</strong>. Here
+<code>dou</code> refers to a queue:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">dispatch_queue_t</span> _dispatch_wakeup(<span class="type">dispatch_object_t</span> dou)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> tq;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(DISPATCH_OBJECT_SUSPENDED(dou._do))) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!dx_probe(dou._do) &amp;&amp; !dou._dq-&gt;dq_items_tail) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!_dispatch_trylock(dou._do)) &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> DISPATCH_COCOA_COMPAT</span></span><br><span class="line">        <span class="keyword">if</span> (dou._dq == &amp;_dispatch_main_q) &#123;</span><br><span class="line">            _dispatch_queue_wakeup_main();</span><br><span class="line">        &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_retain(dou._do);</span><br><span class="line">    tq = dou._do-&gt;do_targetq;</span><br><span class="line">    _dispatch_queue_push(tq, dou._do);</span><br><span class="line">    <span class="keyword">return</span> tq;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>If it is the main queue, call
+<code>_dispatch_queue_wakeup_main</code> directly.</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_queue_wakeup_main(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">kern_return_t</span> kr;</span><br><span class="line">    </span><br><span class="line">    dispatch_once_f(&amp;_dispatch_main_q_port_pred, <span class="literal">NULL</span>, _dispatch_main_q_port_init);</span><br><span class="line">    </span><br><span class="line">    kr = _dispatch_send_wakeup_main_thread(main_q_port, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (kr) &#123;</span><br><span class="line">    <span class="keyword">case</span> MACH_SEND_TIMEOUT:</span><br><span class="line">    <span class="keyword">case</span> MACH_SEND_TIMED_OUT:</span><br><span class="line">    <span class="keyword">case</span> MACH_SEND_INVALID_DEST:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        dispatch_assume_zero(kr);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_safe_fork = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The core logic that wakes the main thread is inside
+<code>_dispatch_send_wakeup_main_thread</code>, but unfortunately that
+part is not open source.</p>
+<blockquote>
+<ul>
+<li><ol start="2" type="1">
+<li>If it is a global queue, execution enters
+<code>_dispatch_queue_wakeup_global</code>, the function pointed to by
+the global queue’s <code>dx_probe</code>. Here we truly encounter
+<strong>pthread</strong>:</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> _dispatch_queue_wakeup_global(<span class="type">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">static</span> <span class="type">dispatch_once_t</span> pred;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_root_queue_context_s</span> *<span class="title">qc</span> =</span> dq-&gt;do_ctxt;</span><br><span class="line">    <span class="type">pthread_workitem_handle_t</span> wh;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> gen_cnt;</span><br><span class="line">    <span class="type">pthread_t</span> pthr;</span><br><span class="line">    <span class="type">int</span> r, t_count;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!dq-&gt;dq_items_tail) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_safe_fork = <span class="literal">false</span>;</span><br><span class="line">    dispatch_debug_queue(dq, __PRETTY_FUNCTION__);</span><br><span class="line"></span><br><span class="line">    dispatch_once_f(&amp;pred, <span class="literal">NULL</span>, _dispatch_root_queues_init);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (qc-&gt;dgq_kworkqueue) &#123;</span><br><span class="line">        <span class="keyword">if</span> (dispatch_atomic_cmpxchg(&amp;qc-&gt;dgq_pending, <span class="number">0</span>, <span class="number">1</span>)) &#123;</span><br><span class="line">            _dispatch_debug(<span class="string">&quot;requesting new worker thread&quot;</span>);</span><br><span class="line"></span><br><span class="line">            r = pthread_workqueue_additem_np(qc-&gt;dgq_kworkqueue, _dispatch_worker_thread2, dq, &amp;wh, &amp;gen_cnt);</span><br><span class="line">            dispatch_assume_zero(r);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            _dispatch_debug(<span class="string">&quot;work thread request still pending on global queue: %p&quot;</span>, dq);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">goto</span> out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dispatch_semaphore_signal(qc-&gt;dgq_thread_mediator)) &#123;</span><br><span class="line">        <span class="keyword">goto</span> out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        t_count = qc-&gt;dgq_thread_pool_size;</span><br><span class="line">        <span class="keyword">if</span> (!t_count) &#123;</span><br><span class="line">            _dispatch_debug(<span class="string">&quot;The thread pool is full: %p&quot;</span>, dq);</span><br><span class="line">            <span class="keyword">goto</span> out;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!dispatch_atomic_cmpxchg(&amp;qc-&gt;dgq_thread_pool_size, t_count, t_count - <span class="number">1</span>));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> ((r = pthread_create(&amp;pthr, <span class="literal">NULL</span>, _dispatch_worker_thread, dq))) &#123;</span><br><span class="line">        <span class="keyword">if</span> (r != EAGAIN) &#123;</span><br><span class="line">            dispatch_assume_zero(r);</span><br><span class="line">        &#125;</span><br><span class="line">        sleep(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r = pthread_detach(pthr);</span><br><span class="line">    dispatch_assume_zero(r);</span><br><span class="line"></span><br><span class="line">out:</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>There are two main paths:</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>If <code>dgq_kworkqueue</code> exists in the queue context, call
+<code>pthread_workqueue_additem_np</code>. This function uses the
+<code>workq_kernreturn</code> system call to notify the
+<code>workqueue</code> that a new item should be executed. Based on this
+notification, the XNU kernel decides whether to create a thread
+according to system state. For an overcommit priority queue,
+<code>workqueue</code> always creates a thread, and that thread later
+executes <code>_dispatch_worker_thread2</code>.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>If <code>dgq_kworkqueue</code> does not exist, call
+<code>pthread_create</code> to start a thread directly. The thread entry
+is <code>_dispatch_worker_thread</code>, but that function still calls
+<code>_dispatch_worker_thread2</code>, so both paths eventually
+converge.</li>
+</ol></li>
+</ul>
+</blockquote>
+<h4 id="_dispatch_worker_thread">_dispatch_worker_thread</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *_dispatch_worker_thread(<span class="type">void</span> *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> dq = context;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_root_queue_context_s</span> *<span class="title">qc</span> =</span> dq-&gt;do_ctxt;</span><br><span class="line">    <span class="type">sigset_t</span> mask;</span><br><span class="line">    <span class="type">int</span> r;</span><br><span class="line"></span><br><span class="line">    r = sigfillset(&amp;mask);</span><br><span class="line">    dispatch_assume_zero(r);</span><br><span class="line">    r = _dispatch_pthread_sigmask(SIG_BLOCK, &amp;mask, <span class="literal">NULL</span>);</span><br><span class="line">    dispatch_assume_zero(r);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        _dispatch_worker_thread2(context);</span><br><span class="line">    &#125; <span class="keyword">while</span> (dispatch_semaphore_wait(qc-&gt;dgq_thread_mediator, dispatch_time(<span class="number">0</span>, <span class="number">65ull</span> * NSEC_PER_SEC)) == <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    dispatch_atomic_inc(&amp;qc-&gt;dgq_thread_pool_size);</span><br><span class="line">    <span class="keyword">if</span> (dq-&gt;dq_items_tail) &#123;</span><br><span class="line">        _dispatch_queue_wakeup_global(dq);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The first part mainly sets the signal mask of the new thread. Real
+task scheduling happens in <code>_dispatch_worker_thread2</code>.</p>
+<p>After task scheduling ends, this thread waits on a semaphore. The
+semaphore it waits on is the same one used in
+<code>dispatch_queue_wakeup_global</code>. Why do this? To avoid
+creating new threads too frequently. If a newly created thread has
+finished all tasks, it does not immediately exit. Instead, it waits on a
+semaphore for about 65 seconds. If a new signal arrives within 65
+seconds, meaning a new task has arrived, the thread continues executing
+that task instead of creating another thread. If no signal arrives after
+65 seconds, the thread exits and is destroyed.</p>
+<h4 id="_dispatch_worker_thread2">_dispatch_worker_thread2</h4>
+<p>The two paths mentioned earlier eventually call
+<code>_dispatch_worker_thread2</code>, so the core execution logic is
+here and deserves special attention:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_worker_thread2(<span class="type">void</span> *context)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *<span class="title">item</span>;</span></span><br><span class="line">    <span class="type">dispatch_queue_t</span> dq = context;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_root_queue_context_s</span> *<span class="title">qc</span> =</span> dq-&gt;do_ctxt;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_dispatch_thread_getspecific(dispatch_queue_key)) &#123;</span><br><span class="line">        DISPATCH_CRASH(<span class="string">&quot;Premature thread recycling&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, dq);</span><br><span class="line">    qc-&gt;dgq_pending = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> ((item = fastpath(_dispatch_queue_concurrent_drain_one(dq)))) &#123;</span><br><span class="line">        _dispatch_continuation_pop(item);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    _dispatch_force_cache_cleanup();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This function schedules tasks. Two functions are important:</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li><code>_dispatch_queue_concurrent_drain_one</code>, which takes one
+item from the queue.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li><code>_dispatch_continuation_pop</code>, which processes the item
+taken from the queue.</li>
+</ol></li>
+</ul>
+</blockquote>
+<h4
+id="_dispatch_queue_concurrent_drain_one">_dispatch_queue_concurrent_drain_one</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *</span></span><br><span class="line"><span class="class">_<span class="title">dispatch_queue_concurrent_drain_one</span>(<span class="title">dispatch_queue_t</span> <span class="title">dq</span>)</span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_object_s</span> *<span class="title">head</span>, *<span class="title">next</span>, *<span class="title">const</span> <span class="title">mediator</span> =</span> (<span class="type">void</span> *)~<span class="number">0ul</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The mediator value acts both as a &quot;lock&quot; and a signal</span></span><br><span class="line">    head = dispatch_atomic_xchg(&amp;dq-&gt;dq_items_head, mediator);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(head == <span class="literal">NULL</span>)) &#123;</span><br><span class="line">        dispatch_atomic_cmpxchg(&amp;dq-&gt;dq_items_head, mediator, <span class="literal">NULL</span>);</span><br><span class="line">        _dispatch_debug(<span class="string">&quot;no work on global work queue&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(head == mediator)) &#123;</span><br><span class="line">        _dispatch_queue_wakeup_global(dq);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    next = fastpath(head-&gt;do_next);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(!next)) &#123;</span><br><span class="line">        dq-&gt;dq_items_head = <span class="literal">NULL</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (dispatch_atomic_cmpxchg(&amp;dq-&gt;dq_items_tail, head, <span class="literal">NULL</span>)) &#123;</span><br><span class="line">            <span class="keyword">goto</span> out;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (!(next = head-&gt;do_next)) &#123;</span><br><span class="line">            _dispatch_hardware_pause();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dq-&gt;dq_items_head = next;</span><br><span class="line">    _dispatch_queue_wakeup_global(dq);</span><br><span class="line">out:</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>mediator</code> is used as both a lock and a signal. If the
+queue is empty, it returns <code>NULL</code>. If the current thread
+loses ownership of the queue during competition, it wakes the global
+queue and returns. Otherwise, it takes the head item, moves the queue
+head forward, and returns the old head.</p>
+<h4 id="_dispatch_continuation_pop">_dispatch_continuation_pop</h4>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span> _dispatch_continuation_pop(<span class="type">dispatch_object_t</span> dou)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_continuation_t</span> dc = dou._dc;</span><br><span class="line">    <span class="type">dispatch_group_t</span> dg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (DISPATCH_OBJ_IS_VTABLE(dou._do)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_queue_invoke(dou._dq);</span><br><span class="line">    &#125;</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">if</span> ((<span class="type">long</span>)dou._do-&gt;do_vtable &amp; DISPATCH_OBJ_ASYNC_BIT) &#123;</span><br><span class="line">        _dispatch_continuation_free(dc);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ((<span class="type">long</span>)dou._do-&gt;do_vtable &amp; DISPATCH_OBJ_GROUP_BIT) &#123;</span><br><span class="line">        dg = dc-&gt;dc_group;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        dg = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    dc-&gt;dc_func(dc-&gt;dc_ctxt);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (dg) &#123;</span><br><span class="line">        dispatch_group_leave(dg);</span><br><span class="line">        _dispatch_release(dg);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>From this function, we can see that what is pushed into a queue is
+not only continuation tasks, but may also be another queue. If it is a
+queue, <code>_dispatch_queue_invoke</code> is executed directly.
+Otherwise, it executes <code>dc-&gt;dc_func(dc-&gt;dc_ctxt)</code>.</p>
+<p>Next, analyze <code>_dispatch_queue_invoke</code>, which explains how
+a popped queue is executed.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_NOINLINE <span class="type">void</span> _dispatch_queue_invoke(<span class="type">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> tq = dq-&gt;do_targetq;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!slowpath(DISPATCH_OBJECT_SUSPENDED(dq)) &amp;&amp; fastpath(_dispatch_queue_trylock(dq))) &#123;</span><br><span class="line">        _dispatch_queue_drain(dq);</span><br><span class="line">        <span class="keyword">if</span> (tq == dq-&gt;do_targetq) &#123;</span><br><span class="line">            tq = dx_invoke(dq);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            tq = dq-&gt;do_targetq;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        dispatch_atomic_dec(&amp;dq-&gt;dq_running);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (tq) &#123;</span><br><span class="line">            <span class="keyword">return</span> _dispatch_queue_push(tq, dq);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    dq-&gt;do_next = DISPATCH_OBJECT_LISTLESS;</span><br><span class="line">    <span class="keyword">if</span> (dispatch_atomic_sub(&amp;dq-&gt;do_suspend_cnt, DISPATCH_OBJECT_SUSPEND_LOCK) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (dq-&gt;dq_running == <span class="number">0</span>) &#123;</span><br><span class="line">            _dispatch_wakeup(dq); </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    _dispatch_release(dq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>If execution is triggered directly through <code>dx_invoke</code>, it
+returns <code>NULL</code>.</p>
+<h4 id="flow-summary">Flow Summary</h4>
+<p>The implementation of <code>dispatch_async</code> is relatively
+complex because it involves many data structures and several branches.
+But the core idea is simple: store all submitted blocks in a linked
+list, then in the lower-level thread pool, take blocks out one by one
+and execute them. The function-call flow is:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">dispatch_async</span><br><span class="line">└──_dispatch_async_f_slow</span><br><span class="line">    └──_dispatch_queue_push</span><br><span class="line">        └──_dispatch_queue_push_list</span><br><span class="line">            └──_dispatch_queue_push_list_slow</span><br><span class="line">                └──_dispatch_wakeup</span><br><span class="line">                    └──_dispatch_queue_wakeup_main</span><br><span class="line">                        └──_dispatch_send_wakeup_main_thread</span><br><span class="line">                    └──_dispatch_queue_wakeup_global</span><br><span class="line">                        └──pthread_workqueue_additem_np</span><br><span class="line">                            └──_dispatch_worker_thread2</span><br><span class="line">                        └──pthread_create</span><br><span class="line">                            └──_dispatch_worker_thread</span><br><span class="line">                                └──_dispatch_worker_thread2</span><br><span class="line">                                    └──_dispatch_queue_concurrent_drain_one</span><br><span class="line">                                    └──_dispatch_continuation_pop</span><br><span class="line">                                        └──_dispatch_queue_invoke(queue)</span><br><span class="line">                                        └──dc-&gt;dc_func(dc-&gt;dc_ctxt)(continuation)</span><br></pre></td></tr></table></figure>
+
+<h3 id="dispatch_sync">dispatch_sync</h3>
+<p>After <code>dispatch_async</code>, look at
+<code>dispatch_sync</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_sync</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> (^work)(<span class="type">void</span>))</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> DISPATCH_COCOA_COMPAT</span></span><br><span class="line">    <span class="keyword">if</span> (slowpath(dq == &amp;_dispatch_main_q)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_slow(dq, work);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Block_basic</span> *<span class="title">bb</span> =</span> (<span class="type">void</span> *)work;</span><br><span class="line">    dispatch_sync_f(dq, work, (<span class="type">dispatch_function_t</span>)bb-&gt;Block_invoke);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>If it is the main queue, call <code>_dispatch_sync_slow</code>. This
+method eventually calls <code>dispatch_sync_f</code>.</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _dispatch_sync_slow(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> (^work)(<span class="type">void</span>))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Block_basic</span> *<span class="title">bb</span> =</span> (<span class="type">void</span> *)work;</span><br><span class="line">    dispatch_sync_f(dq, work, (<span class="type">dispatch_function_t</span>)bb-&gt;Block_invoke);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol start="2" type="1">
+<li>Otherwise, call <code>dispatch_sync_f</code>:</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_sync_f</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">dispatch_function_t</span> func)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">typeof</span>(dq-&gt;dq_running) prev_cnt;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> old_dq;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dq-&gt;dq_width == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> dispatch_barrier_sync_f(dq, ctxt, func);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (slowpath(dq-&gt;dq_items_tail) || slowpath(DISPATCH_OBJECT_SUSPENDED(dq)))&#123;    </span><br><span class="line">        _dispatch_sync_f_slow(dq);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;            </span><br><span class="line">        prev_cnt = dispatch_atomic_add(&amp;dq-&gt;dq_running, <span class="number">2</span>) - <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (slowpath(prev_cnt &amp; <span class="number">1</span>)) &#123;</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">if</span> (dispatch_atomic_sub(&amp;dq-&gt;dq_running, <span class="number">2</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">                _dispatch_wakeup(dq);</span><br><span class="line">            &#125;            </span><br><span class="line">            _dispatch_sync_f_slow(dq);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    old_dq = _dispatch_thread_getspecific(dispatch_queue_key);</span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, dq);</span><br><span class="line">    func(ctxt);</span><br><span class="line">    _dispatch_workitem_inc();</span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, old_dq);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(dispatch_atomic_sub(&amp;dq-&gt;dq_running, <span class="number">2</span>) == <span class="number">0</span>)) &#123;</span><br><span class="line">        _dispatch_wakeup(dq);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol start="3" type="1">
+<li>If a synchronous task is pushed into a serial queue,
+<code>dispatch_barrier_sync_f</code> is called:</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_barrier_sync_f</span><span class="params">(<span class="type">dispatch_queue_t</span> dq, <span class="type">void</span> *ctxt, <span class="type">dispatch_function_t</span> func)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">dispatch_queue_t</span> old_dq = _dispatch_thread_getspecific(dispatch_queue_key);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slowpath(dq-&gt;dq_items_tail)</span><br><span class="line">            || slowpath(DISPATCH_OBJECT_SUSPENDED(dq))</span><br><span class="line">            || slowpath(!_dispatch_queue_trylock(dq))) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_barrier_sync_f_slow(dq, ctxt, func);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, dq);</span><br><span class="line">    func(ctxt);</span><br><span class="line">    _dispatch_workitem_inc();</span><br><span class="line">    _dispatch_thread_setspecific(dispatch_queue_key, old_dq);</span><br><span class="line">    _dispatch_queue_unlock(dq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The core logic sets the current thread’s
+<code>dispatch_queue_key</code> to <code>dq</code>, executes the block,
+and then restores the previous <code>old_dq</code>.</p>
+<blockquote>
+<ul>
+<li><ol start="4" type="1">
+<li>If a synchronous task is pushed into a concurrent queue, and the
+queue is not empty, suspended, or already has running tasks,
+<code>_dispatch_sync_f_slow</code> is called to wait with a semaphore.
+Otherwise, <code>_dispatch_wakeup</code> is called directly to wake the
+queue and execute the task.</li>
+</ol></li>
+</ul>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _dispatch_sync_f_slow(<span class="type">dispatch_queue_t</span> dq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// the global root queues do not need strict ordering</span></span><br><span class="line">    <span class="keyword">if</span> (dq-&gt;do_targetq == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        dispatch_atomic_add(&amp;dq-&gt;dq_running, <span class="number">2</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dispatch_sync_slow_s</span> &#123;</span></span><br><span class="line">        DISPATCH_CONTINUATION_HEADER(dispatch_sync_slow_s);</span><br><span class="line">    &#125; dss = &#123;</span><br><span class="line">        .do_vtable = <span class="literal">NULL</span>,</span><br><span class="line">        .dc_func = _dispatch_sync_f_slow2,</span><br><span class="line">        .dc_ctxt = _dispatch_get_thread_semaphore(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    _dispatch_queue_push(dq, (<span class="type">void</span> *)&amp;dss);</span><br><span class="line"></span><br><span class="line">    dispatch_semaphore_wait(dss.dc_ctxt, DISPATCH_TIME_FOREVER);</span><br><span class="line">    _dispatch_put_thread_semaphore(dss.dc_ctxt);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="flow-summary-1">Flow Summary</h4>
+<p>The synchronous implementation of <code>dispatch_sync</code> is
+simpler by comparison. It only needs to push the task into the
+corresponding queue and use a semaphore to wait. The call stack is:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dispatch_sync</span><br><span class="line">└──_dispatch_sync_slow</span><br><span class="line">    └──dispatch_sync_f</span><br><span class="line">        └──dispatch_barrier_sync_f(synchronous task pushed into a serial queue)</span><br><span class="line">        └──_dispatch_sync_f_slow(synchronous task pushed into a concurrent queue)</span><br></pre></td></tr></table></figure>
+
+<h2 id="summary">Summary</h2>
+<p>Queues contain a lot of material and are relatively complex. Because
+my own ability is limited, some parts may be imperfectly understood or
+not explained clearly enough. Corrections and comments are welcome.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/">GCD Source Analysis 3 - dispatch_queue</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-02-03 00:35</p>
+  <p><span>Updated:</span>2026-08-30 01:19</p>
+  <p><span>Original link:</span><a href="/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/" title="GCD Source Analysis 3 - dispatch_queue">https://tsuijunxi.github.io/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/02/01/gcd-source-analysis-2-dispatch-once/" rel="next" title="GCD Source Analysis 2 - dispatch_once">
+                <i class="fa fa-chevron-left"></i> GCD Source Analysis 2 - dispatch_once
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/02/06/gcd-source-analysis-4-dispatch-group/" rel="prev" title="GCD Source Analysis 4 - dispatch_group">
+                GCD Source Analysis 4 - dispatch_group <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#queue-definition"><span class="nav-number">2.</span> <span class="nav-text">Queue Definition</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_struct_header"><span class="nav-number">2.1.</span> <span class="nav-text">DISPATCH_STRUCT_HEADER</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_queue_header"><span class="nav-number">2.2.</span> <span class="nav-text">DISPATCH_QUEUE_HEADER</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dq_label"><span class="nav-number">2.3.</span> <span class="nav-text">dq_label</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getting-queues"><span class="nav-number">3.</span> <span class="nav-text">Getting Queues</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#main-queue-dispatch_get_main_queue"><span class="nav-number">3.1.</span> <span class="nav-text">Main Queue:
+dispatch_get_main_queue</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#do_vtable"><span class="nav-number">3.1.1.</span> <span class="nav-text">do_vtable</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_ref_cnt-and-do_xref_cnt"><span class="nav-number">3.1.2.</span> <span class="nav-text">do_ref_cnt and do_xref_cnt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_targetq"><span class="nav-number">3.1.3.</span> <span class="nav-text">do_targetq</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#manager-queue-_dispatch_mgr_q"><span class="nav-number">3.2.</span> <span class="nav-text">Manager Queue:
+_dispatch_mgr_q</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#do_vtable-1"><span class="nav-number">3.2.1.</span> <span class="nav-text">do_vtable</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_ref_cnt-and-do_xref_cnt-1"><span class="nav-number">3.2.2.</span> <span class="nav-text">do_ref_cnt and do_xref_cnt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_targetq-1"><span class="nav-number">3.2.3.</span> <span class="nav-text">do_targetq</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#global-queue-dispatch_get_global_queue"><span class="nav-number">3.3.</span> <span class="nav-text">Global Queue:
+dispatch_get_global_queue</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#do_vtable-2"><span class="nav-number">3.3.1.</span> <span class="nav-text">do_vtable</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_ref_cnt-and-do_xref_cnt-2"><span class="nav-number">3.3.2.</span> <span class="nav-text">do_ref_cnt and do_xref_cnt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#do_ctxt"><span class="nav-number">3.3.3.</span> <span class="nav-text">do_ctxt</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#custom-queues"><span class="nav-number">3.4.</span> <span class="nav-text">Custom Queues</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_queue_init"><span class="nav-number">3.4.1.</span> <span class="nav-text">_dispatch_queue_init</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#special-handling-of-dispatch_queue_attr_t"><span class="nav-number">3.4.2.</span> <span class="nav-text">Special Handling of
+dispatch_queue_attr_t</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#common-api-analysis"><span class="nav-number">4.</span> <span class="nav-text">Common API Analysis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_async"><span class="nav-number">4.1.</span> <span class="nav-text">dispatch_async</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#dispatch_async_f"><span class="nav-number">4.1.1.</span> <span class="nav-text">dispatch_async_f</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_queue_push"><span class="nav-number">4.1.2.</span> <span class="nav-text">_dispatch_queue_push</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_queue_push_list"><span class="nav-number">4.1.3.</span> <span class="nav-text">_dispatch_queue_push_list</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_wakeup"><span class="nav-number">4.1.4.</span> <span class="nav-text">_dispatch_wakeup</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_worker_thread"><span class="nav-number">4.1.5.</span> <span class="nav-text">_dispatch_worker_thread</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_worker_thread2"><span class="nav-number">4.1.6.</span> <span class="nav-text">_dispatch_worker_thread2</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_queue_concurrent_drain_one"><span class="nav-number">4.1.7.</span> <span class="nav-text">_dispatch_queue_concurrent_drain_one</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_dispatch_continuation_pop"><span class="nav-number">4.1.8.</span> <span class="nav-text">_dispatch_continuation_pop</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flow-summary"><span class="nav-number">4.1.9.</span> <span class="nav-text">Flow Summary</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_sync"><span class="nav-number">4.2.</span> <span class="nav-text">dispatch_sync</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#flow-summary-1"><span class="nav-number">4.2.1.</span> <span class="nav-text">Flow Summary</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

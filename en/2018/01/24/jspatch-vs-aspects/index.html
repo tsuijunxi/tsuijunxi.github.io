@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JSPatch,Aspects" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface Many iOS open-source projects implement various kinds of magic by hooking the third stage of message forwarding, forwardInvocation. If a project integrates multiple libraries that do this, we">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSPatch VS Aspects">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/01/24/jspatch-vs-aspects/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface Many iOS open-source projects implement various kinds of magic by hooking the third stage of message forwarding, forwardInvocation. If a project integrates multiple libraries that do this, we">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/10.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/11.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/02.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/03.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/04.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/05.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/06.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/07.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/08.png">
+<meta property="article:published_time" content="2018-01-24T14:03:46.000Z">
+<meta property="article:modified_time" content="2026-08-29T17:24:05.038Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="Aspects">
+<meta property="article:tag" content="JSPatch">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/10.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/01/24/jspatch-vs-aspects/"/>
+
+
+
+
+
+  <title>JSPatch VS Aspects | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/01/24/jspatch-vs-aspects/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JSPatch VS Aspects</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-01-24T22:03:46+08:00">
+                2018-01-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  65k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  3:56
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/01/24/iOS%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E7%9A%84%E6%AD%A3%E7%A1%AEHook%E5%A7%BF%E5%8A%BF/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>Many iOS open-source projects implement various kinds of magic by
+hooking the third stage of message forwarding,
+<code>forwardInvocation</code>. If a project integrates multiple
+libraries that do this, we may enjoy the convenience they provide, but
+we may also run into all kinds of traps caused by them.</p>
+<h2 id="ios-message-forwarding">iOS Message Forwarding</h2>
+<p>iOS message forwarding has been explained many times, so I will not
+repeat the basics. Here are the key points. Objective-C method
+invocation mainly follows this flow:</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>First look in the class method cache. If found, jump to
+<code>done</code>.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Search the class method cache again. If found, jump to
+<code>done</code>.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Traverse the class method list. If found, add the method to the
+cache and jump to <code>done</code>.</li>
+</ol></li>
+<li><ol start="4" type="1">
+<li>Walk through the superclass chain until <code>NSObject</code>,
+repeating steps 3 and 4 for each superclass.</li>
+</ol></li>
+<li><ol start="5" type="1">
+<li>If the method is not found in the current class or any superclass,
+enter method resolution. If resolution succeeds, jump to
+<code>retry</code>.</li>
+</ol></li>
+<li><ol start="6" type="1">
+<li>If method resolution is not implemented, runtime asks whether the
+receiver has another object that can handle this unknown selector
+through <code>forwardingTargetForSelector:</code>.</li>
+</ol></li>
+<li><ol start="7" type="1">
+<li>If there is no fallback receiver, message redirection begins.
+Runtime wraps all details of the unknown message into an
+<code>NSInvocation</code> object and calls
+<code>forwardInvocation:</code>.</li>
+</ol></li>
+</ul>
+</blockquote>
+<h2 id="hooking-through-ios-message-forwarding">Hooking Through iOS
+Message Forwarding</h2>
+<p>Based on the message forwarding mechanism above, when an Objective-C
+object method is called, runtime searches upward along the inheritance
+chain until <code>NSObject</code>. If it still cannot find the method,
+the method does not exist, but an exception is not thrown immediately.
+Instead, the call goes through multiple forwarding stages, such as
+<code>-resolveInstanceMethod:</code>,
+<code>-forwardingTargetForSelector:</code>,
+<code>-methodSignatureForSelector:</code>, and
+<code>-forwardInvocation:</code>.</p>
+<p>The final <code>-forwardInvocation:</code> receives an
+<code>NSInvocation</code> object. This object stores all information
+about the method call, including selector name, argument types, return
+value type, and most importantly all argument values.</p>
+<p><strong>If we want to implement a library that dynamically changes
+method implementations, we can hook <code>forwardInvocation</code>:
+define our own forwarding handler, redirect calls to target methods into
+that handler, and then dynamically control where those methods go
+next.</strong></p>
+<h3 id="1-jspatch-hooking">1. JSPatch Hooking</h3>
+<p>First look at how JSPatch does it. In <code>JSPatch.mm</code>,
+<code>overrideMethod</code> is defined as:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> overrideMethod(Class cls, <span class="built_in">NSString</span> *selectorName, JSValue *function, <span class="type">BOOL</span> isClassMethod, <span class="keyword">const</span> <span class="type">char</span> *typeDescription)</span><br><span class="line">&#123;</span><br><span class="line">    SEL selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!typeDescription) &#123;</span><br><span class="line">        Method method = class_getInstanceMethod(cls, selector);</span><br><span class="line">        typeDescription = (<span class="type">char</span> *)method_getTypeEncoding(method);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    IMP originalImp = class_respondsToSelector(cls, selector) ? class_getMethodImplementation(cls, selector) : <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    IMP msgForwardIMP = _objc_msgForward;</span><br><span class="line">    <span class="meta">#<span class="keyword">if</span> !defined(__arm64__)</span></span><br><span class="line">        <span class="keyword">if</span> (typeDescription[<span class="number">0</span>] == <span class="string">&#x27;&#123;&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">NSMethodSignature</span> *methodSignature = [<span class="built_in">NSMethodSignature</span> signatureWithObjCTypes:typeDescription];</span><br><span class="line">            <span class="keyword">if</span> ([methodSignature.debugDescription rangeOfString:<span class="string">@&quot;is special struct return? YES&quot;</span>].location != <span class="built_in">NSNotFound</span>) &#123;</span><br><span class="line">                msgForwardIMP = (IMP)_objc_msgForward_stret;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic push</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic ignored <span class="string">&quot;-Wundeclared-selector&quot;</span></span></span><br><span class="line">    <span class="keyword">if</span> (class_getMethodImplementation(cls, <span class="keyword">@selector</span>(forwardInvocation:)) != (IMP)JPForwardInvocation) &#123;</span><br><span class="line">        IMP originalForwardImp = class_replaceMethod(cls, <span class="keyword">@selector</span>(forwardInvocation:), (IMP)JPForwardInvocation, <span class="string">&quot;v@:@&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (originalForwardImp) &#123;</span><br><span class="line">            class_addMethod(cls, <span class="keyword">@selector</span>(ORIGforwardInvocation:), originalForwardImp, <span class="string">&quot;v@:@&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic pop</span></span><br><span class="line">    [cls jp_fixMethodSignature];</span><br><span class="line">    <span class="keyword">if</span> (class_respondsToSelector(cls, selector)) &#123;</span><br><span class="line">        <span class="built_in">NSString</span> *originalSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@&quot;ORIG%@&quot;</span>, selectorName];</span><br><span class="line">        SEL originalSelector = <span class="built_in">NSSelectorFromString</span>(originalSelectorName);</span><br><span class="line">        <span class="keyword">if</span>(!class_respondsToSelector(cls, originalSelector)) &#123;</span><br><span class="line">            class_addMethod(cls, originalSelector, originalImp, typeDescription);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *JPSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@&quot;_JP%@&quot;</span>, selectorName];</span><br><span class="line">    </span><br><span class="line">    _initJPOverideMethods(cls);</span><br><span class="line">    _JSOverideMethods[cls][JPSelectorName] = function;</span><br><span class="line">    </span><br><span class="line">    class_replaceMethod(cls, selector, msgForwardIMP, typeDescription);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>JSPatch’s hook process is:</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>Make <code>SEL(forwardInvocation)</code> point to JSPatch’s custom
+forwarding implementation <code>IMP(JPForwardInvocation)</code>. At the
+same time, define <code>SEL(ORIGforwardInvocation)</code> to point to
+the original <code>IMP(forwardInvocation)</code>, so the original
+forwarding path can still be handled. For each JSPatch class, although
+<code>overrideMethod</code> may be called many times, this step runs
+only once.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Make <code>SEL(methodName)</code> point to
+<code>_objc_msgForward</code> or <code>_objc_msgForward_stret</code>. At
+the same time, define <code>SEL(ORIGmethodName)</code> to point to the
+original implementation <code>IMP(methodName)</code>.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Store the replacement JavaScript block as
+<code>_JSOverideMethods[cls][JPSelectorName] = function</code>.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>Now look at <code>JPForwardInvocation</code>:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> JPForwardInvocation(__<span class="keyword">unsafe_unretained</span> <span class="type">id</span> assignSlf, SEL selector, <span class="built_in">NSInvocation</span> *invocation)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">BOOL</span> deallocFlag = <span class="literal">NO</span>;</span><br><span class="line">    <span class="type">id</span> slf = assignSlf;</span><br><span class="line">    <span class="built_in">NSMethodSignature</span> *methodSignature = [invocation methodSignature];</span><br><span class="line">    <span class="built_in">NSInteger</span> numberOfArguments = [methodSignature numberOfArguments];</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *selectorName = <span class="built_in">NSStringFromSelector</span>(invocation.selector);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSString</span> *JPSelectorName = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@&quot;_JP%@&quot;</span>, selectorName];</span><br><span class="line">    JSValue *jsFunc = getJSFunctionInObjectHierachy(slf, JPSelectorName);</span><br><span class="line">    <span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);        </span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;    </span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>JSPatch’s original forwarding logic is:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> JPExecuteORIGForwardInvocation(<span class="type">id</span> slf, SEL selector, <span class="built_in">NSInvocation</span> *invocation)</span><br><span class="line">&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic push</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic ignored <span class="string">&quot;-Wundeclared-selector&quot;</span></span></span><br><span class="line">    SEL origForwardSelector = <span class="keyword">@selector</span>(ORIGforwardInvocation:);</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang diagnostic pop</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> ([slf respondsToSelector:origForwardSelector]) &#123;</span><br><span class="line">        <span class="built_in">NSMethodSignature</span> *methodSignature = [slf methodSignatureForSelector:origForwardSelector];</span><br><span class="line">        <span class="keyword">if</span> (!methodSignature) &#123;</span><br><span class="line">            _exceptionBlock([<span class="built_in">NSString</span> stringWithFormat:<span class="string">@&quot;unrecognized selector -ORIGforwardInvocation: for instance %@&quot;</span>, slf]);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">NSInvocation</span> *forwardInv= [<span class="built_in">NSInvocation</span> invocationWithMethodSignature:methodSignature];</span><br><span class="line">        [forwardInv setTarget:slf];</span><br><span class="line">        [forwardInv setSelector:origForwardSelector];</span><br><span class="line">        [forwardInv setArgument:&amp;invocation atIndex:<span class="number">2</span>];</span><br><span class="line">        [forwardInv invoke];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        Class superCls = [[slf <span class="keyword">class</span>] superclass];</span><br><span class="line">        Method superForwardMethod = class_getInstanceMethod(superCls, <span class="keyword">@selector</span>(forwardInvocation:));</span><br><span class="line">        <span class="type">void</span> (*superForwardIMP)(<span class="type">id</span>, SEL, <span class="built_in">NSInvocation</span> *);</span><br><span class="line">        superForwardIMP = (<span class="type">void</span> (*)(<span class="type">id</span>, SEL, <span class="built_in">NSInvocation</span> *))method_getImplementation(superForwardMethod);</span><br><span class="line">        superForwardIMP(slf, <span class="keyword">@selector</span>(forwardInvocation:), invocation);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The execution logic after JSPatch hooks a function:</p>
+<blockquote>
+<ul>
+<li><ol start="4" type="1">
+<li>When the hooked method is executed, it is forwarded into
+<code>JPForwardInvocation</code>. The method prepends <code>"_JP"</code>
+to <code>selectorName</code>, searches <code>_JSOverideMethods</code>
+for the JavaScript code of that method, parses arguments if found,
+executes the JavaScript code, and finally parses the JS return
+value.</li>
+</ol></li>
+<li><ol start="5" type="1">
+<li>If it is not found, the method was not overridden by JSPatch, so
+execution jumps to <code>JPExecuteORIGForwardInvocation</code> and
+follows the original forwarding path.</li>
+</ol></li>
+<li><ol start="6" type="1">
+<li>If the current class responds to <code>origForwardSelector</code>,
+invoke it directly.</li>
+</ol></li>
+<li><ol start="7" type="1">
+<li>Otherwise, find the superclass’s <code>forwardInvocation</code>
+method and invoke it.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>The state after a method is hooked by JSPatch can be represented like
+this:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/10.png" width="65%" height="65%" />
+
+<h3 id="2-aspects-hooking">2. Aspects Hooking</h3>
+<p>Aspects supports not only class hooks, but also object hooks,
+offering finer granularity. For object-level hooks, Aspects does not
+directly swizzle the object’s <code>forwardInvocation</code> method.
+Instead, it dynamically creates a subclass of the current object,
+associates the object with that subclass, and replaces the subclass’s
+<code>forwardInvocation</code>. The idea is similar to KVO: the current
+object becomes an instance of a subclass, while external users can still
+treat it as the original object. All swizzling happens on the subclass,
+so the original class does not need to be changed. Object-level hooks in
+Aspects are not the topic today.</p>
+<p>Here we mainly discuss class hooks in Aspects. The principle is very
+similar to JSPatch. The core code is:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">id</span> aspect_add(<span class="type">id</span> <span class="keyword">self</span>, SEL selector, AspectOptions options, <span class="type">id</span> block, <span class="built_in">NSError</span> **error) &#123;</span><br><span class="line">    __block AspectIdentifier *identifier = <span class="literal">nil</span>;</span><br><span class="line">    aspect_performLocked(^&#123;</span><br><span class="line">        <span class="keyword">if</span> (aspect_isSelectorAllowedAndTrack(<span class="keyword">self</span>, selector, options, error)) &#123;</span><br><span class="line">            AspectsContainer *aspectContainer = aspect_getContainerForObject(<span class="keyword">self</span>, selector);</span><br><span class="line">            identifier = [AspectIdentifier identifierWithSelector:selector object:<span class="keyword">self</span> options:options block:block error:error];</span><br><span class="line">            <span class="keyword">if</span> (identifier) &#123;</span><br><span class="line">                [aspectContainer addAspect:identifier withOptions:options];</span><br><span class="line">                aspect_prepareClassAndHookSelector(<span class="keyword">self</span>, selector, error);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> identifier;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> aspect_prepareClassAndHookSelector(<span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSError</span> **error) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(selector);</span><br><span class="line">    Class klass = aspect_hookClass(<span class="keyword">self</span>, error);</span><br><span class="line"></span><br><span class="line">    Method targetMethod = class_getInstanceMethod(klass, selector);</span><br><span class="line">    IMP targetMethodIMP = method_getImplementation(targetMethod);</span><br><span class="line">    <span class="keyword">if</span> (!aspect_isMsgForwardIMP(targetMethodIMP)) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="type">char</span> *typeEncoding = method_getTypeEncoding(targetMethod);</span><br><span class="line">        SEL aliasSelector = aspect_aliasForSelector(selector);</span><br><span class="line">        <span class="keyword">if</span> (![klass instancesRespondToSelector:aliasSelector]) &#123;</span><br><span class="line">            __unused <span class="type">BOOL</span> addedAlias = class_addMethod(klass, aliasSelector, method_getImplementation(targetMethod), typeEncoding);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        class_replaceMethod(klass, selector, aspect_getMsgForwardIMP(<span class="keyword">self</span>, selector), typeEncoding);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> aspect_swizzleForwardInvocation(Class klass) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(klass);</span><br><span class="line">    IMP originalImplementation = class_replaceMethod(klass, <span class="keyword">@selector</span>(forwardInvocation:), (IMP)__ASPECTS_ARE_BEING_CALLED__, <span class="string">&quot;v@:@&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (originalImplementation) &#123;</span><br><span class="line">        class_addMethod(klass, <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName), originalImplementation, <span class="string">&quot;v@:@&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> __ASPECTS_ARE_BEING_CALLED__(__<span class="keyword">unsafe_unretained</span> <span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSInvocation</span> *invocation) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(<span class="keyword">self</span>);</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(invocation);</span><br><span class="line">    SEL originalSelector = invocation.selector;</span><br><span class="line">    SEL aliasSelector = aspect_aliasForSelector(invocation.selector);</span><br><span class="line">    invocation.selector = aliasSelector;</span><br><span class="line">    AspectsContainer *objectContainer = objc_getAssociatedObject(<span class="keyword">self</span>, aliasSelector);</span><br><span class="line">    AspectsContainer *classContainer = aspect_getContainerForClass(object_getClass(<span class="keyword">self</span>), aliasSelector);</span><br><span class="line">    AspectInfo *info = [[AspectInfo alloc] initWithInstance:<span class="keyword">self</span> invocation:invocation];</span><br><span class="line">    <span class="built_in">NSArray</span> *aspectsToRemove = <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Before hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.beforeAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.beforeAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instead hooks.</span></span><br><span class="line">    <span class="type">BOOL</span> respondsToAlias = <span class="literal">YES</span>;</span><br><span class="line">    <span class="keyword">if</span> (objectContainer.insteadAspects.count || classContainer.insteadAspects.count) &#123;</span><br><span class="line">        aspect_invoke(classContainer.insteadAspects, info);</span><br><span class="line">        aspect_invoke(objectContainer.insteadAspects, info);</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        Class klass = object_getClass(invocation.target);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> ((respondsToAlias = [klass instancesRespondToSelector:aliasSelector])) &#123;</span><br><span class="line">                [invocation invoke];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">while</span> (!respondsToAlias &amp;&amp; (klass = class_getSuperclass(klass)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// After hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.afterAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.afterAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If no matching hooks are found, call the original forwarding path.</span></span><br><span class="line">    <span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">        invocation.selector = originalSelector;</span><br><span class="line">        SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:originalForwardInvocationSEL]) &#123;</span><br><span class="line">            ((<span class="type">void</span>( *)(<span class="type">id</span>, SEL, <span class="built_in">NSInvocation</span> *))objc_msgSend)(<span class="keyword">self</span>, originalForwardInvocationSEL, invocation);</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Remove any hooks that are queued for deregistration.</span></span><br><span class="line">    [aspectsToRemove makeObjectsPerformSelector:<span class="keyword">@selector</span>(remove)];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After a method is hooked by Aspects, its state can be shown as:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/11.png" width="65%" height="65%" />
+
+<h2 id="jspatch-and-aspects-fighting-each-other">JSPatch and Aspects
+Fighting Each Other</h2>
+<p>If a project integrates multiple third-party libraries that all hook
+a class’s <code>forwardInvocation</code>, many problems can occur. Next,
+using Aspects and JSPatch as examples, let’s look at their
+collisions.</p>
+<p>First, some context:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="type">void</span>)test;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">- (<span class="type">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;MyClass origin log&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)aspects_hook_test &#123;</span><br><span class="line">    [MyClass aspect_hookSelector:<span class="keyword">@selector</span>(test)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="type">id</span> aspects) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@&quot;aspects log&quot;</span>);</span><br><span class="line">    &#125; error:<span class="literal">nil</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MyClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">test</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;jspatch log&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>Here is a summary of the problems:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JSPatch hooks first, Aspects hooks later</td>
+<td style="text-align: right;">aspects log</td>
+</tr>
+<tr>
+<td>Aspects hooks first, JSPatch hooks later</td>
+<td style="text-align: right;">jspatch log</td>
+</tr>
+<tr>
+<td>Aspects hooks first, JSPatch hooks later, and JSPatch calls
+<code>self.ORIGxxx()</code></td>
+<td style="text-align: right;">crash</td>
+</tr>
+<tr>
+<td>Aspects hooks a superclass method first, JSPatch hooks the same
+subclass method later, and JSPatch calls
+<code>self.super().xxx()</code></td>
+<td style="text-align: right;">crash</td>
+</tr>
+<tr>
+<td>JSPatch hooks a superclass method first, Aspects hooks a subclass
+method later, then <code>[subclass superTest]</code> is called</td>
+<td style="text-align: right;">crash</td>
+</tr>
+</tbody>
+</table>
+<p>Now analyze them step by step.</p>
+<h3 id="original-state">Original State</h3>
+<p>Before any hook, each class’s SEL and IMP relationships look like
+this:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/02.png" width="65%" height="65%" />
+
+<h3 id="jspatch-hook">JSPatch Hook</h3>
+<p>After JSPatch hooks, the SEL and IMP relationships look like
+this:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/03.png" width="65%" height="65%" />
+
+<h3 id="aspects-hook">Aspects Hook</h3>
+<p>After Aspects hooks, the SEL and IMP relationships look like
+this:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/04.png" width="65%" height="65%" />
+
+<h3 id="jspatch-hooks-first-aspects-hooks-later">JSPatch Hooks First,
+Aspects Hooks Later</h3>
+<p>JSPatch first hooks the <code>test</code> method, and then Aspects
+hooks <code>test</code> on top of that. The SEL and IMP relationships
+become:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/05.png" width="65%" height="65%" />
+
+<p>At this point, if a message is sent to <code>test</code>, forwarding
+naturally occurs according to pointer 1. Since
+<code>SEL(forwardInvocation)</code> now points to
+<code>IMP(__ASPECTS_ARE_BEING_CALLED__)</code>, forwarding enters
+<code>__ASPECTS_ARE_BEING_CALLED__</code>. Because Aspects can find the
+replacement block for <code>test</code>, it executes that block and
+prints <code>aspects log</code>. The original JSPatch JavaScript block
+is overwritten and will not execute.</p>
+<h3 id="aspects-hooks-first-jspatch-hooks-later">Aspects Hooks First,
+JSPatch Hooks Later</h3>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="65%" height="65%" />
+
+<p>If a message is sent to <code>test</code>, forwarding happens
+according to pointer 1. Since <code>SEL(forwardInvocation)</code> points
+to <code>IMP(JPforwardInvocation)</code>, forwarding enters
+<code>JPforwardInvocation</code>. Because the JavaScript block for
+<code>test</code> can be found, it executes that block and prints
+<code>jspatch log</code>. The Aspects block is overwritten and will not
+execute.</p>
+<h3
+id="aspects-hooks-first-jspatch-hooks-later-and-jspatch-calls-selforigtest">Aspects
+Hooks First, JSPatch Hooks Later, and JSPatch Calls self.ORIGtest()</h3>
+<p>The result is a crash:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70095:30054488] -[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30</span><br><span class="line">JPAndAspects[70095:30054488] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;</span><br><span class="line">reason: &#x27;-[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30&#x27;</span><br></pre></td></tr></table></figure>
+
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="75%" height="75%" />
+
+<p>The JSPatch code calls <code>self.ORIGtest()</code>:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MyClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">test</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;jspatch log&quot;</span>);</span><br><span class="line">            self.<span class="title class_">ORIGtest</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>Why does it crash?</p>
+<blockquote>
+<ul>
+<li>According to pointer 1, calling <code>test</code> enters forwarding.
+Since <code>SEL(forwardInvocation)</code> points to
+<code>IMP(JPforwardInvocation)</code>, forwarding enters
+<code>JPforwardInvocation</code>. The JS block for <code>test</code> is
+found and executed.</li>
+<li>The JS code calls <code>self.ORIGtest()</code>. Because of
+replacement order, <code>SEL(ORIGtest)</code> no longer points to
+<code>IMP(test)</code>, but to <code>IMP(_objc_msgForward)</code>, so it
+is forwarded again to <code>IMP(JPforwardInvocation)</code>.</li>
+<li>Now the JS block for <code>_JPORIGtest</code> cannot be found, so
+JSPatch falls back to its original forwarding path,
+<code>SEL(ORIGforwardInvocation)</code>. But due to overwriting,
+<code>SEL(ORIGforwardInvocation)</code> points to
+<code>IMP(__ASPECTS_ARE_BEING_CALLED__)</code>, so it enters
+<code>__ASPECTS_ARE_BEING_CALLED__</code>.</li>
+<li>Inside <code>__ASPECTS_ARE_BEING_CALLED__</code>, the block for
+<code>SEL(aspects__ORIGtest)</code> cannot be found either, so it
+continues to Aspects’ original forwarding path,
+<code>SEL(__aspects_forwardInvocation)</code>, which points to
+<code>IMP(forwardInvocation)</code>.</li>
+<li>In this example, <code>IMP(forwardInvocation)</code> is not
+implemented, so it crashes. Even if we implemented it, we would still
+not expect a selector like <code>SEL(aspects__ORIGtest)</code>, so a
+crash would still be likely.</li>
+</ul>
+</blockquote>
+<p>How can this be solved?</p>
+<p><strong>In theory, <code>ORIGtest</code>, as the original
+implementation of the function, should not enter forwarding. It should
+point directly to <code>IMP(test)</code>. Once it enters
+<code>JPforwardInvocation</code>, it means the class’s <code>test</code>
+method has already been hooked by another library. We need to check
+whether the current <code>ORIGtest</code> has also been hooked. If not,
+follow the original flow. If it has been hooked, remove
+<code>ORIG</code> and forward again.</strong></p>
+<p>Modify JSPatch source code. In <code>JPForwardInvocation</code>,
+before falling back to original forwarding when the corresponding JS
+block is not found, add:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);</span><br><span class="line">        <span class="keyword">if</span>([selectorName hasPrefix:<span class="string">@&quot;ORIG&quot;</span>] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret))</span><br><span class="line">        &#123;</span><br><span class="line">            selectorName = [selectorName stringByReplacingOccurrencesOfString:<span class="string">@&quot;ORIG&quot;</span> withString:<span class="string">@&quot;&quot;</span>];</span><br><span class="line">            invocation.selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>Output:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70724:30115450] JSPatch.log: jspatch log</span><br><span class="line">JPAndAspects[70724:30115450] aspects log</span><br></pre></td></tr></table></figure>
+
+<h3
+id="aspects-hooks-the-superclass-method-first-jspatch-hooks-the-same-subclass-method-later-and-jspatch-calls-selfsuperxxx">Aspects
+Hooks the Superclass Method First, JSPatch Hooks the Same Subclass
+Method Later, and JSPatch Calls self.super().xxx()</h3>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="type">void</span>)test;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">- (<span class="type">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;MyClass origin log&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MySubClass</span> : <span class="title">MyClass</span></span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MySubClass</span></span></span><br><span class="line">- (<span class="type">void</span>)test &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;MySubClass origin log&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)aspects_hook_test &#123;</span><br><span class="line">    [MyClass aspect_hookSelector:<span class="keyword">@selector</span>(test)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="type">id</span> aspects) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@&quot;MyClass aspects log&quot;</span>);</span><br><span class="line">    &#125; error:<span class="literal">nil</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MySubClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">test</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;MySubClass jspatch log&quot;</span>);</span><br><span class="line">            self.<span class="variable language_">super</span>().<span class="title function_">test</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>If a <code>test</code> message is sent to an instance of
+<code>MySubClass</code>, it crashes:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[73431:30359622] JSPatch.log: MySubClass jspatch log</span><br><span class="line">JPAndAspects[73431:30359622] -[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220</span><br></pre></td></tr></table></figure>
+
+<p>Look at the hooked state:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/07.png" />
+
+<p>Why does it crash?</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>According to pointer 6, sending <code>test</code> to an instance of
+<code>MySubClass</code> goes into forwarding. According to pointer 9,
+<code>MySubClass</code>’s <code>SEL(forwardInvocation)</code> points to
+<code>IMP(JPforwardInvocation)</code>, so it enters
+<code>JPforwardInvocation</code>.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>The JS block for <code>test</code> is found and executes, printing
+<code>MySubClass jspatch log</code>. The JS block calls
+<code>self.super().test()</code>. JSPatch’s super-call mechanism works
+by finding the IMP implementation of the superclass method and adding a
+new method to the current class that points to the superclass’s IMP.
+Calling this new method is equivalent to calling <code>super</code>. So
+when <code>self.super().test()</code> is called, JSPatch adds
+<code>SEL(SUPER_test)</code> to <code>MySubClass</code>, pointing to the
+superclass <code>MyClass</code>’s <code>IMP(test)</code>. Unfortunately,
+the superclass’s <code>SEL(test)</code> already points to
+<code>IMP(_objc_msgForward)</code>, so <code>SEL(_JPSUPER_test)</code>
+also points to <code>IMP(_objc_msgForward)</code>.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>According to pointer 9, forwarding enters
+<code>JPforwardInvocation</code> again. This time the JS block for
+<code>SEL(_JPSUPER_test)</code> cannot be found, so it follows the
+original forwarding path and enters
+<code>JPExecuteORIGForwardInvocation</code>.</li>
+</ol></li>
+<li><ol start="4" type="1">
+<li>Since subclass <code>MySubClass</code> does not implement
+<code>forwardInvocation</code>, it enters the superclass
+<code>MyClass</code> forwarding path. According to pointer 4, it enters
+<code>__ASPECTS_ARE_BEING_CALLED__</code>. But inside that function, no
+block for <code>SEL(aspects__SUPER_test)</code> can be found, so it
+crashes directly.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>How to solve it?</p>
+<p>This problem is similar to the <code>ORIG</code> issue. In theory, a
+super call should not enter its own forwarding path; it should point
+directly to the superclass implementation. But because the superclass
+has already been hooked by Aspects, the call to
+<code>self.super().test()</code> accidentally enters the current
+forwarding path again, causing everything that follows.</p>
+<p>Following the same idea, before falling back to original forwarding
+when the JS block is not found, check whether <code>selectorName</code>
+has the <code>SUPER_</code> prefix and whether its IMP has already been
+hooked to <code>_objc_msgForward</code>. If so, remove the
+<code>SUPER_</code> prefix and forward again.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!jsFunc) &#123;</span><br><span class="line">        IMP invocationIMP = class_getMethodImplementation([slf <span class="keyword">class</span>], invocation.selector);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>([selectorName hasPrefix:<span class="string">@&quot;SUPER_&quot;</span>] &amp;&amp; (invocationIMP == _objc_msgForward || invocationIMP==_objc_msgForward_stret))&#123;</span><br><span class="line">            selectorName = [selectorName stringByReplacingOccurrencesOfString:<span class="string">@&quot;SUPER_&quot;</span> withString:<span class="string">@&quot;&quot;</span>];</span><br><span class="line">            invocation.selector = <span class="built_in">NSSelectorFromString</span>(selectorName);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        JPExecuteORIGForwardInvocation(slf, selector, invocation);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3
+id="jspatch-hooks-the-superclass-method-first-aspects-hooks-the-subclass-method-later-then-subclass-supertest-is-called">JSPatch
+Hooks the Superclass Method First, Aspects Hooks the Subclass Method
+Later, Then [subclass superTest] Is Called</h3>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyClass</span> : <span class="title">NSObject</span></span></span><br><span class="line">- (<span class="type">void</span>)superTest;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span></span></span><br><span class="line">-(<span class="type">void</span>)superTest&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;MyClass superTest&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MySubClass</span> : <span class="title">MyClass</span></span></span><br><span class="line">-(<span class="type">void</span>)subTest;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MySubClass</span></span></span><br><span class="line">-(<span class="type">void</span>)subTest&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;MySubClass subTest&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MyClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">superTest</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;MyClass superTest jspatch log&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[MySubClass aspect_hookSelector:<span class="keyword">@selector</span>(subTest)</span><br><span class="line">                     withOptions:AspectPositionInstead</span><br><span class="line">                      usingBlock:^(<span class="type">id</span> aspects) &#123;</span><br><span class="line">                          <span class="built_in">NSLog</span>(<span class="string">@&quot;MySubClass subTest aspects log&quot;</span>);</span><br><span class="line">                          </span><br><span class="line">                      &#125; error:<span class="literal">nil</span>];</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[76443:30659220] -[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10</span><br><span class="line">JPAndAspects[76443:30659220] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;, </span><br><span class="line">reason: &#x27;-[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>Look at the hooked state:</p>
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/08.png" />
+
+<p>Why does it crash?</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>According to pointer 1, because superclass <code>MyClass</code>’s
+<code>SEL(superTest)</code> points to
+<code>IMP(_objc_msgForward)</code>, calling
+<code>[subclass superTest]</code> must trigger forwarding.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Since subclass <code>MySubClass</code>’s
+<code>SEL(forwardInvocation)</code> points to
+<code>IMP(__ASPECTS_ARE_BEGIN_CALLED__)</code>, execution enters
+<code>__ASPECTS_ARE_BEGIN_CALLED__</code>.</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Inside the subclass’s <code>__ASPECTS_ARE_BEGIN_CALLED__</code>, no
+block for <code>SEL(aspects__superTest)</code> can be found, so it is
+treated as not hooked and falls back to original forwarding.</li>
+</ol></li>
+<li><ol start="4" type="1">
+<li>The subclass’s own <code>SEL(__aspects_forwardInvocation)</code>
+points to an unimplemented <code>IMP(forwardInvocation)</code>, so it
+crashes directly.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>How can this be solved?</p>
+<p>The root cause is that the subclass cannot handle
+<code>SEL(aspects__superTest)</code>, while the superclass
+<code>forwardInvocation</code>, which can really handle it, is not
+reached. In other words, the inheritance of
+<code>forwardInvocation</code> is broken by the hooks on the superclass
+and subclass. The solution is to let the inheritance hierarchy handle
+it.</p>
+<p>Modify the Aspects source code:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">    invocation.selector = originalSelector;</span><br><span class="line">    SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">    SEL forwardInvocationSEL = <span class="keyword">@selector</span>(forwardInvocation:);</span><br><span class="line">    Class kClass = object_getClass(<span class="keyword">self</span>);</span><br><span class="line">    Method method = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        method = class_getInstanceMethod(kClass, originalForwardInvocationSEL) ?:</span><br><span class="line">        class_getInstanceMethod(kClass, forwardInvocationSEL);</span><br><span class="line">        FORWARD_INVOCATION_IMP imp = method ? (FORWARD_INVOCATION_IMP)method_getImplementation(method) : <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">if</span>(imp &amp;&amp; (imp != &amp;__ASPECTS_ARE_BEING_CALLED__))&#123;</span><br><span class="line">            imp(<span class="keyword">self</span>,<span class="keyword">@selector</span>(forwardInvocation:),invocation);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="keyword">while</span>((kClass = class_getSuperclass(kClass)));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == method)&#123;</span><br><span class="line">        [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The result after modification:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[78567:30830810] JSPatch.log: MyClass superTest jspatch log</span><br></pre></td></tr></table></figure>
+
+<h2 id="how-to-keep-a-correct-hooking-posture">How to Keep a Correct
+Hooking Posture</h2>
+<p>So far, we have analyzed several problems caused by JSPatch and
+Aspects both hooking message forwarding through
+<code>forwardInvocation</code>, and we have proposed solutions one by
+one. <strong>The core of the solution is to identify the forwarding
+state after multiple libraries have hooked it, and then analyze the
+method invocation flow from that state.</strong></p>
+<p>Although the previous fight involved only two libraries, the
+complexity is already quite high. If you have read this far, you can
+probably feel it too. And this is only a two-library conflict. What if
+there are more libraries?</p>
+<p>Each library’s hook logic often considers only itself, assuming it is
+the only one using this kind of runtime magic in the project. But other
+libraries think the same way. Since hooks must have an order, logic
+overwriting or strange forwarding jumps are inevitable, which can lead
+to crashes and logic errors.</p>
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>Crashes are definitely what we least want, so they must be analyzed,
+solved, and avoided.</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Logic overwriting may not necessarily crash, but if several hook
+libraries are used on the same class, does that product logic or
+technical logic already have a problem?</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>A fundamental reason multiple hook libraries fail together is that
+each library assumes <code>SEL(forwardInvocation)</code> points to the
+original <code>IMP(forwardInvocation)</code> before it hooks. It does
+not know that another library may have already changed
+<code>SEL(forwardInvocation)</code> to another implementation. The
+original forwarding implementation is then lost to the current library,
+causing incorrect original forwarding and crashes. If we implement a
+mechanism for getting the true original forwarding implementation
+without relying on the pre-hook state, this problem can be improved.
+Even so, logical overwriting of <code>SEL(forwardInvocation)</code> is
+probably unavoidable to some extent. If the integrated library is closed
+source, the situation becomes even more serious.</li>
+</ol></li>
+</ul>
+</blockquote>
+<p>So when implementing this kind of library, or integrating one, be
+extra careful with the traps it may bring.</p>
+<h2 id="summary">Summary</h2>
+<p>Forwarding is risky. Hook with care.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/01/24/jspatch-vs-aspects/">JSPatch VS Aspects</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-01-24 22:03</p>
+  <p><span>Updated:</span>2026-08-30 01:24</p>
+  <p><span>Original link:</span><a href="/en/2018/01/24/jspatch-vs-aspects/" title="JSPatch VS Aspects">https://tsuijunxi.github.io/en/2018/01/24/jspatch-vs-aspects/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/01/24/jspatch-vs-aspects/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/JSPatch/" rel="tag"># JSPatch</a>
+          
+            <a href="/en/tags/Aspects/" rel="tag"># Aspects</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/01/21/jspatch-dealloc-sorrow/" rel="next" title="JSPatch's dealloc Sorrow">
+                <i class="fa fa-chevron-left"></i> JSPatch's dealloc Sorrow
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/01/28/iphonex-home-indicator-adaptation/" rel="prev" title="iPhone X Home Indicator Adaptation">
+                iPhone X Home Indicator Adaptation <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ios-message-forwarding"><span class="nav-number">2.</span> <span class="nav-text">iOS Message Forwarding</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hooking-through-ios-message-forwarding"><span class="nav-number">3.</span> <span class="nav-text">Hooking Through iOS
+Message Forwarding</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-jspatch-hooking"><span class="nav-number">3.1.</span> <span class="nav-text">1. JSPatch Hooking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-aspects-hooking"><span class="nav-number">3.2.</span> <span class="nav-text">2. Aspects Hooking</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jspatch-and-aspects-fighting-each-other"><span class="nav-number">4.</span> <span class="nav-text">JSPatch and Aspects
+Fighting Each Other</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#original-state"><span class="nav-number">4.1.</span> <span class="nav-text">Original State</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jspatch-hook"><span class="nav-number">4.2.</span> <span class="nav-text">JSPatch Hook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#aspects-hook"><span class="nav-number">4.3.</span> <span class="nav-text">Aspects Hook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jspatch-hooks-first-aspects-hooks-later"><span class="nav-number">4.4.</span> <span class="nav-text">JSPatch Hooks First,
+Aspects Hooks Later</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#aspects-hooks-first-jspatch-hooks-later"><span class="nav-number">4.5.</span> <span class="nav-text">Aspects Hooks First,
+JSPatch Hooks Later</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#aspects-hooks-first-jspatch-hooks-later-and-jspatch-calls-selforigtest"><span class="nav-number">4.6.</span> <span class="nav-text">Aspects
+Hooks First, JSPatch Hooks Later, and JSPatch Calls self.ORIGtest()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#aspects-hooks-the-superclass-method-first-jspatch-hooks-the-same-subclass-method-later-and-jspatch-calls-selfsuperxxx"><span class="nav-number">4.7.</span> <span class="nav-text">Aspects
+Hooks the Superclass Method First, JSPatch Hooks the Same Subclass
+Method Later, and JSPatch Calls self.super().xxx()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jspatch-hooks-the-superclass-method-first-aspects-hooks-the-subclass-method-later-then-subclass-supertest-is-called"><span class="nav-number">4.8.</span> <span class="nav-text">JSPatch
+Hooks the Superclass Method First, Aspects Hooks the Subclass Method
+Later, Then [subclass superTest] Is Called</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-to-keep-a-correct-hooking-posture"><span class="nav-number">5.</span> <span class="nav-text">How to Keep a Correct
+Hooking Posture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">6.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

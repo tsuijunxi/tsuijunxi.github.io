@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a56087b5"
+    });
+  daovoice('update');
+  </script>
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="GCD" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Preface This article mainly analyzes the underlying implementation of dispatch_once. Relatively speaking, this is probably the simplest article in the GCD source-code analysis series. dispatch_once An">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GCD Source Analysis 2 - dispatch_once">
+<meta property="og:url" content="https://tsuijunxi.github.io/en/2018/02/01/gcd-source-analysis-2-dispatch-once/index.html">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="Preface This article mainly analyzes the underlying implementation of dispatch_once. Relatively speaking, this is probably the simplest article in the GCD source-code analysis series. dispatch_once An">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-02-01T13:59:19.000Z">
+<meta property="article:modified_time" content="2026-08-28T18:49:05.593Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="GCD">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/en/2018/02/01/gcd-source-analysis-2-dispatch-once/"/>
+
+
+
+
+
+  <title>GCD Source Analysis 2 - dispatch_once | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/en/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <a href="/2018/02/01/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%902%20%E2%80%94%E2%80%94%20dispatch-once%E7%AF%87/">中文</a>
+  
+  <span class="separator">/</span>
+  
+    <span class="active">EN</span>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/en/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/en/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/en/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/en/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/en/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            Apps
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/en/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/02/01/gcd-source-analysis-2-dispatch-once/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD Source Analysis 2 - dispatch_once</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-02-01T21:59:19+08:00">
+                2018-02-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Words count in article&#58;</span>
+                
+                <span title="Words count in article">
+                  20k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">
+                  1:11
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <a href="/2018/02/01/GCD%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%902%20%E2%80%94%E2%80%94%20dispatch-once%E7%AF%87/">中文</a>
+          
+          
+            <span class="separator">/</span>
+            
+              <span class="active">English</span>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="preface">Preface</h2>
+<p>This article mainly analyzes the underlying implementation of
+<code>dispatch_once</code>. Relatively speaking, this is probably the
+simplest article in the GCD source-code analysis series.</p>
+<h2 id="dispatch_once-analysis">dispatch_once Analysis</h2>
+<p>In iOS development, we often use <code>dispatch_once</code> to define
+a singleton and guarantee object uniqueness. But have we really looked
+at how <code>dispatch_once</code> guarantees that only one object is
+created in a multithreaded environment? For example, we often create a
+singleton with code like this:</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)sharedInstance &#123;</span><br><span class="line">    <span class="keyword">static</span> XXObject *_instance;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> _predicate;</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;_predicate, ^&#123;</span><br><span class="line">        _instance = [[XXObject alloc] init];</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> _instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This code involves two key terms: <code>dispatch_once_t</code> and
+<code>dispatch_once</code>. Let’s analyze them one by one.</p>
+<h3 id="dispatch_once_t">dispatch_once_t</h3>
+<p>In <code>once.h</code>, it is defined as:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="type">long</span> <span class="type">dispatch_once_t</span>;</span><br></pre></td></tr></table></figure>
+
+<p>So <code>dispatch_once_t</code> is actually a long integer. Quite
+unexpected.</p>
+<h3 id="dispatch_once">dispatch_once</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_once</span><span class="params">(<span class="type">dispatch_once_t</span> *val, <span class="type">void</span> (^block)(<span class="type">void</span>))</span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Block_basic</span> *<span class="title">bb</span> =</span> (<span class="type">void</span> *)block;</span><br><span class="line">    dispatch_once_f(val, block, (<span class="type">void</span> *)bb-&gt;Block_invoke);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Inside <code>dispatch_once</code>, a <code>Block_basic</code> pointer
+is created and made to point to the block. Its <code>Block_invoke</code>
+function pointer is then passed to <code>dispatch_once_f</code>.</p>
+<p>You may wonder what <code>Block_basic</code> and
+<code>Block_invoke</code> are. Unfortunately, they cannot be found
+directly in the source code, but we can infer:</p>
+<ul>
+<li><code>Block_basic</code> is likely a structure whose pointer can
+point to a <code>void (^block)(void)</code> block.</li>
+<li><code>Block_invoke</code> literally means invoking a block. The
+following code can help with that intuition:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _dispatch_call_block_and_release(<span class="type">void</span> *block)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">void</span> (^b)(<span class="type">void</span>) = block;</span><br><span class="line">    b();</span><br><span class="line">    Block_release(b);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Now analyze the core function, <code>dispatch_once_f</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dispatch_once_f</span><span class="params">(<span class="type">dispatch_once_t</span> *val, <span class="type">void</span> *ctxt, <span class="type">void</span> (*func)(<span class="type">void</span> *))</span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">long</span> *vval = val;</span><br><span class="line">    <span class="keyword">if</span> (dispatch_atomic_cmpxchg(val, <span class="number">0l</span>, <span class="number">1l</span>)) &#123;</span><br><span class="line">        func(ctxt); <span class="comment">// the block is really executed here</span></span><br><span class="line">        dispatch_atomic_barrier();</span><br><span class="line">        *val = ~<span class="number">0l</span>;</span><br><span class="line">    &#125; </span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">do</span></span><br><span class="line">        &#123;</span><br><span class="line">            _dispatch_hardware_pause();</span><br><span class="line">        &#125; <span class="keyword">while</span> (*vval != ~<span class="number">0l</span>);</span><br><span class="line">        dispatch_atomic_barrier();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><ol type="1">
+<li>As mentioned in the opening article,
+<code>dispatch_atomic_cmpxchg</code> is a macro whose prototype is
+<code>__sync_bool_compare_and_swap((p), (o), (n))</code>. It is a
+lock-free atomic operation based on CAS. The principle is: <strong>if
+<code>p == o</code>, set <code>p</code> to <code>n</code> and return
+true; otherwise, do nothing and return false.</strong></li>
+</ol></li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li><ol start="2" type="1">
+<li>In a multithreaded environment, if thread A enters
+<code>dispatch_once_f</code> for the first time and
+<code>*val == 0</code>, it atomically changes the value to 1, executes
+the block passed into <code>dispatch_once_f</code>, calls
+<code>dispatch_atomic_barrier</code>, and finally changes
+<code>*val</code> to <code>~0</code>.</li>
+</ol></li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li><ol start="3" type="1">
+<li><code>dispatch_atomic_barrier</code> is a memory barrier. From the
+processor’s perspective, a memory barrier serializes read and write
+operations. From the software perspective, it solves sequential
+consistency problems. The compiler may reorder instructions, and the
+processor may execute instructions out of order. Inserting a memory
+barrier is equivalent to telling the compiler that instructions before
+and after the barrier cannot be reordered, and telling the processor
+that instructions after the barrier can only begin after instructions
+before it are complete. Therefore, <code>dispatch_atomic_barrier</code>
+guarantees that <code>*val</code> is modified only after the block
+finishes executing.</li>
+</ol></li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li><ol start="4" type="1">
+<li>While thread A is executing the block, if other threads also enter
+<code>dispatch_once_f</code>, the atomic check in the <code>if</code>
+branch must return false, so they enter the <code>else</code> branch and
+run the <code>do-while</code> loop. Inside the loop,
+<code>_dispatch_hardware_pause</code> is called. This helps improve
+performance and reduce CPU power usage. <code>pause</code> is similar to
+<code>nop</code>: it delays while spinning. The loop exits only after
+the first thread has finished executing the block and changed
+<code>*val</code> to <code>~0</code>, followed by another
+<code>dispatch_atomic_barrier</code>. This means other threads cannot
+execute the block, which guarantees the uniqueness of the block
+execution in <code>dispatch_once_f</code>, and therefore the singleton
+is unique.</li>
+</ol></li>
+</ul>
+</blockquote>
+<h2 id="dispatch_once-deadlocks">dispatch_once Deadlocks</h2>
+<p>After all that, does it mean singletons written with
+<code>dispatch_once</code> are completely worry-free?</p>
+<p>Not really. Improper use of <code>dispatch_once</code> can cause
+deadlocks.</p>
+<blockquote>
+<ul>
+<li>Deadlock pattern 1:</li>
+</ul>
+</blockquote>
+<ol type="1">
+<li>Thread T1 calls singleton A. This is the first call in the
+application’s lifetime, so
+<code>dispatch_once(&amp;token, block())</code> is used to initialize
+the singleton.</li>
+<li>Some function inside <code>block()</code> calls
+<code>dispatch_sync_safe</code>, synchronously executing code on thread
+T2.</li>
+<li>A function currently running on T2 needs singleton A, so it calls
+<code>dispatch_once</code> again.</li>
+<li>Now T1 is waiting for the block to finish. The block is waiting for
+T2 to finish. T2 is waiting for T1’s <code>dispatch_once</code> to
+complete. They wait on each other, causing a deadlock.</li>
+</ol>
+<blockquote>
+<ul>
+<li>Deadlock pattern 2:</li>
+</ul>
+</blockquote>
+<ol type="1">
+<li>Thread T1 calls singleton A. This is the first call in the
+application’s lifetime, so
+<code>dispatch_once(&amp;token, block())</code> is used to initialize
+it.</li>
+<li>The block may call flow B, flow B calls flow C, and flow C may call
+singleton A again, triggering <code>dispatch_once</code> again.</li>
+<li>This again creates mutual waiting.</li>
+</ol>
+<p>So when writing singletons, keep these points in mind:</p>
+<ul>
+<li>Keep initialization as simple as possible.</li>
+<li>Try to make initialization self-contained and reduce dependencies on
+other modules or classes.</li>
+<li>Think carefully about whether a singleton is really needed. Do not
+create singletons casually, because once initialized they keep occupying
+resources and cannot be released, causing waste.</li>
+</ul>
+<h2 id="a-convenient-singleton-macro-with-dispatch_once">A Convenient
+Singleton Macro with dispatch_once</h2>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __has_feature(objc_arc) </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> singleton_m static id _instanceType = nil;\</span></span><br><span class="line"><span class="meta">+(instancetype)sharedInstance\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    static dispatch_once_t onceToken;\</span></span><br><span class="line"><span class="meta">    dispatch_once(&amp;onceToken, ^&#123;\</span></span><br><span class="line"><span class="meta">        _instanceType = [[self alloc]init];\</span></span><br><span class="line"><span class="meta">    &#125;);\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">+ (instancetype)allocWithZone:(struct _NSZone *)zone\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    static dispatch_once_t onceToken;\</span></span><br><span class="line"><span class="meta">    dispatch_once(&amp;onceToken, ^&#123;\</span></span><br><span class="line"><span class="meta">        _instanceType = [super allocWithZone:zone];\</span></span><br><span class="line"><span class="meta">    &#125;);\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">-(id)copyWithZone:(NSZone *)zone\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">else</span> </span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> singleton_h +(instancetype)sharedInstance;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> singleton_m static id _instanceType = nil;\</span></span><br><span class="line"><span class="meta">+(instancetype)sharedInstance\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    static dispatch_once_t onceToken;\</span></span><br><span class="line"><span class="meta">    dispatch_once(&amp;onceToken, ^&#123;\</span></span><br><span class="line"><span class="meta">        _instanceType = [[self alloc]init];\</span></span><br><span class="line"><span class="meta">    &#125;);\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">+ (instancetype)allocWithZone:(struct _NSZone *)zone\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    static dispatch_once_t onceToken;\</span></span><br><span class="line"><span class="meta">    dispatch_once(&amp;onceToken, ^&#123;\</span></span><br><span class="line"><span class="meta">        _instanceType = [super allocWithZone:zone];\</span></span><br><span class="line"><span class="meta">    &#125;);\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">-(id)copyWithZone:(NSZone *)zone\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">-(oneway void)release\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">-(instancetype)retain\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">-(instancetype)autorelease\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    return _instanceType;\</span></span><br><span class="line"><span class="meta">&#125;\</span></span><br><span class="line"><span class="meta">- (NSUInteger)retainCount\</span></span><br><span class="line"><span class="meta">&#123;\</span></span><br><span class="line"><span class="meta">    return 1;\</span></span><br><span class="line"><span class="meta">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>Then add <code>singleton_h</code> to the <code>.h</code> file of the
+singleton you want to implement, and add <code>singleton_m</code> to the
+<code>.m</code> file.</p>
+<h2 id="summary">Summary</h2>
+<p>The analysis of <code>dispatch_once</code> is the simplest one. That
+also means the later articles in this series will gradually become more
+complex. The storm is coming.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>If this article helped you, your support encourages me to keep writing.</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+<div class="my_post_copyright">
+  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
+  
+  <!-- JS库 sweetalert 可修改路径 -->
+  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <p><span>Title:</span><a href="/en/2018/02/01/gcd-source-analysis-2-dispatch-once/">GCD Source Analysis 2 - dispatch_once</a></p>
+  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
+  <p><span>Published:</span>2018-02-01 21:59</p>
+  <p><span>Updated:</span>2026-08-29 02:49</p>
+  <p><span>Original link:</span><a href="/en/2018/02/01/gcd-source-analysis-2-dispatch-once/" title="GCD Source Analysis 2 - dispatch_once">https://tsuijunxi.github.io/en/2018/02/01/gcd-source-analysis-2-dispatch-once/index.html</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/02/01/gcd-source-analysis-2-dispatch-once/index.html"  aria-label="Copied"></i></span>
+  </p>
+  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+</div>
+<script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: 'Copied',
+          icon: "success", 
+          showConfirmButton: true
+          });
+  });
+    });  
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/en/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/en/2018/01/31/gcd-source-analysis-1-introduction/" rel="next" title="GCD Source Analysis 1 - Introduction">
+                <i class="fa fa-chevron-left"></i> GCD Source Analysis 1 - Introduction
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/en/2018/02/03/gcd-source-analysis-3-dispatch-queue/" rel="prev" title="GCD Source Analysis 3 - dispatch_queue">
+                GCD Source Analysis 3 - dispatch_queue <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/en/archives/">
+              
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/en/categories/">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/en/tags/">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/en/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/en/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#preface"><span class="nav-number">1.</span> <span class="nav-text">Preface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch_once-analysis"><span class="nav-number">2.</span> <span class="nav-text">dispatch_once Analysis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_once_t"><span class="nav-number">2.1.</span> <span class="nav-text">dispatch_once_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch_once"><span class="nav-number">2.2.</span> <span class="nav-text">dispatch_once</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch_once-deadlocks"><span class="nav-number">3.</span> <span class="nav-text">dispatch_once Deadlocks</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#a-convenient-singleton-macro-with-dispatch_once"><span class="nav-number">4.</span> <span class="nav-text">A Convenient
+Singleton Macro with dispatch_once</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">173k</span>
+
+  <div class="powered-by">
+    <i class="fa fa-user-md"></i>
+    <span id="busuanzi_container_site_pv">
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span id="busuanzi_container_site_uv">
+      本站访客数:<span id="busuanzi_value_site_uv"></span>人
+    </span>
+
+  </div>
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="/js/src/md5.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: '3b98a5ec68bfccc21c29',
+          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
+          repo: 'tsuijunxi.github.io',
+          owner: 'tsuijunxi',
+          admin: ['tsuijunxi'], 
+          id: md5(location.pathname),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
