@@ -90,7 +90,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="C++ exception, __cxa_throw, __cxa_begin_catch, __cpp_exceptions, -fno-exceptions, libunwind, libc++abi, Itanium ABI, DWARF CFI, stack unwinding" />
 
 
 
@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="Brief overview What is the C++ exception mechanism? This article starts from a few questions:  When throw is triggered inside a try block, how does the runtime find the matching catch, especially acro">
+<meta name="description" content="A source-level explanation of C++ exception handling through libc++abi, libunwind, Itanium ABI, __cxa_throw, stack unwinding, personality functions, RTTI matching, and -fno-exceptions.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Understanding C++ Exceptions from the Source">
+<meta property="og:title" content="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Brief overview What is the C++ exception mechanism? This article starts from a few questions:  When throw is triggered inside a try block, how does the runtime find the matching catch, especially acro">
+<meta property="og:description" content="A source-level explanation of C++ exception handling through libc++abi, libunwind, Itanium ABI, __cxa_throw, stack unwinding, personality functions, RTTI matching, and -fno-exceptions.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
@@ -122,7 +122,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-08-29T16:22:59.029Z">
+<meta property="article:modified_time" content="2026-09-01T14:15:50.243Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
@@ -161,7 +161,7 @@
 
 
 
-  <title>Understanding C++ Exceptions from the Source | 凌云的博客</title>
+  <title>Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions | 凌云的博客</title>
   
 
 
@@ -445,7 +445,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">Understanding C++ Exceptions from the Source</h1>
+          <h1 class="post-title" itemprop="name headline">Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions</h1>
         
 
         <div class="post-meta">
@@ -508,7 +508,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  114k
+                  115k
                 </span>
               
 
@@ -524,12 +524,16 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  6:56
+                  6:58
                 </span>
               
             </div>
           
 
+          
+              <div class="post-description">
+                  A source-level explanation of C++ exception handling through libc++abi, libunwind, Itanium ABI, __cxa_throw, stack unwinding, personality functions, RTTI matching, and -fno-exceptions.
+              </div>
           
 
         </div>
@@ -562,6 +566,16 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="brief-overview">Brief overview</h2>
+<blockquote>
+<p><strong>Summary:</strong> This article explains C++ exception
+handling from the runtime source code level, covering
+<code>__cxa_throw</code>, <code>__cxa_begin_catch</code>,
+<code>_Unwind_RaiseException</code>, stack unwinding, landing pads,
+personality functions, RTTI matching, DWARF CFI, and the implications of
+<code>-fno-exceptions</code> and <code>__cpp_exceptions</code>. The
+focus is how C++ separates error detection from error handling while
+still cleaning up stack objects correctly.</p>
+</blockquote>
 <h3 id="what-is-the-c-exception-mechanism">What is the C++ exception
 mechanism?</h3>
 <p>This article starts from a few questions:</p>
@@ -1264,11 +1278,11 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/">Understanding C++ Exceptions from the Source</a></p>
+  <p><span>Title:</span><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/">Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions</a></p>
   <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
   <p><span>Published:</span>2026-03-07 23:06</p>
-  <p><span>Updated:</span>2026-08-30 00:22</p>
-  <p><span>Original link:</span><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/" title="Understanding C++ Exceptions from the Source">https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/index.html</a>
+  <p><span>Updated:</span>2026-09-01 22:15</p>
+  <p><span>Original link:</span><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/" title="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions">https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/index.html</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/index.html"  aria-label="Copied"></i></span>
   </p>
   <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
@@ -1318,8 +1332,8 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/en/2026/06/23/the-art-of-continuous-corners/" rel="prev" title="The Art of Continuous Corners">
-                The Art of Continuous Corners <i class="fa fa-chevron-right"></i>
+              <a href="/en/2026/06/23/the-art-of-continuous-corners/" rel="prev" title="The Art of Continuous Corners: iOS Continuous Corner Algorithm and Implementation">
+                The Art of Continuous Corners: iOS Continuous Corner Algorithm and Implementation <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -1523,7 +1537,7 @@ exceptions?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173k</span>
+    <span title="Site words total count">174k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

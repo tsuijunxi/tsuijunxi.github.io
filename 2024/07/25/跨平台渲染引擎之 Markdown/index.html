@@ -90,7 +90,7 @@
 
 
 
-  <meta name="keywords" content="Markdown 跨平台" />
+  <meta name="keywords" content="Markdown renderer, native markdown rendering, iOS Markdown, Android Markdown, C++ rendering engine, cross-platform rendering, WebView alternative, TextLayout, Graphics2D" />
 
 
 
@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="背景 在ChatGPT火遍天际之际，许多应用程序都试图以聊天机器人的形式接入访问它。由于ChatGPT的回复文本是markdown格式，所以移动端上需要支持markdown语法，调研良久发现：  很多方案都是基于WebView的方式来实现的，这对于移动平台会存在性能不佳的问题； iOS方向的CocoaMarkdown 是为数不多的Native渲染库，但是其功能不够全面，且不易扩展； Android">
+<meta name="description" content="介绍一个面向 iOS 和 Android 的跨平台 Markdown Native 渲染库，从 C++ 解析、排版、Atom&#x2F;Box 树、事件交互到平台适配，避免 WebView 渲染带来的性能问题。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="跨平台渲染引擎之 Markdown">
 <meta property="og:url" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景 在ChatGPT火遍天际之际，许多应用程序都试图以聊天机器人的形式接入访问它。由于ChatGPT的回复文本是markdown格式，所以移动端上需要支持markdown语法，调研良久发现：  很多方案都是基于WebView的方式来实现的，这对于移动平台会存在性能不佳的问题； iOS方向的CocoaMarkdown 是为数不多的Native渲染库，但是其功能不够全面，且不易扩展； Android">
+<meta property="og:description" content="介绍一个面向 iOS 和 Android 的跨平台 Markdown Native 渲染库，从 C++ 解析、排版、Atom&#x2F;Box 树、事件交互到平台适配，避免 WebView 渲染带来的性能问题。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/image%2010.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/image%203.png">
@@ -115,9 +115,13 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/image%2015.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/image%204.png">
 <meta property="article:published_time" content="2024-07-25T15:40:07.000Z">
-<meta property="article:modified_time" content="2026-08-29T03:50:09.317Z">
+<meta property="article:modified_time" content="2026-09-01T14:27:22.817Z">
 <meta property="article:author" content="lingyun">
-<meta property="article:tag" content="Markdown 跨平台">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Markdown">
+<meta property="article:tag" content="iOS">
+<meta property="article:tag" content="跨平台">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/image%2010.png">
 
@@ -545,12 +549,16 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  16:38
+                  16:40
                 </span>
               
             </div>
           
 
+          
+              <div class="post-description">
+                  介绍一个面向 iOS 和 Android 的跨平台 Markdown Native 渲染库，从 C++ 解析、排版、Atom/Box 树、事件交互到平台适配，避免 WebView 渲染带来的性能问题。
+              </div>
           
 
         </div>
@@ -583,6 +591,15 @@ mjx-container[display="true"] + br {
 
       
         <h1 id="背景">背景</h1>
+<blockquote>
+<p><strong>English Abstract:</strong> This article describes how to
+build a cross-platform native markdown rendering library for iOS and
+Android. Instead of relying on WebView, the renderer uses a C++ core for
+parsing, layout, Atom/Box tree construction, event dispatching, text
+layout, image loading, and platform rendering adapters. It is aimed at
+chat-style AI responses and other dynamic markdown content on
+mobile.</p>
+</blockquote>
 <p>在<code>ChatGPT</code>火遍天际之际，许多应用程序都试图以聊天机器人的形式接入访问它。由于<code>ChatGPT</code>的回复文本是<code>markdown</code>格式，所以移动端上需要支持<code>markdown</code>语法，调研良久发现：</p>
 <ol type="1">
 <li>很多方案都是基于<code>WebView</code>的方式来实现的，这对于移动平台会存在性能不佳的问题；</li>
@@ -620,8 +637,8 @@ href="https://www.markdownguide.org/extended-syntax/">https://www.markdownguide.
 <h2 id="渲染效果">渲染效果</h2>
 <p>左边<code>iOS</code>，右边<code>Android</code></p>
 <div style="display: flex;">
-  <style>.pilwrexjhksp{width: 100%;}</style>
-  <style>.qpncgberrtdb{width: 100%;}</style>
+  <style>.yodqfxypcqyl{width: 100%;}</style>
+  <style>.kmjvzqstkarv{width: 100%;}</style>
 </div>
 
 <p>这里是演示视频：</p>
@@ -966,8 +983,8 @@ block, a start/end of every span, and with any textual contents.</p>
 <h4 id="推出式避头尾-vs-优先推入式避头尾">“推出式”避头尾 vs
 “优先推入式”避头尾</h4>
 <div style="display: flex;">
-  <style>.ebveteysjddi{width: 100%;}</style>
-  <style>.ludrdysppikt{width: 100%;}</style>
+  <style>.nfchvmhncwpl{width: 100%;}</style>
+  <style>.vfrifttpwalu{width: 100%;}</style>
 </div>
 
 <blockquote>
@@ -1054,8 +1071,8 @@ LTR 规则</p>
 <li>其中的文字要整体右对齐；</li>
 </ol>
 <div style="display: flex;">
-  <style>.qvsrctpmgmlp{width: 100%;}</style>
-  <style>.uewgzsdtbxfw{width: 100%;}</style>
+  <style>.youbsfppxdll{width: 100%;}</style>
+  <style>.ebxnitlmyjcx{width: 100%;}</style>
 </div>
 
 <h4 id="列表">列表</h4>
@@ -1065,8 +1082,8 @@ LTR 规则</p>
 <li>其中的文字要整体右对齐；</li>
 </ol>
 <div style="display: flex;">
-  <style>.ssshcknwaxfb{width: 100%;}</style>
-  <style>.bvpuldjdlfay{width: 100%;}</style>
+  <style>.dreoipfgokjv{width: 100%;}</style>
+  <style>.lxbskaxjkwlh{width: 100%;}</style>
 </div>
 
 <h4 id="表格">表格</h4>
@@ -1078,8 +1095,8 @@ LTR 规则</p>
 <li>对齐方式也需要适配，例如 LTR 中的左对齐，在 RTL 变成了右对齐</li>
 </ol>
 <div style="display: flex;">
-  <style>.giswtvpwjtwe{width: 100%;}</style>
-  <style>.mkfkljmrlrhf{width: 100%;}</style>
+  <style>.ajakfimenpuz{width: 100%;}</style>
+  <style>.lrolmvclghts{width: 100%;}</style>
 </div>
 
 <h2 id="事件交互">事件交互</h2>
@@ -1589,7 +1606,7 @@ href="https://github.com/dalirnet/rtl-markdow">https://github.com/dalirnet/rtl-m
   <p><span>本文标题:</span><a href="/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/">跨平台渲染引擎之 Markdown</a></p>
   <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
   <p><span>发布时间:</span>2024年07月25日 - 23:07</p>
-  <p><span>最后更新:</span>2026年08月29日 - 11:08</p>
+  <p><span>最后更新:</span>2026年09月01日 - 22:09</p>
   <p><span>原始链接:</span><a href="/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/" title="跨平台渲染引擎之 Markdown">https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2024/07/25/%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%B8%B2%E6%9F%93%E5%BC%95%E6%93%8E%E4%B9%8B%20Markdown/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1620,7 +1637,15 @@ href="https://github.com/dalirnet/rtl-markdow">https://github.com/dalirnet/rtl-m
       
         <div class="post-tags">
           
-            <a href="/tags/Markdown-%E8%B7%A8%E5%B9%B3%E5%8F%B0/" rel="tag"># Markdown 跨平台</a>
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+            <a href="/tags/Markdown/" rel="tag"># Markdown</a>
+          
+            <a href="/tags/%E8%B7%A8%E5%B9%B3%E5%8F%B0/" rel="tag"># 跨平台</a>
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
           
         </div>
       
@@ -1760,7 +1785,7 @@ href="https://github.com/dalirnet/rtl-markdow">https://github.com/dalirnet/rtl-m
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">30</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1840,7 +1865,7 @@ href="https://github.com/dalirnet/rtl-markdow">https://github.com/dalirnet/rtl-m
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173k</span>
+    <span title="Site words total count">174k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

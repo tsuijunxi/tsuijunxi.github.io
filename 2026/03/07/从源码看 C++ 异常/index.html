@@ -90,7 +90,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="C++ exception, __cxa_throw, __cxa_begin_catch, __cpp_exceptions, -fno-exceptions, libunwind, libc++abi, Itanium ABI, DWARF CFI, stack unwinding" />
 
 
 
@@ -101,12 +101,12 @@
 
 
 
-<meta name="description" content="简述 什么是 C++ 异常机制？ 如代码所示，你是否比较好奇：  当 try 代码块中触发了 throw，它是如何寻找到对应的 catch 代码块的，尤其是调用层级很深的情况？ 由于 throw 改变了代码流程，try 块中的对象 r 是否能得到正常释放？ 如果方法调用层级包含了不同的语言，例如 C -&gt; C++ -&gt; C -&gt; C++，但 C 语言并不支持异常处理，那么上面的代">
+<meta name="description" content="从 libc++abi、libunwind 和 Itanium C++ ABI 源码分析 C++ 异常机制，覆盖 __cxa_throw、_Unwind_RaiseException、landingpad、personality function、RTTI 匹配和 -fno-exceptions。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="从源码看 C++ 异常">
 <meta property="og:url" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/index.html">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="简述 什么是 C++ 异常机制？ 如代码所示，你是否比较好奇：  当 try 代码块中触发了 throw，它是如何寻找到对应的 catch 代码块的，尤其是调用层级很深的情况？ 由于 throw 改变了代码流程，try 块中的对象 r 是否能得到正常释放？ 如果方法调用层级包含了不同的语言，例如 C -&gt; C++ -&gt; C -&gt; C++，但 C 语言并不支持异常处理，那么上面的代">
+<meta property="og:description" content="从 libc++abi、libunwind 和 Itanium C++ ABI 源码分析 C++ 异常机制，覆盖 __cxa_throw、_Unwind_RaiseException、landingpad、personality function、RTTI 匹配和 -fno-exceptions。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png">
@@ -122,8 +122,12 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-08-28T19:18:59.659Z">
+<meta property="article:modified_time" content="2026-09-01T14:27:22.712Z">
 <meta property="article:author" content="lingyun">
+<meta property="article:tag" content="ABI">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Exception">
+<meta property="article:tag" content="libunwind">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 
@@ -524,7 +528,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  152k
+                  153k
                 </span>
               
 
@@ -540,12 +544,16 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  9:14
+                  9:16
                 </span>
               
             </div>
           
 
+          
+              <div class="post-description">
+                  从 libc++abi、libunwind 和 Itanium C++ ABI 源码分析 C++ 异常机制，覆盖 __cxa_throw、_Unwind_RaiseException、landingpad、personality function、RTTI 匹配和 -fno-exceptions。
+              </div>
           
 
         </div>
@@ -578,6 +586,16 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="简述">简述</h2>
+<blockquote>
+<p><strong>English Abstract:</strong> This article explains C++
+exception handling from the runtime source code level, covering
+<code>__cxa_throw</code>, <code>__cxa_begin_catch</code>,
+<code>_Unwind_RaiseException</code>, stack unwinding, landing pads,
+personality functions, RTTI matching, DWARF CFI, and the implications of
+<code>-fno-exceptions</code> and <code>__cpp_exceptions</code>. The
+focus is how C++ separates error detection from error handling while
+still cleaning up stack objects correctly.</p>
+</blockquote>
 <h3 id="什么是-c-异常机制">什么是 C++ 异常机制？</h3>
 <p>如代码所示，你是否比较好奇：</p>
 <ul>
@@ -600,7 +618,7 @@ Language》中讲到：一个库的作者可以检测出发生了运行时错误
 <p>到目前为止，有<a
 href="https://www.gricad-gitlab.univ-grenoble-alpes.fr/tracing-llvm/llvm/-/tree/d2298e74235598f15594fe2c99bbac870a507c59/libunwind/docs#:~:text=libunwind%20is%20a%20production%2Dquality,%2C%20SjLj%2C%20and%20ARM%20EHABI.">多种
 C++ 异常实现机制</a>。</p>
-<style>.fuqggshmvfrd{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="fuqggshmvfrd">
+<style>.lwcihnmtoyaw{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="lwcihnmtoyaw">
 
 <ul>
 <li>SJLJ
@@ -644,7 +662,7 @@ Handling）</strong> 定义输入到链接器的对象文件的格式（Linkage 
 Object Files）</p>
 </blockquote>
 <h2 id="异常机制概览">异常机制概览</h2>
-<style>.wvslujfpprdc{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png" class="wvslujfpprdc">
+<style>.udcfkklulnhw{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/13.png" class="udcfkklulnhw">
 
 <p>该图简要地描述了 C++ 异常机制的处理流程，例如
 <code>__cxa_throw</code>、<code>_Unwind_RaiseException</code>、<code>unwind_phase1</code>、<code>unwind_phase2</code>、<code>landingpad</code>
@@ -923,7 +941,7 @@ destructors。</p>
 frame）恢复到其调用者的栈帧。CFI
 通过描述调用栈帧的布局，特别是<strong>返回地址和调用者寄存器</strong>值是如何保存的，来实现栈的“展开”（unwinding）。</p>
 <p>CFI 内部有 2 个重要的结构体：CIE 和 FDE。</p>
-<style>.djvwojygyyti{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/09.png" class="djvwojygyyti">
+<style>.qaldglxwtlrv{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/09.png" class="qaldglxwtlrv">
 
 <ul>
 <li><p>CIE 中记录的是一些公用的入口信息，包括异常的
@@ -958,16 +976,16 @@ Area）</h3>
 匹配决定该异常是否在自己的 catch
 范围内，如果前两者都满足的话，可以跳转到对应的 landing pad 地址。</p>
 <h4 id="lsda-结构">LSDA 结构</h4>
-<style>.tbeffwlmjngt{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/03.png" class="tbeffwlmjngt">
+<style>.onuubkehsybp{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/03.png" class="onuubkehsybp">
 
-<style>.rpnworrxgazc{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/05.png" class="rpnworrxgazc">
+<style>.vngebutwjgfh{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/05.png" class="vngebutwjgfh">
 
 <p>如图，LSDA 结构主要包括 4 部分信息：</p>
 <ol type="1">
 <li><p><strong>Header</strong></p></li>
 <li><p><strong>Call Site Table</strong></p></li>
 <li><p><strong>Action Table</strong> actionType 有 3 种情况：</p>
-<style>.lmpaytdockoq{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/10.png" class="lmpaytdockoq">
+<style>.orzrlpokvrvn{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/10.png" class="orzrlpokvrvn">
 </li>
 <li><p><strong>Type Table</strong></p>
 <ol type="1">
@@ -975,11 +993,11 @@ Area）</h3>
 <li>横线以上的对应异常类型，倒序排列；</li>
 <li>横线以下的正序部分是异常规格索引，已经在 C++17 被移除。</li>
 </ol>
-<style>.wtgqpwqlmgrs{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/01.png" class="wtgqpwqlmgrs">
+<style>.hqyoqkeklwki{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/01.png" class="hqyoqkeklwki">
 </li>
 </ol>
 <p>最后可以从汇编代码中感受下真实的 LSDA 信息：</p>
-<style>.cvrxejetirlm{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/06.png" class="cvrxejetirlm">
+<style>.qdimiskefves{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/06.png" class="qdimiskefves">
 
 <h4 id="lsda-解析">LSDA 解析</h4>
 <p>整个流程中少不了的是 <code>scan_eh_tab</code>
@@ -1128,17 +1146,17 @@ this（catchType）</strong>。</p>
 
 <p>这部分逻辑和 C++
 继承方式密切相关，例如单继承、多继承、虚继承，逻辑比较复杂。</p>
-<style>.mqwgcnghqtta{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/11.png" class="mqwgcnghqtta">
+<style>.tcxpzkbcykuo{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/11.png" class="tcxpzkbcykuo">
 
 <p>感兴趣的同学可以先参考《<a
 href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">深入探索 C++
 多态 ② - 继承关系</a>》里的这 <strong>3 张图</strong>，了解下 C++
 对象的内存模型，然后可以在此基础上了解下 dynamic_cast 的工作过程。</p>
-<style>.pvrfmrttftwi{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/08.png" class="pvrfmrttftwi">
+<style>.pmffbaopytyw{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/08.png" class="pmffbaopytyw">
 
-<style>.sjbqqgnmmlih{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/04.png" class="sjbqqgnmmlih">
+<style>.jqrbrlykvrxk{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/04.png" class="jqrbrlykvrxk">
 
-<style>.cmrukyxehitc{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png" class="cmrukyxehitc">
+<style>.mibilpvttaqe{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png" class="mibilpvttaqe">
 
 <h2 id="总结">总结</h2>
 <p>本文主要结合源码分析了 C++
@@ -1246,7 +1264,7 @@ C++ 的异常有本质区别，它和 OC 的 NSError 机制更像。在纯 Swift
 <p>相同点：二者都有 try-catch
 块，都支持异常传播，都进行栈展开，而且都是两段式栈回溯。</p>
 <p>不同点：</p>
-<style>.crupewkbvwvk{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="crupewkbvwvk">
+<style>.sxsakinkphpo{}</style><img src="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png" class="sxsakinkphpo">
 
 <h3 id="对待-c-异常的态度">对待 C++ 异常的态度？</h3>
 <ul>
@@ -1394,7 +1412,7 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
   <p><span>本文标题:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/">从源码看 C++ 异常</a></p>
   <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
   <p><span>发布时间:</span>2026年03月07日 - 23:03</p>
-  <p><span>最后更新:</span>2026年08月29日 - 03:08</p>
+  <p><span>最后更新:</span>2026年09月01日 - 22:09</p>
   <p><span>原始链接:</span><a href="/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/" title="从源码看 C++ 异常">https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/</a>
     <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/"  aria-label="复制成功！"></i></span>
   </p>
@@ -1422,6 +1440,18 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
 
     <footer class="post-footer">
       
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+            <a href="/tags/Exception/" rel="tag"># Exception</a>
+          
+            <a href="/tags/ABI/" rel="tag"># ABI</a>
+          
+            <a href="/tags/libunwind/" rel="tag"># libunwind</a>
+          
+        </div>
       
 
       
@@ -1559,7 +1589,7 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">30</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1644,7 +1674,7 @@ Native Exception</span></a></li><li class="nav-item nav-level-3"><a class="nav-l
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">173k</span>
+    <span title="Site words total count">174k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
