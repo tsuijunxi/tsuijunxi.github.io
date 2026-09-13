@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="LaTeX TTS, Chinese TTS, formula speech, MathJax, TeX2Speech, Atom tree, math pronunciation, chemistry formula speech, accessibility" />
 
 
 
@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="Background The product recently needed to read LaTeX formulas aloud, but the current TTS engine does not understand LaTeX syntax. If we feed raw LaTeX directly into TTS, there will be many pronunciati">
+<meta name="description" content="A practical implementation of Chinese TTS for LaTeX formulas, based on Atom tree traversal, speech-text generation rules, MathJax comparison, and math and chemistry pronunciation cases.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Reading LaTeX with TTS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Background The product recently needed to read LaTeX formulas aloud, but the current TTS engine does not understand LaTeX syntax. If we feed raw LaTeX directly into TTS, there will be many pronunciati">
+<meta property="og:description" content="A practical implementation of Chinese TTS for LaTeX formulas, based on Atom tree traversal, speech-text generation rules, MathJax comparison, and math and chemistry pronunciation cases.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/05.png">
@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/10.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/03.png">
 <meta property="article:published_time" content="2024-02-02T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-06T14:54:33.585Z">
+<meta property="article:modified_time" content="2026-09-13T01:53:16.813Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png">
@@ -421,6 +421,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -430,7 +431,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -507,7 +508,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  103k
+                  104k
                 </span>
               
 
@@ -523,12 +524,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  6:15
+                  6:17
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -561,11 +560,20 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
+<blockquote>
+<p><strong>Summary:</strong> This article explains how to convert LaTeX
+formulas into Chinese-friendly TTS text. Instead of sending raw LaTeX
+into a speech engine, the implementation walks the existing LaTeX
+<code>Atom</code> tree, applies command-specific speech rules, and
+generates readable Chinese text for math and chemistry formulas. The
+Chinese phrases in examples are intentional pronunciation targets, not
+untranslated body copy.</p>
+</blockquote>
 <p>The product recently needed to read <code>LaTeX</code> formulas
 aloud, but the current <code>TTS</code> engine does not understand LaTeX
 syntax. If we feed raw LaTeX directly into <code>TTS</code>, there will
 be many pronunciation errors.</p>
-<p>After research, there are already some existing solutions:</p>
+<p>A quick survey found a few existing solutions:</p>
 <ul>
 <li><a href="https://mathjax.github.io/MathJax-demos-web/speech-generator/convert-with-speech.html">MathJax
 Speech Converter</a></li>
@@ -694,8 +702,8 @@ correct <code>NthRootAtom</code>.</p>
 conveniently.</p>
 <h3 id="early-truncation-for-inference">Early truncation for
 inference</h3>
-<p>Some symbols look very simple. For example, the
-<code>\equalparallel</code> command renders as follows:</p>
+<p>Some symbols look visually simple. For example, the
+<code>\equalparallel</code> command renders like this:</p>
 <img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/05.png" width="10%">
 
 <p>But the corresponding <code>Atom</code> tree is quite complex:</p>
@@ -861,8 +869,7 @@ Convert each element to string, prefix subscripts with <code>_</code>,
 prefix superscripts with <code>^</code>, and concatenate them.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ScriptsAtom</span> : <span class="keyword">public</span> Atom, <span class="keyword">public</span> HasTrueBase {</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; base;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; subscript;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; superscript;</span><br><span class="line">    ......</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">std::wstring <span class="title">ScriptsAtom::toString</span><span class="params">()</span> </span>{</span><br><span class="line">    std::wstring key = <span class="string">L""</span>;</span><br><span class="line">    <span class="keyword">if</span> (base != <span class="literal">nullptr</span>) key += base-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (subscript != <span class="literal">nullptr</span>) key += <span class="string">L"_"</span> + subscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (superscript != <span class="literal">nullptr</span>) key += <span class="string">L"^"</span> + superscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">return</span> key;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 
-<p>Under this rule, the tree structure above is flattened as
-follows:</p>
+<p>With this rule, the tree above is flattened into this form:</p>
 <img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/08.png" width="100%">
 
 <h3 id="recognizing-chemical-formulas">Recognizing chemical
@@ -1069,20 +1076,21 @@ still needs long-term human effort and continuous polishing.</p>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2024/02/02/latex-tts-reading-in-chinese/">Reading LaTeX with TTS</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2024-02-02 23:06</p>
-  <p><span>Updated:</span>2026-09-06 22:54</p>
-  <p><span>Original link:</span><a href="/en/2024/02/02/latex-tts-reading-in-chinese/" title="Reading LaTeX with TTS">https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/">Reading LaTeX with TTS</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-02-02 23:06</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/" title="Reading LaTeX with TTS">https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1198,15 +1206,16 @@ still needs long-term human effort and continuous polishing.</p>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1328,7 +1337,7 @@ equations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" hr
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

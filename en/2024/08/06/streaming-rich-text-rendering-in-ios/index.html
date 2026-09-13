@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Rich Text Streaming Rendering" />
+  <meta name="keywords" content="iOS streaming rich text, LLM streaming rendering, YYText, Markdown streaming, HTML streaming parser, LaTeX rendering, TTS synchronization, pseudo-stream rendering" />
 
 
 
@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="Background When using ChatGPT or other LLMs, the model’s response is streamed out token by token instead of appearing as one complete paragraph. The model has to keep predicting what to output next, a">
+<meta name="description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Streaming Rich Text Rendering in iOS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Background When using ChatGPT or other LLMs, the model’s response is streamed out token by token instead of appearing as one complete paragraph. The model has to keep predicting what to output next, a">
+<meta property="og:description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/02.png">
@@ -107,7 +107,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/05.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
 <meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:02.549Z">
+<meta property="article:modified_time" content="2026-09-13T01:37:08.034Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Rich Text Streaming Rendering">
 <meta name="twitter:card" content="summary">
@@ -419,6 +419,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -428,7 +429,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -521,12 +522,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  3:12
+                  3:13
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -559,19 +558,23 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<p>When using ChatGPT or other LLMs, the model’s response is streamed
-out token by token instead of appearing as one complete paragraph. The
-model has to keep predicting what to output next, and if the client
-waited until the whole answer was generated before displaying anything,
-the experience would be poor.</p>
-<p>To adapt to LLM streaming output, the client must also support
-streaming rendering. At the same time, to improve expressiveness, LLM
-output is usually rich text, such as Markdown or HTML, rather than plain
-text. Streaming output plus rich text puts real pressure on the
-client-side rendering capability.</p>
-<p>This article discusses how rich text streaming rendering is
-implemented on the client side in a real business scenario. The rich
-text here includes both <code>HTML</code> and <code>LaTeX</code>.</p>
+<blockquote>
+<p><strong>Summary:</strong> This article walks through a practical iOS
+implementation of streaming rich text rendering for LLM responses. It
+covers pseudo-stream parsing, <code>YYText</code>-based masking,
+incomplete HTML and LaTeX handling, interruption behavior, TTS
+synchronization, and the tradeoffs behind choosing a pseudo-streaming
+approach instead of a fully streaming parser.</p>
+</blockquote>
+<p>LLM responses are usually streamed token by token instead of arriving
+as one complete paragraph. If the client waits until the full answer is
+generated before rendering anything, the experience feels slow and
+unresponsive.</p>
+<p>To match that output model, the client also needs a streaming
+rendering experience. The challenge is that LLM output is rarely plain
+text: it often contains Markdown, HTML-like markup, or formulas. In this
+implementation, the rich text pipeline needs to handle both
+<code>HTML</code> and <code>LaTeX</code>.</p>
 <h2 id="how-it-works">How it works</h2>
 <h3 id="streaming-request">Streaming request</h3>
 <p><a
@@ -580,21 +583,20 @@ provides an interface for chunked data responses. In simple terms, one
 request needs to handle multiple response callbacks and one final
 completion callback. When data first arrives,
 <code>headerCallback</code> is triggered once; as the server keeps
-sending data, <code>dataCallback</code> is triggered multiple times; and
-when sending ends, the final callback is triggered.</p>
+sending data, <code>dataCallback</code> is triggered repeatedly; and
+when the stream ends, the final callback is triggered.</p>
 <p>The client receives the data stream through <code>dataCallback</code>
 and parses it according to the separator agreed with the server.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSURL</span> *url = [<span class="built_in">NSURL</span> URLWithString:<span class="string">@&quot;https://raw.githubusercontent.com&quot;</span>];</span><br><span class="line"><span class="keyword">self</span>.manager = [[DWHTTPStreamSessionManager alloc] initWithBaseURL:url];</span><br><span class="line"><span class="keyword">self</span>.manager.itemSerializerProvider = [[DWHTTPJSONItemSerializerProvider alloc] init];</span><br><span class="line"><span class="keyword">self</span>.manager.responseSerializer = [[DWDummyHTTPResponseSerializer alloc] init];</span><br><span class="line">[<span class="keyword">self</span>.manager GET:<span class="string">@&quot;deanWombourne/AFNetworking-streaming/master/Example/example.json&quot;</span></span><br><span class="line">           parameters:@&#123;&#125;</span><br><span class="line">                 data:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSDictionary</span> *dictionary) &#123;</span><br><span class="line">                     [<span class="keyword">self</span>.results addObject:dictionary];</span><br><span class="line">                     [<span class="keyword">self</span>.tableView reloadData];</span><br><span class="line">                 &#125;</span><br><span class="line">              success:^(<span class="built_in">NSURLSessionDataTask</span> *task) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response complete&quot;</span>);</span><br><span class="line">              &#125;</span><br><span class="line">              failure:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSError</span> *error) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response failed&quot;</span>);</span><br><span class="line">              &#125;];</span><br></pre></td></tr></table></figure>
 
 <h3 id="pseudo-stream-parsing">Pseudo-stream parsing</h3>
-<p>To support streaming rendering, we first need to support streaming
-parsing for rich text such as <code>HTML</code> and <code>LaTeX</code>.
-However, there is no true streaming parser on the client, and
-implementing a truly streaming parser would involve many difficulties.
-So the client chose a “pseudo-stream parsing” solution:</p>
-<p><strong>Every time the parser receives streamed text, it appends that
-text to the previously received text and parses everything again from
-the beginning.</strong></p>
+<p>To support streaming rendering, we first need to parse rich text such
+as <code>HTML</code> and <code>LaTeX</code> while the content is still
+incomplete. Instead of implementing a fully incremental parser, the
+client uses a “pseudo-stream parsing” approach:</p>
+<p><strong>Whenever new streamed text arrives, the parser appends it to
+the accumulated text and reparses the full content from the
+beginning.</strong></p>
 <h4 id="incomplete-tag-rules">Incomplete tag rules</h4>
 <p>Rich text has a certain format, which means at any given moment, the
 streamed text may be incomplete or syntactically invalid. In a
@@ -1019,20 +1021,21 @@ problems.</p>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">Streaming Rich Text Rendering in iOS</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2024-08-06 16:25</p>
-  <p><span>Updated:</span>2026-09-06 23:47</p>
-  <p><span>Original link:</span><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="Streaming Rich Text Rendering in iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">Streaming Rich Text Rendering in iOS</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-08-06 16:25</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:37</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="Streaming Rich Text Rendering in iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1154,15 +1157,16 @@ problems.</p>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1280,7 +1284,7 @@ interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a 
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

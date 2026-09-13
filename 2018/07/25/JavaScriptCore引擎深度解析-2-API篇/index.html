@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="前言 相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。 在JavaScriptCore.h文件中可以看到： 1234567891011121314151617#ifndef JavaScriptCore_h#define JavaScriptCore_h#include &lt;JavaScriptCore&#x2F;JavaSc">
+<meta name="description" content="面向 iOS 开发者梳理 JavaScriptCore 的 API 层，介绍 JavaScriptCore.h、C API、Objective-C API、JSContext、JSValue、JSExport 和桥接机制。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JavaScriptCore引擎深度解析2—API篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 相对而言，这篇文章最贴近日常的iOS开发了，应该是我们最熟悉，同时又有点陌生的一篇了，这里陌生的原因是会加入一些对源码的分析。 在JavaScriptCore.h文件中可以看到： 1234567891011121314151617#ifndef JavaScriptCore_h#define JavaScriptCore_h#include &lt;JavaScriptCore&#x2F;JavaSc">
+<meta property="og:description" content="面向 iOS 开发者梳理 JavaScriptCore 的 API 层，介绍 JavaScriptCore.h、C API、Objective-C API、JSContext、JSValue、JSExport 和桥接机制。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/08.png">
@@ -109,7 +109,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/07.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/04.png">
 <meta property="article:published_time" content="2018-07-24T16:27:58.000Z">
-<meta property="article:modified_time" content="2026-08-28T18:12:51.262Z">
+<meta property="article:modified_time" content="2026-09-13T02:15:28.223Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="JavaScriptCore">
 <meta name="twitter:card" content="summary">
@@ -421,6 +421,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -430,7 +431,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -545,8 +546,6 @@ mjx-container[display="true"] + br {
             </div>
           
 
-          
-
         </div>
       </header>
     
@@ -582,7 +581,7 @@ mjx-container[display="true"] + br {
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> JavaScriptCore_h</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> JavaScriptCore_h</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;JavaScriptCore/JavaScript.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;JavaScriptCore/JSStringRefCF.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__OBJC__) &amp;&amp; JSC_OBJC_API_ENABLED</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="string">&quot;JSContext.h&quot;</span></span></span><br><span class="line"><span class="meta">#import <span class="string">&quot;JSValue.h&quot;</span></span></span><br><span class="line"><span class="meta">#import <span class="string">&quot;JSManagedValue.h&quot;</span></span></span><br><span class="line"><span class="meta">#import <span class="string">&quot;JSVirtualMachine.h&quot;</span></span></span><br><span class="line"><span class="meta">#import <span class="string">&quot;JSExport.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span> <span class="comment">/* JavaScriptCore_h */</span></span></span><br></pre></td></tr></table></figure>
 
 <p>JavaScriptCore一共向我们暴露了这几个主要的头文件，先看一张全局关系图</p>
-<style>.xquovigztlhn{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/01.png" class="xquovigztlhn">
+<style>.cglcmydxibps{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/01.png" class="cglcmydxibps">
 
 <p>接下来逐个阐述，阅读的时候，可能需要回翻，因为有些就好像鸡生蛋、蛋生鸡的哲学问题，无法分清楚先后…</p>
 <h2 id="jsvirtualmachine">JSVirtualMachine</h2>
@@ -630,9 +629,9 @@ mjx-container[display="true"] + br {
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)didRemoveOwner:(id)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">size_t</span> count = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">size_t</span>&gt;(<span class="built_in">NSMapGet</span>(m_owners, owner));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!count) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (count == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">NSMapRemove</span>(m_owners, owner);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">NSMapInsert</span>(m_owners, owner, <span class="built_in">reinterpret_cast</span>&lt;<span class="type">void</span>*&gt;(count - <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>是不是已经感觉凌乱了？我们先看一下图：</p>
-<style>.xohqlqnykqlr{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/08.png" class="xohqlqnykqlr">
+<style>.vmtieiixnpsy{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/08.png" class="vmtieiixnpsy">
 
-<style>.peduuedbtcjc{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/09.png" class="peduuedbtcjc">
+<style>.szseglmyonnt{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/09.png" class="szseglmyonnt">
 
 <p>实际上到这里，我们也没讲明白，JSVirturlMachine和JSManagedValue是怎么做到有条件强持有的，并且没有循环引用。</p>
 <p>以下是我的一点推理：
@@ -640,7 +639,7 @@ mjx-container[display="true"] + br {
 <p>实际上这部分内容在<code>scanExternalObjectGraph</code>方法中可以看到一些端倪，感兴趣的童鞋可以看一下。</p>
 <h2 id="jscontext">JSContext</h2>
 <p>一个JSContext对象代表一个JavaScript执行环境。在native代码中，使用JSContext去执行JS代码，访问JS中定义或者计算的值，并使JavaScript可以访问native的对象、方法、函数，它就好像是OC和JS语言之间的一座桥梁。</p>
-<style>.gpzwhraxtmhx{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/02.png" class="gpzwhraxtmhx">
+<style>.qobpyvqznuee{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/02.png" class="qobpyvqznuee">
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SValue *value = [context evaluateScript:<span class="string">@&quot;var a = 1+2*3;&quot;</span>];</span><br><span class="line"></span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, [context objectForKeyedSubscript:<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, [context.globalObject objectForKeyedSubscript:<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, context[<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
@@ -700,10 +699,10 @@ mjx-container[display="true"] + br {
 </blockquote>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">JSValue *value = [JSValue valueWithObject:<span class="string">@&quot;test&quot;</span> inContext:context];</span><br><span class="line">context[<span class="string">@&quot;block&quot;</span>] = ^()&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;%@&quot;</span>, value);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<style>.augonnyrnqcd{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/05.png" class="augonnyrnqcd">
+<style>.yqybgvyjmxbq{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/05.png" class="yqybgvyjmxbq">
 
 <p>通常我们使用weak来修饰block内需要使用的外部引用以避免循环引用，由于JSValue对应的JS对象内存由虚拟机进行管理并负责回收，这种方法不能准确地控制block内的引用JSValue的生命周期，可能在block内需要使用JSValue的时候，其已经被虚拟机回收。</p>
-<style>.nsqpdrjhzrtg{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/06.png" class="nsqpdrjhzrtg">
+<style>.goiddfvmqmhv{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/06.png" class="goiddfvmqmhv">
 
 <p>因为JSValue的引用计数为0，所以早早就被释放了，不能达到我们的预期。</p>
 <p>Apple引入了有条件的强引用:<code>conditional retain</code>，而对应的类就叫<code>JSManagedValue</code>
@@ -718,7 +717,7 @@ retain）”的特性使其可以自动管理内存。
 retain）”，是指在以下两种情况任何一个满足的情况下保证其管理的JSValue被持有：可以通过JavaScript的对象图找到该JSValue。可以通过native对象图找到该JSManagedValue。使用addManagedReference:withOwner:方法可向虚拟机记录该关系反之，如果以上条件都不满足，JSManagedValue对象就会将其value置为nil并释放该JSValue。</li>
 </ul>
 </blockquote>
-<style>.ewpbpukwsuqb{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/07.png" class="ewpbpukwsuqb">
+<style>.czogmxpoclwc{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/07.png" class="czogmxpoclwc">
 
 <h3 id="初始化-1">初始化</h3>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JSManagedValue</span> </span>&#123;</span><br><span class="line">    JSC::Weak&lt;JSC::JSGlobalObject&gt; m_globalObject;</span><br><span class="line">    RefPtr&lt;JSC::JSLock&gt; m_lock;</span><br><span class="line">    WeakValueRef m_weakValue;<span class="comment">//注意这里的m_weakValue</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_owners;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">+ (JSManagedValue *)managedValueWithValue:(JSValue *)value andOwner:(<span class="type">id</span>)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 这里的JSManagedValue并没有对JSValue进行强引用</span></span><br><span class="line">    JSManagedValue *managedValue = [[<span class="keyword">self</span> alloc] initWithValue:value];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// context对应的virtualMachine对value进行了强持有</span></span><br><span class="line">    [value.context.virtualMachine addManagedReference:managedValue withOwner:owner];</span><br><span class="line">    <span class="keyword">return</span> [managedValue autorelease];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -748,7 +747,7 @@ function.</li>
 </blockquote>
 <p>说起来，JavaScript一直是让人很费解的一门语言，它是动态的，本身没有类的概念，尽管ES6引入了关键字class，但是这种语法糖仍然改变不了JavaScript是基于原型的这一事实，掌握原型和原型链的本质是JavaScript进阶的非常重要一环。</p>
 <p>引用一章非常经典的原型链和构造函数的关系图</p>
-<style>.xmzrirgpymig{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/04.png" class="xmzrirgpymig">
+<style>.iqfeguobhtxe{}</style><img src="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/04.png" class="iqfeguobhtxe">
 
 <p>但是这里我们不打算细究JavaScript的原型链，感兴趣的同学可以参考这里:
 <a
@@ -854,20 +853,21 @@ id="allocateconstructorandprototype">allocateConstructorAndPrototype</h3>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/">JavaScriptCore引擎深度解析2—API篇</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2018年07月25日 - 00:07</p>
-  <p><span>最后更新:</span>2026年08月29日 - 02:08</p>
-  <p><span>原始链接:</span><a href="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/" title="JavaScriptCore引擎深度解析2—API篇">https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/">JavaScriptCore引擎深度解析2—API篇</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2018年07月25日 - 00:07</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/" title="JavaScriptCore引擎深度解析2—API篇">https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/07/25/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-2-API%E7%AF%87/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -989,15 +989,16 @@ id="allocateconstructorandprototype">allocateConstructorAndPrototype</h3>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1113,7 +1114,7 @@ id="allocateconstructorandprototype">allocateConstructorAndPrototype</h3>
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

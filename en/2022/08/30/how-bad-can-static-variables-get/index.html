@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="C++ static variables, static initialization order, iOS +load, __cxa_guard_acquire, __cxa_atexit, translation unit, static local variable, initialization order fiasco" />
 
 
 
@@ -93,16 +93,16 @@
 
 
 
-<meta name="description" content="Background In C++, the construction and destruction order of static variables across translation units is undefined, and it can even change from build to build. That leads to a lot of hard-to-predict">
+<meta name="description" content="A practical look at C++ static variable initialization and destruction pitfalls in iOS projects, covering translation units, +load timing, local static guards, __cxa_guard, and lifecycle bugs.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="How Bad Can Static Variables Get?">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Background In C++, the construction and destruction order of static variables across translation units is undefined, and it can even change from build to build. That leads to a lot of hard-to-predict">
+<meta property="og:description" content="A practical look at C++ static variable initialization and destruction pitfalls in iOS projects, covering translation units, +load timing, local static guards, __cxa_guard, and lifecycle bugs.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
 <meta property="article:published_time" content="2022-08-30T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:03.905Z">
+<meta property="article:modified_time" content="2026-09-13T01:53:16.709Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
@@ -413,6 +413,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -422,7 +423,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -499,7 +500,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  43k
+                  44k
                 </span>
               
 
@@ -515,12 +516,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  2:37
+                  2:38
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -553,6 +552,14 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
+<blockquote>
+<p><strong>Summary:</strong> This article examines several real-world
+C++ static variable problems in iOS projects. It covers initialization
+order across translation units, crashes triggered by Objective-C
+<code>+load</code>, thread-safe local static initialization after C++11,
+and destruction-order hazards that are easy to miss in mixed
+Objective-C/C++ code.</p>
+</blockquote>
 <p>In C++, the construction and destruction order of static variables
 across translation units is undefined, and it can even change from build
 to build. That leads to a lot of hard-to-predict bugs. If you put C++
@@ -675,7 +682,7 @@ goes into <code>__DATA, __data</code> and does not need a runtime
 <code>__cxx_global_var_init</code>.</li>
 </ul>
 </blockquote>
-<p>From the demo, we can see:</p>
+<p>The demo shows two different initialization paths:</p>
 <ol type="1">
 <li>The unhighlighted lines are all values that can be determined at
 compile time, so they do not trigger
@@ -981,20 +988,21 @@ C++ Style Guide - Static and Global Variables</a></li>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2022/08/30/how-bad-can-static-variables-get/">How Bad Can Static Variables Get?</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2022-08-30 23:06</p>
-  <p><span>Updated:</span>2026-09-06 23:47</p>
-  <p><span>Original link:</span><a href="/en/2022/08/30/how-bad-can-static-variables-get/" title="How Bad Can Static Variables Get?">https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/">How Bad Can Static Variables Get?</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-08-30 23:06</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/" title="How Bad Can Static Variables Get?">https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1110,15 +1118,16 @@ C++ Style Guide - Static and Global Variables</a></li>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1238,7 +1247,7 @@ destructors with xcconfig</span></a></li><li class="nav-item nav-level-4"><a cla
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

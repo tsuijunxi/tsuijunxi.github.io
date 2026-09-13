@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Trampoline Center Redirection InlineHook" />
+  <meta name="keywords" content="iOS center redirection, JSPatch, Objective-C runtime, message forwarding, trampoline, inline hook, AOP, method dispatch, JavaScriptCore" />
 
 
 
@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="Background Center redirection, as the name suggests, means routing certain flows to one central point, performing some aspect-oriented work there, and then returning to the original downstream flow. I">
+<meta name="description" content="An iOS runtime article about center redirection, covering JSPatch-style message forwarding, trampolines, inline hooks, centralized routing, and aspect-oriented implementation patterns.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Center Redirection in iOS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Background Center redirection, as the name suggests, means routing certain flows to one central point, performing some aspect-oriented work there, and then returning to the original downstream flow. I">
+<meta property="og:description" content="An iOS runtime article about center redirection, covering JSPatch-style message forwarding, trampolines, inline hooks, centralized routing, and aspect-oriented implementation patterns.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/02.png">
@@ -116,7 +116,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/14.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/15.png">
 <meta property="article:published_time" content="2023-05-08T15:40:07.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:03.243Z">
+<meta property="article:modified_time" content="2026-09-13T01:55:07.147Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Trampoline Center Redirection InlineHook">
 <meta name="twitter:card" content="summary">
@@ -428,6 +428,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -437,7 +438,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -514,7 +515,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  87k
+                  88k
                 </span>
               
 
@@ -530,12 +531,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  5:17
+                  5:18
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -567,7 +566,15 @@ mjx-container[display="true"] + br {
       
 
       
-        <h1 id="background">Background</h1>
+        <h2 id="background">Background</h2>
+<blockquote>
+<p><strong>Summary:</strong> This article explains center redirection as
+a runtime technique for routing many calls through a shared center
+before returning to the original flow. Through examples such as
+JSPatch-style JavaScript syntax, message forwarding, trampolines, and
+inline hooks, it compares center redirection with ordinary hooking and
+shows where this pattern is useful on iOS.</p>
+</blockquote>
 <p>Center redirection, as the name suggests, means routing certain flows
 to one central point, performing some aspect-oriented work there, and
 then returning to the original downstream flow. In a sense, center
@@ -577,8 +584,8 @@ while a <code>Hook</code> may not.</p>
 <p>This article explains the idea through several examples.</p>
 <img src="/2023/05/08/聊聊iOS中的中心重定向/01.png" width="100%"/>
 
-<h1 id="how-do-you-write-ios-with-js-syntax">How do you write iOS with
-JS syntax?</h1>
+<h2 id="how-do-you-write-ios-with-js-syntax">How do you write iOS with
+JS syntax?</h2>
 <p>If you have used <code>JSPatch</code>, the following code should look
 familiar. It looks a lot like <code>iOS</code>, but it is actually
 <code>JS</code> syntax. The reason this writing style works is deeply
@@ -1188,20 +1195,21 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2023/05/08/center-redirection-in-ios/">Center Redirection in iOS</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2023-05-08 23:40</p>
-  <p><span>Updated:</span>2026-09-06 23:47</p>
-  <p><span>Original link:</span><a href="/en/2023/05/08/center-redirection-in-ios/" title="Center Redirection in iOS">https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/">Center Redirection in iOS</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2023-05-08 23:40</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:55</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/" title="Center Redirection in iOS">https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1323,15 +1331,16 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1412,15 +1421,15 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#how-do-you-write-ios-with-js-syntax"><span class="nav-number">2.</span> <span class="nav-text">How do you write iOS with
-JS syntax?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#brute-force-mapping"><span class="nav-number">2.1.</span> <span class="nav-text">Brute-force mapping</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#__c-redirection"><span class="nav-number">2.2.</span> <span class="nav-text">__c redirection</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#login-check-center-redirection"><span class="nav-number">3.</span> <span class="nav-text">Login-check center
-redirection</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#define-a-one-time-observer"><span class="nav-number">3.1.</span> <span class="nav-text">Define a one-time observer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#login-callback"><span class="nav-number">3.2.</span> <span class="nav-text">Login callback</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-login-proxy"><span class="nav-number">3.3.</span> <span class="nav-text">Define the login proxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-nsobject-category-loginproxy"><span class="nav-number">3.4.</span> <span class="nav-text">Define the
-NSObject category LoginProxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#call-flow"><span class="nav-number">3.5.</span> <span class="nav-text">Call flow</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#how-do-we-center-redirect-any-block"><span class="nav-number">4.</span> <span class="nav-text">How do we center-redirect
-any Block?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#current-result"><span class="nav-number">4.1.</span> <span class="nav-text">Current result</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vm_remap"><span class="nav-number">4.2.</span> <span class="nav-text">vm_remap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#principle"><span class="nav-number">4.2.1.</span> <span class="nav-text">Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#code-practice"><span class="nav-number">4.2.2.</span> <span class="nav-text">Code practice</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#block-structure-representation"><span class="nav-number">4.3.</span> <span class="nav-text">Block structure
-representation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flow-jump-logic"><span class="nav-number">4.4.</span> <span class="nav-text">Flow-jump logic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arm64-assembly-implementation"><span class="nav-number">4.5.</span> <span class="nav-text">arm64 assembly
-implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers"><span class="nav-number">4.5.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code"><span class="nav-number">4.5.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram"><span class="nav-number">4.5.3.</span> <span class="nav-text">Hopper diagram</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x86_64-assembly-implementation"><span class="nav-number">4.6.</span> <span class="nav-text">x86_64 assembly
-implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers-1"><span class="nav-number">4.6.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code-1"><span class="nav-number">4.6.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram-1"><span class="nav-number">4.6.3.</span> <span class="nav-text">Hopper diagram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stack-alignment-pitfall"><span class="nav-number">4.6.4.</span> <span class="nav-text">Stack alignment pitfall</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#why-not-save-and-restore-xmm0xmm7"><span class="nav-number">4.6.5.</span> <span class="nav-text">Why not save and restore
-xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#thoughts"><span class="nav-number">4.7.</span> <span class="nav-text">Thoughts</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#references"><span class="nav-number">6.</span> <span class="nav-text">References</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-do-you-write-ios-with-js-syntax"><span class="nav-number">2.</span> <span class="nav-text">How do you write iOS with
+JS syntax?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#brute-force-mapping"><span class="nav-number">3.</span> <span class="nav-text">Brute-force mapping</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#__c-redirection"><span class="nav-number">4.</span> <span class="nav-text">__c redirection</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#login-check-center-redirection"><span class="nav-number">5.</span> <span class="nav-text">Login-check center
+redirection</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#define-a-one-time-observer"><span class="nav-number">5.1.</span> <span class="nav-text">Define a one-time observer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#login-callback"><span class="nav-number">5.2.</span> <span class="nav-text">Login callback</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-login-proxy"><span class="nav-number">5.3.</span> <span class="nav-text">Define the login proxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-nsobject-category-loginproxy"><span class="nav-number">5.4.</span> <span class="nav-text">Define the
+NSObject category LoginProxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#call-flow"><span class="nav-number">5.5.</span> <span class="nav-text">Call flow</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#how-do-we-center-redirect-any-block"><span class="nav-number">6.</span> <span class="nav-text">How do we center-redirect
+any Block?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#current-result"><span class="nav-number">6.1.</span> <span class="nav-text">Current result</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vm_remap"><span class="nav-number">6.2.</span> <span class="nav-text">vm_remap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#principle"><span class="nav-number">6.2.1.</span> <span class="nav-text">Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#code-practice"><span class="nav-number">6.2.2.</span> <span class="nav-text">Code practice</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#block-structure-representation"><span class="nav-number">6.3.</span> <span class="nav-text">Block structure
+representation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flow-jump-logic"><span class="nav-number">6.4.</span> <span class="nav-text">Flow-jump logic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arm64-assembly-implementation"><span class="nav-number">6.5.</span> <span class="nav-text">arm64 assembly
+implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers"><span class="nav-number">6.5.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code"><span class="nav-number">6.5.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram"><span class="nav-number">6.5.3.</span> <span class="nav-text">Hopper diagram</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x86_64-assembly-implementation"><span class="nav-number">6.6.</span> <span class="nav-text">x86_64 assembly
+implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers-1"><span class="nav-number">6.6.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code-1"><span class="nav-number">6.6.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram-1"><span class="nav-number">6.6.3.</span> <span class="nav-text">Hopper diagram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stack-alignment-pitfall"><span class="nav-number">6.6.4.</span> <span class="nav-text">Stack alignment pitfall</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#why-not-save-and-restore-xmm0xmm7"><span class="nav-number">6.6.5.</span> <span class="nav-text">Why not save and restore
+xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#thoughts"><span class="nav-number">6.7.</span> <span class="nav-text">Thoughts</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#references"><span class="nav-number">8.</span> <span class="nav-text">References</span></a></li></ol></div>
             
 
           </div>
@@ -1455,7 +1464,7 @@ xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="n
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

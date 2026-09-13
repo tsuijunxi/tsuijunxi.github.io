@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="GCD" />
+  <meta name="keywords" content="GCD, dispatch_source, libdispatch, kqueue, kevent, BSD event notification, dispatch queue, iOS concurrency, event source" />
 
 
 
@@ -93,15 +93,15 @@
 
 
 
-<meta name="description" content="Preface Compared with other parts of GCD, dispatch_source is probably the least eye-catching one. It is a wrapper around kqueue, a common BSD kernel facility, and can monitor certain kinds of events.">
+<meta name="description" content="A source-level analysis of GCD dispatch_source, covering kqueue, kevent, event filters, source registration, event delivery, and how libdispatch bridges kernel events to dispatch queues.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="GCD Source Analysis 6 - dispatch_source">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="Preface Compared with other parts of GCD, dispatch_source is probably the least eye-catching one. It is a wrapper around kqueue, a common BSD kernel facility, and can monitor certain kinds of events.">
+<meta property="og:description" content="A source-level analysis of GCD dispatch_source, covering kqueue, kevent, event filters, source registration, event delivery, and how libdispatch bridges kernel events to dispatch queues.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2018-02-09T16:25:55.000Z">
-<meta property="article:modified_time" content="2026-08-29T17:08:05.925Z">
+<meta property="article:modified_time" content="2026-09-13T01:55:07.043Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="GCD">
 <meta name="twitter:card" content="summary">
@@ -412,6 +412,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -421,7 +422,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -514,12 +515,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  6:32
+                  6:34
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -552,6 +551,13 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="preface">Preface</h2>
+<blockquote>
+<p><strong>Summary:</strong> This article explains
+<code>dispatch_source</code> from the bottom up. It starts with BSD
+<code>kqueue</code> and <code>kevent</code>, then follows how
+libdispatch wraps kernel events and delivers them onto dispatch queues,
+making event-driven programming fit naturally into the GCD model.</p>
+</blockquote>
 <p>Compared with other parts of GCD, <code>dispatch_source</code> is
 probably the least eye-catching one. It is a wrapper around
 <code>kqueue</code>, a common BSD kernel facility, and can monitor
@@ -916,20 +922,21 @@ those two points in mind, the underlying principle of
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2018/02/10/gcd-source-analysis-6-dispatch-source/">GCD Source Analysis 6 - dispatch_source</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2018-02-10 00:25</p>
-  <p><span>Updated:</span>2026-08-30 01:08</p>
-  <p><span>Original link:</span><a href="/en/2018/02/10/gcd-source-analysis-6-dispatch-source/" title="GCD Source Analysis 6 - dispatch_source">https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2018/02/10/gcd-source-analysis-6-dispatch-source/">GCD Source Analysis 6 - dispatch_source</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2018-02-10 00:25</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:55</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2018/02/10/gcd-source-analysis-6-dispatch-source/" title="GCD Source Analysis 6 - dispatch_source">https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2018/02/10/gcd-source-analysis-6-dispatch-source/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1051,15 +1058,16 @@ those two points in mind, the underlying principle of
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1175,7 +1183,7 @@ those two points in mind, the underlying principle of
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

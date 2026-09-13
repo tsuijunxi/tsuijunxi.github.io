@@ -93,15 +93,15 @@
 
 
 
-<meta name="description" content="前言 运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者">
+<meta name="description" content="记录 JavaScriptCore LLInt 解释器相关笔记，讨论字节码执行、OSR、多级 JIT、低延迟解释执行和寄存器抽象等基础概念。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JavaScriptCore引擎深度解析6——LLInt解释器篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 运行指令字节码（ByteCode）是JavaScriptCore引擎中很核心的部分，各家JavaScript引擎的优化也主要集中于此。JSByteCode的解释执行是一套很复杂的系统，特别是加入了OSR和多级JIT技术之后，整个解释执行变的越来越高效，并且让整个ByteCode的执行在低延时之间和高吞吐之间有个很好的平衡：由低延时的LLInt来解释执行ByteCode，当遇到多次重复调用或者">
+<meta property="og:description" content="记录 JavaScriptCore LLInt 解释器相关笔记，讨论字节码执行、OSR、多级 JIT、低延迟解释执行和寄存器抽象等基础概念。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2018-09-19T16:35:05.000Z">
-<meta property="article:modified_time" content="2026-08-28T17:37:34.483Z">
+<meta property="article:modified_time" content="2026-09-13T02:15:28.840Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="JavaScriptCore">
 <meta name="twitter:card" content="summary">
@@ -412,6 +412,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -421,7 +422,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -536,8 +537,6 @@ mjx-container[display="true"] + br {
             </div>
           
 
-          
-
         </div>
       </header>
     
@@ -644,20 +643,21 @@ let，const 和 class 的全局属性，或者 var，let 和 const 的全局变�
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/">JavaScriptCore引擎深度解析6——LLInt解释器篇</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2018年09月20日 - 00:09</p>
-  <p><span>最后更新:</span>2026年08月29日 - 01:08</p>
-  <p><span>原始链接:</span><a href="/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/" title="JavaScriptCore引擎深度解析6——LLInt解释器篇">https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/">JavaScriptCore引擎深度解析6——LLInt解释器篇</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2018年09月20日 - 00:09</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/" title="JavaScriptCore引擎深度解析6——LLInt解释器篇">https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/09/20/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-6-LLInt%E8%A7%A3%E9%87%8A%E5%99%A8%E7%AF%87/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -779,15 +779,16 @@ let，const 和 class 的全局属性，或者 var，let 和 const 的全局变�
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -903,7 +904,7 @@ let，const 和 class 的全局属性，或者 var，let 和 const 的全局变�
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

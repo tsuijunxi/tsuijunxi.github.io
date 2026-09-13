@@ -93,18 +93,18 @@
 
 
 
-<meta name="description" content="背景 在 C++ 中，不同编译单元之间的静态变量的构造和析构的调用顺序是不确定的，甚至会随着构建变化而变化，这样会导致许多难以预料的问题。如果将C++代码放置于iOS工程中，由于调用时机又会引发一些额外的问题，这将会使得问题更加严重。本文将结合之前碰到的静态变量的一些问题做个总结。  同一个编译单元内是明确的，静态初始化优先于动态初始化，初始化顺序按照声明顺序进行，销毁则逆序。不同的编译单元之间初">
+<meta name="description" content="结合 iOS 工程里的真实问题，梳理 C++ 静态变量的初始化和析构陷阱，包括 +load 时机、局部静态变量、__cxa_guard 和生命周期问题。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="静态变量究竟有多坑？">
 <meta property="og:url" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景 在 C++ 中，不同编译单元之间的静态变量的构造和析构的调用顺序是不确定的，甚至会随着构建变化而变化，这样会导致许多难以预料的问题。如果将C++代码放置于iOS工程中，由于调用时机又会引发一些额外的问题，这将会使得问题更加严重。本文将结合之前碰到的静态变量的一些问题做个总结。  同一个编译单元内是明确的，静态初始化优先于动态初始化，初始化顺序按照声明顺序进行，销毁则逆序。不同的编译单元之间初">
+<meta property="og:description" content="结合 iOS 工程里的真实问题，梳理 C++ 静态变量的初始化和析构陷阱，包括 +load 时机、局部静态变量、__cxa_guard 和生命周期问题。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/04.png">
 <meta property="article:published_time" content="2022-08-30T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:03.757Z">
+<meta property="article:modified_time" content="2026-09-13T02:14:22.604Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
@@ -415,6 +415,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -424,7 +425,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -526,8 +527,6 @@ mjx-container[display="true"] + br {
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -942,20 +941,21 @@ C++ Style Guide - Static and Global Variables</a></li>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/">静态变量究竟有多坑？</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2022年08月30日 - 23:08</p>
-  <p><span>最后更新:</span>2026年09月06日 - 23:09</p>
-  <p><span>原始链接:</span><a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/" title="静态变量究竟有多坑？">https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/">静态变量究竟有多坑？</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2022年08月30日 - 23:08</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/" title="静态变量究竟有多坑？">https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1071,15 +1071,16 @@ C++ Style Guide - Static and Global Variables</a></li>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1197,7 +1198,7 @@ assignment operator</span></a></li><li class="nav-item nav-level-3"><a class="na
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

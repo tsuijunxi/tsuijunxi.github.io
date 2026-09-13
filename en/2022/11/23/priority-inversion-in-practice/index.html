@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="iOS priority inversion, QoS, NSOperationQueue, pthread_rwlock, os_unfair_lock, dispatch_semaphore, turnstile, priority inheritance, main thread timeout" />
 
 
 
@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="This article also appears on WeChat: &lt;&gt;  Background I recently hit a large number of deadlocks in production around read-write locks. After checking the stacks, I found that every problematic t">
+<meta name="description" content="A practical investigation of priority inversion on iOS, covering NSOperationQueue QoS, pthread read-write locks, priority inheritance, turnstiles, dispatch_semaphore, and debugging real main-thread st">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Priority Inversion in Practice">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="This article also appears on WeChat: &lt;&gt;  Background I recently hit a large number of deadlocks in production around read-write locks. After checking the stacks, I found that every problematic t">
+<meta property="og:description" content="A practical investigation of priority inversion on iOS, covering NSOperationQueue QoS, pthread read-write locks, priority inheritance, turnstiles, dispatch_semaphore, and debugging real main-thread st">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/07.png">
@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png">
 <meta property="article:published_time" content="2022-11-23T09:53:47.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:03.603Z">
+<meta property="article:modified_time" content="2026-09-13T01:38:07.022Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
@@ -421,6 +421,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -430,7 +431,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -466,6 +467,25 @@ mjx-container[display="true"] + br {
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/en/categories/iOS/" itemprop="url" rel="index">
+                    <span itemprop="name">iOS</span>
+                  </a>
+                </span>
+              
+            </span>
           
 
           
@@ -504,12 +524,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  5:04
+                  5:05
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -542,38 +560,42 @@ mjx-container[display="true"] + br {
 
       
         <blockquote>
-<p>This article also appears on WeChat: <a
-href="https://mp.weixin.qq.com/s/kp6cdDrdQ4rhfdXH-_Q8IA">&lt;<Priority Inversion in Practice>&gt;</a></p>
+<p><strong>Summary:</strong> This article investigates a real iOS
+priority inversion issue around read-write locks and
+<code>NSOperationQueue</code> QoS. It walks through the production
+symptom, a local verification demo, the system mechanisms behind
+priority inheritance, and why APIs such as <code>pthread_mutex</code>,
+<code>os_unfair_lock</code>, <code>dispatch_sync</code>, and
+<code>dispatch_semaphore</code> behave differently.</p>
 </blockquote>
 <h2 id="background">Background</h2>
-<p>I recently hit a large number of deadlocks in production around
-read-write locks. After checking the stacks, I found that every
-problematic thread belonged to an <code>NSOperationQueue</code> and all
-of them were marked <code>QOS:BACKGROUND</code>. It looked like the
-worker threads that held the lock were still running, but they were not
-getting enough CPU time, which eventually caused the main thread to time
-out after 8 seconds.</p>
-<p>Why would a thread that already owns a lock still need so long to
-finish? There are two possibilities:</p>
+<p>I recently investigated a wave of production stalls around read-write
+locks. The suspicious stacks all came from
+<code>NSOperationQueue</code>, and the relevant worker threads were
+marked <code>QOS:BACKGROUND</code>. The lock owners appeared to be
+alive, but they were not getting enough CPU time, which eventually
+caused the main thread to hit the 8-second watchdog threshold.</p>
+<p>Why would a thread that already owns a lock take so long to finish?
+There are two likely explanations:</p>
 <ol type="1">
 <li>It really is that slow.</li>
 <li>Priority inversion is happening.</li>
 </ol>
-<p>The following diagram shows the main thread waiting for the lock, and
-a background thread holding it.</p>
+<p>The diagrams below show the main thread waiting for the lock while a
+background thread holds it.</p>
 <img src="/2022/11/23/优先级反转那些事儿/00.png" />
 
 <img src="/2022/11/23/优先级反转那些事儿/07.png" />
 
 <h3 id="how-to-deal-with-it">How to deal with it</h3>
-<p>In this case, the low-priority thread that holds the read-write lock
-keeps getting scheduled too late, gets preempted, or simply runs out of
-time slices. Meanwhile, the high-priority thread keeps waiting for the
-lock. This is classic priority inversion.</p>
-<p>Since iOS 8, Apple introduced <code>QualityOfService</code>, which is
-similar to thread priority. Different QoS classes get different CPU,
-network, and disk resource allocations, so we can use QoS to influence
-queue priority.</p>
+<p>In this case, the low-priority thread holding the read-write lock is
+scheduled too late, gets preempted, or simply runs out of time slices.
+Meanwhile, the high-priority thread continues to wait for the lock. This
+is classic priority inversion.</p>
+<p>Since iOS 8, Apple has exposed <code>QualityOfService</code>, which
+maps roughly to thread priority. Different QoS classes receive different
+CPU, network, and disk resource treatment, so QoS can influence
+scheduling behavior.</p>
 <h4 id="option-1-remove-qos-settings-from-nsoperationqueue">Option 1:
 Remove QoS settings from <code>NSOperationQueue</code></h4>
 <p>Apple gives a clear warning in the <a
@@ -587,9 +609,10 @@ your application contains high-priority and low-priority threads that
 must interact with each other, the starvation of lower-priority threads
 may block other threads and create performance bottlenecks.</p>
 </blockquote>
-<p>The advice is simple: do not arbitrarily raise thread priority,
-especially when high- and low-priority threads compete for the same
-critical resource. Removing the QoS tweak can solve the problem.</p>
+<p>The practical takeaway is simple: avoid raising thread priority
+arbitrarily, especially when high- and low-priority threads compete for
+the same critical resource. In some cases, removing the QoS override is
+enough to solve the problem.</p>
 <h4 id="option-2-temporarily-raise-the-worker-thread-priority">Option 2:
 Temporarily raise the worker thread priority</h4>
 <p>The <a
@@ -608,20 +631,25 @@ it in a number of ways, such as by having critical sections that are
 guarded by read-write locks execute at a high priority, so that a thread
 cannot be preempted while executing in its critical section.</p>
 </blockquote>
-<p>That is written for realtime systems, but it still gives a useful
-hint. In our case, once a thread acquires <code>_rwlock</code> through
-<code>pthread_rwlock_wrlock</code>, we temporarily boost its QoS, then
-restore the original QoS after releasing the lock.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">        </span><br><span class="line">        qos_class_t oldQos = qos_class_self();</span><br><span class="line">        <span class="type">BOOL</span> needRecover = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Temporarily boost thread priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; oldQos &lt; QOS_CLASS_USER_INTERACTIVE) &#123;</span><br><span class="line">            <span class="type">int</span> ret = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, <span class="number">0</span>);</span><br><span class="line">            needRecover = (ret == <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Restore priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; needRecover) &#123;</span><br><span class="line">            pthread_set_qos_class_self_np(oldQos, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">One thing to note: <span class="variable language_">this</span> has to be done with `pthread` APIs. `<span class="built_in">NSThread</span>` APIs <span class="keyword">do</span> not work here.</span><br><span class="line"></span><br><span class="line">```objc</span><br><span class="line"><span class="comment">// NSThread.h</span></span><br><span class="line"><span class="comment">// To be deprecated; use qualityOfService below</span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">double</span> threadPriority API_AVAILABLE(macos(<span class="number">10.6</span>), ios(<span class="number">4.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br><span class="line"><span class="comment">// read-only after the thread is started</span></span><br><span class="line"><span class="keyword">@property</span> <span class="built_in">NSQualityOfService</span> qualityOfService API_AVAILABLE(macos(<span class="number">10.10</span>), ios(<span class="number">8.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br></pre></td></tr></table></figure>
+<p>That guidance is written for realtime systems, but it points to a
+useful workaround. In our case, once a thread acquires
+<code>_rwlock</code> through <code>pthread_rwlock_wrlock</code>, we
+temporarily boost its QoS, then restore the original QoS after releasing
+the lock.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        pthread_rwlock_wrlock(&amp;_rwlock);</span><br><span class="line">        </span><br><span class="line">        qos_class_t oldQos = qos_class_self();</span><br><span class="line">        <span class="type">BOOL</span> needRecover = <span class="literal">NO</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Temporarily boost thread priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; oldQos &lt; QOS_CLASS_USER_INTERACTIVE) &#123;</span><br><span class="line">            <span class="type">int</span> ret = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, <span class="number">0</span>);</span><br><span class="line">            needRecover = (ret == <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">        pthread_rwlock_unlock(&amp;_rwlock);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Restore priority</span></span><br><span class="line">        <span class="keyword">if</span> (_enablePriorityInversionProtection &amp;&amp; needRecover) &#123;</span><br><span class="line">            pthread_set_qos_class_self_np(oldQos, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>One thing to note: this has to be done with <code>pthread</code>
+APIs. <code>NSThread</code> APIs do not work here.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NSThread.h</span></span><br><span class="line"><span class="comment">// To be deprecated; use qualityOfService below</span></span><br><span class="line"><span class="keyword">@property</span> <span class="type">double</span> threadPriority API_AVAILABLE(macos(<span class="number">10.6</span>), ios(<span class="number">4.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br><span class="line"><span class="comment">// read-only after the thread is started</span></span><br><span class="line"><span class="keyword">@property</span> <span class="built_in">NSQualityOfService</span> qualityOfService API_AVAILABLE(macos(<span class="number">10.10</span>), ios(<span class="number">8.0</span>), watchos(<span class="number">2.0</span>), tvos(<span class="number">9.0</span>)); </span><br></pre></td></tr></table></figure>
 
 <h3 id="demo-verification">Demo verification</h3>
-<p>To see whether manually adjusting thread priority helps, I ran a
-local demo: create <code>2000</code> operations to keep the CPU busy,
-set the queue QoS to <code>NSQualityOfServiceUserInitiated</code>, and
-downgrade every <code>100th</code> operation to
+<p>To verify whether manual priority adjustment helps, I ran a local
+demo. It creates <code>2000</code> operations to keep the CPU busy, sets
+the queue QoS to <code>NSQualityOfServiceUserInitiated</code>, and
+downgrades every <code>100th</code> operation to
 <code>NSQualityOfServiceBackground</code>. Each operation runs the same
-expensive work, and we measure the <code>10</code> selected
-operations.</p>
+expensive work, and the <code>10</code> selected operations are
+measured.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; <span class="number">2000</span>; ++j) &#123;</span><br><span class="line">    <span class="built_in">NSOperationQueue</span> *operation = [[<span class="built_in">NSOperationQueue</span> alloc] init];</span><br><span class="line">    operation.maxConcurrentOperationCount = <span class="number">1</span>;</span><br><span class="line">    operation.qualityOfService = <span class="built_in">NSQualityOfServiceUserInitiated</span>;</span><br><span class="line">    <span class="comment">// if (j % 100 == 0) &#123;</span></span><br><span class="line">    <span class="comment">//    operation.qualityOfService = NSQualityOfServiceBackground;</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">    [operation addOperationWithBlock:^&#123;</span><br><span class="line">        <span class="comment">// qos_class_t oldQos = qos_class_self();</span></span><br><span class="line">        <span class="comment">// pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);</span></span><br><span class="line">        </span><br><span class="line">        <span class="built_in">NSTimeInterval</span> start = <span class="built_in">CFAbsoluteTimeGetCurrent</span>();</span><br><span class="line">        <span class="type">double</span> sum = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) &#123;</span><br><span class="line">            sum += sin(i) + cos(i) + sin(i*<span class="number">2</span>) + cos(i*<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        start = <span class="built_in">CFAbsoluteTimeGetCurrent</span>() - start;</span><br><span class="line">        <span class="keyword">if</span> (j % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">            printf(<span class="string">&quot;%.8f\n&quot;</span>, start * <span class="number">1000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// pthread_set_qos_class_self_np(oldQos, 0);</span></span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>Measured results:</p>
@@ -633,8 +661,8 @@ lowering the priority and restoring it inside the block:
 is worth thinking about).</p>
 </blockquote>
 <p>The demo shows that manual priority boosting can greatly reduce the
-total time spent on low-priority tasks. When a lock is held, this
-shortens the time the main thread stays blocked.</p>
+time spent in low-priority tasks. When a lock is involved, that directly
+shortens the time the main thread remains blocked.</p>
 <h2 id="a-deeper-look-at-priority-inversion">A deeper look at priority
 inversion</h2>
 <p>Does every lock need the same manual priority boost? Will the system
@@ -835,7 +863,7 @@ priority inheritance.</p>
 <code>turnstile</code> mechanism for priority inheritance, and this
 mechanism is applied to <code>pthread mutex</code> and
 <code>os_unfair_lock</code>.</p>
-<p>Following that clue, I found <code>_kwq_use_turnstile</code> in
+<p>Following that clue leads to <code>_kwq_use_turnstile</code> in
 <code>ksyn_wait</code>. The comment describes read-write locks somewhat
 cautiously and adds “at least sometimes”.</p>
 <blockquote>
@@ -897,11 +925,11 @@ priority and avoid inversion.</p>
 <h3 id="the-mysterious-semaphore">The mysterious semaphore</h3>
 <h4 id="dispatch_semaphore"><code>dispatch_semaphore</code></h4>
 <p>I used to think binary semaphores and mutexes were basically the
-same. After researching, I found that <code>dispatch_semaphore</code>
-has no QoS concept and does not track the owner thread. So when a
-high-priority thread waits on it, the kernel has no idea which thread
-should be boosted. If the lock owner has a lower priority than the
-waiter, the high-priority thread can wait forever.</p>
+same. In practice, <code>dispatch_semaphore</code> has no QoS concept
+and does not track the owner thread. So when a high-priority thread
+waits on it, the kernel has no idea which thread should be boosted. If
+the lock owner has a lower priority than the waiter, the high-priority
+thread can wait forever.</p>
 <p>This is a warning from the system:</p>
 <blockquote>
 <p>Semaphores are for signaling (same as condition variables, events)
@@ -1022,6 +1050,11 @@ Internals</a>:</p>
 and the common ways to handle it, then studied several iOS locking
 primitives in detail. With a deeper understanding, we can avoid
 unnecessary priority inversion and reduce deadlock-like stalls.</p>
+<blockquote>
+<p>Source note: this article also appears on WeChat: <a
+href="https://mp.weixin.qq.com/s/kp6cdDrdQ4rhfdXH-_Q8IA">Priority
+Inversion in Practice</a>.</p>
+</blockquote>
 <h2 id="references">References</h2>
 <ol type="1">
 <li><a
@@ -1123,20 +1156,21 @@ infect each other with their low priority</a></li>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2022/11/23/priority-inversion-in-practice/">Priority Inversion in Practice</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2022-11-23 17:53</p>
-  <p><span>Updated:</span>2026-09-06 23:47</p>
-  <p><span>Original link:</span><a href="/en/2022/11/23/priority-inversion-in-practice/" title="Priority Inversion in Practice">https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/11/23/priority-inversion-in-practice/">Priority Inversion in Practice</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-11-23 17:53</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:38</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/11/23/priority-inversion-in-practice/" title="Priority Inversion in Practice">https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1252,15 +1286,16 @@ infect each other with their low priority</a></li>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1382,7 +1417,7 @@ caused by semaphores</span></a></li></ol></li></ol></li><li class="nav-item nav-
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

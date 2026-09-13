@@ -93,15 +93,15 @@
 
 
 
-<meta name="description" content="前言 最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。 打开文件 获取文件大小和文件流 1234567&#x2F;&#x2F; 给定文件路径，获取文件大小。_fileSize &#x3D; [[[">
+<meta name="description" content="系统梳理 TXT 阅读引擎的工作流程，包括文件打开、编码识别、GBK 和 UTF-8 处理、章节解析、排版、绘制、分页和翻页逻辑。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Txt引擎工作原理">
 <meta property="og:url" content="https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 最近为了解决切章过程中碰到的各种疑难杂症，不得不深入到TxtEngine中调试分析一些细节，尽管之前为了解决卡牌的排版问题也接触过，但是每次都是只见树木不见森林。为了避免一叶障目不见泰山，所以下决心梳理下该阅读引擎，从整体上了解引擎的工作原理，包括打开文件、排版、渲染、翻页等环节。 打开文件 获取文件大小和文件流 1234567&#x2F;&#x2F; 给定文件路径，获取文件大小。_fileSize &#x3D; [[[">
+<meta property="og:description" content="系统梳理 TXT 阅读引擎的工作流程，包括文件打开、编码识别、GBK 和 UTF-8 处理、章节解析、排版、绘制、分页和翻页逻辑。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2019-04-05T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-08-28T17:08:21.366Z">
+<meta property="article:modified_time" content="2026-09-13T02:15:57.211Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 
@@ -411,6 +411,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -420,7 +421,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -498,8 +499,6 @@ mjx-container[display="true"] + br {
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -863,20 +862,21 @@ merge 到总的段落组中<code>_prgfGroup</code>中</p>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">Txt引擎工作原理</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2019年04月05日 - 23:04</p>
-  <p><span>最后更新:</span>2026年08月29日 - 01:08</p>
-  <p><span>原始链接:</span><a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/" title="Txt引擎工作原理">https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">Txt引擎工作原理</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2019年04月05日 - 23:04</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/" title="Txt引擎工作原理">https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/04/05/Txt%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -992,15 +992,16 @@ merge 到总的段落组中<code>_prgfGroup</code>中</p>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1116,7 +1117,7 @@ merge 到总的段落组中<code>_prgfGroup</code>中</p>
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

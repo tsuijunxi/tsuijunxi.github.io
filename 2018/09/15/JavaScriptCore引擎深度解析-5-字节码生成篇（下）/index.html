@@ -93,15 +93,15 @@
 
 
 
-<meta name="description" content="前言 本来想着两篇就差不多能分析完字节码的生成，结果最后发现篇幅过长了，于是重新拆分为上、中、下了，本篇是字节码生成的最后一篇 注：如果有些地方感觉解释的不清楚，请看代码中的注释 ExpressionNode 接着中篇，继续对ExpressionNode的一些子类进行字节码的细节分析，相比较StatementNode，ExpressionNode会看多较多的细节指令。 ConstantNode 常">
+<meta name="description" content="JavaScriptCore 字节码生成分析下篇，聚焦 ExpressionNode、常量加载、表达式求值、语句和表达式路径差异以及底层 opcode 细节。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JavaScriptCore引擎深度解析5-字节码生成篇（下）">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 本来想着两篇就差不多能分析完字节码的生成，结果最后发现篇幅过长了，于是重新拆分为上、中、下了，本篇是字节码生成的最后一篇 注：如果有些地方感觉解释的不清楚，请看代码中的注释 ExpressionNode 接着中篇，继续对ExpressionNode的一些子类进行字节码的细节分析，相比较StatementNode，ExpressionNode会看多较多的细节指令。 ConstantNode 常">
+<meta property="og:description" content="JavaScriptCore 字节码生成分析下篇，聚焦 ExpressionNode、常量加载、表达式求值、语句和表达式路径差异以及底层 opcode 细节。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2018-09-14T16:34:33.000Z">
-<meta property="article:modified_time" content="2026-08-28T17:44:21.055Z">
+<meta property="article:modified_time" content="2026-09-13T02:15:28.736Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="JavaScriptCore ByteCode">
 <meta name="twitter:card" content="summary">
@@ -412,6 +412,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -421,7 +422,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -534,8 +535,6 @@ mjx-container[display="true"] + br {
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -801,20 +800,21 @@ ES6也是基于这样的方式，但是封装了更优雅简洁的api，让Javas
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/">JavaScriptCore引擎深度解析5-字节码生成篇（下）</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2018年09月15日 - 00:09</p>
-  <p><span>最后更新:</span>2026年08月29日 - 01:08</p>
-  <p><span>原始链接:</span><a href="/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/" title="JavaScriptCore引擎深度解析5-字节码生成篇（下）">https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/">JavaScriptCore引擎深度解析5-字节码生成篇（下）</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2018年09月15日 - 00:09</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/" title="JavaScriptCore引擎深度解析5-字节码生成篇（下）">https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/09/15/JavaScriptCore%E5%BC%95%E6%93%8E%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90-5-%E5%AD%97%E8%8A%82%E7%A0%81%E7%94%9F%E6%88%90%E7%AF%87%EF%BC%88%E4%B8%8B%EF%BC%89/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -936,15 +936,16 @@ ES6也是基于这样的方式，但是封装了更优雅简洁的api，让Javas
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1060,7 +1061,7 @@ ES6也是基于这样的方式，但是封装了更优雅简洁的api，让Javas
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

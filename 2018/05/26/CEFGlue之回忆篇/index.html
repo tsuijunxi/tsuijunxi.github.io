@@ -93,19 +93,19 @@
 
 
 
-<meta name="description" content="前言 刚毕业参加工作的时候，研究过一段时间CEF，解决了几个令人头疼的问题，转行之后就再没关注过。直到前两天，一个素不相识的童鞋突然不知道从哪里搞来我的QQ，加我好友询问CEF的一些问题，就在那时我突然意识到，也许这段经历应该被记录下来。———— 写给4年前的自己。 背景 在.NET平台的开发中，微软自带的WebBrowser控件存在以下问题： （1）WebBrowser控件无法保证版本的一致，如">
+<meta name="description" content="回顾一次 CEFGlue 接入经历，梳理 .NET WebBrowser 的局限、CEF 集成、音视频支持、JavaScript 调用 Native 以及 C# 互操作问题。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CEFGlue之回忆篇">
 <meta property="og:url" content="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="前言 刚毕业参加工作的时候，研究过一段时间CEF，解决了几个令人头疼的问题，转行之后就再没关注过。直到前两天，一个素不相识的童鞋突然不知道从哪里搞来我的QQ，加我好友询问CEF的一些问题，就在那时我突然意识到，也许这段经历应该被记录下来。———— 写给4年前的自己。 背景 在.NET平台的开发中，微软自带的WebBrowser控件存在以下问题： （1）WebBrowser控件无法保证版本的一致，如">
+<meta property="og:description" content="回顾一次 CEFGlue 接入经历，梳理 .NET WebBrowser 的局限、CEF 集成、音视频支持、JavaScript 调用 Native 以及 C# 互操作问题。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/03.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/04.png">
 <meta property="article:published_time" content="2018-05-25T17:08:00.000Z">
-<meta property="article:modified_time" content="2026-08-28T18:30:38.199Z">
+<meta property="article:modified_time" content="2026-09-13T02:16:48.024Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="CEF Chromium">
 <meta name="twitter:card" content="summary">
@@ -417,6 +417,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -426,7 +427,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -541,8 +542,6 @@ mjx-container[display="true"] + br {
             </div>
           
 
-          
-
         </div>
       </header>
     
@@ -587,7 +586,7 @@ Greenblatt在2008建立的开源项目，它主要目的是开发一个基于Goo
 Chromium的Webbrowser控件。CEF支持一系列的编程语言和操作系统，并且能很容易地整合到新的或已有的工程中去。
 它的设计思想政治就是易用且兼顾性能。CEF基本的框架包含C/C++程序接口，通过本地库的接口来实现，而这个库则会隔离宿主程序和Chromium&amp;Webkit的操作细节。它在浏览器控件和宿主程序之间提供紧密的整合，它支持用户插件，协议，javascript对象以及javascript扩展，宿主程序可以随意地控件资源下载，导航和打印等，并且可以跟Google
 Chrome浏览器一样，支持高性能和Html5技术.</p>
-<style>.yjewkgdptvtf{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/01.png" class="yjewkgdptvtf">
+<style>.ccehvshfmasb{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/01.png" class="ccehvshfmasb">
 
 <p>CEFGlue的整体依赖如图所示，其中有两个棘手的问题亟待解决：</p>
 <blockquote>
@@ -673,7 +672,7 @@ workspace/chromium/src ninja -C out/Release cefclient cef_unittests</li>
 <li>具体依赖 ： CEFGlue–&gt;CEF–&gt;Chromium</li>
 </ul>
 </blockquote>
-<style>.yrbwswhxkmvh{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/02.png" class="yrbwswhxkmvh">
+<style>.ocmealusuqku{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/02.png" class="ocmealusuqku">
 
 <h2 id="js调用native功能">JS调用Native功能</h2>
 <p><code>Xilium CefGlue</code>是一款基于<code>Chromium Embedded Framework</code> (CEF)的开源WebKit内核浏览器项目，用.NET进行了各种封装，本身有很多优势，内核也在不断更新，具有良好的前景。但是，它有一个致命的问题：<code>CLR Object</code>无法很好的与网页前端<code>JavaScript</code>进行交互，实现方法非常复杂，非常繁琐。</p>
@@ -706,11 +705,11 @@ workspace/chromium/src ninja -C out/Release cefclient cef_unittests</li>
 不难发现：<strong>所谓的注册本质上不过是让V8的上下文记了个方法名字和对应的参数个数和类型，告诉V8引擎，如果碰到了注册的名字，通过Excute方法把方法名和参数传出来，然后进行本地方法的匹配和调用。至于Excute方法是被谁调用的，怎么调用的，V8引擎会搞定，无需我们关心</strong>。明白了核心原理，并且.NET有良好的反射特性，我们不难推理：<strong>给定一个CLR对象，我们可以通过反射技术分析它的方法列表，并且能拿到每一个方法对应的参数个数和参数类型列表，这样就可以自动地进行注册，实现一个通用的注册方案。</strong></p>
 <h4 id="多进程通信解决方案">多进程通信解决方案</h4>
 <p>CEF从3.0开始，就由原先的单进程模式变为多进程模式，例如：渲染模块是由专门的渲染进程来实现的，主进程（Browser进程）与渲染进程（Render进程）通过发送消息的机制实现进程之间的通信。因为注册对象只能在V8上下文中进行注册，而V8上下文只能被Render进程访问。如果想注册某一个Native对象，一般都会把Native对象在主进程里面进行序列化，然后通过发送消息的方式发送给渲染进程，渲染进程拿到消息，首先进行反序列化得到想要注册的对象，然后再进行注册。</p>
-<style>.iioaodtlodew{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/03.png" class="iioaodtlodew">
+<style>.luitnyrqppla{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/03.png" class="luitnyrqppla">
 
 <p>然而以上思路在实践中碰到了比较严重的问题：.NET中并非每个对象都支持序列化，尤其是我们无法去修改一个已经封装好的DLL库中的对象，所以以上方法行不通。中间也曾经考虑过共享内存的解决方案，但是发现最后都无法逃脱序列化这一步骤。</p>
 <p>经过进一步深入挖掘CEF注册内部机制，发现CEF注册的时候仅仅关心的是对象的方法名和属性名，并不在意该方法的具体实现，所以可以现在Browser进程内首先将对象保存到自己的对象池中，然后将对象的方法名（属性名）通过反射技术解析出来，并发送给Render进程。Render进程接收到对象的方法名（属性名）之后，会在Render进程的上下文中实现真正的注册。一旦JS中调用本地方法，在CefV8Handler的Execute触发，就会获取到对象的方法名和参数，此时Render进程将该对象的哈希值、方法名和参数一起发送给Browser进程。Browser进程拿到这个对象的方法名和参数，会在本地注册池内进行对相匹配，一旦找到对象，会在对象的方法中寻找最适合的方法进行匹配调用，相当于方法的执行完全跑到了Browser进程中，而在整个过程中Browser进程和Render进程之间通信的内容仅仅是对象的方法名，仅仅是一个字符串，这样就避免了对象的序列化。</p>
-<style>.jdorrpcmklxf{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/04.png" class="jdorrpcmklxf">
+<style>.beqeplajgwvp{}</style><img src="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/04.png" class="beqeplajgwvp">
 
 <p>关于CEF多进程通信的问题，收集到几个对我有启发的英文片段：</p>
 <blockquote>
@@ -858,20 +857,21 @@ renderer with return value from your JS Cheers.</p>
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/">CEFGlue之回忆篇</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2018年05月26日 - 01:05</p>
-  <p><span>最后更新:</span>2026年08月29日 - 02:08</p>
-  <p><span>原始链接:</span><a href="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/" title="CEFGlue之回忆篇">https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/">CEFGlue之回忆篇</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2018年05月26日 - 01:05</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/" title="CEFGlue之回忆篇">https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2018/05/26/CEFGlue%E4%B9%8B%E5%9B%9E%E5%BF%86%E7%AF%87/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -993,15 +993,16 @@ renderer with return value from your JS Cheers.</p>
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1117,7 +1118,7 @@ renderer with return value from your JS Cheers.</p>
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

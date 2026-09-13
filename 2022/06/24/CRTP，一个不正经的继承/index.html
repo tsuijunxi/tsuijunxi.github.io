@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="背景 最近在写一些C++代码的时候，遇到了一些代码重复性问题，在思考如何通过模板去解决这些问题的时候，我想到了CRTP，一个不怎么正经的继承。 什么是CRTP ？ CRTP全称Curiously Recurring Template Pattern，翻译过来是「奇异递归模板模式」，是C++模板编程的一种惯用方法。这是由James Coplien在1995年提出的一项技术，它的特点是：  继承自模板">
+<meta name="description" content="用实际代码解释 C++ 中的 CRTP 模式，讨论静态多态、模板实例化时机、虚函数性能对比以及这种写法适合解决的问题。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CRTP，一个不正经的继承">
 <meta property="og:url" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="背景 最近在写一些C++代码的时候，遇到了一些代码重复性问题，在思考如何通过模板去解决这些问题的时候，我想到了CRTP，一个不怎么正经的继承。 什么是CRTP ？ CRTP全称Curiously Recurring Template Pattern，翻译过来是「奇异递归模板模式」，是C++模板编程的一种惯用方法。这是由James Coplien在1995年提出的一项技术，它的特点是：  继承自模板">
+<meta property="og:description" content="用实际代码解释 C++ 中的 CRTP 模式，讨论静态多态、模板实例化时机、虚函数性能对比以及这种写法适合解决的问题。">
 <meta property="og:locale">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/02.png">
@@ -108,7 +108,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/05.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/07.png">
 <meta property="article:published_time" content="2022-06-23T17:08:00.000Z">
-<meta property="article:modified_time" content="2026-09-06T14:37:42.422Z">
+<meta property="article:modified_time" content="2026-09-13T02:14:22.498Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="CRTP">
 <meta name="twitter:card" content="summary">
@@ -420,6 +420,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -429,7 +430,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -531,8 +532,6 @@ mjx-container[display="true"] + br {
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -891,20 +890,21 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>本文标题:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">CRTP，一个不正经的继承</a></p>
-  <p><span>文章作者:</span><a href="/" title="访问  的个人博客"></a></p>
-  <p><span>发布时间:</span>2022年06月24日 - 01:06</p>
-  <p><span>最后更新:</span>2026年09月06日 - 22:09</p>
-  <p><span>原始链接:</span><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" title="CRTP，一个不正经的继承">https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"  aria-label="复制成功！"></i></span>
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">CRTP，一个不正经的继承</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2022年06月24日 - 01:06</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" title="CRTP，一个不正经的继承">https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/</a>
+    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"  aria-label="复制成功！"></i></span></span>
   </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>  
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1026,15 +1026,16 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1150,7 +1151,7 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

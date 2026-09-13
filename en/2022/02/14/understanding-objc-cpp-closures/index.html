@@ -82,7 +82,7 @@
 
 
 
-  <meta name="keywords" content="Objective-C Block C++ Lambda" />
+  <meta name="keywords" content="Objective-C Block, C++ lambda, Objective-C++, ARC, __block, closure capture, shared_ptr, weak_ptr, retain cycle, clang rewrite objc" />
 
 
 
@@ -93,12 +93,12 @@
 
 
 
-<meta name="description" content="This article also appears on WeChat: &lt;&lt;Understanding OC&#x2F;C++ Closures&gt;&gt;  Background Apple’s Objective-C compiler lets you mix C++ and Objective-C in the same source file. The combined lang">
+<meta name="description" content="A deep dive into Objective-C Blocks and C++ lambdas in Objective-C++, covering capture semantics, ARC behavior, copy and move construction, __block, shared_ptr, weak_ptr, and retain cycles.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Understanding OC&#x2F;C++ Closures">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="This article also appears on WeChat: &lt;&lt;Understanding OC&#x2F;C++ Closures&gt;&gt;  Background Apple’s Objective-C compiler lets you mix C++ and Objective-C in the same source file. The combined lang">
+<meta property="og:description" content="A deep dive into Objective-C Blocks and C++ lambdas in Objective-C++, covering capture semantics, ARC behavior, copy and move construction, __block, shared_ptr, weak_ptr, and retain cycles.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/02.png">
@@ -116,7 +116,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png">
 <meta property="article:published_time" content="2022-02-14T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-06T15:47:04.207Z">
+<meta property="article:modified_time" content="2026-09-13T01:53:16.919Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Objective-C Block C++ Lambda">
 <meta name="twitter:card" content="summary">
@@ -428,6 +428,7 @@ mjx-container[display="true"] + br {
   
   
   
+  
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
@@ -437,7 +438,7 @@ mjx-container[display="true"] + br {
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
+      <meta itemprop="name" content="lingyun">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/favicon.ico">
     </span>
@@ -530,12 +531,10 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  3:16
+                  3:17
                 </span>
               
             </div>
-          
-
           
 
         </div>
@@ -568,9 +567,12 @@ mjx-container[display="true"] + br {
 
       
         <blockquote>
-<p>This article also appears on WeChat: <a
-href="https://mp.weixin.qq.com/s/NEvtm_yBMghyP_WTUATy8g">&lt;&lt;Understanding
-OC/C++ Closures&gt;&gt;</a></p>
+<p><strong>Summary:</strong> This article compares Objective-C
+<code>Block</code>s and C++ <code>lambda</code>s inside Objective-C++
+code. It looks at syntax, compiler rewriting, capture behavior, ARC
+interaction, <code>__block</code>, C++ copy and move construction,
+<code>shared_ptr</code>/<code>weak_ptr</code>, and the retain-cycle
+traps that appear when the two closure models meet.</p>
 </blockquote>
 <h2 id="background">Background</h2>
 <p>Apple’s Objective-C compiler lets you mix <code>C++</code> and
@@ -687,9 +689,8 @@ retained.</p>
 <code>self</code>:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0x10cab31ea</span> &lt;<span class="number">+170</span>&gt;: movq   <span class="number">-0x8</span>(%rbp), %rdi</span><br><span class="line"><span class="number">0x10cab31ee</span> &lt;<span class="number">+174</span>&gt;: movq   <span class="number">0x5e7b</span>(%rip), %rax        ; (<span class="type">void</span> *)<span class="number">0x00007fff2018fa80</span>: objc_retain</span><br><span class="line"><span class="number">0x10cab31f5</span> &lt;<span class="number">+181</span>&gt;: callq  *%rax</span><br></pre></td></tr></table></figure>
 
-<p>Looking at the anonymous class parameter list, we can see that
-<code>self</code> is of type <code>OCClass *</code>, which is a pointer
-type.</p>
+<p>The anonymous class parameter list shows that <code>self</code> is of
+type <code>OCClass *</code>, which is a pointer type.</p>
 <img src="/2022/02/14/深入理解-OC-C-闭包/03.png" />
 
 <p>So we can model the capture like this. Under ARC, it behaves like a
@@ -936,6 +937,11 @@ href="https://releases.llvm.org/12.0.0/tools/clang/docs/BlockLanguageSpec.html#c
 <li><a
 href="https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-lambdas-fight.html">https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-lambdas-fight.html</a></li>
 </ol>
+<blockquote>
+<p>Source note: this article also appears on WeChat: <a
+href="https://mp.weixin.qq.com/s/NEvtm_yBMghyP_WTUATy8g">Understanding
+OC/C++ Closures</a>.</p>
+</blockquote>
 
       
     </div>
@@ -991,20 +997,21 @@ href="https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-
       <div>
         
 
+
 <div class="my_post_copyright">
   <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
   
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span>Title:</span><a href="/en/2022/02/14/understanding-objc-cpp-closures/">Understanding OC/C++ Closures</a></p>
-  <p><span>Author:</span><a href="/en/" title="Visit 's blog"></a></p>
-  <p><span>Published:</span>2022-02-14 16:25</p>
-  <p><span>Updated:</span>2026-09-06 23:47</p>
-  <p><span>Original link:</span><a href="/en/2022/02/14/understanding-objc-cpp-closures/" title="Understanding OC/C++ Closures">https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/index.html</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/index.html"  aria-label="Copied"></i></span>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/">Understanding OC/C++ Closures</a></span></p>
+  <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
+  <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-02-14 16:25</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/" title="Understanding OC/C++ Closures">https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/</a>
+    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/"  aria-label="Copied"></i></span></span>
   </p>
-  <p><span>License:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</p>  
+  <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
 <script> 
     var clipboard = new Clipboard('.fa-clipboard');
@@ -1031,7 +1038,7 @@ href="https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-
       
         <div class="post-tags">
           
-            <a href="/en/tags/Objective-C-Block-C++-Lambda/" rel="tag"># Objective-C Block C++ Lambda</a>
+            <a href="/en/tags/Objective-C-Block-C%2B%2B-Lambda/" rel="tag"># Objective-C Block C++ Lambda</a>
           
         </div>
       
@@ -1126,15 +1133,16 @@ href="https://mikeash.com/pyblog/friday-qa-2011-06-03-objective-c-blocks-vs-c0x-
         </ul>
       
 
+      
       <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
               <img class="site-author-image" itemprop="image"
                 src="/images/favicon.ico"
-                alt="" />
+                alt="lingyun" />
             
-              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-author-name" itemprop="name">lingyun</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -1256,7 +1264,7 @@ shared_from_this</span></a></li><li class="nav-item nav-level-4"><a class="nav-l
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">174k</span>
+    <span title="Site words total count">173k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
