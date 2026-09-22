@@ -95,14 +95,14 @@
 
 <meta name="description" content="A practical look at C++ static variable initialization and destruction pitfalls in iOS projects, covering translation units, +load timing, local static guards, __cxa_guard, and lifecycle bugs.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="How Bad Can Static Variables Get?">
+<meta property="og:title" content="Static Variables in C++: How Bad Can They Get?">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="A practical look at C++ static variable initialization and destruction pitfalls in iOS projects, covering translation units, +load timing, local static guards, __cxa_guard, and lifecycle bugs.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
 <meta property="article:published_time" content="2022-08-30T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:53:16.709Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:10.850Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/08/30/%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E7%A9%B6%E7%AB%9F%E6%9C%89%E5%A4%9A%E5%9D%91%EF%BC%9F/05.jpg">
@@ -152,7 +152,7 @@
 
 
 
-  <title>How Bad Can Static Variables Get? | 凌云的博客</title>
+  <title>Static Variables in C++: How Bad Can They Get? | 凌云的博客</title>
   
 
 
@@ -437,7 +437,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">How Bad Can Static Variables Get?</h1>
+          <h1 class="post-title" itemprop="name headline">Static Variables in C++: How Bad Can They Get?</h1>
         
 
         <div class="post-meta">
@@ -500,7 +500,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  1.7k
+                  1.6k
                 </span>
               
 
@@ -552,14 +552,6 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article examines several real-world
-C++ static variable problems in iOS projects. It covers initialization
-order across translation units, crashes triggered by Objective-C
-<code>+load</code>, thread-safe local static initialization after C++11,
-and destruction-order hazards that are easy to miss in mixed
-Objective-C/C++ code.</p>
-</blockquote>
 <p>In C++, the construction and destruction order of static variables
 across translation units is undefined, and it can even change from build
 to build. That leads to a lot of hard-to-predict bugs. If you put C++
@@ -649,17 +641,17 @@ initialized yet.</p>
 <p>The static variable was implemented like this:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// env.h</span></span><br><span class="line"><span class="type">static</span> rwlock static_lock;</span><br><span class="line"></span><br><span class="line"><span class="comment">// env.cpp</span></span><br><span class="line">rwlock static_lock;</span><br></pre></td></tr></table></figure>
 
-<h3 id="localizing-the-static-variable">Localizing the Static
-Variable</h3>
-<p><code>+load</code> runs earlier than C++ static variable
-initialization, so a lazy-loading approach works better here: turn the
-global static variable into a local static variable.</p>
+<h3 id="moving-the-static-variable-into-function-scope">Moving the
+Static Variable into Function Scope</h3>
+<p><code>+load</code> may run before a C++ global has completed dynamic
+initialization. A function-local static avoids that ordering dependency
+by initializing the object on first use.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> rwlock&amp; <span class="title">GetLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">static</span> rwlock lock;</span><br><span class="line">    <span class="keyword">return</span> lock;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>Some people may wonder whether this has a multithreading problem.
-Before C++11, it did. After C++11, it is fine. The standard requires
-local static initialization to be thread-safe. According to cxxabi, the
-generated pattern looks like this:</p>
+<p>This raises an immediate thread-safety question. Before C++11,
+concurrent first access could race. Since C++11, the standard requires
+function-local static initialization to be thread-safe. In the C++ ABI,
+the generated pattern looks like this:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( obj_guard.first_byte == <span class="number">0</span> ) &#123;</span><br><span class="line">  <span class="keyword">if</span> ( __cxa_guard_acquire(&amp;obj_guard) ) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      ... initialize the object ...;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">catch</span> (...) &#123;</span><br><span class="line">      __cxa_guard_abort(&amp;obj_guard);</span><br><span class="line">      <span class="keyword">throw</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ... queue object destructor with __cxa_atexit() ...;</span><br><span class="line">    __cxa_guard_release(&amp;obj_guard);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>You can also inspect the assembly for <code>GetLock</code> and see
@@ -875,13 +867,11 @@ will be reclaimed on exit anyway.</li>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// code</span></span><br><span class="line"><span class="type">bool</span> ret = std::is_trivially_destructible&lt;NoDestructor&lt;rwlock&gt;&gt;::value;</span><br><span class="line">std::cout &lt;&lt; ret &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line"><span class="comment">// result</span></span><br><span class="line"><span class="number">1</span></span><br></pre></td></tr></table></figure>
 
 <ol start="2" type="1">
-<li>The constructor, copy constructor, and move constructor of
-<code>NoDestructor</code> all use placement new to construct the object
-directly inside <code>storage_</code>. Placement new does not give you
-an easy way to call <code>delete</code>, which means the
-<code>rwlock</code> object created this way never gets a chance to run
-its destructor unless you call it manually, which obviously we do not do
-here.</li>
+<li>The constructors of <code>NoDestructor</code> use placement new to
+construct <code>T</code> directly inside <code>storage_</code>. Because
+the wrapper itself has a trivial destructor and never explicitly invokes
+<code>T::~T()</code>, the contained <code>rwlock</code> remains alive
+until the process exits.</li>
 </ol>
 <h2 id="summary">Summary</h2>
 <p>This article summarized several static-variable pitfalls. They are
@@ -995,11 +985,11 @@ C++ Style Guide - Static and Global Variables</a></li>
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/">How Bad Can Static Variables Get?</a></span></p>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/">Static Variables in C++: How Bad Can They Get?</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-08-30 23:06</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
-  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/" title="How Bad Can Static Variables Get?">https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/</a>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/08/30/how-bad-can-static-variables-get/" title="Static Variables in C++: How Bad Can They Get?">https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/08/30/how-bad-can-static-variables-get/"  aria-label="Copied"></i></span></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
@@ -1209,8 +1199,8 @@ C++ Style Guide - Static and Global Variables</a></li>
 
             
               <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#what-static-means"><span class="nav-number">2.</span> <span class="nav-text">What static Means</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#crash-when-accessed-before-initialization"><span class="nav-number">3.</span> <span class="nav-text">Crash When Accessed
-Before Initialization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#the-trigger"><span class="nav-number">3.1.</span> <span class="nav-text">The Trigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localizing-the-static-variable"><span class="nav-number">3.2.</span> <span class="nav-text">Localizing the Static
-Variable</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#initialization-types"><span class="nav-number">4.</span> <span class="nav-text">Initialization Types</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#a-few-notes"><span class="nav-number">4.1.</span> <span class="nav-text">A Few Notes</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#trivial-default-constructor"><span class="nav-number">4.2.</span> <span class="nav-text">Trivial Default Constructor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#trivial-copy-assignment-operator"><span class="nav-number">4.3.</span> <span class="nav-text">Trivial Copy Assignment
+Before Initialization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#the-trigger"><span class="nav-number">3.1.</span> <span class="nav-text">The Trigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#moving-the-static-variable-into-function-scope"><span class="nav-number">3.2.</span> <span class="nav-text">Moving the
+Static Variable into Function Scope</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#initialization-types"><span class="nav-number">4.</span> <span class="nav-text">Initialization Types</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#a-few-notes"><span class="nav-number">4.1.</span> <span class="nav-text">A Few Notes</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#trivial-default-constructor"><span class="nav-number">4.2.</span> <span class="nav-text">Trivial Default Constructor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#trivial-copy-assignment-operator"><span class="nav-number">4.3.</span> <span class="nav-text">Trivial Copy Assignment
 Operator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#extra-note"><span class="nav-number">4.4.</span> <span class="nav-text">Extra Note</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#value-overwrite"><span class="nav-number">5.</span> <span class="nav-text">Value Overwrite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#destructor-crash"><span class="nav-number">6.</span> <span class="nav-text">Destructor Crash</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#the-trigger-1"><span class="nav-number">6.1.</span> <span class="nav-text">The Trigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#preventing-destruction"><span class="nav-number">6.2.</span> <span class="nav-text">Preventing Destruction</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#disable-static-destructors-with-xcconfig"><span class="nav-number">6.2.1.</span> <span class="nav-text">Disable static
 destructors with xcconfig</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pointer-approach"><span class="nav-number">6.2.2.</span> <span class="nav-text">Pointer approach</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#the-google-way"><span class="nav-number">6.2.3.</span> <span class="nav-text">The Google way</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">8.</span> <span class="nav-text">References</span></a></li></ol></div>
             
@@ -1247,7 +1237,7 @@ destructors with xcconfig</span></a></li><li class="nav-item nav-level-4"><a cla
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

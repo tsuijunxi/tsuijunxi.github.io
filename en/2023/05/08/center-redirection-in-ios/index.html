@@ -95,7 +95,7 @@
 
 <meta name="description" content="An iOS runtime article about center redirection, covering JSPatch-style message forwarding, trampolines, inline hooks, centralized routing, and aspect-oriented implementation patterns.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Center Redirection in iOS">
+<meta property="og:title" content="How to Redirect an Objective-C Block with Trampoline Hook">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="An iOS runtime article about center redirection, covering JSPatch-style message forwarding, trampolines, inline hooks, centralized routing, and aspect-oriented implementation patterns.">
@@ -116,7 +116,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/14.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2023/05/08/%E8%81%8A%E8%81%8AiOS%E4%B8%AD%E7%9A%84%E4%B8%AD%E5%BF%83%E9%87%8D%E5%AE%9A%E5%90%91/15.png">
 <meta property="article:published_time" content="2023-05-08T15:40:07.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:55:07.147Z">
+<meta property="article:modified_time" content="2026-09-22T17:26:07.146Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Trampoline Center Redirection InlineHook">
 <meta name="twitter:card" content="summary">
@@ -167,7 +167,7 @@
 
 
 
-  <title>Center Redirection in iOS | 凌云的博客</title>
+  <title>How to Redirect an Objective-C Block with Trampoline Hook | 凌云的博客</title>
   
 
 
@@ -452,7 +452,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">Center Redirection in iOS</h1>
+          <h1 class="post-title" itemprop="name headline">How to Redirect an Objective-C Block with Trampoline Hook</h1>
         
 
         <div class="post-meta">
@@ -515,7 +515,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  3.3k
+                  2.4k
                 </span>
               
 
@@ -531,7 +531,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  12 mins.
+                  9 mins.
                 </span>
               
             </div>
@@ -567,158 +567,16 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article explains center redirection as
-a runtime technique for routing many calls through a shared center
-before returning to the original flow. Through examples such as
-JSPatch-style JavaScript syntax, message forwarding, trampolines, and
-inline hooks, it compares center redirection with ordinary hooking and
-shows where this pattern is useful on iOS.</p>
-</blockquote>
 <p>Center redirection, as the name suggests, means routing certain flows
 to one central point, performing some aspect-oriented work there, and
 then returning to the original downstream flow. In a sense, center
 redirection is very similar to <code>Hook</code> in <code>iOS</code>,
 but they are not the same thing: center redirection must have a center,
 while a <code>Hook</code> may not.</p>
-<p>This article explains the idea through several examples.</p>
 <img src="/2023/05/08/聊聊iOS中的中心重定向/01.png" width="100%"/>
 
-<h2 id="how-do-you-write-ios-with-js-syntax">How do you write iOS with
-JS syntax?</h2>
-<p>If you have used <code>JSPatch</code>, the following code should look
-familiar. It looks a lot like <code>iOS</code>, but it is actually
-<code>JS</code> syntax. The reason this writing style works is deeply
-related to center redirection.</p>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">require</span>(<span class="string">&#x27;UIView&#x27;</span>) </span><br><span class="line"><span class="keyword">var</span> view = <span class="title class_">UIView</span>.<span class="title function_">alloc</span>().<span class="title function_">init</span>()</span><br><span class="line">view.<span class="title function_">setBackgroundColor</span>(<span class="built_in">require</span>(<span class="string">&#x27;UIColor&#x27;</span>).<span class="title function_">grayColor</span>())</span><br><span class="line">view.<span class="title function_">setAlpha</span>(<span class="number">0.5</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="brute-force-mapping">Brute-force mapping</h2>
-<p>According to <code>JS</code> behavior, if we want
-<code>UIView.alloc()</code> to work, the only possible way is to add an
-<code>alloc</code> method to the <code>UIView</code> object. Otherwise
-the call cannot succeed. In <code>JS</code>, calling an undefined
-property or variable immediately throws an exception.</p>
-<p>So to make the call succeed, the class name is passed into
-<code>OC</code>; <code>OC</code> uses runtime APIs to find all methods
-of that class and returns them to <code>JS</code>; then the
-<code>JS</code> class object generates a function for every method name.
-Each generated function simply takes the method name and asks
-<code>OC</code> to call the corresponding method. The generated
-<code>UIView</code> object roughly looks like this:</p>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">__clsName</span>: <span class="string">&quot;UIView&quot;</span>,</span><br><span class="line">    <span class="attr">alloc</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;…&#125;,</span><br><span class="line">    <span class="attr">beginAnimations_context</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;…&#125;,</span><br><span class="line">    <span class="attr">setAnimationsEnabled</span>: <span class="keyword">function</span>(<span class="params"></span>)&#123;…&#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>This not only requires enumerating all methods on the current class,
-but also walking up the superclass chain all the way to the root. Every
-method in the inheritance chain has to be added to the <code>JS</code>
-object. A single class can have hundreds of methods. Adding all of them
-to every <code>JS</code> object causes serious memory growth and is not
-usable in practice.</p>
-<h2 id="__c-redirection"><code>__c</code> redirection</h2>
-<p>The final <code>JSPatch</code> solution is: when a nonexistent method
-is called, forward it to a specified function. Before <code>OC</code>
-executes <code>JS</code>, a regex rewrites all method calls into calls
-to the <code>__c()</code> function, achieving a message-forwarding
-mechanism similar to <code>OC/Lua/Ruby</code>.</p>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">UIView</span>.<span class="title function_">alloc</span>().<span class="title function_">init</span>()</span><br><span class="line">-&gt;</span><br><span class="line"><span class="title class_">UIView</span>.<span class="title function_">__c</span>(<span class="string">&#x27;alloc&#x27;</span>)().<span class="title function_">__c</span>(<span class="string">&#x27;init&#x27;</span>)()</span><br></pre></td></tr></table></figure>
-
-<p><code>__c</code> is added to the <code>Object</code> prototype, so
-all objects can call it. It then behaves differently depending on the
-current object type:</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Object</span>.<span class="title function_">defineProperty</span>(<span class="title class_">Object</span>.<span class="property"><span class="keyword">prototype</span></span>, <span class="string">&#x27;__c&#x27;</span>, &#123;<span class="attr">value</span>: <span class="keyword">function</span>(<span class="params">methodName</span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (!<span class="variable language_">this</span>.<span class="property">__obj</span> &amp;&amp; !<span class="variable language_">this</span>.<span class="property">__clsName</span>) <span class="keyword">return</span> <span class="variable language_">this</span>[methodName].<span class="title function_">bind</span>(<span class="variable language_">this</span>);</span><br><span class="line">  <span class="keyword">var</span> self = <span class="variable language_">this</span></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">function</span>(<span class="params"></span>)&#123;</span><br><span class="line">    <span class="keyword">var</span> args = <span class="title class_">Array</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">slice</span>.<span class="title function_">call</span>(<span class="variable language_">arguments</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">_methodFunc</span>(self.<span class="property">__obj</span>, self.<span class="property">__clsName</span>, methodName, args, self.<span class="property">__isSuper</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&#125;)</span><br></pre></td></tr></table></figure>
-
-<p>With this design, we no longer need to enumerate object methods in
-<code>OC</code>, nor store all methods on the <code>JS</code> object.
-Forwarding is enough to invoke any method. <code>__c</code> seems to
-provide a meta-function capability: the original function becomes a
-parameter to this meta-function, which is exactly the charm of center
-redirection.</p>
-<h1 id="login-check-center-redirection">Login-check center
-redirection</h1>
-<p>Most apps have login functionality. Many actions need to check
-whether the user is logged in before they run. If the user is logged in,
-the action can continue; otherwise the app must jump to login first.
-Business code often ends up looking like this:</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!AccountManager.sharedManager.isLogin) &#123;</span><br><span class="line">    <span class="comment">// If not logged in, go to login first. A lot of logic may live here, possibly with callbacks.</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// do something</span></span><br><span class="line">    [<span class="keyword">self</span> doSomethingNeedLogin];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>This style has two problems:</p>
-<ol type="1">
-<li>The thing the user wanted to do is interrupted. After login, the app
-will not automatically continue that action, so the user has to trigger
-it again. This is especially serious in paid flows.</li>
-<li>Login checks are scattered everywhere, making the code bloated. Once
-the API or login strategy changes, every call site has to be modified,
-which is hard to maintain.</li>
-</ol>
-<p>How do we solve this? Let’s try center redirection: hand the complex
-decision logic to a proxy, redirect all places that need login checks to
-that proxy, and use <code>NSProxy</code>, which is naturally designed
-for forwarding on iOS.</p>
-<h2 id="define-a-one-time-observer">Define a one-time observer</h2>
-<p>As the name suggests, it observes only once and is removed after the
-callback. This is usually defined inside the login manager.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)addOnceLoginObserver:(<span class="type">id</span>)observer invocation:(<span class="built_in">NSInvocation</span> *)invocation &#123;</span><br><span class="line">    <span class="keyword">if</span> (!observer || !invocation) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    dispatch_main_async_safe(^&#123;</span><br><span class="line">        [_onceLoginObserversMap setObject:invocation forKey:observer];</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="login-callback">Login callback</h2>
-<ol type="1">
-<li>After login succeeds, actively trigger the registered
-<code>NSInvocation</code>, then remove it from the one-time observer
-collection.</li>
-</ol>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)informOnceLoginObserverForSuccess &#123;</span><br><span class="line">    dispatch_main_async_safe(^&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">id</span> target <span class="keyword">in</span> _onceLoginObserversMap) &#123;</span><br><span class="line">            <span class="built_in">NSInvocation</span> *invocation = [_onceLoginObserversMap objectForKey:target];</span><br><span class="line">            [invocation invokeWithTarget:target];</span><br><span class="line">        &#125;</span><br><span class="line">        [_onceLoginObserversMap removeAllObjects];</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="2" type="1">
-<li>If login fails or is canceled:</li>
-</ol>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)informOnceLoginObserverForFailure &#123;</span><br><span class="line">    [<span class="keyword">self</span> removeAllOnceLoginObserver];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="define-the-login-proxy">Define the login proxy</h2>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// LoginProxy.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">LoginProxy</span> : <span class="title">NSProxy</span></span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">LoginProxy</span> ()</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">weak</span>) <span class="type">id</span> target;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// LoginProxy.m</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">LoginProxy</span></span></span><br><span class="line">- (<span class="keyword">instancetype</span>)initWithTarget:(<span class="type">id</span>)target &#123;</span><br><span class="line">    <span class="keyword">self</span>.target = target;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="type">void</span>)forwardInvocation:(<span class="built_in">NSInvocation</span> *)invocation &#123;</span><br><span class="line">    invocation.target = <span class="literal">nil</span>;   </span><br><span class="line">    AccountManager *accoutMgr = AccountManager.sharedManager;</span><br><span class="line">    <span class="keyword">if</span> (! accoutMgr.isLogin) &#123;</span><br><span class="line">        <span class="comment">// retain arguments</span></span><br><span class="line">        [invocation retainArguments];</span><br><span class="line">        <span class="comment">// add once observer</span></span><br><span class="line">        [accoutMgr addOnceAuthenticationObserver:<span class="keyword">self</span>.target invocation:invocation];</span><br><span class="line">        <span class="comment">// show login vc</span></span><br><span class="line">        [AccountLoginManager presentLoginViewControllerFromVC:<span class="literal">nil</span>];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// invoke directly</span></span><br><span class="line">        [invocation invokeWithTarget:<span class="keyword">self</span>.target];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">NSMethodSignature</span> *)methodSignatureForSelector:(SEL)sel &#123;</span><br><span class="line">    <span class="keyword">return</span> [<span class="keyword">self</span>.target methodSignatureForSelector:sel];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="define-the-nsobject-category-loginproxy">Define the
-<code>NSObject</code> category <code>LoginProxy</code></h2>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSObject</span> (<span class="title">LoginProxy</span>)</span></span><br><span class="line">- (<span class="keyword">instancetype</span>)loginProxy;</span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">NSObject</span> (<span class="title">LoginProxy</span>)</span></span><br><span class="line">- (<span class="keyword">instancetype</span>)loginProxy &#123;</span><br><span class="line">    <span class="keyword">return</span> [(<span class="type">id</span>)[LoginProxy alloc] initWithTarget:<span class="keyword">self</span>];</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
-
-<p>Now any Objective-C object that inherits from <code>NSObject</code>
-can get its own login proxy.</p>
-<h2 id="call-flow">Call flow</h2>
-<p>The original login-check flow can now be written very simply:</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">self</span>.loginProxy doSomethingNeedLogin];</span><br></pre></td></tr></table></figure>
-
-<ol type="1">
-<li><code>loginProxy</code> records the current <code>target</code>,
-which is <code>self</code> here.</li>
-<li>Since <code>loginProxy</code> does not implement the target method
-<code>doSomethingNeedLogin</code>, forwarding goes through
-<code>forwardInvocation</code>.</li>
-<li>Inside <code>forwardInvocation</code>, the proxy checks login state.
-If already logged in, it directly invokes the
-<code>invocation</code>.</li>
-<li>Otherwise, it uses <code>AccountManager</code> to add the
-<code>target</code> to the one-time observer collection, then presents
-the login flow.
-<ul>
-<li>If login succeeds, <code>AccountManager</code> triggers
-<code>doSomethingNeedLogin</code> through
-<code>[invocation invokeWithTarget:target]</code>, then removes
-<code>target</code> from the one-time observer collection.</li>
-<li>If login fails, <code>target</code> is removed directly and
-<code>doSomethingNeedLogin</code> is not triggered.</li>
-</ul></li>
-</ol>
-<p>From this perspective, login center redirection solves both problems
-mentioned earlier:</p>
-<ol type="1">
-<li>The original action is not interrupted; what needed to happen before
-login continues after login returns.</li>
-<li>Login decision logic is centralized in the proxy, while
-business-side calls become simpler.</li>
-</ol>
-<h1 id="how-do-we-center-redirect-any-block">How do we center-redirect
-any Block?</h1>
-<p>The first example achieved center redirection through script
-preprocessing. The second example used the natural forwarding capability
-of the <code>OC</code> language. Is there a more thorough, lower-level
-form of center redirection that ignores language features?</p>
+<h2 id="how-to-center-redirect-objective-c-block">How to center-redirect
+Objective-C Block?</h2>
 <p>We know that all <code>OC</code> methods eventually call into the
 <code>objc_msgSend</code> family, so if we want to redirect
 <code>OC</code> methods, we only need to <code>hook</code>
@@ -1202,11 +1060,11 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/">Center Redirection in iOS</a></span></p>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/">How to Redirect an Objective-C Block with Trampoline Hook</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2023-05-08 23:40</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:55</span></p>
-  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/" title="Center Redirection in iOS">https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/</a>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:26</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2023/05/08/center-redirection-in-ios/" title="How to Redirect an Objective-C Block with Trampoline Hook">https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2023/05/08/center-redirection-in-ios/"  aria-label="Copied"></i></span></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
@@ -1262,8 +1120,8 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/en/2024/02/02/latex-tts-reading-in-chinese/" rel="prev" title="Reading LaTeX with TTS">
-                Reading LaTeX with TTS <i class="fa fa-chevron-right"></i>
+              <a href="/en/2024/02/02/latex-tts-reading-in-chinese/" rel="prev" title="Teaching a TTS Engine to Read LaTeX in Chinese">
+                Teaching a TTS Engine to Read LaTeX in Chinese <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -1421,15 +1279,12 @@ href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/eojde/index.htm
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-do-you-write-ios-with-js-syntax"><span class="nav-number">2.</span> <span class="nav-text">How do you write iOS with
-JS syntax?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#brute-force-mapping"><span class="nav-number">3.</span> <span class="nav-text">Brute-force mapping</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#__c-redirection"><span class="nav-number">4.</span> <span class="nav-text">__c redirection</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#login-check-center-redirection"><span class="nav-number">5.</span> <span class="nav-text">Login-check center
-redirection</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#define-a-one-time-observer"><span class="nav-number">5.1.</span> <span class="nav-text">Define a one-time observer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#login-callback"><span class="nav-number">5.2.</span> <span class="nav-text">Login callback</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-login-proxy"><span class="nav-number">5.3.</span> <span class="nav-text">Define the login proxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#define-the-nsobject-category-loginproxy"><span class="nav-number">5.4.</span> <span class="nav-text">Define the
-NSObject category LoginProxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#call-flow"><span class="nav-number">5.5.</span> <span class="nav-text">Call flow</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#how-do-we-center-redirect-any-block"><span class="nav-number">6.</span> <span class="nav-text">How do we center-redirect
-any Block?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#current-result"><span class="nav-number">6.1.</span> <span class="nav-text">Current result</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vm_remap"><span class="nav-number">6.2.</span> <span class="nav-text">vm_remap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#principle"><span class="nav-number">6.2.1.</span> <span class="nav-text">Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#code-practice"><span class="nav-number">6.2.2.</span> <span class="nav-text">Code practice</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#block-structure-representation"><span class="nav-number">6.3.</span> <span class="nav-text">Block structure
-representation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flow-jump-logic"><span class="nav-number">6.4.</span> <span class="nav-text">Flow-jump logic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arm64-assembly-implementation"><span class="nav-number">6.5.</span> <span class="nav-text">arm64 assembly
-implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers"><span class="nav-number">6.5.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code"><span class="nav-number">6.5.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram"><span class="nav-number">6.5.3.</span> <span class="nav-text">Hopper diagram</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x86_64-assembly-implementation"><span class="nav-number">6.6.</span> <span class="nav-text">x86_64 assembly
-implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers-1"><span class="nav-number">6.6.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code-1"><span class="nav-number">6.6.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram-1"><span class="nav-number">6.6.3.</span> <span class="nav-text">Hopper diagram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stack-alignment-pitfall"><span class="nav-number">6.6.4.</span> <span class="nav-text">Stack alignment pitfall</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#why-not-save-and-restore-xmm0xmm7"><span class="nav-number">6.6.5.</span> <span class="nav-text">Why not save and restore
-xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#thoughts"><span class="nav-number">6.7.</span> <span class="nav-text">Thoughts</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#references"><span class="nav-number">8.</span> <span class="nav-text">References</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-to-center-redirect-objective-c-block"><span class="nav-number">2.</span> <span class="nav-text">How to center-redirect
+Objective-C Block?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#current-result"><span class="nav-number">3.</span> <span class="nav-text">Current result</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vm_remap"><span class="nav-number">4.</span> <span class="nav-text">vm_remap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#principle"><span class="nav-number">4.1.</span> <span class="nav-text">Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#code-practice"><span class="nav-number">4.2.</span> <span class="nav-text">Code practice</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#block-structure-representation"><span class="nav-number">5.</span> <span class="nav-text">Block structure
+representation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flow-jump-logic"><span class="nav-number">6.</span> <span class="nav-text">Flow-jump logic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arm64-assembly-implementation"><span class="nav-number">7.</span> <span class="nav-text">arm64 assembly
+implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers"><span class="nav-number">7.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code"><span class="nav-number">7.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram"><span class="nav-number">7.3.</span> <span class="nav-text">Hopper diagram</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x86_64-assembly-implementation"><span class="nav-number">8.</span> <span class="nav-text">x86_64 assembly
+implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#registers-1"><span class="nav-number">8.1.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assembly-code-1"><span class="nav-number">8.2.</span> <span class="nav-text">Assembly code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hopper-diagram-1"><span class="nav-number">8.3.</span> <span class="nav-text">Hopper diagram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stack-alignment-pitfall"><span class="nav-number">8.4.</span> <span class="nav-text">Stack alignment pitfall</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#why-not-save-and-restore-xmm0xmm7"><span class="nav-number">8.5.</span> <span class="nav-text">Why not save and restore
+xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#thoughts"><span class="nav-number">9.</span> <span class="nav-text">Thoughts</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#summary"><span class="nav-number">10.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#references"><span class="nav-number">11.</span> <span class="nav-text">References</span></a></li></ol></div>
             
 
           </div>
@@ -1464,7 +1319,7 @@ xmm0~xmm7?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="n
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

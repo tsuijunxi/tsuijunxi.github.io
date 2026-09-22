@@ -114,7 +114,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/12.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
 <meta property="article:published_time" content="2026-03-07T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:37:31.661Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:10.943Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2026/03/07/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8B%20C++%20%E5%BC%82%E5%B8%B8/02.png">
@@ -564,16 +564,6 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="brief-overview">Brief overview</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article explains C++ exception
-handling from the runtime source level, covering
-<code>__cxa_throw</code>, <code>__cxa_begin_catch</code>,
-<code>_Unwind_RaiseException</code>, stack unwinding, landing pads,
-personality functions, RTTI matching, DWARF CFI, and the implications of
-<code>-fno-exceptions</code> and <code>__cpp_exceptions</code>. The
-focus is how C++ separates error detection from error handling while
-still cleaning up stack objects correctly.</p>
-</blockquote>
 <h3 id="what-is-the-c-exception-mechanism">What is the C++ exception
 mechanism?</h3>
 <p>C++ exceptions look simple at the language level, but the runtime
@@ -1059,13 +1049,13 @@ duplicated RTTI.</p>
 <p><strong>Case 1: <a
 href="https://juejin.cn/post/7331924057925304370">Shocking! The
 try-catch statement stopped working?</a></strong></p>
-<p>The rough story is this: an Objective-C component used exceptions but
-disabled RTTI. To keep exception type information available, the
-compiler generated another copy of <code>type_info</code>. Because the
-component was a static library, that <code>type_info</code> ended up in
-the main binary. As a result, the main binary and libc++ both had
-same-named <code>type_info</code>, and <code>can_catch</code> failed to
-match.</p>
+<p>The failure came from an Objective-C component that used exceptions
+while RTTI was disabled. To preserve exception type information, the
+compiler emitted another copy of <code>type_info</code>. Because the
+component was linked statically, that copy ended up in the main binary.
+The main binary and libc++ then contained identically named but distinct
+<code>type_info</code> objects, and <code>can_catch</code> failed to
+match them.</p>
 <p>In iOS projects, CocoaPods usually builds components as separate
 targets. If any target disables RTTI, it may affect exception handling
 in the host app. If RTTI is disabled, exception handling should usually
@@ -1076,13 +1066,13 @@ href="https://www.cnblogs.com/Iflyinsky/p/19412352">A satisfying
 debugging story about C++ standard-library exceptions</a></strong></p>
 <p>On Android, <code>ANDROID_STL</code> defaults to <a
 href="https://developer.android.com/ndk/guides/cpp-support?hl=zh-cn#selecting_a_c_runtime"><code>c++_static</code></a>
-in CMake. The C++ standard library is linked statically into the
-business <code>.so</code>, so related <code>type_info</code> symbols are
-local, and <code>can_catch</code> may fail. Switching to
-<code>c++_shared</code>, or exporting <code>typeinfo</code> and
-<code>vtable</code> symbols so that they depend on
-<code>libc++.so</code> or <code>libstdc++.so</code>, can solve the
-issue.</p>
+in CMake. The C++ standard library is then linked into the application’s
+<code>.so</code>, leaving the relevant <code>type_info</code> symbols
+local to that image, and <code>can_catch</code> may fail across library
+boundaries. Switching to <code>c++_shared</code>, or exporting
+<code>typeinfo</code> and <code>vtable</code> symbols so that they
+resolve through <code>libc++.so</code> or <code>libstdc++.so</code>, can
+solve the issue.</p>
 <h3 id="is-two-phase-unwinding-necessary">Is two-phase unwinding
 necessary?</h3>
 <p>Not strictly. The <a
@@ -1281,7 +1271,7 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/">Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2026-03-07 23:06</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:37</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2026/03/07/understanding-cpp-exceptions-from-source/" title="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions">https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2026/03/07/understanding-cpp-exceptions-from-source/"  aria-label="Copied"></i></span></span>
   </p>
@@ -1322,8 +1312,8 @@ href="https://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class">w
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" rel="next" title="Streaming Rich Text Rendering in iOS">
-                <i class="fa fa-chevron-left"></i> Streaming Rich Text Rendering in iOS
+              <a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" rel="next" title="How We Built Streaming Rich Text for LLM Responses on iOS">
+                <i class="fa fa-chevron-left"></i> How We Built Streaming Rich Text for LLM Responses on iOS
               </a>
             
           </div>
@@ -1538,7 +1528,7 @@ exceptions?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

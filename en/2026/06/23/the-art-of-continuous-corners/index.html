@@ -159,7 +159,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/06/23/%E8%BF%9E%E7%BB%AD%E5%9C%86%E8%A7%92%E7%9A%84%E8%89%BA%E6%9C%AF/image%2053.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2026/06/23/%E8%BF%9E%E7%BB%AD%E5%9C%86%E8%A7%92%E7%9A%84%E8%89%BA%E6%9C%AF/20260622224827_rec_.gif">
 <meta property="article:published_time" content="2026-06-23T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:26:12.929Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:37.577Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2026/06/23/%E8%BF%9E%E7%BB%AD%E5%9C%86%E8%A7%92%E7%9A%84%E8%89%BA%E6%9C%AF/image%2041.png">
@@ -557,7 +557,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  4.3k
+                  4.2k
                 </span>
               
 
@@ -573,7 +573,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  16 mins.
+                  15 mins.
                 </span>
               
             </div>
@@ -609,14 +609,6 @@ mjx-container[display="true"] + br {
 
       
         <p>Git: <a href="https://github.com/tsuijunxi/ContinuousCornerKit.git">https://github.com/tsuijunxi/ContinuousCornerKit.git</a></p>
-<blockquote>
-<p><strong>Summary:</strong> This article reverse-engineers the visual
-behavior of Apple’s iOS continuous corners, tests the common
-superellipse and Euler spiral explanations, and derives a practical
-Bezier-based implementation for curvature-continuous corners. It covers
-<code>cornerCurve</code>, squircle-like shapes, curvature continuity,
-parameter fitting, and the implementation details behind <a href="https://github.com/tsuijunxi/ContinuousCornerKit.git">ContinuousCornerKit</a>.</p>
-</blockquote>
 <h2 id="background">Background</h2>
 <p>After iOS 7, Apple brought the idea of curvature continuity from
 industrial design into visual design and refined the classic rounded app
@@ -665,9 +657,11 @@ creates a smoother transition toward the sides. Apple’s continuous
 corner, however, still contains straight segments. That rules out the
 superellipse hypothesis for iOS continuous corners.</p>
 <p><img src="/2026/06/23/连续圆角的艺术/image%2028.png" alt="image.png"></p>
-<p>As a side note, Xiaomi’s “2-million-icon” shape is one of the
-better-known superellipse examples. It is essentially a superellipse
-with <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="1.197ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 529 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="a = b"><g data-mml-node="mi" data-latex="a"><path data-c="1D44E" d="M498 144C498 153 493 158 482 158C474 158 468 151 465 137C445 58 421 18 394 18C377 18 368 32 368 60C368 73 372 97 381 132L438 357C443 376 445 387 445 392C445 412 434 422 412 422C391 422 377 410 370 387C349 424 319 442 281 442C216 442 159 409 109 343C63 281 40 217 40 150C40 63 91-11 175-11C218-11 260 12 300 58C311 20 345-11 392-11C461-11 482 70 498 144M341 374C350 353 355 339 355 330C355 326 354 321 353 314L304 122C301 111 294 99 285 87C248 41 212 18 177 18C138 18 118 48 118 107C118 131 124 167 136 215C157 300 187 357 224 388C244 405 263 413 282 413C309 413 329 400 341 374Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="3.359ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1484.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="a = b"><g data-mml-node="mo" data-latex="="><path data-c="3D" d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"></path></g><g data-mml-node="mi" data-latex="b" transform="translate(1055.8,0)"><path data-c="1D44F" d="M281 445C245 445 209 428 174 394L243 679C241 688 238 694 226 694C193 694 120 685 107 684C92 682 84 675 84 660C84 650 93 645 112 645C131 645 157 646 157 632C157 628 152 608 143 571L63 249C52 207 47 173 47 148C47 62 93-11 175-11C240-11 297 22 347 89C392 151 415 216 415 283C415 370 364 445 281 445M279 415C318 415 337 385 337 326C337 299 331 263 319 218C297 133 268 75 233 44C213 27 194 19 175 19C134 19 114 51 114 115C114 137 119 170 129 214L151 304C154 319 159 330 165 338C204 389 242 415 279 415Z"></path></g></g></g></svg></mjx-container></span> and <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="1.357ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 600 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="n = 3"><g data-mml-node="mi" data-latex="n"><path data-c="1D45B" d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="3.52ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1555.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="n = 3"><g data-mml-node="mo" data-latex="="><path data-c="3D" d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"></path></g><g data-mml-node="mn" data-latex="3" transform="translate(1055.8,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path></g></g></g></svg></mjx-container></span>.</p>
+<p>As a side note, Xiaomi’s much-discussed “RMB 2 million icon” is one
+of the better-known commercial uses of a superellipse. Its outline is
+essentially a superellipse with <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="1.197ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 529 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="a =
+b"><g data-mml-node="mi" data-latex="a"><path data-c="1D44E" d="M498 144C498 153 493 158 482 158C474 158 468 151 465 137C445 58 421 18 394 18C377 18 368 32 368 60C368 73 372 97 381 132L438 357C443 376 445 387 445 392C445 412 434 422 412 422C391 422 377 410 370 387C349 424 319 442 281 442C216 442 159 409 109 343C63 281 40 217 40 150C40 63 91-11 175-11C218-11 260 12 300 58C311 20 345-11 392-11C461-11 482 70 498 144M341 374C350 353 355 339 355 330C355 326 354 321 353 314L304 122C301 111 294 99 285 87C248 41 212 18 177 18C138 18 118 48 118 107C118 131 124 167 136 215C157 300 187 357 224 388C244 405 263 413 282 413C309 413 329 400 341 374Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="3.359ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1484.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="a =
+b"><g data-mml-node="mo" data-latex="="><path data-c="3D" d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"></path></g><g data-mml-node="mi" data-latex="b" transform="translate(1055.8,0)"><path data-c="1D44F" d="M281 445C245 445 209 428 174 394L243 679C241 688 238 694 226 694C193 694 120 685 107 684C92 682 84 675 84 660C84 650 93 645 112 645C131 645 157 646 157 632C157 628 152 608 143 571L63 249C52 207 47 173 47 148C47 62 93-11 175-11C240-11 297 22 347 89C392 151 415 216 415 283C415 370 364 445 281 445M279 415C318 415 337 385 337 326C337 299 331 263 319 218C297 133 268 75 233 44C213 27 194 19 175 19C134 19 114 51 114 115C114 137 119 170 129 214L151 304C154 319 159 330 165 338C204 389 242 415 279 415Z"></path></g></g></g></svg></mjx-container></span> and <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="1.357ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 600 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="n = 3"><g data-mml-node="mi" data-latex="n"><path data-c="1D45B" d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="3.52ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1555.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="n = 3"><g data-mml-node="mo" data-latex="="><path data-c="3D" d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"></path></g><g data-mml-node="mn" data-latex="3" transform="translate(1055.8,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path></g></g></g></svg></mjx-container></span>.</p>
 <p><img src="/2026/06/23/连续圆角的艺术/image%2051.png" alt="image.png"></p>
 <p><img src="/2026/06/23/连续圆角的艺术/image%2043.png" alt="image.png"></p>
 <p>It is also worth noting that Xiaomi’s MIUI 12 rendering engine
@@ -1382,9 +1376,10 @@ Distance rendering:</p>
 <p>Maybe continuous corners are not Apple’s secret alone.</p>
 </blockquote>
 <h2 id="summary">Summary</h2>
-<p>What began as curiosity turned into a small piece of research, and
-with Codex’s help it became CCK. One small obsession, a little less
-mystery, and a sincere thanks to the AI era and Codex.</p>
+<p>What began as curiosity turned into a small research project and,
+with help from Codex, eventually became CCK. The implementation does not
+reveal Apple’s private formula, but it makes the shape less mysterious
+and gives us a practical model to build on.</p>
 <h2 id="references">References</h2>
 <ul>
 <li><a href="https://www.hi-id.com/?p=3445">From Rounded Corners to
@@ -1481,7 +1476,7 @@ Integral</a></li>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2026/06/23/the-art-of-continuous-corners/">The Art of Continuous Corners: iOS Continuous Corner Algorithm and Implementation</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2026-06-23 23:06</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:26</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2026/06/23/the-art-of-continuous-corners/" title="The Art of Continuous Corners: iOS Continuous Corner Algorithm and Implementation">https://tsuijunxi.github.io/en/2026/06/23/the-art-of-continuous-corners/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2026/06/23/the-art-of-continuous-corners/"  aria-label="Copied"></i></span></span>
   </p>
@@ -1729,7 +1724,7 @@ corner radius</span></a></li><li class="nav-item nav-level-4"><a class="nav-link
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

@@ -95,7 +95,7 @@
 
 <meta name="description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Streaming Rich Text Rendering in iOS">
+<meta property="og:title" content="How We Built Streaming Rich Text for LLM Responses on iOS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
@@ -107,7 +107,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/05.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
 <meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:37:08.034Z">
+<meta property="article:modified_time" content="2026-09-22T17:33:20.269Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Rich Text Streaming Rendering">
 <meta name="twitter:card" content="summary">
@@ -158,7 +158,7 @@
 
 
 
-  <title>Streaming Rich Text Rendering in iOS | 凌云的博客</title>
+  <title>How We Built Streaming Rich Text for LLM Responses on iOS | 凌云的博客</title>
   
 
 
@@ -443,7 +443,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">Streaming Rich Text Rendering in iOS</h1>
+          <h1 class="post-title" itemprop="name headline">How We Built Streaming Rich Text for LLM Responses on iOS</h1>
         
 
         <div class="post-meta">
@@ -506,7 +506,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  2.9k
+                  2.2k
                 </span>
               
 
@@ -522,7 +522,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
                 <span title="Reading time">
-                  10 mins.
+                  8 mins.
                 </span>
               
             </div>
@@ -558,55 +558,43 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article walks through a practical iOS
-implementation of streaming rich text rendering for LLM responses. It
-covers pseudo-stream parsing, <code>YYText</code>-based masking,
-incomplete HTML and LaTeX handling, interruption behavior, TTS
-synchronization, and the tradeoffs behind choosing a pseudo-streaming
-approach instead of a fully streaming parser.</p>
-</blockquote>
-<p>LLM responses are usually streamed token by token instead of arriving
-as one complete paragraph. If the client waits until the full answer is
-generated before rendering anything, the experience feels slow and
-unresponsive.</p>
-<p>To match that output model, the client also needs a streaming
-rendering experience. The challenge is that LLM output is rarely plain
-text: it often contains Markdown, HTML-like markup, or formulas. In this
-implementation, the rich text pipeline needs to handle both
-<code>HTML</code> and <code>LaTeX</code>.</p>
+<p>LLM responses usually arrive token by token rather than as a complete
+document. Waiting for the final response before drawing anything makes
+the interface feel needlessly slow.</p>
+<p>The client should reveal content as it arrives, but LLM output is
+rarely plain text. It may contain Markdown, HTML-like markup, and
+formulas; this implementation must handle both <code>HTML</code> and
+<code>LaTeX</code> while the document is still incomplete.</p>
 <h2 id="how-it-works">How it works</h2>
 <h3 id="streaming-request">Streaming request</h3>
 <p><a
 href="https://github.com/deanWombourne/AFNetworking-streaming">AFNetworking-streaming</a>
-provides an interface for chunked data responses. In simple terms, one
-request needs to handle multiple response callbacks and one final
-completion callback. When data first arrives,
-<code>headerCallback</code> is triggered once; as the server keeps
-sending data, <code>dataCallback</code> is triggered repeatedly; and
-when the stream ends, the final callback is triggered.</p>
-<p>The client receives the data stream through <code>dataCallback</code>
-and parses it according to the separator agreed with the server.</p>
+adds callbacks for chunked responses. A request receives one
+<code>headerCallback</code>, repeated <code>dataCallback</code>
+invocations as chunks arrive, and a final completion callback when the
+stream closes.</p>
+<p>Each <code>dataCallback</code> may contain one or more
+application-level records, which the client splits using the delimiter
+defined by the server protocol.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSURL</span> *url = [<span class="built_in">NSURL</span> URLWithString:<span class="string">@&quot;https://raw.githubusercontent.com&quot;</span>];</span><br><span class="line"><span class="keyword">self</span>.manager = [[DWHTTPStreamSessionManager alloc] initWithBaseURL:url];</span><br><span class="line"><span class="keyword">self</span>.manager.itemSerializerProvider = [[DWHTTPJSONItemSerializerProvider alloc] init];</span><br><span class="line"><span class="keyword">self</span>.manager.responseSerializer = [[DWDummyHTTPResponseSerializer alloc] init];</span><br><span class="line">[<span class="keyword">self</span>.manager GET:<span class="string">@&quot;deanWombourne/AFNetworking-streaming/master/Example/example.json&quot;</span></span><br><span class="line">           parameters:@&#123;&#125;</span><br><span class="line">                 data:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSDictionary</span> *dictionary) &#123;</span><br><span class="line">                     [<span class="keyword">self</span>.results addObject:dictionary];</span><br><span class="line">                     [<span class="keyword">self</span>.tableView reloadData];</span><br><span class="line">                 &#125;</span><br><span class="line">              success:^(<span class="built_in">NSURLSessionDataTask</span> *task) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response complete&quot;</span>);</span><br><span class="line">              &#125;</span><br><span class="line">              failure:^(<span class="built_in">NSURLSessionDataTask</span> *task, <span class="built_in">NSError</span> *error) &#123;</span><br><span class="line">                  <span class="built_in">NSLog</span>(<span class="string">@&quot;Response failed&quot;</span>);</span><br><span class="line">              &#125;];</span><br></pre></td></tr></table></figure>
 
 <h3 id="pseudo-stream-parsing">Pseudo-stream parsing</h3>
-<p>To support streaming rendering, we first need to parse rich text such
-as <code>HTML</code> and <code>LaTeX</code> while the content is still
-incomplete. Instead of implementing a fully incremental parser, the
-client uses a “pseudo-stream parsing” approach:</p>
+<p>The parser must tolerate HTML and LaTeX fragments that end halfway
+through a construct. Rather than maintain incremental parser state, the
+client uses a simpler pseudo-streaming strategy:</p>
 <p><strong>Whenever new streamed text arrives, the parser appends it to
 the accumulated text and reparses the full content from the
 beginning.</strong></p>
 <h4 id="incomplete-tag-rules">Incomplete tag rules</h4>
-<p>Rich text has a certain format, which means at any given moment, the
-streamed text may be incomplete or syntactically invalid. In a
-non-streaming scenario this would be treated as an error, but in a
-streaming scenario it is normal. Therefore we need some
-exception-handling rules:</p>
+<p>At any point in the stream, the buffer may end in the middle of a
+tag. That is an expected intermediate state rather than a syntax error,
+so the parser follows a few recovery rules:</p>
 <ol type="1">
-<li>Closed tags are output, while unclosed tags are swallowed.
+<li>Complete tag openings are parsed, while incomplete openings are
+withheld.
 <ol type="1">
-<li><code>&lt;div&gt;</code> is considered closed.
+<li><code>&lt;div&gt;</code> is complete even if its matching
+<code>&lt;/div&gt;</code> has not arrived yet.
 <ol type="1">
 <li>If the text is <code>&lt;div&gt;123</code>, the output is
 <code>123</code>.</li>
@@ -614,55 +602,52 @@ exception-handling rules:</p>
 <code>&lt;div&gt;&lt;span&gt;123&lt;/span&gt;&lt;b&gt;456</code>, the
 output is <code>123**456**</code>.</li>
 </ol></li>
-<li>But <code>&lt;div</code>, <code>&lt;di</code>, <code>&lt;d</code>,
-and <code>&lt;img src="http://</code> are incomplete and are
-swallowed.</li>
+<li><code>&lt;div</code>, <code>&lt;di</code>, <code>&lt;d</code>, and
+<code>&lt;img src="http://</code> are incomplete openings and remain
+hidden.</li>
 </ol></li>
 <li>Leaf nodes are output normally.</li>
 </ol>
 <blockquote>
-<p>Here, “closed” means the opening half of an HTML tag is complete
-enough to be considered closed.</p>
+<p>In this section, “complete” refers to the opening tag itself, not to
+the presence of a matching closing element.</p>
 </blockquote>
 <h4 id="incomplete-formula-rules">Incomplete formula rules</h4>
-<p>The <code>tex</code> tag is special because its inner text must still
-be parsed by the <code>LaTeX</code> engine. Therefore whether it is
-finally output depends on whether the LaTeX text itself is syntactically
-valid.</p>
+<p>The custom <code>tex</code> element needs a second validation step
+because its contents must also parse as LaTeX.</p>
 <ol type="1">
 <li><code>&lt;tex&gt;\frac{1}{2}</code> has no
-<code>&lt;/tex&gt;</code>, but the inner text is complete, so it still
-renders normally.</li>
-<li><code>&lt;tex&gt;\frac{2}{&lt;/tex&gt;</code> has a complete tag,
-but the LaTeX text contains a syntax error, so it is swallowed.</li>
+<code>&lt;/tex&gt;</code>, but the formula itself is complete and can be
+rendered.</li>
+<li><code>&lt;tex&gt;\frac{2}{&lt;/tex&gt;</code> closes the element,
+but the formula is invalid and remains hidden.</li>
 </ol>
 <h3 id="pseudo-stream-rendering">Pseudo-stream rendering</h3>
-<p>iOS rich text rendering is based on <code>YYText</code>. If we
-implemented streaming rendering according to the true principle, we
-would need to heavily modify <code>YYText</code> so that it supports
-streaming rendering. That cost would be very high, so the client chose
-pseudo-stream rendering.</p>
+<p>The iOS renderer is built on <code>YYText</code>, which expects a
+complete attributed string and layout rather than an incrementally
+growing document. Making it truly incremental would require invasive
+changes to <code>YYText</code>, so we chose a pseudo-streaming design
+instead.</p>
 <h4 id="core-idea">Core idea</h4>
 <p>The core of pseudo-stream rendering can be summarized in one word:
-“cover”.</p>
-<p>Usually, given a piece of rich text, the parser generates an
-<code>NSAttributedString</code>, and the layout generated by
-<code>YYLabel</code> is deterministic. We can render everything first,
-add a mask above <code>YYLabel</code>, and then reveal one grid at a
-time like a scratch card. This creates the feeling of streaming.</p>
-<p>The mask solution is shown in the videos below. Video 1 is the debug
-version, and video 2 is the normal version.</p>
+<strong>masking</strong>.</p>
+<p>For a given <code>NSAttributedString</code>, <code>YYLabel</code>
+produces a deterministic layout. The renderer can therefore draw the
+latest complete layout immediately, cover it with an opaque mask, and
+uncover one character cell at a time. Visually, the response appears to
+stream even though each layout pass still processes the full buffer.</p>
+<p>The first video visualizes the masks for debugging; the second shows
+the final effect.</p>
 <table><tr>
 <td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/07.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
 <td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/08.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
 </tr></table>
 
-<p>There is a red horizontal mask and a blue vertical mask. For every
-streamed character, the red mask shrinks to the right by one character
-width until the current line has fully streamed. At that point, the red
-mask moves to the next line, while the blue mask shrinks downward by one
-line height. During streaming, the <code>loading</code> indicator is
-always displayed at the leftmost edge of the red mask.</p>
+<p>The debug view uses a red horizontal mask for the current line and a
+blue vertical mask for all later lines. Revealing a character shortens
+the red mask by one cell. At the end of a line, the red mask moves down
+and the blue mask shrinks by one line height. The <code>loading</code>
+indicator stays attached to the leading edge of the red mask.</p>
 <blockquote>
 <p><strong>Note: the mask color must match the underlying view color and
 must not contain transparency.</strong></p>
@@ -671,98 +656,83 @@ must not contain transparency.</strong></p>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/01.png" width="100%"/>
 
 <ol type="1">
-<li>The client sends an SSE request, meaning the real stream has
-started. At the same time, it informs the rendering engine, which marks
-pseudo-stream rendering as started and begins loading.</li>
-<li>During the stream, multiple real data callbacks arrive. On the first
-callback, the engine generates layout information for the real streamed
-data and starts a timer for pseudo-stream rendering. Every time new
-stream data arrives, it appends the new text to the previously received
-stream text, regenerates layout information, and replaces the previous
-layout. Internally, the streaming renderer only checks whether the
-current progress has exceeded the end of the layout. If not, it
-“scratches open” one more grid.</li>
-<li>When the real stream ends, the final layout is generated and
-updated, and the real stream is marked as finished. When the internal
-pseudo renderer finishes the currently available layout, it checks
-whether the real stream has ended. If yes, pseudo rendering ends;
-otherwise the engine waits for new real stream data.</li>
-<li>In some cases, pseudo-stream rendering needs to be interrupted
-directly. The corresponding API can be called; internally the engine
-stops the timer and adds <code>......</code> after the current position
-to indicate that the stream was interrupted.</li>
+<li>When the client starts the SSE request, it also marks the pseudo
+renderer as active and shows the loading state.</li>
+<li>The first data callback creates a layout and starts the reveal
+timer. Later callbacks append text to the buffer and prepare newer
+layouts. On each timer tick, the renderer reveals one more character
+cell from the current layout.</li>
+<li>The final network callback produces the last layout and marks the
+source stream as complete. Once the reveal timer reaches the end of that
+layout, pseudo-streaming stops. If the source is still active, the
+renderer waits for the next layout instead.</li>
+<li>The caller can also interrupt pseudo-stream rendering explicitly.
+The engine stops the timer and appends <code>......</code> at the
+current position to show that the response ended early.</li>
 </ol>
 <h4 id="card-expansion">Card expansion</h4>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/02.png" width="100%"/>
 
-<p>In business scenarios, streaming cards often appear inside scrolling
-lists. Unlike traditional cards, whose height is determined from outside
-to inside, the height of a streaming card is determined from inside to
-outside. Therefore, while streaming, the engine must constantly call
-back and notify the outer cell card of its width and height.</p>
-<p>In fact, updating only the cell height is not enough. A container is
-also needed for clipping. A mask alone is not enough; the unrevealed
-area must also be clipped away.</p>
+<p>In production interfaces, streaming content often appears inside a
+scrolling list. A normal cell receives its size from the surrounding
+layout, but a streaming cell grows as new content is revealed. The
+renderer must therefore report updated dimensions to the containing cell
+throughout the stream.</p>
+<p>Updating the cell height alone is not enough. The cell also needs a
+clipping container so that content outside the revealed region remains
+hidden.</p>
 <blockquote>
-<p>If the streaming card is in a list, after updating the model height
-during streaming, do not call <code>reloadData</code> or
-<code>reloadItemsAtIndexPaths:</code> to refresh the cell. That will
-cause flickering. Use the following methods to update only the cell
-height without refreshing content.</p>
+<p>When a streaming card lives in a list, do not call
+<code>reloadData</code> or <code>reloadItemsAtIndexPaths:</code> after
+changing its model height; recreating the cell causes visible flicker.
+Ask the list to recompute geometry without reloading its content
+instead.</p>
 </blockquote>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UITableView</span></span><br><span class="line">[<span class="keyword">self</span>.tableView beginUpdates];</span><br><span class="line">[<span class="keyword">self</span>.tableView endUpdates];</span><br><span class="line"></span><br><span class="line"><span class="comment">// UICollectionView</span></span><br><span class="line">[<span class="keyword">self</span>.collectionView performBatchUpdates:^&#123;&#125; completion:^(<span class="type">BOOL</span> finished) &#123;&#125;];</span><br></pre></td></tr></table></figure>
 
 <h2 id="pitfalls">Pitfalls</h2>
-<h3 id="latex-text-appears-first-then-renders-normally">LaTeX text
-appears first, then renders normally</h3>
-<p>Because data is returned as a stream, a complete formula may be cut
-into an intermediate state. On the client, this causes rendering
-flicker: part of the raw text is rendered first; after the client
-receives the complete data, the correct rendered result appears, causing
-a visual flash.</p>
-<p>The reason is this: if a formula nested inside <code>HTML</code> is
-expressed as <code>$xxx$</code>, before parser processing it is
-regex-matched into <code>&lt;tex&gt;xxx&lt;/tex&gt;</code>. However,
-during streaming, if only the first half of the data has arrived, such
-as <code>$(a-b)</code>, the match will not succeed. Therefore
-<code>$(a-b)</code> is treated as plain text and directly output. Later,
-when the data becomes complete, such as <code>$(a-b)^{2}$</code>, it is
-parsed and rendered correctly.</p>
-<p>The strategy is: for incomplete <code>$xx</code> formulas, the regex
-replaces them with <code>&lt;tex&gt;xx</code>. At that point, if
-<code>xx</code> cannot be parsed and rendered by the <code>LaTeX</code>
-engine, it is swallowed; otherwise it is output.</p>
-<p>But because some edge cases were not fully covered, iOS adopted a
-once-and-for-all solution: for incomplete <code>&lt;tex&gt;</code> tags
-such as <code>&lt;tex&gt;xx</code>, before encountering
-<code>&lt;/tex&gt;</code>, the content inside no longer goes through the
-<code>LaTeX</code> engine and returns empty. The streaming effect is
-that the formula start stays in a <code>loading</code> state.</p>
+<h3 id="raw-latex-flashes-before-the-formula-appears">Raw LaTeX flashes
+before the formula appears</h3>
+<p>A chunk boundary may split a formula. If the incomplete prefix is
+treated as ordinary text, raw LaTeX briefly appears and is then replaced
+by the rendered formula when the closing delimiter arrives.</p>
+<p>The preprocessing pass normally rewrites <code>$xxx$</code> as
+<code>&lt;tex&gt;xxx&lt;/tex&gt;</code>. An incomplete prefix such as
+<code>$(a-b)</code> does not match that expression, so the HTML parser
+emits it as plain text. Once the buffer grows to
+<code>$(a-b)^{2}$</code>, the same range becomes a valid formula and
+changes representation.</p>
+<p>One possible fix is to rewrite an unmatched <code>$xx</code> prefix
+as <code>&lt;tex&gt;xx</code> as well. The LaTeX parser can then render
+complete prefixes and suppress invalid ones.</p>
+<p>That still left several ambiguous intermediate states, so the iOS
+implementation uses a conservative rule: an incomplete
+<code>&lt;tex&gt;</code> element such as <code>&lt;tex&gt;xx</code>
+produces no visible output until <code>&lt;/tex&gt;</code> arrives.
+During streaming, the formula position simply remains in the
+<code>loading</code> state.</p>
 <h3 id="text-justified-alignment">Text justified alignment</h3>
-<p>Usually, <code>YYLabel</code> provides a ready-made API for justified
-alignment: <code>view.textAlignment = NSTextAlignmentJustified</code>.
-However, this causes flickering during streaming rendering. The root
-cause is that justified alignment may adjust the position of text that
-has already been rendered. This creates text flicker. That alignment
-style is suitable for static cards, but not for streaming cards.</p>
+<p><code>YYLabel</code> supports justified text through
+<code>view.textAlignment = NSTextAlignmentJustified</code>, but
+justification can reposition characters that are already visible
+whenever the line grows. That movement is acceptable for static text and
+distracting during streaming, so streaming cards avoid justified
+alignment.</p>
 <h3 id="display-overlap">Display overlap</h3>
-<p>During streaming, the engine depends on <code>YYTextLayout</code> to
-get the position of the current character. However, in some line-wrap
-cases, the returned position information is wrong.</p>
+<p>The masks rely on <code>YYTextLayout</code> for the current
+character’s rectangle. Around some line breaks, that rectangle is
+incorrect.</p>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/03.png" width="100%"/>
 
-<p>As shown in the figure, after the <code>N</code>th grid finishes
-streaming, the current line has already ended, so the next position
-should be the <code>N+2</code>th grid. But <code>YYTextLayout</code>
-returns the <code>N+1</code>th grid. This grid area is very large: it
-not only repeats the already streamed area, but also exposes the
-not-yet-streamed area too early. This causes the content to appear first
-and then get covered again, producing flicker.</p>
-<p>After investigation, this is related to the logic in
-<code>YYTextLayout</code> that calculates the union of
-<code>Rect</code>s. Some <code>Rect</code>s have width or height equal
-to <code>0</code>, and they do not need to participate in union
-calculation. Excluding them fixes the issue.</p>
+<p>In the figure, revealing cell <code>N</code> completes the line, so
+the next cursor position should be cell <code>N+2</code>.
+<code>YYTextLayout</code> instead returns the oversized <code>N+1</code>
+rectangle. That rectangle overlaps content already revealed and content
+that should still be hidden, making text appear and then disappear
+behind the mask.</p>
+<p>The bug comes from <code>YYTextLayout</code> including zero-width or
+zero-height rectangles in a union calculation. Ignoring those empty
+rectangles produces the expected cursor geometry.</p>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/04.jpg" width="100%"/>
 
 <p>Modify <code>rectForRange:</code> as follows:</p>
@@ -771,94 +741,76 @@ calculation. Excluding them fixes the issue.</p>
 <h3 id="underline-spacing">Underline spacing</h3>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/05.png" width="100%"/>
 
-<p><code>YYText</code> cannot adjust the distance between text and
-underline, but this is a strong requirement in the business scenario.
-The solution is to modify <code>YYTextDrawDecoration</code> in
-<code>YYText</code> and add an underline offset.</p>
+<p><code>YYText</code> does not expose the distance between text and its
+underline, but the product design requires that control. We modified
+<code>YYTextDrawDecoration</code> to support an underline offset.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>) decorationWithStyle: (YYTextLineStyle)style width: (<span class="keyword">nullable</span> <span class="built_in">NSNumber</span> *)width color: (<span class="keyword">nullable</span></span><br><span class="line"><span class="built_in">UIColor</span> *)color;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) YYTextLineStyle style;                <span class="comment">///&lt; line style</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *width;    <span class="comment">///&lt; line width (nil means automatic width)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">NSNumber</span> *offset;   <span class="comment">///&lt; line offset(nil means 0, only for underline)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">UIColor</span> *color;     <span class="comment">///&lt; line color (nil means automatic color)</span></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nullable</span>, <span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) YYTextShadow *shadow; <span class="comment">///&lt; line shadow</span></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
 
-<p>Then include <code>offset</code> in the underline’s y coordinate
-inside <code>YYTextDrawDecoration</code>.</p>
+<p><code>YYTextDrawDecoration</code> then adds <code>offset</code> to
+the underline’s y coordinate.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    TRunGetPositions(run, <span class="built_in">CFRangeMake</span> (<span class="number">0</span>, <span class="number">1</span>), &amp;runPosition);</span><br><span class="line">    underlineStart.x = strikethroughStart.x = runPosition.x + line position.x;</span><br><span class="line">    length = <span class="built_in">CTRunGetTypographicBounds</span>|run, <span class="built_in">CFRangeMake</span>(<span class="number">0</span>, <span class="number">0</span>), <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// offset</span></span><br><span class="line">    <span class="keyword">if</span> (underline.offset) &#123;</span><br><span class="line">        underlineStart.y += underline.offset.floatValue;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (underlineOffset) &#123;</span><br><span class="line">        underlineStart.y += underline0ffset.floatValue;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
 
-<p>After the modification, the underline on the last line is often lost.
-The main reason is that if the underline spacing on the last line is too
-large, it exceeds the layout range and gets clipped. So the layout
-information also needs to be expanded. When the layout method finally
-determines the layout size, it should take this offset into account.</p>
+<p>This change can push the final underline beyond the original layout
+bounds, where it gets clipped. The layout height must therefore include
+the additional offset.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">+ (YYTextLayout *)layoutWithContainer:(YYTextContainer *)container text:(<span class="built_in">NSAttributedString</span> *)text range:(<span class="built_in">NSRange</span>)range &#123;</span><br><span class="line">......</span><br><span class="line">    &#123;</span><br><span class="line">        YYTextLine *lastLine = lines.lastObject;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(lastLine.CTLine);</span><br><span class="line">        <span class="keyword">if</span> (runs != <span class="literal">nil</span>) &#123;</span><br><span class="line">            <span class="built_in">CGFloat</span> underlinePositionCustom = <span class="number">0.</span>f;</span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, <span class="literal">NULL</span>, &amp;underlinePositionCustom, <span class="literal">NULL</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> maxUnderlineOffset = <span class="number">0.</span>f;</span><br><span class="line">            <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">                <span class="built_in">CTRunRef</span> run = <span class="built_in">CFArrayGetValueAtIndex</span>(runs, r);</span><br><span class="line">                <span class="built_in">CFIndex</span> glyphCount = <span class="built_in">CTRunGetGlyphCount</span>(run);</span><br><span class="line">                <span class="keyword">if</span> (glyphCount == <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">                <span class="built_in">NSDictionary</span> *attrs = (<span class="type">id</span>)<span class="built_in">CTRunGetAttributes</span>(run);</span><br><span class="line">                YYTextDecoration *underline = attrs[YYTextUnderlineAttributeName];</span><br><span class="line">                <span class="keyword">if</span> (underlinePositionCustom &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    maxUnderlineOffset = MAX(maxUnderlineOffset, fabs(underlinePositionCustom * <span class="number">-1</span> + underline.width.floatValue));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (maxUnderlineOffset &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">CGRect</span> tempRect = textBoundingRect;</span><br><span class="line">                tempRect.size.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingRect = tempRect;</span><br><span class="line">                </span><br><span class="line">                <span class="built_in">CGSize</span> tempSize = textBoundingSize;</span><br><span class="line">                tempSize.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingSize = tempSize;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    layout.frameSetter = ctSetter;</span><br><span class="line">    layout.frame = ctFrame;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">if</span> (lineOrigins) free(lineOrigins);</span><br><span class="line">    <span class="keyword">return</span> layout;</span><br></pre></td></tr></table></figure>
 
 <h3 id="underline-attachment">Underline attachment</h3>
-<p>Rich text contains formulas and images, which usually appear in
-<code>NSAttributedString</code> as <code>attachment</code>s. In some
-cases, a formula or image is obviously taller than normal text, so the
-underline has problems. As shown below, the underline passes directly
-through the formula, which clearly does not meet product
-requirements.</p>
+<p>Formulas and images enter the <code>NSAttributedString</code> as
+attachments, often taller than the surrounding text. If the underline
+still uses the text baseline, it may cut through the attachment.</p>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/06.jpg" width="50%"/>
 
-<p>Therefore, <code>YYText</code> layout logic needs to be modified
-again. The core logic is: during layout of each line, get the
-<code>ascent</code> and <code>descent</code> of the
-<code>attachment</code>, then apply an offset based on the maximum
-<code>descent</code>.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">static void YYTextGetRunsMaxMetricOfAttachment(CFArrayRef  _Nonnull runs, CGFloat * _Nullable xHeight, CGFloat * _Nonnull underlinePosition, CGFloat * _Nullable lineThickness) &#123;</span><br><span class="line">    CGFloat maxXHeight = 0;</span><br><span class="line">    CGFloat maxUnderlinePos = 0;</span><br><span class="line">    for (NSUInteger i = 0, max = CFArrayGetCount(runs); i &lt; max; i++) &#123;</span><br><span class="line">        CTRunRef run = CFArrayGetValueAtIndex(runs, i);</span><br><span class="line">        CFDictionaryRef attrs = CTRunGetAttributes(run);</span><br><span class="line">        if (attrs) &#123;</span><br><span class="line">            YYTextDecoration *underline = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextUnderlineAttributeName);</span><br><span class="line">            YYTextDecoration *attachment = CFDictionaryGetValue(attrs, (__bridge CFStringRef)YYTextAttachmentAttributeName);</span><br><span class="line">            YYTextRunDelegate *runDelegate = CTRunDelegateGetRefCon(CFDictionaryGetValue(attrs, kCTRunDelegateAttributeName));</span><br><span class="line">            if (underline &amp;&amp; attachment &amp;&amp; runDelegate) &#123;</span><br><span class="line">                if (runDelegate.descent * -1 &lt; maxUnderlinePos) &#123;</span><br><span class="line">                    maxUnderlinePos = runDelegate.descent * -1;</span><br><span class="line">                &#125;</span><br><span class="line">                if (runDelegate.ascent &lt; maxXHeight) &#123;</span><br><span class="line">                    maxXHeight = runDelegate.ascent;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (underlinePosition &amp;&amp; *underlinePosition &gt; maxUnderlinePos) &#123;</span><br><span class="line">        *underlinePosition = maxUnderlinePos;</span><br><span class="line">    &#125;</span><br><span class="line">    if (xHeight &amp;&amp; *xHeight &lt; maxXHeight) &#123;</span><br><span class="line">        *xHeight = maxXHeight;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The line layout now inspects each attachment’s <code>ascent</code>
+and <code>descent</code> and shifts the decoration using the maximum
+descent on that line.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextGetRunsMaxMetricOfAttachment(<span class="built_in">CFArrayRef</span>  _Nonnull runs, <span class="built_in">CGFloat</span> * _Nullable xHeight, <span class="built_in">CGFloat</span> * _Nonnull underlinePosition, <span class="built_in">CGFloat</span> * _Nullable lineThickness) &#123;</span><br><span class="line">    <span class="built_in">CGFloat</span> maxXHeight = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">CGFloat</span> maxUnderlinePos = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> i = <span class="number">0</span>, max = <span class="built_in">CFArrayGetCount</span>(runs); i &lt; max; i++) &#123;</span><br><span class="line">        <span class="built_in">CTRunRef</span> run = <span class="built_in">CFArrayGetValueAtIndex</span>(runs, i);</span><br><span class="line">        <span class="built_in">CFDictionaryRef</span> attrs = <span class="built_in">CTRunGetAttributes</span>(run);</span><br><span class="line">        <span class="keyword">if</span> (attrs) &#123;</span><br><span class="line">            YYTextDecoration *underline = <span class="built_in">CFDictionaryGetValue</span>(attrs, (__bridge <span class="built_in">CFStringRef</span>)YYTextUnderlineAttributeName);</span><br><span class="line">            YYTextDecoration *attachment = <span class="built_in">CFDictionaryGetValue</span>(attrs, (__bridge <span class="built_in">CFStringRef</span>)YYTextAttachmentAttributeName);</span><br><span class="line">            YYTextRunDelegate *runDelegate = <span class="built_in">CTRunDelegateGetRefCon</span>(<span class="built_in">CFDictionaryGetValue</span>(attrs, kCTRunDelegateAttributeName));</span><br><span class="line">            <span class="keyword">if</span> (underline &amp;&amp; attachment &amp;&amp; runDelegate) &#123;</span><br><span class="line">                <span class="keyword">if</span> (runDelegate.descent * <span class="number">-1</span> &lt; maxUnderlinePos) &#123;</span><br><span class="line">                    maxUnderlinePos = runDelegate.descent * <span class="number">-1</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (runDelegate.ascent &lt; maxXHeight) &#123;</span><br><span class="line">                    maxXHeight = runDelegate.ascent;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (underlinePosition &amp;&amp; *underlinePosition &gt; maxUnderlinePos) &#123;</span><br><span class="line">        *underlinePosition = maxUnderlinePos;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (xHeight &amp;&amp; *xHeight &lt; maxXHeight) &#123;</span><br><span class="line">        *xHeight = maxXHeight;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> YYTextDrawDecoration(YYTextLayout *layout, <span class="built_in">CGContextRef</span> context, <span class="built_in">CGSize</span> size, <span class="built_in">CGPoint</span> point, YYTextDecorationType type, <span class="type">BOOL</span> (^cancel)(<span class="type">void</span>)) &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> l = <span class="number">0</span>, lMax = layout.lines.count; l &lt; lMax; l++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cancel &amp;&amp; cancel()) <span class="keyword">break</span>;</span><br><span class="line">        </span><br><span class="line">        YYTextLine *line = lines[l];</span><br><span class="line">        <span class="keyword">if</span> (layout.truncatedLine &amp;&amp; layout.truncatedLine.index == line.index) line = layout.truncatedLine;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(line.CTLine);</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">            ......</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> xHeight, underlinePosition, lineThickness;</span><br><span class="line">            YYTextGetRunsMaxMetric(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// get the runs max metric of attachment</span></span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, &amp;xHeight, &amp;underlinePosition, &amp;lineThickness);</span><br><span class="line">            </span><br><span class="line">            ......  </span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>The premise of this fix is that <code>Attachment</code> must
-correctly set <code>ascent</code> and <code>descent</code>; otherwise
-the problem cannot be solved.</p>
+<p>This fix depends on every attachment reporting accurate
+<code>ascent</code> and <code>descent</code> values.</p>
 </blockquote>
-<h3 id="flicker--misalignment">Flicker + misalignment</h3>
-<p>From the phenomenon, the layout information used during streaming
-seems to differ from the layout information actually displayed, causing
-misalignment and flicker. Investigation showed that the problem was
-caused by frequent <code>YYText</code> refreshes in a short period of
-time. Therefore the original solution needed to be changed:</p>
-<p>When streamed text is received, do not immediately apply the newly
-generated layout information to the view. Instead, record that layout
-information. After the view finishes streaming the current layout, it
-checks whether layout information has been updated. If yes, it applies
-the new layout and continues streaming; otherwise pseudo-stream
-rendering is complete.</p>
-<p>During streaming of the current layout, new layout information may be
-updated multiple times and overwritten. This avoids frequent view
-refreshes, solves flicker and misalignment, and also improves
-performance.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (void)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    if (!self.isStreamingRendering) &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // relocate the animateView at the first time that the layout was set.</span><br><span class="line">    if (![[XXXTimer defaultTimer] hasTimerWithName:self.identify]) &#123;</span><br><span class="line">        [self updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [self.animateView locateInRect:CGRectMake(0, 0, 0, CGRectGetHeight(self.loadingView.frame))];</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // save the textlayout</span><br><span class="line">        self.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    // start rendering timer</span><br><span class="line">    [self startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="flicker-and-cursor-drift">Flicker and cursor drift</h3>
+<p>Another failure appeared when network chunks arrived faster than the
+reveal timer: the view could adopt a new layout while the masks still
+referenced the previous one. Repeated <code>YYText</code> refreshes then
+caused both cursor drift and flicker.</p>
+<p>The fix is to stage new layouts instead of applying them immediately.
+The renderer finishes revealing its current layout, swaps in the newest
+pending layout, and continues. If no pending layout exists and the
+network stream has ended, rendering is complete.</p>
+<p>Several network updates may replace the pending layout before the
+current one finishes. Coalescing them this way reduces view refreshes,
+keeps mask geometry consistent, and improves performance.</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// relocate the animateView at the first time that the layout was set.</span></span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [<span class="keyword">self</span> updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [<span class="keyword">self</span>.animateView locateInRect:<span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="built_in">CGRectGetHeight</span>(<span class="keyword">self</span>.loadingView.frame))];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// save the textlayout</span></span><br><span class="line">        <span class="keyword">self</span>.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// start rendering timer</span></span><br><span class="line">    [<span class="keyword">self</span> startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)startRenderingTimer &#123;</span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [[XXXTimer defaultTimer] scheduledTimerWithName:<span class="keyword">self</span>.identify timeInterval:<span class="keyword">self</span>.renderingInterval queue:dispatch_get_main_queue() startImmediately:<span class="literal">YES</span> repeat:<span class="literal">YES</span> action:^&#123;</span><br><span class="line">            <span class="built_in">NSUInteger</span> length = <span class="keyword">self</span>.textLayout.text.yy_rangeOfAll.length;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">self</span>.rectIndex &lt; length) &#123;</span><br><span class="line">                [<span class="keyword">self</span> informChangeStreamingRenderingWithInfo];</span><br><span class="line">                <span class="keyword">self</span>.rectIndex++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">self</span>.tempTextLayout != <span class="literal">nil</span> &amp;&amp; <span class="keyword">self</span>.textLayout != <span class="keyword">self</span>.tempTextLayout) &#123;</span><br><span class="line">                    <span class="comment">// update the text layout and frame</span></span><br><span class="line">                    [<span class="keyword">self</span> updateTextLayoutAndFrame:<span class="keyword">self</span>.tempTextLayout];</span><br><span class="line">                    <span class="keyword">self</span>.tempTextLayout = <span class="literal">nil</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">                        <span class="comment">// wait</span></span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        [<span class="keyword">self</span> stopAnimation];</span><br><span class="line">                        [<span class="keyword">self</span> stopRenderingTimer];</span><br><span class="line">                        [<span class="keyword">self</span> informStopStreamingRenderingWithInfo];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="syncing-stream-interruption-progress-to-tts">Syncing stream
 interruption progress to TTS</h3>
-<p>In the business scenario, the original rich text usually needs to be
-parsed by the rendering engine and converted into readable text, which
-is then fed to the <code>TTS</code> engine. Usually this is fine. But in
-a streaming interruption scenario, the final displayed text ends with
-<code>...</code>, while the readable text may already have been fed to
-<code>TTS</code> as a whole. As a result, <code>TTS</code> reads more
-text than what streaming rendering displayed, and canceling the extra
-fed content is not easy.</p>
-<p>Therefore, the final solution is: for every rendered character, the
-rendering engine emits the corresponding text to <code>TTS</code> (which
-has its own internal cache queue). When streaming rendering is
-interrupted, the text fed to <code>TTS</code> also stops at that point.
-IM also records this <code>index</code>, so future replay can locate the
-same position, ensuring consistency between rendering and the final
-<code>TTS</code> text.</p>
+<p>The application also converts the rich text into plain speech input
+for <code>TTS</code>. Under normal conditions this is straightforward,
+but interruption creates a synchronization problem: the visible response
+may stop at <code>...</code> after the full readable text has already
+entered the speech queue. The result is audio that continues beyond what
+the user can see.</p>
+<p>To keep speech and display in sync, the renderer emits TTS input only
+as each character becomes visible. TTS maintains its own queue, so
+interrupting the visual stream naturally stops new speech at the same
+point. The message model also stores that character index, allowing
+later playback to reconstruct the same truncated response.</p>
 <h3 id="-problem"><code>$...$$...$</code> problem</h3>
-<p>This problem is complex, so let’s start with some background.
-Traditional TeX has two ways to typeset formulas:</p>
+<p>This edge case comes from TeX’s two traditional dollar-delimited math
+modes:</p>
 <ul>
 <li><strong>inline math mode</strong>, where formulas are included in a
 paragraph. Early TeX used <code>$...$</code>.</li>
 <li><strong>display math mode</strong>, where formulas occupy their own
 line. Early TeX used <code>$$...$$</code>.</li>
 </ul>
-<p>Today, the standard best practice is to avoid using <code>$</code>
-characters to typeset formulas, and instead use LaTeX delimiters:</p>
+<p>Modern LaTeX documents generally prefer explicit delimiters:</p>
 <ul>
 <li>For <strong>inline math mode</strong>, use <code>\(... \)</code> or
 <code>\begin{math}...\end{math}</code>, instead of
@@ -867,104 +819,80 @@ characters to typeset formulas, and instead use LaTeX delimiters:</p>
 <code>\begin{displaymath}...\end{displaymath}</code>, instead of
 <code>$$...$$</code>.</li>
 </ul>
-<p>Back to the business scenario: LaTeX formulas are usually nested
-inside HTML, so HTML parsing must happen first. For easier parsing, a
-custom tag <code>&lt;tex&gt;...&lt;/tex&gt;</code> is used to represent
-LaTeX formulas.</p>
-<p>Even so, LaTeX parsing is not painless. The reason is that LaTeX text
-may contain HTML syntax markers. For example:
-<code>&lt;tex&gt;1\+2&lt;5&lt;/tex&gt;</code>. The <code>&lt;</code>
-inside the LaTeX text is meant for display; it is not an HTML tag
-marker. But the HTML parser treats it as a tag, causing parsing chaos.
-Therefore, before parsing, we need to regex-match
-<code>&lt;tex&gt;...&lt;/tex&gt;</code> and replace <code>&lt;</code>
-with <code>&amp;lt;</code> for escaping. Similar symbols include
-<code>&gt;</code>, <code>&amp;</code>, <code>"</code>, and
-<code>'</code>.</p>
-<p>After LLMs arrived, all the delimiter types mentioned above might be
-returned, so client rendering still had to support them. Taking
-<code>$...$</code> and <code>$$...$$</code> as examples, the initial
-client implementation was very simple: before parsing, first regex-match
-<code>$$...$$</code>, then match <code>$...$</code>, replace them with
-<code>&lt;tex&gt;...&lt;/tex&gt;</code>, and keep the rest of the logic
-unchanged. Everything was peaceful.</p>
-<p>There was actually an implicit assumption here: if HTML text wants to
-express the dollar sign <code>$</code>, it must use <code>\$</code>;
-otherwise a single dollar sign would misalign all subsequent
-parsing.</p>
+<p>In this content format, LaTeX formulas are embedded inside HTML, so
+HTML parsing happens first. A custom
+<code>&lt;tex&gt;...&lt;/tex&gt;</code> element marks formula ranges for
+the LaTeX renderer.</p>
+<p>Formula text may itself contain characters that are meaningful to
+HTML. In <code>&lt;tex&gt;1\+2&lt;5&lt;/tex&gt;</code>, for example,
+<code>&lt;</code> is a mathematical operator, but an HTML parser may
+interpret it as the start of a tag. The preprocessing pass therefore
+escapes <code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>,
+<code>"</code>, and <code>'</code> inside every <code>&lt;tex&gt;</code>
+range before HTML parsing begins.</p>
+<p>LLM output may use any of these delimiter styles, so the client
+accepts all of them. The first implementation handled dollar delimiters
+with two regular expressions: match <code>$$...$$</code> first, then
+<code>$...$</code>, and rewrite each match as
+<code>&lt;tex&gt;...&lt;/tex&gt;</code>.</p>
+<p>That approach assumes a literal dollar sign is escaped as
+<code>\$</code>; an unescaped <code>$</code> can otherwise shift every
+later match.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    <span class="comment">// replace the $$xxx$$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDoubleDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// replace the $xxx$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// process the excape in tex tag</span></span><br><span class="line">    [<span class="keyword">self</span> processExcapeInTexTag];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>Until one day, the model returned <code>$...$$...$</code>, breaking
-that peace. Its intention was to express two consecutive formulas, but
-because the middle <code>$$</code> became coupled, the client regex
-logic failed. The client first tried to match <code>$$...$$</code> and
-failed, then matched <code>$...$</code>, and finally treated
-<code>...$$...</code> as LaTeX text, causing an error.</p>
-<p>The client eventually abandoned the regex matching approach and
-switched to a scan with stack push/pop:</p>
+<p>The pattern <code>$...$$...$</code> breaks this strategy. It
+represents two adjacent inline formulas, but the middle <code>$$</code>
+also resembles a display-math delimiter. The display regex finds no
+complete pair; the inline regex then consumes the outer dollar signs and
+incorrectly sends <code>...$$...</code> to the LaTeX parser as one
+formula.</p>
+<p>We replaced the regular expressions with a single stateful scan:</p>
 <ol type="1">
-<li>When encountering <code>$</code>, check whether the stack already
-contains <code>$</code>. If yes, pop it first, and one formula is
-complete.</li>
-<li>Otherwise, consider whether the next character is <code>$</code>.
+<li>If the current <code>$</code> closes an open <code>$</code> range,
+close that inline formula.</li>
+<li>Otherwise, inspect the next character.
 <ol type="1">
-<li>If yes, combine into <code>$$</code>.
-<ol type="1">
-<li>Check whether the stack contains <code>$$</code>. If yes, pop it
-first, and one formula is complete.</li>
-<li>Otherwise, push <code>$$</code> to mark the start of a formula.</li>
-</ol></li>
-<li>Otherwise, push <code>$</code> to mark the start of a formula.</li>
+<li>If it is also <code>$</code>, treat the pair as a <code>$$</code>
+delimiter and either open or close display math.</li>
+<li>If not, open a new inline formula with <code>$</code>.</li>
 </ol></li>
 </ol>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    .....</span><br><span class="line">    <span class="keyword">if</span> (curCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$&quot;</span>]) &#123;</span><br><span class="line">            [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">self</span>.index + <span class="number">1</span> &lt; <span class="keyword">self</span>.len) &#123;</span><br><span class="line">            <span class="type">wchar_t</span> nextCh = *(<span class="keyword">self</span>.str + <span class="keyword">self</span>.index + <span class="number">1</span>);</span><br><span class="line">            <span class="keyword">if</span> (nextCh == L<span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> ([<span class="keyword">self</span>.sentinelStack.lastObject isEqualToString:<span class="string">@&quot;$$&quot;</span>]) &#123;</span><br><span class="line">                    [<span class="keyword">self</span> closeLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$$&quot;</span>];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">self</span>.index += <span class="number">2</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                [<span class="keyword">self</span> startLatexRangeWithSentinel:<span class="string">@&quot;$&quot;</span>];</span><br><span class="line">                <span class="keyword">self</span>.index++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> appendWideCharacter:curCh];</span><br><span class="line">            <span class="keyword">self</span>.index++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    .....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>This stack-based scan brings flexibility and freedom. It can solve
-<code>$</code> and <code>$$</code> issues, and can also handle
-<code>\(...\)</code> and <code>\[...\]</code>. It also handles escaping
-of HTML syntax markers. All problems can be solved in one scan, which is
-difficult with the regex approach.</p>
-<p>In addition, the stack-based scan also brought a performance benefit:
-LaTeX preprocessing time dropped to <code>1/2</code> to <code>1/4</code>
-of the regex solution.</p>
+<p>The same scanner handles <code>$...$</code>, <code>$$...$$</code>,
+<code>\(...\)</code>, and <code>\[...\]</code>, while escaping
+HTML-sensitive characters inside formula ranges. Keeping those decisions
+in one pass avoids the overlapping matches that made the
+regular-expression version fragile.</p>
+<p>It is also faster: in our measurements, preprocessing took between
+one-half and one-quarter of the time required by the regular-expression
+implementation.</p>
 <h2 id="summary">Summary</h2>
-<p>The streaming rendering discussed above is built on top of
-<code>YYText</code>. Thanks to <code>YYText</code>’s good layout
-mechanism, we can quickly implement a pseudo-streaming effect and
-satisfy business needs. But we also encountered many problems and
-stepped into many pitfalls. Even so, the current pseudo-streaming
-solution still has some natural defects:</p>
+<p>Building on <code>YYText</code> made it possible to ship
+pseudo-streaming without replacing the existing text stack. It also
+exposed several architectural limits:</p>
 <ol type="1">
-<li>Because it is based on <code>YYText</code>, many problems still
-require modifying <code>YYText</code> source code. <code>YYText</code>
-cannot be treated as a black box, which raises the bar for future
-development and maintenance.</li>
-<li>The business side has weak layout control, especially for block
-elements such as tables and lists. The client struggles with these.
-Fundamentally, <code>YYText</code> is still mainly for text layout. For
-mixed image-text-table layout and nested layout, if we want to control
-details, <code>YYText</code> becomes limited, because
-<code>attachment</code> and <code>YYText</code> are separated, making it
-difficult to fully use <code>YYText</code>’s layout and rendering
-capability.</li>
-<li><code>HTML</code> and <code>LaTeX</code> are split at the rendering
-layer. A formula is embedded into <code>YYText</code> as a whole
-<code>attachment</code> and can only be output as a whole
-<code>View</code>, making it hard to achieve a streaming rendering
-effect.</li>
+<li>Several fixes require maintaining a fork of <code>YYText</code>,
+which increases the cost of upgrades and long-term maintenance.</li>
+<li>The host app has limited control over block elements such as tables
+and lists. <code>YYText</code> is primarily a text layout engine; once
+content mixes nested blocks, images, and tables, its attachment model
+makes precise layout control difficult.</li>
+<li>HTML and LaTeX converge too late in the pipeline. A formula enters
+<code>YYText</code> as one attachment view, so it cannot be revealed
+incrementally like ordinary text.</li>
 </ol>
-<p>In the future, we may need to build a rendering engine that can
-integrate multiple rich-text syntaxes. Even though the upper-level
-syntaxes are different, the underlying rendering framework can be
-consistent. This would bring unified rendering capabilities and more
-flexible customization, providing greater possibilities for solving
-nested block rendering, formula streaming rendering, and similar
-problems.</p>
-<p>Some questions to think about:</p>
+<p>A longer-term solution would use one rendering engine for several
+rich-text syntaxes. Markdown, HTML, and LaTeX need different parsers,
+but they can still share a layout and rendering model. That would make
+nested blocks and incremental formula rendering easier to support
+without patching each syntax independently.</p>
+<p>The remaining design questions are:</p>
 <ol type="1">
 <li>Is it possible to build a truly streaming parser?</li>
 <li>Can the number of layout passes be reduced?</li>
-<li>Can we achieve truly streaming rendering?</li>
+<li>Can layout and painting become genuinely incremental rather than
+merely appear incremental?</li>
 </ol>
 
       
@@ -1028,11 +956,11 @@ problems.</p>
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">Streaming Rich Text Rendering in iOS</a></span></p>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">How We Built Streaming Rich Text for LLM Responses on iOS</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-08-06 16:25</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:37</span></p>
-  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="Streaming Rich Text Rendering in iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:33</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="How We Built Streaming Rich Text for LLM Responses on iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"  aria-label="Copied"></i></span></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
@@ -1247,8 +1175,8 @@ problems.</p>
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-it-works"><span class="nav-number">2.</span> <span class="nav-text">How it works</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#streaming-request"><span class="nav-number">2.1.</span> <span class="nav-text">Streaming request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-parsing"><span class="nav-number">2.2.</span> <span class="nav-text">Pseudo-stream parsing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-tag-rules"><span class="nav-number">2.2.1.</span> <span class="nav-text">Incomplete tag rules</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-formula-rules"><span class="nav-number">2.2.2.</span> <span class="nav-text">Incomplete formula rules</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-rendering"><span class="nav-number">2.3.</span> <span class="nav-text">Pseudo-stream rendering</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#core-idea"><span class="nav-number">2.3.1.</span> <span class="nav-text">Core idea</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#streaming-rendering-flow"><span class="nav-number">2.3.2.</span> <span class="nav-text">Streaming rendering flow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#card-expansion"><span class="nav-number">2.3.3.</span> <span class="nav-text">Card expansion</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pitfalls"><span class="nav-number">3.</span> <span class="nav-text">Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#latex-text-appears-first-then-renders-normally"><span class="nav-number">3.1.</span> <span class="nav-text">LaTeX text
-appears first, then renders normally</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text-justified-alignment"><span class="nav-number">3.2.</span> <span class="nav-text">Text justified alignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#display-overlap"><span class="nav-number">3.3.</span> <span class="nav-text">Display overlap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-spacing"><span class="nav-number">3.4.</span> <span class="nav-text">Underline spacing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-attachment"><span class="nav-number">3.5.</span> <span class="nav-text">Underline attachment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flicker--misalignment"><span class="nav-number">3.6.</span> <span class="nav-text">Flicker + misalignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syncing-stream-interruption-progress-to-tts"><span class="nav-number">3.7.</span> <span class="nav-text">Syncing stream
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-it-works"><span class="nav-number">2.</span> <span class="nav-text">How it works</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#streaming-request"><span class="nav-number">2.1.</span> <span class="nav-text">Streaming request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-parsing"><span class="nav-number">2.2.</span> <span class="nav-text">Pseudo-stream parsing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-tag-rules"><span class="nav-number">2.2.1.</span> <span class="nav-text">Incomplete tag rules</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-formula-rules"><span class="nav-number">2.2.2.</span> <span class="nav-text">Incomplete formula rules</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-rendering"><span class="nav-number">2.3.</span> <span class="nav-text">Pseudo-stream rendering</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#core-idea"><span class="nav-number">2.3.1.</span> <span class="nav-text">Core idea</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#streaming-rendering-flow"><span class="nav-number">2.3.2.</span> <span class="nav-text">Streaming rendering flow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#card-expansion"><span class="nav-number">2.3.3.</span> <span class="nav-text">Card expansion</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pitfalls"><span class="nav-number">3.</span> <span class="nav-text">Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#raw-latex-flashes-before-the-formula-appears"><span class="nav-number">3.1.</span> <span class="nav-text">Raw LaTeX flashes
+before the formula appears</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text-justified-alignment"><span class="nav-number">3.2.</span> <span class="nav-text">Text justified alignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#display-overlap"><span class="nav-number">3.3.</span> <span class="nav-text">Display overlap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-spacing"><span class="nav-number">3.4.</span> <span class="nav-text">Underline spacing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-attachment"><span class="nav-number">3.5.</span> <span class="nav-text">Underline attachment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flicker-and-cursor-drift"><span class="nav-number">3.6.</span> <span class="nav-text">Flicker and cursor drift</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syncing-stream-interruption-progress-to-tts"><span class="nav-number">3.7.</span> <span class="nav-text">Syncing stream
 interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#-problem"><span class="nav-number">3.8.</span> <span class="nav-text">$...$$...$ problem</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
             
 
@@ -1284,7 +1212,7 @@ interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a 
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

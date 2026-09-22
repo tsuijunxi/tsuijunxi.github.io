@@ -116,7 +116,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png">
 <meta property="article:published_time" content="2022-02-14T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:53:16.919Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:10.759Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Objective-C Block C++ Lambda">
 <meta name="twitter:card" content="summary">
@@ -515,7 +515,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  1.9k
+                  1.8k
                 </span>
               
 
@@ -566,15 +566,7 @@ mjx-container[display="true"] + br {
       
 
       
-        <blockquote>
-<p><strong>Summary:</strong> This article compares Objective-C
-<code>Block</code>s and C++ <code>lambda</code>s inside Objective-C++
-code. It looks at syntax, compiler rewriting, capture behavior, ARC
-interaction, <code>__block</code>, C++ copy and move construction,
-<code>shared_ptr</code>/<code>weak_ptr</code>, and the retain-cycle
-traps that appear when the two closure models meet.</p>
-</blockquote>
-<h2 id="background">Background</h2>
+        <h2 id="background">Background</h2>
 <p>Apple’s Objective-C compiler lets you mix <code>C++</code> and
 <code>Objective-C</code> in the same source file. The combined language
 is <code>Objective-C++</code>. Compared with ecosystems where
@@ -603,10 +595,10 @@ only.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">^(<span class="type">int</span> x, NSString *y)&#123;&#125; <span class="comment">// ObjC, take int and NSString*</span></span><br><span class="line">[](<span class="type">int</span> x, std::string y)&#123;&#125; <span class="comment">// C++, take int and std::string</span></span><br><span class="line"></span><br><span class="line">^&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// ObjC, returns int</span></span><br><span class="line">[]&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// C++, returns int</span></span><br><span class="line"></span><br><span class="line">^<span class="type">int</span> &#123; <span class="keyword">if</span>(something) <span class="keyword">return</span> <span class="number">42</span>; <span class="keyword">else</span> <span class="keyword">return</span> <span class="number">43</span>; &#125;</span><br><span class="line">[]()-&gt;<span class="type">int</span> &#123; <span class="keyword">if</span>(something) <span class="keyword">return</span> <span class="number">42</span>; <span class="keyword">else</span> <span class="keyword">return</span> <span class="number">43</span>; &#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="principle">Principle</h3>
-<p>For Objective-C <code>Block</code>s, see <a
-href="https://halfrost.com/ios_block">&lt;&lt;深入研究 Block
-捕获外部变量和 __block 实现原理&gt;&gt;</a> for the low-level story.
-Here we only expand the code enough to compare the two models.</p>
+<p>For a detailed explanation of Objective-C <code>Block</code>s, see <a
+href="https://halfrost.com/ios_block">A Deep Dive into Block Variable
+Capture and <code>__block</code></a>. Here we expand only enough
+generated code to compare the two models.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)viewDidLoad &#123;</span><br><span class="line">    [<span class="variable language_">super</span> viewDidLoad];</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> x = <span class="number">3</span>;</span><br><span class="line">    <span class="type">void</span>(^block)(<span class="type">int</span>) = ^(<span class="type">int</span> a) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@&quot;%d&quot;</span>, x);</span><br><span class="line">    &#125;;</span><br><span class="line">    block(<span class="number">5</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>After <code>clang -rewrite-objc</code>, we get:</p>
@@ -912,18 +904,14 @@ object, the move constructor is called, and the
 during capture.</li>
 </ol>
 <h2 id="summary">Summary</h2>
-<p>The article started with a simple comparison between <code>OC</code>
-<code>Block</code>s and <code>C++</code> <code>lambda</code>s across
-four dimensions: syntax, implementation model, capture rules, and memory
-management. It then focused on the mixed capture problems between
-<code>OC</code> and <code>C++</code> closures.</p>
-<p>The reason for going into this much detail is that I do not want to
-rely on guesswork or trial and error. Only by understanding the
-underlying mechanism can we write better <code>OC/C++</code> mixed code.
-I also hope this helps readers who have had the same confusion.</p>
-<p>For the whole <code>OC/C++</code> mixed world, this is only the tip
-of the iceberg. There are still many difficult problems ahead, and I
-hope to explore more of them in the future.</p>
+<p>We compared Objective-C <code>Block</code>s and C++ lambdas in four
+areas: syntax, implementation, capture rules, and memory management. The
+mixed-language examples then showed where those two ownership models
+meet and where retain cycles or dangling references can appear.</p>
+<p>The details matter because mixed Objective-C++ code crosses two
+independent object and lifetime models. Understanding the generated
+structures and ownership transitions is more reliable than debugging
+each capture problem by trial and error.</p>
 <h2 id="references">References</h2>
 <ol type="1">
 <li><a
@@ -1007,7 +995,7 @@ OC/C++ Closures</a>.</p>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/">Understanding OC/C++ Closures</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-02-14 16:25</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/" title="Understanding OC/C++ Closures">https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/"  aria-label="Copied"></i></span></span>
   </p>
@@ -1264,7 +1252,7 @@ shared_from_this</span></a></li><li class="nav-item nav-level-4"><a class="nav-l
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

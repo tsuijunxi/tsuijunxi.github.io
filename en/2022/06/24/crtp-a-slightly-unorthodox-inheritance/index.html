@@ -108,7 +108,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/05.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/07.png">
 <meta property="article:published_time" content="2022-06-23T17:08:00.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:52:42.302Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:37.492Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="CRTP">
 <meta name="twitter:card" content="summary">
@@ -507,7 +507,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  1.9k
+                  1.8k
                 </span>
               
 
@@ -559,14 +559,6 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article explains the Curiously
-Recurring Template Pattern, or CRTP, from the perspective of everyday
-C++ code. It starts with the strange-looking inheritance form, then
-walks through template instantiation timing, static polymorphism,
-performance differences from virtual dispatch, and the situations where
-CRTP is useful.</p>
-</blockquote>
 <p>While writing some C++ code recently, I ran into a few repetitive
 patterns. While thinking about how templates could help, I remembered
 CRTP, a rather unusual form of inheritance.</p>
@@ -582,8 +574,8 @@ class.</li>
 <p>The general form looks like this:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> &#123;...&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base&lt;Derived&gt; &#123;...&#125;;</span><br></pre></td></tr></table></figure>
 
-<p>As far as I know, there is probably no second language that writes
-this exact pattern in quite this way…</p>
+<p>Few languages express inheritance in quite this self-referential way,
+which is part of what makes CRTP look so strange at first.</p>
 <p>So why does this work? And why would anyone design it like this?</p>
 <p>Here is a small example:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Base</span> &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">interface</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">static_cast</span> &lt;T*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">implementation</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Derived</span> : Base&lt;Derived&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">implementation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot; Derived class &quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
@@ -830,8 +822,8 @@ previous derived classes need to change. That makes this code unstable
 and violates the open-closed principle. The reason is that
 <code>animal</code> depends on <code>visitor</code>, and
 <code>visitor</code> depends on concrete <code>animal</code> types.
-<strong>SOLID constantly reminds us: depend on abstractions, not on
-concretes.</strong></p>
+<strong>SOLID reminds us to depend on abstractions rather than concrete
+classes.</strong></p>
 <p>So we can make <code>visitor</code> a template class, so
 <code>animal</code> depends on a generic type instead of a concrete one.
 Because templates are contagious, and we do not want to template-ify
@@ -917,12 +909,10 @@ template parameter.</p>
 </ul>
 <h2 id="postscript-the-ghost-sibling-of-crtp">Postscript: The Ghost
 Sibling of CRTP</h2>
-<p>Does the 1995 vintage of CRTP taste good?</p>
-<p>Then let us look at the ghost sibling of CRTP:
-<strong>Mixin</strong>. A mixin is a C++ template technique that
-combines multiple independent feature classes through inheritance to
-achieve module reuse. The basic idea is to treat template parameters as
-base classes:</p>
+<p>CRTP dates back to 1995, but it has a less famous relative worth
+revisiting: <strong>Mixin</strong>. A mixin is a C++ template technique
+that combines independent feature classes through inheritance. The basic
+idea is to treat template parameters as base classes:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MixinClass</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">MixinClass</span>() :  <span class="built_in">Mixins</span>()... &#123;&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>Take <code>Point</code> as an example. Traditionally, if we want to
@@ -1034,7 +1024,7 @@ design-pattern references</a></li>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/">CRTP, a Slightly Unorthodox Form of Inheritance</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-06-24 01:08</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:52</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/" title="CRTP, a Slightly Unorthodox Form of Inheritance">https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/"  aria-label="Copied"></i></span></span>
   </p>
@@ -1091,8 +1081,8 @@ design-pattern references</a></li>
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/en/2022/08/30/how-bad-can-static-variables-get/" rel="prev" title="How Bad Can Static Variables Get?">
-                How Bad Can Static Variables Get? <i class="fa fa-chevron-right"></i>
+              <a href="/en/2022/08/30/how-bad-can-static-variables-get/" rel="prev" title="Static Variables in C++: How Bad Can They Get?">
+                Static Variables in C++: How Bad Can They Get? <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -1287,7 +1277,7 @@ Sibling of CRTP</span></a></li><li class="nav-item nav-level-2"><a class="nav-li
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

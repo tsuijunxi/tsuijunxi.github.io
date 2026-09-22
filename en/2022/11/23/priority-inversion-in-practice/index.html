@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/06.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/08.png">
 <meta property="article:published_time" content="2022-11-23T09:53:47.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:38:07.022Z">
+<meta property="article:modified_time" content="2026-09-22T17:01:10.668Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/11/23/%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF/00.png">
@@ -508,7 +508,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  3.1k
+                  3k
                 </span>
               
 
@@ -559,16 +559,7 @@ mjx-container[display="true"] + br {
       
 
       
-        <blockquote>
-<p><strong>Summary:</strong> This article investigates a real iOS
-priority inversion issue around read-write locks and
-<code>NSOperationQueue</code> QoS. It walks through the production
-symptom, a local verification demo, the system mechanisms behind
-priority inheritance, and why APIs such as <code>pthread_mutex</code>,
-<code>os_unfair_lock</code>, <code>dispatch_sync</code>, and
-<code>dispatch_semaphore</code> behave differently.</p>
-</blockquote>
-<h2 id="background">Background</h2>
+        <h2 id="background">Background</h2>
 <p>I recently investigated a wave of production stalls around read-write
 locks. The suspicious stacks all came from
 <code>NSOperationQueue</code>, and the relevant worker threads were
@@ -837,13 +828,12 @@ by a low-priority thread. The microkernel has no knowledge of read-write
 locks, and therefore can’t boost the low-priority thread to prevent the
 priority inversion.</p>
 </blockquote>
-<p>The rough meaning is that the kernel does not understand read-write
-locks, so it cannot boost the low-priority thread and therefore cannot
-avoid priority inversion. Looking at the definition, however,
-<code>pthread_rwlock_s</code> contains an <code>rw_tid</code> field used
-to record the thread that owns the write lock. This raises an
-interesting question: why does <code>pthread_rwlock_s</code> have owner
-information, but still cannot avoid priority inversion?</p>
+<p>In other words, the kernel cannot identify the read-write lock owner
+and boost its priority. The definition of <code>pthread_rwlock_s</code>,
+however, contains an <code>rw_tid</code> field that records the thread
+holding the write lock. That raises an interesting question: if the
+structure records an owner, why can it not participate in priority
+inheritance?</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pthread_rwlock_s</span> &#123;</span></span><br><span class="line">        <span class="type">long</span> sig;</span><br><span class="line">        _pthread_lock lock;</span><br><span class="line">        <span class="type">uint32_t</span></span><br><span class="line">                unused:<span class="number">29</span>,</span><br><span class="line">                misalign:<span class="number">1</span>,</span><br><span class="line">                pshared:<span class="number">2</span>;</span><br><span class="line">        <span class="type">uint32_t</span> rw_flags;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _pad;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">        <span class="type">uint32_t</span> rw_tid[<span class="number">2</span>]; <span class="comment">// thread id of thread that has exclusive (write) lock</span></span><br><span class="line">        <span class="type">uint32_t</span> rw_seq[<span class="number">4</span>]; <span class="comment">// rw sequence id (at 128-bit aligned boundary)</span></span><br><span class="line">        <span class="type">uint32_t</span> rw_mis[<span class="number">4</span>]; <span class="comment">// for misaligned locks rw_seq will span into here</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(__LP64__)</span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">34</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">        <span class="type">uint32_t</span> _reserved[<span class="number">18</span>];</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>This Hacker News thread mentions:</p>
@@ -873,12 +863,10 @@ NULL as the tstore to the shims so they wait on the global waitq.</p>
 </blockquote>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// libpthread/kern/kern_synch.c</span></span><br><span class="line"><span class="type">int</span></span><br><span class="line"><span class="title function_">ksyn_wait</span><span class="params">(<span class="type">ksyn_wait_queue_t</span> kwq, <span class="type">kwq_queue_type_t</span> kqi, <span class="type">uint32_t</span> lockseq,</span></span><br><span class="line"><span class="params">                <span class="type">int</span> fit, <span class="type">uint64_t</span> abstime, <span class="type">uint16_t</span> kwe_flags,</span></span><br><span class="line"><span class="params">                <span class="type">thread_continue_t</span> continuation, <span class="type">block_hint_t</span> block_hint)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="type">thread_t</span> th = current_thread();</span><br><span class="line">        <span class="type">uthread_t</span> uth = pthread_kern-&gt;get_bsdthread_info(th);</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">turnstile</span> **<span class="title">tstore</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">        <span class="type">int</span> res;</span><br><span class="line"></span><br><span class="line">        assert(continuation != THREAD_CONTINUE_NULL);</span><br><span class="line"></span><br><span class="line">        <span class="type">ksyn_waitq_element_t</span> kwe = pthread_kern-&gt;uthread_get_uukwe(uth);</span><br><span class="line">        bzero(kwe, <span class="keyword">sizeof</span>(*kwe));</span><br><span class="line">        kwe-&gt;kwe_count = <span class="number">1</span>;</span><br><span class="line">        kwe-&gt;kwe_lockseq = lockseq &amp; PTHRW_COUNT_MASK;</span><br><span class="line">        kwe-&gt;kwe_state = KWE_THREAD_INWAIT;</span><br><span class="line">        kwe-&gt;kwe_uth = uth;</span><br><span class="line">        kwe-&gt;kwe_thread = th;</span><br><span class="line">        kwe-&gt;kwe_flags = kwe_flags;</span><br><span class="line"></span><br><span class="line">        res = ksyn_queue_insert(kwq, kqi, kwe, lockseq, fit);</span><br><span class="line">        <span class="keyword">if</span> (res != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> res;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_kwqwait, kwq-&gt;kw_addr, kwq-&gt;kw_inqueue,</span><br><span class="line">                        kwq-&gt;kw_prepost.count, kwq-&gt;kw_intr.count);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (_kwq_use_turnstile(kwq)) &#123;</span><br><span class="line">                <span class="comment">// pthread mutexes and rwlocks both (at least sometimes) know their</span></span><br><span class="line">                <span class="comment">// owner and can use turnstiles. Otherwise, we pass NULL as the</span></span><br><span class="line">                <span class="comment">// tstore to the shims so they wait on the global waitq.</span></span><br><span class="line">                tstore = &amp;kwq-&gt;kw_turnstile;</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>Looking at <code>_kwq_use_turnstile</code>, the code is more honest:
-only <code>KSYN_WQTYPE_MTX</code> enables <code>turnstile</code>
-priority-inversion protection. A read-write lock is
-<code>KSYN_WQTYPE_RWLOCK</code>, which means it does not use
-<code>_kwq_use_turnstile</code> and therefore cannot avoid priority
-inversion.</p>
+<p>The implementation of <code>_kwq_use_turnstile</code> resolves the
+ambiguity: only <code>KSYN_WQTYPE_MTX</code> enables
+<code>turnstile</code>-based priority inheritance. A read-write lock
+uses <code>KSYN_WQTYPE_RWLOCK</code>, so it does not take this path.</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_MTX         0x01</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_CVAR        0x02</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_RWLOCK      0x04</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> KSYN_WQTYPE_SEMA        0x08</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">bool</span></span><br><span class="line">_kwq_use_turnstile(<span class="type">ksyn_wait_queue_t</span> kwq)</span><br><span class="line">&#123;</span><br><span class="line">        <span class="comment">// If we had writer-owner information from the</span></span><br><span class="line">        <span class="comment">// rwlock then we could use the turnstile to push on it. For now, only</span></span><br><span class="line">        <span class="comment">// plain mutexes use it.</span></span><br><span class="line">        <span class="keyword">return</span> (_kwq_type(kwq) == KSYN_WQTYPE_MTX);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>In <code>_pthread_find_owner</code>, we can also see that the owner
@@ -959,8 +947,8 @@ happen.</li>
 <p>Clang even has a static checker for this pattern.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">auto</span> <span class="title">findGCDAntiPatternWithSemaphore</span><span class="params">()</span> -&gt; <span class="title">decltype</span><span class="params">(compoundStmt())</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> <span class="type">char</span> *SemaphoreBinding = <span class="string">&quot;semaphore_name&quot;</span>;</span><br><span class="line">  <span class="keyword">auto</span> SemaphoreCreateM = <span class="built_in">callExpr</span>(<span class="built_in">allOf</span>(</span><br><span class="line">      <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_create&quot;</span>),</span><br><span class="line">      <span class="built_in">hasArgument</span>(<span class="number">0</span>, <span class="built_in">ignoringParenCasts</span>(<span class="built_in">integerLiteral</span>(<span class="built_in">equals</span>(<span class="number">0</span>))))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreBindingM = <span class="built_in">anyOf</span>(</span><br><span class="line">      forEachDescendant(</span><br><span class="line">          <span class="built_in">varDecl</span>(<span class="built_in">hasDescendant</span>(SemaphoreCreateM)).<span class="built_in">bind</span>(SemaphoreBinding)),</span><br><span class="line">      forEachDescendant(<span class="built_in">binaryOperator</span>(<span class="built_in">bindAssignmentToDecl</span>(SemaphoreBinding),</span><br><span class="line">                     <span class="built_in">hasRHS</span>(SemaphoreCreateM))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockArgumentM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">hasType</span>(</span><br><span class="line">            <span class="built_in">hasCanonicalType</span>(<span class="built_in">blockPointerType</span>())</span><br><span class="line">            ));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> ArgCallsSignalM = <span class="built_in">hasAnyArgument</span>(<span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(<span class="built_in">callExpr</span>(</span><br><span class="line">          <span class="built_in">allOf</span>(</span><br><span class="line">              <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_signal&quot;</span>),</span><br><span class="line">              <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">              )))));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockAndCallsSignalM = <span class="built_in">allOf</span>(HasBlockArgumentM, ArgCallsSignalM);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> HasBlockCallingSignalM =</span><br><span class="line">    forEachDescendant(</span><br><span class="line">      <span class="built_in">stmt</span>(<span class="built_in">anyOf</span>(</span><br><span class="line">        <span class="built_in">callExpr</span>(HasBlockAndCallsSignalM),</span><br><span class="line">        <span class="built_in">objcMessageExpr</span>(HasBlockAndCallsSignalM)</span><br><span class="line">           )));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> SemaphoreWaitM = forEachDescendant(</span><br><span class="line">    <span class="built_in">callExpr</span>(</span><br><span class="line">      <span class="built_in">allOf</span>(</span><br><span class="line">        <span class="built_in">callsName</span>(<span class="string">&quot;dispatch_semaphore_wait&quot;</span>),</span><br><span class="line">        <span class="built_in">equalsBoundArgDecl</span>(<span class="number">0</span>, SemaphoreBinding)</span><br><span class="line">      )</span><br><span class="line">    ).<span class="built_in">bind</span>(WarnAtNode));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">compoundStmt</span>(</span><br><span class="line">      SemaphoreBindingM, HasBlockCallingSignalM, SemaphoreWaitM);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>To enable this check, just turn on the corresponding Xcode
-setting.</p>
+<p>Xcode exposes this analyzer through the <strong>Performance
+Anti-Patterns with Grand Central Dispatch</strong> build setting.</p>
 <img src="/2022/11/23/优先级反转那些事儿/05.png" />
 
 <blockquote>
@@ -976,9 +964,9 @@ caused by semaphores</h4>
 permission on the main thread:</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">__block <span class="type">BOOL</span> auth = <span class="literal">NO</span>;</span><br><span class="line">dispatch_semaphore_t semaphore = dispatch_semaphore_create(<span class="number">0</span>);</span><br><span class="line">[KTAuthorizeService requestAuthorizationWithType:KTPermissionsTypeCamera completionHandler:^(<span class="type">BOOL</span> allow) &#123;</span><br><span class="line">  auth = allow;</span><br><span class="line">  dispatch_semaphore_signal(semaphore);</span><br><span class="line">&#125;];</span><br><span class="line">dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);</span><br></pre></td></tr></table></figure>
 
-<p>After launch, it stayed in the top deadlock spot for a long time.
-Once I understood that semaphores cannot avoid priority inversion, the
-reason finally clicked.</p>
+<p>After launch, this stack remained one of the most common apparent
+deadlocks in production. Once I understood that semaphores cannot
+participate in priority inheritance, the pattern finally made sense.</p>
 <img src="/2022/11/23/优先级反转那些事儿/06.png" />
 
 <p>There are usually two ways to fix this:</p>
@@ -1166,7 +1154,7 @@ infect each other with their low priority</a></li>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/11/23/priority-inversion-in-practice/">Priority Inversion in Practice</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-11-23 17:53</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:38</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/11/23/priority-inversion-in-practice/" title="Priority Inversion in Practice">https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/11/23/priority-inversion-in-practice/"  aria-label="Copied"></i></span></span>
   </p>
@@ -1207,8 +1195,8 @@ infect each other with their low priority</a></li>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/en/2022/08/30/how-bad-can-static-variables-get/" rel="next" title="How Bad Can Static Variables Get?">
-                <i class="fa fa-chevron-left"></i> How Bad Can Static Variables Get?
+              <a href="/en/2022/08/30/how-bad-can-static-variables-get/" rel="next" title="Static Variables in C++: How Bad Can They Get?">
+                <i class="fa fa-chevron-left"></i> Static Variables in C++: How Bad Can They Get?
               </a>
             
           </div>
@@ -1217,8 +1205,8 @@ infect each other with their low priority</a></li>
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/en/2023/05/08/center-redirection-in-ios/" rel="prev" title="Center Redirection in iOS">
-                Center Redirection in iOS <i class="fa fa-chevron-right"></i>
+              <a href="/en/2023/05/08/center-redirection-in-ios/" rel="prev" title="How to Redirect an Objective-C Block with Trampoline Hook">
+                How to Redirect an Objective-C Block with Trampoline Hook <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -1417,7 +1405,7 @@ caused by semaphores</span></a></li></ol></li></ol></li><li class="nav-item nav-
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>

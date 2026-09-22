@@ -95,7 +95,7 @@
 
 <meta name="description" content="A practical implementation of Chinese TTS for LaTeX formulas, based on Atom tree traversal, speech-text generation rules, MathJax comparison, and math and chemistry pronunciation cases.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Reading LaTeX with TTS">
+<meta property="og:title" content="Teaching a TTS Engine to Read LaTeX in Chinese">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="A practical implementation of Chinese TTS for LaTeX formulas, based on Atom tree traversal, speech-text generation rules, MathJax comparison, and math and chemistry pronunciation cases.">
@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/10.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/03.png">
 <meta property="article:published_time" content="2024-02-02T15:06:59.000Z">
-<meta property="article:modified_time" content="2026-09-13T01:53:16.813Z">
+<meta property="article:modified_time" content="2026-09-22T16:59:25.172Z">
 <meta property="article:author" content="lingyun">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2024/02/02/%E5%85%B3%E4%BA%8E%20LaTeX%20%E7%9A%84%20TTS%20%E6%9C%97%E8%AF%BB%E8%BF%99%E4%BB%B6%E4%BA%8B/11.png">
@@ -160,7 +160,7 @@
 
 
 
-  <title>Reading LaTeX with TTS | 凌云的博客</title>
+  <title>Teaching a TTS Engine to Read LaTeX in Chinese | 凌云的博客</title>
   
 
 
@@ -445,7 +445,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">Reading LaTeX with TTS</h1>
+          <h1 class="post-title" itemprop="name headline">Teaching a TTS Engine to Read LaTeX in Chinese</h1>
         
 
         <div class="post-meta">
@@ -508,7 +508,7 @@ mjx-container[display="true"] + br {
                   <span class="post-meta-item-text">Words count in article&#58;</span>
                 
                 <span title="Words count in article">
-                  2.6k
+                  2.5k
                 </span>
               
 
@@ -560,15 +560,6 @@ mjx-container[display="true"] + br {
 
       
         <h2 id="background">Background</h2>
-<blockquote>
-<p><strong>Summary:</strong> This article explains how to convert LaTeX
-formulas into Chinese-friendly TTS text. Instead of sending raw LaTeX
-into a speech engine, the implementation walks the existing LaTeX
-<code>Atom</code> tree, applies command-specific speech rules, and
-generates readable Chinese text for math and chemistry formulas. The
-Chinese phrases in examples are intentional pronunciation targets, not
-untranslated body copy.</p>
-</blockquote>
 <p>The product recently needed to read <code>LaTeX</code> formulas
 aloud, but the current <code>TTS</code> engine does not understand LaTeX
 syntax. If we feed raw LaTeX directly into <code>TTS</code>, there will
@@ -579,13 +570,12 @@ be many pronunciation errors.</p>
 Speech Converter</a></li>
 <li><a href="https://tex2speech-website.vercel.app/Home.html">TeX2Speech</a></li>
 </ul>
-<p>These open-source solutions do not support Chinese well, and their
-rule systems differ a lot from Chinese speech patterns. They are also
-non-native solutions, so performance is poor. We therefore decided to
-add a translation layer before feeding LaTeX into <code>TTS</code>:
-parse the LaTeX syntax, build a syntax tree, convert the original LaTeX
-into natural-language text that <code>TTS</code> can read, and then send
-that text to <code>TTS</code>.</p>
+<p>Neither project was designed around Chinese mathematical speech, and
+integrating a web-oriented solution into a native client would add
+unnecessary runtime overhead. We therefore added a translation layer
+before <code>TTS</code>: parse the LaTeX source, build a syntax tree,
+turn that tree into natural Chinese speech, and pass the result to the
+speech engine.</p>
 <p>Since the LaTeX rendering engine already parses the syntax and builds
 the tree, the main job is to walk that existing tree and assemble text
 according to rules. Because LaTeX has many commands and symbols, the
@@ -613,11 +603,11 @@ parsed into an <code>Atom</code> tree, then that <code>Atom</code> tree
 recursively generates a <code>Box</code> tree, and <code>Box</code>
 objects are finally rendered through a platform-independent
 <code>Graphics2D</code> interface.</p>
-<p>Since <code>TTS</code> does not involve rendering, we only need to
-assemble speech text on the <code>Atom</code> tree nodes. During that
-generation process, we may need to build rules and data tables. The
-whole speech-text generation pipeline is platform-independent, so this
-logic can be shared across platforms.</p>
+<p>Because speech generation does not need visual layout, it can operate
+directly on the existing <code>Atom</code> tree. Each node contributes
+spoken text according to a set of rules and lookup tables. This pipeline
+has no platform-specific UI dependencies, so the implementation can be
+shared across platforms.</p>
 <h3 id="syntax-tree-nodes">Syntax tree nodes</h3>
 <p>Because <code>Atom</code> nodes can be nested recursively, the speech
 assembly process is also recursive. That means every <code>Atom</code>
@@ -685,28 +675,26 @@ correct rendering result and the correct TTS text. For example:</p>
 <p>The final rendering result is:</p>
 <p><span class="math display"><mjx-container class="MathJax" jax="SVG" overflow="overflow" display="true"><svg style="vertical-align: -0.098ex;" xmlns="http://www.w3.org/2000/svg" width="3.647ex" height="2.398ex" role="img" focusable="false" viewBox="0 -1016.8 1612 1060"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="\root{A} \of{B}"><g data-mml-node="mroot" data-latex="\root{A} \of{B}"><g data-mml-node="mo" transform="translate(0,916.8)"><path data-c="221A" d="M847-2C851 7 853 13 853 16C853 32 845 40 829 40C820 40 813 36 809 27C666-259 595-403 595-405L595-406C595-413 527-558 390-843L217-461C212-450 207-445 201-445C198-445 192-448 184-454L86-528C77-535 73-540 73-545C73-555 78-560 87-560C90-560 95-557 103-551L151-516L345-943C350-954 357-960 367-960C379-960 387-955 392-946Z"></path></g><g data-mml-node="TeXAtom" transform="translate(136.8,506.8) scale(0.5)" data-latex="{A}" data-mjx-texclass="ORD"><g data-mml-node="mi" data-latex="A"><path data-c="1D434" d="M137 3C155 3 217 0 236 0C251 0 258 8 258 23C258 32 252 38 239 39C210 40 196 50 196 69C196 78 205 98 224 128C251 173 270 206 283 228L526 228C526 221 527 207 530 185C537 112 541 72 541 67C541 48 519 39 474 39C455 39 446 31 446 15C446 5 452 0 464 0C488 0 564 3 588 3C608 3 679 0 699 0C714 0 721 8 721 24C721 34 712 39 694 39C666 39 649 41 644 44C639 47 635 56 634 71L574 689C571 708 572 716 551 716C539 716 529 710 522 697L178 120C148 70 108 43 59 39C43 38 35 30 35 15C35 5 41 0 52 0C68 0 121 3 137 3M492 577L522 267L307 267Z"></path></g></g><g><g data-mml-node="mi" data-latex="B" transform="translate(853,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g></g><rect width="759" height="60" x="853" y="896.7"></rect></g></g></g></svg></mjx-container></span></p>
 <p>Its <code>TTS</code> text is “B 的 A 次方根”.</p>
-<p>When parsing <code>root</code>, the parser does not know that an
-<code>of</code> command will appear later. According to the parsing
-rules, it generates two commands: <code>CommandRoot</code> and
-<code>CommandOf</code>, each with its own arguments. But since this is a
-combined command, the two commands must work together to render
-correctly. Therefore, during initialization, <code>CommandOf</code>
-tentatively checks the previous command. If it is
-<code>CommandRoot</code>, it steals the argument from
-<code>CommandRoot</code> and ignores <code>CommandRoot</code>. Finally,
-<code>CommandOf</code> uses all collected arguments to generate the
-correct <code>NthRootAtom</code>.</p>
+<p>When parsing <code>root</code>, the parser cannot yet know that an
+<code>of</code> command will follow, so it initially creates two
+independent commands: <code>CommandRoot</code> and
+<code>CommandOf</code>. During initialization, <code>CommandOf</code>
+checks the preceding command. If it finds <code>CommandRoot</code>, it
+takes over that command’s argument, removes the standalone root command,
+and creates a single <code>NthRootAtom</code> from the combined
+arguments.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">CommandOf::init</span><span class="params">(<span class="type">const</span> std::shared_ptr&lt;TeXParser&gt;&amp; tp)</span> </span>{</span><br><span class="line">    std::shared_ptr&lt;RowAtom&gt; at = tp-&gt;<span class="built_in">steal</span>();</span><br><span class="line">    std::shared_ptr&lt;NthRootAtom&gt; root = std::<span class="built_in">dynamic_pointer_cast</span>&lt;NthRootAtom&gt;(at-&gt;<span class="built_in">getLastAtom</span>());</span><br><span class="line">    <span class="keyword">this</span>-&gt;root = root != <span class="literal">nullptr</span> ? root-&gt;<span class="built_in">getTrueBase</span>() : EmptyAtom::<span class="built_in">get</span>();</span><br><span class="line">    base = std::<span class="built_in">make_shared</span>&lt;RowAtom&gt;();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 
-<p>With this design, its <code>TTS</code> text can also be assembled
-conveniently.</p>
+<p>The same combined node can then generate the correct spoken form
+without adding a second special case to the TTS layer.</p>
 <h3 id="early-truncation-for-inference">Early truncation for
 inference</h3>
 <p>Some symbols look visually simple. For example, the
 <code>\equalparallel</code> command renders like this:</p>
 <img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/05.png" width="10%">
 
-<p>But the corresponding <code>Atom</code> tree is quite complex:</p>
+<p>Its generated <code>Atom</code> tree, however, is surprisingly
+complex:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">shared_ptr&lt;Atom&gt; Commands::CommandEqualParallel::<span class="built_in">newI</span>(<span class="type">const</span> std::shared_ptr&lt;TeXParser&gt; &amp;tp) {</span><br><span class="line">    std::shared_ptr&lt;RowAtom&gt; ra = <span class="built_in">make_shared_from_list</span>&lt;RowAtom&gt;({std::<span class="built_in">make_shared</span>&lt;SpaceAtom&gt;(Unit::MU, <span class="number">8.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>), SymbolAtom::<span class="built_in">get</span>(<span class="string">L"shortparallel"</span>)});</span><br><span class="line">    <span class="keyword">auto</span> raiseAtom = std::<span class="built_in">make_shared</span>&lt;RaiseAtom&gt;(ra, std::<span class="built_in">make_shared</span>&lt;TeXLength&gt;(Unit::MU, <span class="number">3.0</span>), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">auto</span> lapAtom = std::<span class="built_in">make_shared</span>&lt;LapedAtom&gt;(raiseAtom, <span class="string">L'r'</span>);</span><br><span class="line">    <span class="keyword">auto</span> raiseAtom2 = std::<span class="built_in">make_shared</span>&lt;RaiseAtom&gt;(SymbolAtom::<span class="built_in">get</span>(<span class="string">L"equals"</span>), std::<span class="built_in">make_shared</span>&lt;TeXLength&gt;(Unit::MU, <span class="number">-3.0</span>), <span class="literal">nullptr</span>, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">auto</span> ra2 = <span class="built_in">make_shared_from_list</span>&lt;RowAtom&gt;({lapAtom, raiseAtom2});</span><br><span class="line">    <span class="keyword">auto</span> result = std::<span class="built_in">make_shared</span>&lt;TypedAtom&gt;(TYPE_RELATION, ra2);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br></pre></td></tr></table></figure>
 
 <p>As shown in the code, it is difficult to infer the TTS text
@@ -857,12 +845,11 @@ needed.</p>
 traversal, it is difficult to associate it with the name “硫酸”. This
 conflict mainly comes from the natural mismatch between tree structure
 and linear split-and-lookup.</p>
-<p>Most chemical structures are relatively flat, and most molecular
-formulas do not have very deep hierarchy. They mainly use
-<code>ScriptsAtom</code> to express subscripts in chemical formulas.
-Therefore we can locally flatten the tree structure. In other words,
-when reading <code>ScriptsAtom</code>, do not traverse its child nodes;
-instead, flatten it into one layer according to a rule.</p>
+<p>Most molecular formulas have a shallow structure and use
+<code>ScriptsAtom</code> primarily for subscripts. We can therefore
+flatten that part of the tree locally. Instead of recursively reading a
+<code>ScriptsAtom</code>, the chemistry reader converts it into a single
+normalized token.</p>
 <p>The rule is: <code>ScriptsAtom</code> has three elements:
 <code>base</code>, <code>subscript</code>, and <code>superscript</code>.
 Convert each element to string, prefix subscripts with <code>_</code>,
@@ -891,9 +878,8 @@ characters, search engines can show a list of associated
 suggestions.</p>
 <img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/06.png" width="100%">
 
-<p>Therefore, we can borrow the search-engine idea and introduce a
-<code>Trie</code> tree to solve recognition of chemical formula
-names.</p>
+<p>This is a prefix-matching problem, so a trie is a natural fit for
+recognizing chemical formula names.</p>
 <img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/09.png" width="100%">
 
 <p>The figure shows a constructed <code>Trie</code> tree of chemical
@@ -939,10 +925,10 @@ unit.</li>
 rules and let it help build the database.</p>
 <h3 id="loading-the-chemical-formula-table">Loading the chemical formula
 table</h3>
-<p>How is the chemical formula <code>Trie</code> built? The construction
-process is highly similar to the search process: it is the insertion
-process of <code>Trie</code> nodes. Find nodes in sequence, and create
-the corresponding node if it does not exist.</p>
+<p>The chemical-formula trie is built by inserting each normalized token
+sequence from left to right. For every token, the builder follows an
+existing child node or creates one when necessary; the final node stores
+the compound name.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">TrieNode</span> {</span><br><span class="line">    std::wstring *name;</span><br><span class="line">    std::unordered_map&lt;std::wstring, TrieNode *&gt; children;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">TrieNode</span>();</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">insert</span><span class="params">(<span class="type">const</span> std::wstring&amp; s, <span class="type">const</span> std::wstring&amp; name)</span></span>;</span><br><span class="line">    <span class="function">TrieNode *<span class="title">find</span><span class="params">(<span class="type">const</span> std::wstring&amp; s)</span></span>;</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Trie</span> {</span><br><span class="line">    TrieNode *root;</span><br><span class="line">    <span class="built_in">Trie</span>();</span><br><span class="line">    <span class="function"><span class="type">static</span> Trie&amp; <span class="title">Instance</span><span class="params">()</span></span>;</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Trie::<span class="built_in">Trie</span>() {</span><br><span class="line">    root = <span class="keyword">new</span> <span class="built_in">TrieNode</span>();</span><br><span class="line">    <span class="keyword">auto</span>&amp; map = ChemTTSDatabase::<span class="built_in">getChemicalNameMap</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; kv : map) {</span><br><span class="line">        root-&gt;<span class="built_in">insert</span>(kv.first, kv.second);</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">TrieNode::insert</span><span class="params">(<span class="type">const</span> std::wstring&amp; s, <span class="type">const</span> std::wstring&amp; name)</span> </span>{</span><br><span class="line">    TrieNode *cur = <span class="keyword">this</span>;</span><br><span class="line">    std::vector&lt;std::wstring&gt; elements = StringHelper::<span class="built_in">split</span>(s, <span class="string">L'#'</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; e : elements) {</span><br><span class="line">        <span class="keyword">auto</span>&amp; children = cur-&gt;children;</span><br><span class="line">        <span class="keyword">if</span> (children.<span class="built_in">find</span>(e) == children.<span class="built_in">end</span>()) {</span><br><span class="line">            children[e] = <span class="keyword">new</span> <span class="built_in">TrieNode</span>();</span><br><span class="line">        }</span><br><span class="line">        cur = children[e];</span><br><span class="line">    }</span><br><span class="line">    cur-&gt;name = <span class="keyword">new</span> std::<span class="built_in">wstring</span>(name);</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 
 <h3 id="recognizing-chemical-equations">Recognizing chemical
@@ -998,10 +984,10 @@ hydrate y”, where <code>x</code> is the number of water molecules and
 <li>They cannot be fully enumerated, so omissions are inevitable.</li>
 <li>There is a lot of waste.</li>
 </ol>
-<p>If we can extract the number of water molecules in the hydrate, both
-problems can be solved. We only need to look up the name before
-<code>·</code> in the data table, and the final chemical name can be
-determined.</p>
+<p>Both problems disappear if the parser extracts the number of water
+molecules separately. It can look up the compound before <code>·</code>,
+then construct the hydrate name from the coefficient and the matched
+compound.</p>
 <p>The idea is: during Trie traversal, if the <code>·</code> symbol is
 encountered, check whether the following substance is
 <code>number + H2O</code> or just <code>H2O</code>. If so, stop the loop
@@ -1018,9 +1004,11 @@ if the lookup fails.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">{<span class="string">L"N#H_3#·#H_2#O"</span> , <span class="string">L"一水合氨"</span>},</span><br></pre></td></tr></table></figure>
 
 <h2 id="summary">Summary</h2>
-<p>Rome was not built in a day. The ability to generate <code>TTS</code>
-text for <code>LaTeX</code> cannot be completed overnight either; it
-still needs long-term human effort and continuous polishing.</p>
+<p>Converting LaTeX into natural Chinese speech is not a one-time
+parsing task. Every new notation, ambiguous reading, and chemistry
+exception adds another language rule to test. The tree-based pipeline
+gives those rules a stable foundation, but pronunciation quality will
+continue to depend on real examples and careful human review.</p>
 
       
     </div>
@@ -1083,11 +1071,11 @@ still needs long-term human effort and continuous polishing.</p>
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/">Reading LaTeX with TTS</a></span></p>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/">Teaching a TTS Engine to Read LaTeX in Chinese</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-02-02 23:06</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-13 09:53</span></p>
-  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/" title="Reading LaTeX with TTS">https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/</a>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 00:59</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/02/02/latex-tts-reading-in-chinese/" title="Teaching a TTS Engine to Read LaTeX in Chinese">https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/02/02/latex-tts-reading-in-chinese/"  aria-label="Copied"></i></span></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
@@ -1127,8 +1115,8 @@ still needs long-term human effort and continuous polishing.</p>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/en/2023/05/08/center-redirection-in-ios/" rel="next" title="Center Redirection in iOS">
-                <i class="fa fa-chevron-left"></i> Center Redirection in iOS
+              <a href="/en/2023/05/08/center-redirection-in-ios/" rel="next" title="How to Redirect an Objective-C Block with Trampoline Hook">
+                <i class="fa fa-chevron-left"></i> How to Redirect an Objective-C Block with Trampoline Hook
               </a>
             
           </div>
@@ -1337,7 +1325,7 @@ equations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" hr
     
       <span class="post-meta-item-text">Site words total count&#58;</span>
     
-    <span title="Site words total count">114k</span>
+    <span title="Site words total count">113k</span>
 
   <div class="powered-by">
     <i class="fa fa-user-md"></i>
