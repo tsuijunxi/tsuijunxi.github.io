@@ -2,16 +2,14 @@
 
 
 
-  
 
 
 
-
-<html class="theme-next gemini use-motion" lang="en">
+<html class="theme-next gemini" lang="en">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#222">
 <script>
     (function(){
@@ -93,12 +91,16 @@
 
 
 
-<meta name="description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
-<meta property="og:type" content="website">
+
+  
+
+
+<meta name="description" content="Building a streaming rich text renderer for LLM responses on iOS, including incremental parsing, YYText masking, HTML, LaTeX, interruption, TTS, and performance.">
+<meta property="og:type" content="article">
 <meta property="og:title" content="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
+<meta property="og:description" content="Building a streaming rich text renderer for LLM responses on iOS, including incremental parsing, YYText masking, HTML, LaTeX, interruption, TTS, and performance.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/02.png">
@@ -107,11 +109,17 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/05.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
 <meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-10-07T06:22:21.832Z">
+<meta property="article:modified_time" content="2026-10-06T16:00:00.000Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Rich Text Streaming Rendering">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/01.png">
+
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"},"headline":"How We Built a Streaming Rich Text Renderer for LLM Responses on iOS","description":"Building a streaming rich text renderer for LLM responses on iOS, including incremental parsing, YYText masking, HTML, LaTeX, interruption, TTS, and performance.","image":["https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/cover.webp"],"datePublished":"2024-08-06T08:25:16.000Z","dateModified":"2026-10-07T00:00:00.000Z","inLanguage":"en","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
 
 
 
@@ -124,7 +132,7 @@
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     duoshuo: {
       userId: '0',
       author: 'Author'
@@ -426,7 +434,10 @@ mjx-container[display="true"] + br {
   
   
   <div class="post-block">
+    
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/cover.webp">
+    <meta itemprop="dateModified" content="2026-10-07T00:00:00.000Z">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lingyun">
@@ -436,7 +447,11 @@ mjx-container[display="true"] + br {
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
     </span>
+    
 
     
       <header class="post-header">
@@ -639,8 +654,8 @@ stream even though each layout pass still processes the full buffer.</p>
 <p>The first video visualizes the masks for debugging; the second shows
 the final effect.</p>
 <table><tr>
-<td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/07.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
-<td><video src='/2024/08/06/聊聊 iOS 富文本的流式渲染/08.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
+<td><video preload="metadata" src='/2024/08/06/聊聊 iOS 富文本的流式渲染/07.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
+<td><video preload="metadata" src='/2024/08/06/聊聊 iOS 富文本的流式渲染/08.mp4' type='video/mp4' controls='controls' width='100%' height='100%'></video></td>
 </tr></table>
 
 <p>The debug view uses a red horizontal mask for the current line and a
@@ -653,7 +668,7 @@ indicator stays attached to the leading edge of the red mask.</p>
 must not contain transparency.</strong></p>
 </blockquote>
 <h4 id="streaming-rendering-flow">Streaming rendering flow</h4>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/01.png" width="100%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/01.png" width="100%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Streaming rendering flow (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <ol type="1">
 <li>When the client starts the SSE request, it also starts the
@@ -671,7 +686,7 @@ The engine stops the timer and appends <code>......</code> at the
 current position to show that the response ended early.</li>
 </ol>
 <h4 id="card-expansion">Card expansion</h4>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/02.png" width="100%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/02.png" width="100%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Card expansion (figure 2)" decoding="async" loading="lazy">
 
 <p>In production interfaces, streaming content often appears inside a
 scrolling list. A normal cell receives its size from the surrounding
@@ -723,7 +738,7 @@ line breaks</h3>
 <p>The masks rely on <code>YYTextLayout</code> for the current
 character’s rectangle. Around some line breaks, that rectangle is
 incorrect.</p>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/03.png" width="100%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/03.png" width="100%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Incorrect mask bounds at line breaks (figure 3)" decoding="async" loading="lazy">
 
 <p>In the figure, revealing cell <code>N</code> completes the line, so
 the next cursor position should be cell <code>N+2</code>.
@@ -734,13 +749,13 @@ behind the mask.</p>
 <p>The bug comes from <code>YYTextLayout</code> including zero-width or
 zero-height rectangles in a union calculation. Ignoring those empty
 rectangles produces the expected cursor geometry.</p>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/04.jpg" width="100%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/04.jpg" width="100%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Incorrect mask bounds at line breaks (figure 4)" decoding="async" loading="lazy">
 
 <p>Modify <code>rectForRange:</code> as follows:</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">CGRect</span>)rectForRange:(YYTextRange *)range &#123;</span><br><span class="line">    <span class="built_in">NSArray</span> *rects = [<span class="keyword">self</span> selectionRectsForRange:range];</span><br><span class="line">    <span class="keyword">if</span> (rects.count == <span class="number">0</span>) <span class="keyword">return</span> <span class="built_in">CGRectNull</span>;</span><br><span class="line">    <span class="built_in">CGRect</span> rectUnion = ((YYTextSelectionRect *)rects.firstObject).rect;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> i = <span class="number">1</span>; i &lt; rects.count; i++) &#123;</span><br><span class="line">        YYTextSelectionRect *rect = rects[i];</span><br><span class="line">        <span class="keyword">if</span> (fabs(<span class="built_in">CGRectGetWidth</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span> &amp;&amp; fabs(<span class="built_in">CGRectGetHeight</span>(rect.rect)) &gt; <span class="built_in">CGFLOAT_MIN</span>) &#123;</span><br><span class="line">            rectUnion = <span class="built_in">CGRectUnion</span>(rectUnion, rect.rect);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> rectUnion;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="underline-spacing">Underline spacing</h3>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/05.png" width="100%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/05.png" width="100%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Underline spacing (figure 5)" decoding="async" loading="lazy">
 
 <p><code>YYText</code> does not expose the distance between text and its
 underline, but the product design requires that control. We modified
@@ -760,7 +775,7 @@ the additional offset.</p>
 <p>Formulas and images enter the <code>NSAttributedString</code> as
 attachments, often taller than the surrounding text. If the underline
 still uses the text baseline, it may cut through the attachment.</p>
-<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/06.jpg" width="50%"/>
+<img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/06.jpg" width="50%" alt="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS: Underlining text attachments (figure 6)" decoding="async" loading="lazy">
 
 <p>The line layout now inspects each attachment’s <code>ascent</code>
 and <code>descent</code> and shifts the decoration using the maximum
@@ -952,32 +967,48 @@ merely appear incremental?</li>
 
 
 <div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">How We Built a Streaming Rich Text Renderer for LLM Responses on iOS</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-08-06 16:25</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-10-07 14:22</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-10-07 00:00</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"  aria-label="Copied"></i></span></span>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/" data-copy-success="Copied" title="Copy article link" aria-label="Copy article link"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: 'Copied',
-          icon: "success", 
-          showConfirmButton: true
-          });
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
   });
-    });  
+})(document.currentScript);
 </script>
 
 
@@ -1048,10 +1079,6 @@ merely appear incremental?</li>
 
 
           
-
-  
-    <div id="gitalk-container">
-    </div>
 
   
 
@@ -1132,7 +1159,7 @@ merely appear incremental?</li>
               
               <div class="site-state-item site-state-tags">
                 <a href="/en/tags/">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -1411,23 +1438,6 @@ delimiters</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="n
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
 

@@ -2,16 +2,14 @@
 
 
 
-  
 
 
 
-
-<html class="theme-next gemini use-motion" lang="zh-Hans">
+<html class="theme-next gemini" lang="zh-Hans">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#222">
 <script>
     (function(){
@@ -93,13 +91,15 @@
 
 
 
+
+
 <meta name="description" content="用实际代码解释 C++ 中的 CRTP 模式，讨论静态多态、模板实例化时机、虚函数性能对比以及这种写法适合解决的问题。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CRTP，一个不正经的继承">
 <meta property="og:url" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="用实际代码解释 C++ 中的 CRTP 模式，讨论静态多态、模板实例化时机、虚函数性能对比以及这种写法适合解决的问题。">
-<meta property="og:locale">
+<meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/02.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/03.png">
@@ -115,6 +115,12 @@
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
 
 
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"},"headline":"CRTP，一个不正经的继承","description":"用实际代码解释 C++ 中的 CRTP 模式，讨论静态多态、模板实例化时机、虚函数性能对比以及这种写法适合解决的问题。","image":["https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/cover.png"],"datePublished":"2022-06-23T17:08:00.000Z","dateModified":"2022-06-23T17:08:00.000Z","inLanguage":"zh-Hans","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
+
+
 
 <script type="text/javascript" id="hexo.configurations">
   var NexT = window.NexT || {};
@@ -125,7 +131,7 @@
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     duoshuo: {
       userId: '0',
       author: '博主'
@@ -427,7 +433,10 @@ mjx-container[display="true"] + br {
   
   
   <div class="post-block">
+    
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/cover.png">
+    <meta itemprop="dateModified" content="2022-06-23T17:08:00.000Z">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lingyun">
@@ -437,7 +446,11 @@ mjx-container[display="true"] + br {
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
     </span>
+    
 
     
       <header class="post-header">
@@ -892,32 +905,48 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
 
 
 <div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
   <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/">CRTP，一个不正经的继承</a></span></p>
   <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
   <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2022年06月24日 - 01:06</span></p>
   <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
   <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" title="CRTP，一个不正经的继承">https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/"  aria-label="复制成功！"></i></span></span>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/" data-copy-success="复制成功" title="点击复制文章链接" aria-label="复制文章链接"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
   </p>
   <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: '复制成功',
-          icon: "success", 
-          showConfirmButton: true
-          });
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
   });
-    });  
+})(document.currentScript);
 </script>
 
 
@@ -947,8 +976,8 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/" rel="next" title="深入理解 OC/C++ 闭包">
-                <i class="fa fa-chevron-left"></i> 深入理解 OC/C++ 闭包
+              <a href="/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/" rel="next" title="深入理解 Objective-C Block 与 C++ Lambda">
+                <i class="fa fa-chevron-left"></i> 深入理解 Objective-C Block 与 C++ Lambda
               </a>
             
           </div>
@@ -988,10 +1017,6 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
 
 
           
-
-  
-    <div id="gitalk-container">
-    </div>
 
   
 
@@ -1072,7 +1097,7 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-count">32</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1347,23 +1372,6 @@ href="https://zhuanlan.zhihu.com/p/460825741">https://zhuanlan.zhihu.com/p/46082
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
 

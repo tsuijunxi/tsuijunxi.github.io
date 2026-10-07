@@ -2,16 +2,14 @@
 
 
 
-  
 
 
 
-
-<html class="theme-next gemini use-motion" lang="en">
+<html class="theme-next gemini" lang="en">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#222">
 <script>
     (function(){
@@ -93,12 +91,16 @@
 
 
 
-<meta name="description" content="An approachable explanation of CRTP in C++, covering static polymorphism, compile-time dispatch, template instantiation timing, performance comparison with virtual functions, and practical inheritance">
-<meta property="og:type" content="website">
+
+  
+
+
+<meta name="description" content="A practical guide to CRTP in C++, from static polymorphism and template instantiation to compile-time dispatch, performance, and inheritance patterns.">
+<meta property="og:type" content="article">
 <meta property="og:title" content="CRTP, a Slightly Unorthodox Form of Inheritance">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/">
 <meta property="og:site_name" content="凌云的博客">
-<meta property="og:description" content="An approachable explanation of CRTP in C++, covering static polymorphism, compile-time dispatch, template instantiation timing, performance comparison with virtual functions, and practical inheritance">
+<meta property="og:description" content="A practical guide to CRTP in C++, from static polymorphism and template instantiation to compile-time dispatch, performance, and inheritance patterns.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/02.png">
@@ -108,11 +110,17 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/05.jpg">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/07.png">
 <meta property="article:published_time" content="2022-06-23T17:08:00.000Z">
-<meta property="article:modified_time" content="2026-09-22T17:01:37.492Z">
+<meta property="article:modified_time" content="2026-10-06T16:00:00.000Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="CRTP">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/01.png">
+
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/"},"headline":"CRTP, a Slightly Unorthodox Form of Inheritance","description":"A practical guide to CRTP in C++, from static polymorphism and template instantiation to compile-time dispatch, performance, and inheritance patterns.","image":["https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/cover.png"],"datePublished":"2022-06-23T17:08:00.000Z","dateModified":"2026-10-07T00:00:00.000Z","inLanguage":"en","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
 
 
 
@@ -125,7 +133,7 @@
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     duoshuo: {
       userId: '0',
       author: 'Author'
@@ -427,7 +435,10 @@ mjx-container[display="true"] + br {
   
   
   <div class="post-block">
+    
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/2022/06/24/CRTP%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%B8%8D%E6%AD%A3%E7%BB%8F%E7%9A%84%E7%BB%A7%E6%89%BF/cover.png">
+    <meta itemprop="dateModified" content="2026-10-07T00:00:00.000Z">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lingyun">
@@ -437,7 +448,11 @@ mjx-container[display="true"] + br {
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
     </span>
+    
 
     
       <header class="post-header">
@@ -622,14 +637,11 @@ the runtime cost of a vtable lookup. This is usually called
 <p>Environment: x86-64 clang 14.0.0 -std=c++14</p>
 </blockquote>
 <h3 id="virtual-function-cost">Virtual Function Cost</h3>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/01.png"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/01.png" alt="CRTP, a Slightly Unorthodox Form of Inheritance: Virtual Function Cost (figure 1)" decoding="async" loading="eager" fetchpriority="high"></p>
 <h3 id="crtp-cost-inlining-disabled">CRTP Cost (Inlining Disabled)</h3>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/02.png"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/02.png" alt="CRTP, a Slightly Unorthodox Form of Inheritance: CRTP Cost (Inlining Disabled) (figure 2)" decoding="async" loading="lazy"></p>
 <h3 id="crtp-cost-inlining-enabled">CRTP Cost (Inlining Enabled)</h3>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/03.png"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/03.png" alt="CRTP, a Slightly Unorthodox Form of Inheritance: CRTP Cost (Inlining Enabled) (figure 3)" decoding="async" loading="lazy"></p>
 <h3 id="comparison">Comparison</h3>
 <table>
 <thead>
@@ -723,13 +735,11 @@ is not the focus here.</p>
 <h3 id="strategy-pattern">Strategy Pattern</h3>
 <p>Here is a flow-control example. Suppose there are two modes: normal
 mode and limited mode.</p>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/04.jpg"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/04.jpg" alt="CRTP, a Slightly Unorthodox Form of Inheritance: Strategy Pattern (figure 4)" decoding="async" loading="lazy"></p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">IFlowControlStrategy</span> &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">IFlowControlStrategy</span>() = <span class="keyword">default</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NormalFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LimitedFlowControlStrategy</span> : <span class="keyword">public</span>  IFlowControlStrategy &#123;</span><br><span class="line"><span class="keyword">public</span> :</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadMaxSize</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">long</span>  <span class="title">GetUploadInterval</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>With CRTP, it becomes:</p>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/06.jpg"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/06.jpg" alt="CRTP, a Slightly Unorthodox Form of Inheritance: Strategy Pattern (figure 5)" decoding="async" loading="lazy"></p>
 <ol type="1">
 <li>Define a CRTP base class <code>BaseFlowControlStrategy</code>.</li>
 <li>Define two derived strategies:
@@ -775,8 +785,7 @@ methods do not belong in the base <code>animal</code> class.</p>
 <code>fly()</code> through an <code>animal</code> object?</p>
 <h4 id="downcasting">Downcasting</h4>
 <p>The most common approach is downcasting.</p>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/05.jpg"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/05.jpg" alt="CRTP, a Slightly Unorthodox Form of Inheritance: Downcasting (figure 6)" decoding="async" loading="lazy"></p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">test</span><span class="params">(animal* anim)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;dog*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;dog*&gt;(anim)-&gt;<span class="built_in">swim</span>();</span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="built_in">dynamic_cast</span>&lt;bird*&gt;(anim))&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;bird*&gt;(anim)-&gt;<span class="built_in">fly</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>Many people have seen code like this, and many have written it,
@@ -861,8 +870,7 @@ templates.</p>
 <li>The code still uses a vtable and vptr. You can look at the vtable
 for <code>visitor_impl</code>:</li>
 </ol>
-<p><img src="/2022/06/24/CRTP，一个不正经的继承/07.png"
-alt="Image" /></p>
+<p><img src="/2022/06/24/CRTP，一个不正经的继承/07.png" alt="CRTP, a Slightly Unorthodox Form of Inheritance: Questions (figure 7)" decoding="async" loading="lazy"></p>
 <p>So the elegant-looking final code is still somewhat away from the
 original goal. But you usually have to make trade-offs, and these
 trade-offs are worth it.</p>
@@ -1016,32 +1024,48 @@ design-pattern references</a></li>
 
 
 <div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/">CRTP, a Slightly Unorthodox Form of Inheritance</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-06-24 01:08</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-10-07 00:00</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/" title="CRTP, a Slightly Unorthodox Form of Inheritance">https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/"  aria-label="Copied"></i></span></span>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/en/2022/06/24/crtp-a-slightly-unorthodox-inheritance/" data-copy-success="Copied" title="Copy article link" aria-label="Copy article link"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: 'Copied',
-          icon: "success", 
-          showConfirmButton: true
-          });
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
   });
-    });  
+})(document.currentScript);
 </script>
 
 
@@ -1112,10 +1136,6 @@ design-pattern references</a></li>
 
 
           
-
-  
-    <div id="gitalk-container">
-    </div>
 
   
 
@@ -1196,7 +1216,7 @@ design-pattern references</a></li>
               
               <div class="site-state-item site-state-tags">
                 <a href="/en/tags/">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -1473,23 +1493,6 @@ Sibling of CRTP</span></a></li><li class="nav-item nav-level-2"><a class="nav-li
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
 

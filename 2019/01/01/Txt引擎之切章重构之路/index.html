@@ -2,16 +2,14 @@
 
 
 
-  
 
 
 
-
-<html class="theme-next gemini use-motion" lang="zh-Hans">
+<html class="theme-next gemini" lang="zh-Hans">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#222">
 <script>
     (function(){
@@ -93,18 +91,26 @@
 
 
 
+
+
 <meta name="description" content="记录 TXT 阅读引擎中章节切换逻辑的重构过程，围绕章节定位、页码计算、缓存、边界条件和阅读体验优化展开。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Txt引擎之切章重构之路">
 <meta property="og:url" content="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="记录 TXT 阅读引擎中章节切换逻辑的重构过程，围绕章节定位、页码计算、缓存、边界条件和阅读体验优化展开。">
-<meta property="og:locale">
+<meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-01-01T03:37:00.000Z">
 <meta property="article:modified_time" content="2026-09-13T02:15:57.317Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Txt引擎 切章">
 <meta name="twitter:card" content="summary">
+
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/"},"headline":"Txt引擎之切章重构之路","description":"记录 TXT 阅读引擎中章节切换逻辑的重构过程，围绕章节定位、页码计算、缓存、边界条件和阅读体验优化展开。","image":["https://tsuijunxi.github.io/images/apple-touch-icon-next.png"],"datePublished":"2019-01-01T03:37:00.000Z","dateModified":"2019-01-01T03:37:00.000Z","inLanguage":"zh-Hans","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
 
 
 
@@ -117,7 +123,7 @@
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     duoshuo: {
       userId: '0',
       author: '博主'
@@ -419,7 +425,10 @@ mjx-container[display="true"] + br {
   
   
   <div class="post-block">
+    
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+    <meta itemprop="dateModified" content="2019-01-01T03:37:00.000Z">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lingyun">
@@ -429,7 +438,11 @@ mjx-container[display="true"] + br {
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
     </span>
+    
 
     
       <header class="post-header">
@@ -1037,32 +1050,48 @@ enqueueRequestSession:session]线程为子线程，在默认concurrentQueue队�
 
 
 <div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
   <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/">Txt引擎之切章重构之路</a></span></p>
   <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
   <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2019年01月01日 - 11:01</span></p>
   <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年09月13日 - 10:09</span></p>
   <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/" title="Txt引擎之切章重构之路">https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/</a>
-    <span class="copy-path"  title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/"  aria-label="复制成功！"></i></span></span>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/2019/01/01/Txt%E5%BC%95%E6%93%8E%E4%B9%8B%E5%88%87%E7%AB%A0%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF/" data-copy-success="复制成功" title="点击复制文章链接" aria-label="复制文章链接"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
   </p>
   <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
 </div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: '复制成功',
-          icon: "success", 
-          showConfirmButton: true
-          });
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
   });
-    });  
+})(document.currentScript);
 </script>
 
 
@@ -1133,10 +1162,6 @@ enqueueRequestSession:session]线程为子线程，在默认concurrentQueue队�
 
 
           
-
-  
-    <div id="gitalk-container">
-    </div>
 
   
 
@@ -1217,7 +1242,7 @@ enqueueRequestSession:session]线程为子线程，在默认concurrentQueue队�
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/">
-                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-count">32</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1492,23 +1517,6 @@ enqueueRequestSession:session]线程为子线程，在默认concurrentQueue队�
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
 

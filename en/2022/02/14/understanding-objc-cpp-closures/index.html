@@ -2,16 +2,14 @@
 
 
 
-  
 
 
 
-
-<html class="theme-next gemini use-motion" lang="en">
+<html class="theme-next gemini" lang="en">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#222">
 <script>
     (function(){
@@ -93,8 +91,12 @@
 
 
 
+
+  
+
+
 <meta name="description" content="A deep dive into Objective-C Blocks and C++ lambdas in Objective-C++, covering capture semantics, ARC behavior, copy and move construction, __block, shared_ptr, weak_ptr, and retain cycles.">
-<meta property="og:type" content="website">
+<meta property="og:type" content="article">
 <meta property="og:title" content="Understanding OC&#x2F;C++ Closures">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/">
 <meta property="og:site_name" content="凌云的博客">
@@ -116,11 +118,19 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/14.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/15.png">
 <meta property="article:published_time" content="2022-02-14T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-22T17:01:10.759Z">
+<meta property="article:modified_time" content="2026-10-06T16:00:00.000Z">
 <meta property="article:author" content="lingyun">
-<meta property="article:tag" content="Objective-C Block C++ Lambda">
+<meta property="article:tag" content="C++ Lambda">
+<meta property="article:tag" content="Objective-C Block">
+<meta property="article:tag" content="Objective-C++">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/01.png">
+
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/"},"headline":"Understanding OC/C++ Closures","description":"A deep dive into Objective-C Blocks and C++ lambdas in Objective-C++, covering capture semantics, ARC behavior, copy and move construction, __block, shared_ptr, weak_ptr, and retain cycles.","image":["https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/cover.webp"],"datePublished":"2022-02-14T08:25:16.000Z","dateModified":"2026-10-07T00:00:00.000Z","inLanguage":"en","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
 
 
 
@@ -133,7 +143,7 @@
     sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
     fancybox: true,
     tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     duoshuo: {
       userId: '0',
       author: 'Author'
@@ -435,7 +445,10 @@ mjx-container[display="true"] + br {
   
   
   <div class="post-block">
+    
     <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/2022/02/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-OC-C-%E9%97%AD%E5%8C%85/cover.webp">
+    <meta itemprop="dateModified" content="2026-10-07T00:00:00.000Z">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lingyun">
@@ -445,7 +458,11 @@ mjx-container[display="true"] + br {
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
     </span>
+    
 
     
       <header class="post-header">
@@ -670,12 +687,12 @@ value.</p>
 <p>Unfortunately, this creates a retain cycle: <code>ocObj</code> owns
 <code>cppObj</code>, and <code>cppObj</code> owns <code>ocObj</code>
 through <code>callback</code>.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/01.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/01.png" alt="Understanding OC/C++ Closures: Capture by value (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <p>Looking at the generated assembly, you can see that ARC semantics are
 triggered during capture, so <code>self</code> is automatically
 retained.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/02.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/02.png" alt="Understanding OC/C++ Closures: Capture by value (figure 2)" decoding="async" loading="lazy">
 
 <p>These instructions increase the retain count of
 <code>self</code>:</p>
@@ -683,7 +700,7 @@ retained.</p>
 
 <p>The anonymous class parameter list shows that <code>self</code> is of
 type <code>OCClass *</code>, which is a pointer type.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/03.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/03.png" alt="Understanding OC/C++ Closures: Capture by value (figure 3)" decoding="async" loading="lazy">
 
 <p>So we can model the capture like this. Under ARC, it behaves like a
 retain:</p>
@@ -692,7 +709,7 @@ retain:</p>
 <p>To solve the retain cycle, use <code>__weak</code>.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">__weak __typeof(self) wself = self;</span><br><span class="line">cppObj-&gt;callback = [wself]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [wself executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<img src="/2022/02/14/深入理解-OC-C-闭包/04.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/04.png" alt="Understanding OC/C++ Closures: Capture by value (figure 4)" decoding="async" loading="lazy">
 
 <p>Looking at the assembly again, the <code>objc_retain</code> logic is
 gone and <code>objc_copyWeak</code> appears instead.</p>
@@ -701,11 +718,11 @@ gone and <code>objc_copyWeak</code> appears instead.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">cppObj-&gt;callback = [&amp;self]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [self executeTask];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>The assembly no longer contains <code>objc_retain</code> either.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/05.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/05.png" alt="Understanding OC/C++ Closures: Capture by reference (figure 5)" decoding="async" loading="lazy">
 
 <p>Looking at the anonymous class parameter list, <code>self</code> is
 now <code>OCClass *&amp;</code>, which is a reference to a pointer.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/06.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/06.png" alt="Understanding OC/C++ Closures: Capture by reference (figure 6)" decoding="async" loading="lazy">
 
 <p>So reference capture does not retain <code>self</code>. You can think
 of it like this under ARC:</p>
@@ -716,7 +733,7 @@ captured Objective-C object released?</h4>
 <p>For this snippet:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> cppObj = std::<span class="built_in">make_shared</span>&lt;CppClass&gt;();</span><br><span class="line">OCClass2 *oc2 = [[OCClass2 alloc] init];</span><br><span class="line">cppObj-&gt;callback = [oc2]() -&gt; <span class="type">void</span> &#123;</span><br><span class="line">    [oc2 <span class="keyword">class</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<img src="/2022/02/14/深入理解-OC-C-闭包/07.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/07.png" alt="Understanding OC/C++ Closures: When is the captured Objective-C object released? (figure 7)" decoding="async" loading="lazy">
 
 <p>When <code>CppClass</code> is destroyed, its
 <code>std::function</code> is destroyed too, and that in turn releases
@@ -758,9 +775,9 @@ synchronously wait for a network response.</p>
 
 <p>Here we directly use <code>std::weak_ptr</code>.</p>
 <h4 id="without-__block">Without <code>__block</code></h4>
-<img src="/2022/02/14/深入理解-OC-C-闭包/08.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/08.png" alt="Understanding OC/C++ Closures: Without __block (figure 8)" decoding="async" loading="lazy">
 
-<img src="/2022/02/14/深入理解-OC-C-闭包/09.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/09.png" alt="Understanding OC/C++ Closures: Without __block (figure 9)" decoding="async" loading="lazy">
 
 <p>From the experiment we get:</p>
 <ol type="1">
@@ -801,9 +818,9 @@ becomes <code>3</code>, and the logic is otherwise the same.</p>
 <h4 id="with-__block">With <code>__block</code></h4>
 <p>Can we use <code>__block</code> to modify the captured C++ variable?
 The experiment says yes.</p>
-<img src="/2022/02/14/深入理解-OC-C-闭包/10.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/10.png" alt="Understanding OC/C++ Closures: With __block (figure 10)" decoding="async" loading="lazy">
 
-<img src="/2022/02/14/深入理解-OC-C-闭包/11.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/11.png" alt="Understanding OC/C++ Closures: With __block (figure 11)" decoding="async" loading="lazy">
 
 <p>We can conclude:</p>
 <ol type="1">
@@ -820,7 +837,7 @@ by reference.</li>
 ownership is transferred without changing the reference count.</li>
 </ul></li>
 </ol>
-<img src="/2022/02/14/深入理解-OC-C-闭包/12.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/12.png" alt="Understanding OC/C++ Closures: With __block (figure 12)" decoding="async" loading="lazy">
 
 <h4 id="questions-about-__block">Questions about
 <code>__block</code></h4>
@@ -840,9 +857,9 @@ afterwards?</p>
 <p>When the block assignment happens, the <code>std::shared_ptr</code>
 move constructor is called:</p>
 </blockquote>
-<img src="/2022/02/14/深入理解-OC-C-闭包/13.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/13.png" alt="Understanding OC/C++ Closures: Questions about __block (figure 13)" decoding="async" loading="lazy">
 
-<img src="/2022/02/14/深入理解-OC-C-闭包/14.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/14.png" alt="Understanding OC/C++ Closures: Questions about __block (figure 14)" decoding="async" loading="lazy">
 
 <ol type="1">
 <li>The <code>this</code> pointer inside the move constructor is
@@ -864,7 +881,7 @@ address and becomes a different <code>std::shared_ptr</code> object, so
 it can still be accessed afterward.</p>
 <h4 id="when-is-the-captured-c-object-released">When is the captured
 <code>C++</code> object released?</h4>
-<img src="/2022/02/14/深入理解-OC-C-闭包/15.png" />
+<img src="/2022/02/14/深入理解-OC-C-闭包/15.png" alt="Understanding OC/C++ Closures: When is the captured C++ object released? (figure 15)" decoding="async" loading="lazy">
 
 <p>When the Objective-C <code>Block</code> is released, the captured
 <code>C++</code> object is released as well.</p>
@@ -987,32 +1004,48 @@ OC/C++ Closures</a>.</p>
 
 
 <div class="my_post_copyright">
-  <script src="//s0.pstatp.com/cdn/expire-1-M/clipboard.js/1.5.10/clipboard.min.js"></script>
-  
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
   <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/">Understanding OC/C++ Closures</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2022-02-14 16:25</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:01</span></p>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-10-07 00:00</span></p>
   <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2022/02/14/understanding-objc-cpp-closures/" title="Understanding OC/C++ Closures">https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/</a>
-    <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/"  aria-label="Copied"></i></span></span>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/en/2022/02/14/understanding-objc-cpp-closures/" data-copy-success="Copied" title="Copy article link" aria-label="Copy article link"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
 </div>
-<script> 
-    var clipboard = new Clipboard('.fa-clipboard');
-    $(".fa-clipboard").click(function(){
-      clipboard.on('success', function(){
-        swal({   
-          title: "",   
-          text: 'Copied',
-          icon: "success", 
-          showConfirmButton: true
-          });
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
   });
-    });  
+})(document.currentScript);
 </script>
 
 
@@ -1026,7 +1059,11 @@ OC/C++ Closures</a>.</p>
       
         <div class="post-tags">
           
-            <a href="/en/tags/Objective-C-Block-C%2B%2B-Lambda/" rel="tag"># Objective-C Block C++ Lambda</a>
+            <a href="/en/tags/Objective-C-Block/" rel="tag"># Objective-C Block</a>
+          
+            <a href="/en/tags/cpp-lambda/" rel="tag"># C++ Lambda</a>
+          
+            <a href="/en/tags/objective-cpp/" rel="tag"># Objective-C++</a>
           
         </div>
       
@@ -1083,10 +1120,6 @@ OC/C++ Closures</a>.</p>
 
 
           
-
-  
-    <div id="gitalk-container">
-    </div>
 
   
 
@@ -1167,7 +1200,7 @@ OC/C++ Closures</a>.</p>
               
               <div class="site-state-item site-state-tags">
                 <a href="/en/tags/">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -1448,23 +1481,6 @@ shared_from_this</span></a></li><li class="nav-item nav-level-4"><a class="nav-l
 
 
 
-
-  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
-
-  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-  <script src="/js/src/md5.min.js"></script>
-   <script type="text/javascript">
-        var gitalk = new Gitalk({
-          clientID: '3b98a5ec68bfccc21c29',
-          clientSecret: '4c30086ddf0fdf77d050830b540bcffd3054c1b0',
-          repo: 'tsuijunxi.github.io',
-          owner: 'tsuijunxi',
-          admin: ['tsuijunxi'], 
-          id: md5(location.pathname),
-          distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-       </script>
 
 
 
