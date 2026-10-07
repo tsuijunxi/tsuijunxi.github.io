@@ -111,7 +111,7 @@
 <meta name="twitter:image" content="https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png">
 
 
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/"},"headline":"记一个AVAudioPlayer Crash修复","description":"记录一次 AVAudioPlayer 在线上触发的崩溃排查，分析 finishedPlaying 回调、weak delegate、内部 AudioPlayerImpl 引用以及最终的防御性修复方式。","image":["https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png"],"datePublished":"2021-05-10T05:34:26.000Z","dateModified":"2021-05-10T05:34:26.000Z","inLanguage":"zh-Hans","author":{"@type":"Person","name":"lingyun"},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/"},"headline":"记一个AVAudioPlayer Crash修复","description":"记录一次 AVAudioPlayer 在线上触发的崩溃排查，分析 finishedPlaying 回调、weak delegate、内部 AudioPlayerImpl 引用以及最终的防御性修复方式。","image":["https://tsuijunxi.github.io/2021/05/10/AVAudioPlayer/03.png"],"datePublished":"2021-05-10T05:34:26.000Z","dateModified":"2021-05-10T05:34:26.000Z","inLanguage":"zh-Hans","author":{"@type":"Person","name":"Lingyun","alternateName":"凌云","url":"https://tsuijunxi.github.io/about/","sameAs":["https://github.com/tsuijunxi"]},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
 
 
 
@@ -606,14 +606,14 @@ delegate的方法。</p>
 
 <h2 id="调试">调试</h2>
 <p>由于<code>finishedPlaying:</code>并没有暴露为共有方法，为了能看下堆栈，所以hook了<code>finishedPlaying:</code>方法</p>
-<style>.tsddbwzgoyqc{}</style><img src="/2021/05/10/AVAudioPlayer/03.png" class="tsddbwzgoyqc" alt="记一个AVAudioPlayer Crash修复：调试（图 1）" decoding="async" loading="eager" fetchpriority="high">
+<style>.taoyrkftyjhb{}</style><img src="/2021/05/10/AVAudioPlayer/03.png" class="taoyrkftyjhb" alt="记一个AVAudioPlayer Crash修复：调试（图 1）" decoding="async" loading="eager" fetchpriority="high">
 
-<style>.lscjbuqgpftf{}</style><img src="/2021/05/10/AVAudioPlayer/04.png" class="lscjbuqgpftf" alt="记一个AVAudioPlayer Crash修复：调试（图 2）" decoding="async" loading="lazy">
+<style>.ynopmbbggqqd{}</style><img src="/2021/05/10/AVAudioPlayer/04.png" class="ynopmbbggqqd" alt="记一个AVAudioPlayer Crash修复：调试（图 2）" decoding="async" loading="lazy">
 
 <p>通过调试，发现原AVAudioPlayer有一个内部实现类<code>AudioPlayerImpl</code>，这个内部实现类还有一个成员变量<code>_delegate</code></p>
 <p>进而详细查看了<code>AudioPlayerImpl</code>的头文件：<a
 href="https://github.com/ultramiraculous/iOS9-Runtime-Headers/blob/master/lib/libAVFAudio.dylib/AudioPlayerImpl.h">AudioPlayerImpl的头文件</a></p>
-<style>.wtvjuhqgdwtj{}</style><img src="/2021/05/10/AVAudioPlayer/05.png" class="wtvjuhqgdwtj" alt="记一个AVAudioPlayer Crash修复：调试（图 3）" decoding="async" loading="lazy">
+<style>.qyujmrovqfbb{}</style><img src="/2021/05/10/AVAudioPlayer/05.png" class="qyujmrovqfbb" alt="记一个AVAudioPlayer Crash修复：调试（图 3）" decoding="async" loading="lazy">
 
 <p>通过验证，发现这两个代理都指向同一个对象：</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> (lldb) po <span class="keyword">self</span>.delegate</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br><span class="line"></span><br><span class="line">Printing description of <span class="keyword">self</span>-&gt;_impl-&gt;_delegate:</span><br><span class="line">&lt;ThreadViewController: <span class="number">0x7ff3334025e0</span>&gt;</span><br></pre></td></tr></table></figure>
