@@ -95,7 +95,7 @@
 
 <meta name="description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
 <meta property="og:type" content="website">
-<meta property="og:title" content="How We Built Streaming Rich Text for LLM Responses on iOS">
+<meta property="og:title" content="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS">
 <meta property="og:url" content="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/">
 <meta property="og:site_name" content="凌云的博客">
 <meta property="og:description" content="A practical iOS implementation of streaming rich text rendering for LLM responses, covering pseudo-stream parsing, YYText masking, HTML and LaTeX handling, interruption, TTS synchronization, and perfo">
@@ -107,7 +107,7 @@
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/05.png">
 <meta property="og:image" content="https://tsuijunxi.github.io/2024/08/06/%E8%81%8A%E8%81%8A%20iOS%20%E5%AF%8C%E6%96%87%E6%9C%AC%E7%9A%84%E6%B5%81%E5%BC%8F%E6%B8%B2%E6%9F%93/06.jpg">
 <meta property="article:published_time" content="2024-08-06T08:25:16.000Z">
-<meta property="article:modified_time" content="2026-09-22T17:33:20.269Z">
+<meta property="article:modified_time" content="2026-10-07T06:22:21.832Z">
 <meta property="article:author" content="lingyun">
 <meta property="article:tag" content="Rich Text Streaming Rendering">
 <meta name="twitter:card" content="summary">
@@ -158,7 +158,7 @@
 
 
 
-  <title>How We Built Streaming Rich Text for LLM Responses on iOS | 凌云的博客</title>
+  <title>How We Built a Streaming Rich Text Renderer for LLM Responses on iOS | 凌云的博客</title>
   
 
 
@@ -443,7 +443,7 @@ mjx-container[display="true"] + br {
 
         
         
-          <h1 class="post-title" itemprop="name headline">How We Built Streaming Rich Text for LLM Responses on iOS</h1>
+          <h1 class="post-title" itemprop="name headline">How We Built a Streaming Rich Text Renderer for LLM Responses on iOS</h1>
         
 
         <div class="post-meta">
@@ -606,7 +606,7 @@ output is <code>123**456**</code>.</li>
 <code>&lt;img src="http://</code> are incomplete openings and remain
 hidden.</li>
 </ol></li>
-<li>Leaf nodes are output normally.</li>
+<li>Leaf nodes can be emitted as soon as they are complete.</li>
 </ol>
 <blockquote>
 <p>In this section, “complete” refers to the opening tag itself, not to
@@ -656,8 +656,8 @@ must not contain transparency.</strong></p>
 <img src="/2024/08/06/聊聊 iOS 富文本的流式渲染/01.png" width="100%"/>
 
 <ol type="1">
-<li>When the client starts the SSE request, it also marks the pseudo
-renderer as active and shows the loading state.</li>
+<li>When the client starts the SSE request, it also starts the
+pseudo-stream renderer and shows the loading state.</li>
 <li>The first data callback creates a layout and starts the reveal
 timer. Later callbacks append text to the buffer and prepare newer
 layouts. On each timer tick, the renderer reveals one more character
@@ -711,14 +711,15 @@ implementation uses a conservative rule: an incomplete
 produces no visible output until <code>&lt;/tex&gt;</code> arrives.
 During streaming, the formula position simply remains in the
 <code>loading</code> state.</p>
-<h3 id="text-justified-alignment">Text justified alignment</h3>
+<h3 id="text-justification">Text justification</h3>
 <p><code>YYLabel</code> supports justified text through
 <code>view.textAlignment = NSTextAlignmentJustified</code>, but
 justification can reposition characters that are already visible
 whenever the line grows. That movement is acceptable for static text and
 distracting during streaming, so streaming cards avoid justified
 alignment.</p>
-<h3 id="display-overlap">Display overlap</h3>
+<h3 id="incorrect-mask-bounds-at-line-breaks">Incorrect mask bounds at
+line breaks</h3>
 <p>The masks rely on <code>YYTextLayout</code> for the current
 character’s rectangle. Around some line breaks, that rectangle is
 incorrect.</p>
@@ -755,7 +756,7 @@ bounds, where it gets clipped. The layout height must therefore include
 the additional offset.</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">+ (YYTextLayout *)layoutWithContainer:(YYTextContainer *)container text:(<span class="built_in">NSAttributedString</span> *)text range:(<span class="built_in">NSRange</span>)range &#123;</span><br><span class="line">......</span><br><span class="line">    &#123;</span><br><span class="line">        YYTextLine *lastLine = lines.lastObject;</span><br><span class="line">        <span class="built_in">CFArrayRef</span> runs = <span class="built_in">CTLineGetGlyphRuns</span>(lastLine.CTLine);</span><br><span class="line">        <span class="keyword">if</span> (runs != <span class="literal">nil</span>) &#123;</span><br><span class="line">            <span class="built_in">CGFloat</span> underlinePositionCustom = <span class="number">0.</span>f;</span><br><span class="line">            YYTextGetRunsMaxMetricOfAttachment(runs, <span class="literal">NULL</span>, &amp;underlinePositionCustom, <span class="literal">NULL</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">CGFloat</span> maxUnderlineOffset = <span class="number">0.</span>f;</span><br><span class="line">            <span class="keyword">for</span> (<span class="built_in">NSUInteger</span> r = <span class="number">0</span>, rMax = <span class="built_in">CFArrayGetCount</span>(runs); r &lt; rMax; r++) &#123;</span><br><span class="line">                <span class="built_in">CTRunRef</span> run = <span class="built_in">CFArrayGetValueAtIndex</span>(runs, r);</span><br><span class="line">                <span class="built_in">CFIndex</span> glyphCount = <span class="built_in">CTRunGetGlyphCount</span>(run);</span><br><span class="line">                <span class="keyword">if</span> (glyphCount == <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">                <span class="built_in">NSDictionary</span> *attrs = (<span class="type">id</span>)<span class="built_in">CTRunGetAttributes</span>(run);</span><br><span class="line">                YYTextDecoration *underline = attrs[YYTextUnderlineAttributeName];</span><br><span class="line">                <span class="keyword">if</span> (underlinePositionCustom &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    maxUnderlineOffset = MAX(maxUnderlineOffset, fabs(underlinePositionCustom * <span class="number">-1</span> + underline.width.floatValue));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (maxUnderlineOffset &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">CGRect</span> tempRect = textBoundingRect;</span><br><span class="line">                tempRect.size.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingRect = tempRect;</span><br><span class="line">                </span><br><span class="line">                <span class="built_in">CGSize</span> tempSize = textBoundingSize;</span><br><span class="line">                tempSize.height += maxUnderlineOffset;</span><br><span class="line">                textBoundingSize = tempSize;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    layout.frameSetter = ctSetter;</span><br><span class="line">    layout.frame = ctFrame;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">if</span> (lineOrigins) free(lineOrigins);</span><br><span class="line">    <span class="keyword">return</span> layout;</span><br></pre></td></tr></table></figure>
 
-<h3 id="underline-attachment">Underline attachment</h3>
+<h3 id="underlining-text-attachments">Underlining text attachments</h3>
 <p>Formulas and images enter the <code>NSAttributedString</code> as
 attachments, often taller than the surrounding text. If the underline
 still uses the text baseline, it may cut through the attachment.</p>
@@ -784,16 +785,16 @@ network stream has ended, rendering is complete.</p>
 <p>Several network updates may replace the pending layout before the
 current one finishes. Coalescing them this way reduces view refreshes,
 keeps mask geometry consistent, and improves performance.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// relocate the animateView at the first time that the layout was set.</span></span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [<span class="keyword">self</span> updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [<span class="keyword">self</span>.animateView locateInRect:<span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="built_in">CGRectGetHeight</span>(<span class="keyword">self</span>.loadingView.frame))];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// save the textlayout</span></span><br><span class="line">        <span class="keyword">self</span>.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// start rendering timer</span></span><br><span class="line">    [<span class="keyword">self</span> startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)updateStreamingTextLayout:(YYTextLayout *)textLayout &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Position animateView the first time a layout is set.</span></span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [<span class="keyword">self</span> updateTextLayoutAndFrame:textLayout];</span><br><span class="line">        [<span class="keyword">self</span>.animateView locateInRect:<span class="built_in">CGRectMake</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="built_in">CGRectGetHeight</span>(<span class="keyword">self</span>.loadingView.frame))];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Stage the latest layout.</span></span><br><span class="line">        <span class="keyword">self</span>.tempTextLayout = textLayout;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Start the reveal timer.</span></span><br><span class="line">    [<span class="keyword">self</span> startRenderingTimer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)startRenderingTimer &#123;</span><br><span class="line">    <span class="keyword">if</span> (![[XXXTimer defaultTimer] hasTimerWithName:<span class="keyword">self</span>.identify]) &#123;</span><br><span class="line">        [[XXXTimer defaultTimer] scheduledTimerWithName:<span class="keyword">self</span>.identify timeInterval:<span class="keyword">self</span>.renderingInterval queue:dispatch_get_main_queue() startImmediately:<span class="literal">YES</span> repeat:<span class="literal">YES</span> action:^&#123;</span><br><span class="line">            <span class="built_in">NSUInteger</span> length = <span class="keyword">self</span>.textLayout.text.yy_rangeOfAll.length;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">self</span>.rectIndex &lt; length) &#123;</span><br><span class="line">                [<span class="keyword">self</span> informChangeStreamingRenderingWithInfo];</span><br><span class="line">                <span class="keyword">self</span>.rectIndex++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">self</span>.tempTextLayout != <span class="literal">nil</span> &amp;&amp; <span class="keyword">self</span>.textLayout != <span class="keyword">self</span>.tempTextLayout) &#123;</span><br><span class="line">                    <span class="comment">// update the text layout and frame</span></span><br><span class="line">                    [<span class="keyword">self</span> updateTextLayoutAndFrame:<span class="keyword">self</span>.tempTextLayout];</span><br><span class="line">                    <span class="keyword">self</span>.tempTextLayout = <span class="literal">nil</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">self</span>.isStreamingRendering) &#123;</span><br><span class="line">                        <span class="comment">// wait</span></span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        [<span class="keyword">self</span> stopAnimation];</span><br><span class="line">                        [<span class="keyword">self</span> stopRenderingTimer];</span><br><span class="line">                        [<span class="keyword">self</span> informStopStreamingRenderingWithInfo];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="syncing-stream-interruption-progress-to-tts">Syncing stream
 interruption progress to TTS</h3>
-<p>The application also converts the rich text into plain speech input
-for <code>TTS</code>. Under normal conditions this is straightforward,
-but interruption creates a synchronization problem: the visible response
-may stop at <code>...</code> after the full readable text has already
+<p>Our app also converts the rich text into plain speech input for
+<code>TTS</code>. Under normal conditions this is straightforward, but
+interruption creates a synchronization problem: the visible response may
+stop at <code>...</code> after the full readable text has already
 entered the speech queue. The result is audio that continues beyond what
 the user can see.</p>
 <p>To keep speech and display in sync, the renderer emits TTS input only
@@ -801,14 +802,15 @@ as each character becomes visible. TTS maintains its own queue, so
 interrupting the visual stream naturally stops new speech at the same
 point. The message model also stores that character index, allowing
 later playback to reconstruct the same truncated response.</p>
-<h3 id="-problem"><code>$...$$...$</code> problem</h3>
+<h3 id="ambiguous-adjacent-dollar-delimiters">Ambiguous adjacent dollar
+delimiters</h3>
 <p>This edge case comes from TeX’s two traditional dollar-delimited math
 modes:</p>
 <ul>
-<li><strong>inline math mode</strong>, where formulas are included in a
-paragraph. Early TeX used <code>$...$</code>.</li>
+<li><strong>inline math mode</strong>, where formulas appear within a
+paragraph and use <code>$...$</code>.</li>
 <li><strong>display math mode</strong>, where formulas occupy their own
-line. Early TeX used <code>$$...$$</code>.</li>
+line and use <code>$$...$$</code>.</li>
 </ul>
 <p>Modern LaTeX documents generally prefer explicit delimiters:</p>
 <ul>
@@ -838,7 +840,7 @@ with two regular expressions: match <code>$$...$$</code> first, then
 <p>That approach assumes a literal dollar sign is escaped as
 <code>\$</code>; an unescaped <code>$</code> can otherwise shift every
 later match.</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    <span class="comment">// replace the $$xxx$$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDoubleDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// replace the $xxx$ with &lt;tex&gt;xxx&lt;/tex&gt;</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// process the excape in tex tag</span></span><br><span class="line">    [<span class="keyword">self</span> processExcapeInTexTag];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)preprocess &#123;</span><br><span class="line">    <span class="comment">// Replace $$xxx$$ with &lt;tex&gt;xxx&lt;/tex&gt;.</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDoubleDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Replace $xxx$ with &lt;tex&gt;xxx&lt;/tex&gt;.</span></span><br><span class="line">    [<span class="keyword">self</span> replaceDollarWithTexTag];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Escape HTML-sensitive characters inside tex tags.</span></span><br><span class="line">    [<span class="keyword">self</span> processExcapeInTexTag];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>The pattern <code>$...$$...$</code> breaks this strategy. It
 represents two adjacent inline formulas, but the middle <code>$$</code>
@@ -864,9 +866,8 @@ delimiter and either open or close display math.</li>
 HTML-sensitive characters inside formula ranges. Keeping those decisions
 in one pass avoids the overlapping matches that made the
 regular-expression version fragile.</p>
-<p>It is also faster: in our measurements, preprocessing took between
-one-half and one-quarter of the time required by the regular-expression
-implementation.</p>
+<p>It is also faster: in our measurements, preprocessing took only
+25–50% as long as the regular-expression implementation.</p>
 <h2 id="summary">Summary</h2>
 <p>Building on <code>YYText</code> made it possible to ship
 pseudo-streaming without replacing the existing text stack. It also
@@ -956,11 +957,11 @@ merely appear incremental?</li>
   <!-- JS库 sweetalert 可修改路径 -->
   <script src="https://s1.pstatp.com/cdn/expire-1-M/jquery/2.0.0/jquery.min.js"></script>
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">How We Built Streaming Rich Text for LLM Responses on iOS</a></span></p>
+  <p><span class="copyright-label">Title:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/">How We Built a Streaming Rich Text Renderer for LLM Responses on iOS</a></span></p>
   <p><span class="copyright-label">Author:</span><span class="copyright-value"><a href="/en/" title="Visit lingyun's blog">lingyun</a></span></p>
   <p><span class="copyright-label">Published:</span><span class="copyright-value">2024-08-06 16:25</span></p>
-  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-09-23 01:33</span></p>
-  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="How We Built Streaming Rich Text for LLM Responses on iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
+  <p><span class="copyright-label">Updated:</span><span class="copyright-value">2026-10-07 14:22</span></p>
+  <p><span class="copyright-label">Original link:</span><span class="copyright-value"><a href="/en/2024/08/06/streaming-rich-text-rendering-in-ios/" title="How We Built a Streaming Rich Text Renderer for LLM Responses on iOS">https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/</a>
     <span class="copy-path"  title="Copy article link"><i class="fa fa-clipboard" data-clipboard-text="https://tsuijunxi.github.io/en/2024/08/06/streaming-rich-text-rendering-in-ios/"  aria-label="Copied"></i></span></span>
   </p>
   <p><span class="copyright-label">License:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">Attribution-NonCommercial-NoDerivatives 4.0 International</a> Please keep the original link and author when sharing.</span></p>  
@@ -1131,7 +1132,7 @@ merely appear incremental?</li>
               
               <div class="site-state-item site-state-tags">
                 <a href="/en/tags/">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -1176,8 +1177,10 @@ merely appear incremental?</li>
 
             
               <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#how-it-works"><span class="nav-number">2.</span> <span class="nav-text">How it works</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#streaming-request"><span class="nav-number">2.1.</span> <span class="nav-text">Streaming request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-parsing"><span class="nav-number">2.2.</span> <span class="nav-text">Pseudo-stream parsing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-tag-rules"><span class="nav-number">2.2.1.</span> <span class="nav-text">Incomplete tag rules</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete-formula-rules"><span class="nav-number">2.2.2.</span> <span class="nav-text">Incomplete formula rules</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pseudo-stream-rendering"><span class="nav-number">2.3.</span> <span class="nav-text">Pseudo-stream rendering</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#core-idea"><span class="nav-number">2.3.1.</span> <span class="nav-text">Core idea</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#streaming-rendering-flow"><span class="nav-number">2.3.2.</span> <span class="nav-text">Streaming rendering flow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#card-expansion"><span class="nav-number">2.3.3.</span> <span class="nav-text">Card expansion</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pitfalls"><span class="nav-number">3.</span> <span class="nav-text">Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#raw-latex-flashes-before-the-formula-appears"><span class="nav-number">3.1.</span> <span class="nav-text">Raw LaTeX flashes
-before the formula appears</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text-justified-alignment"><span class="nav-number">3.2.</span> <span class="nav-text">Text justified alignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#display-overlap"><span class="nav-number">3.3.</span> <span class="nav-text">Display overlap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-spacing"><span class="nav-number">3.4.</span> <span class="nav-text">Underline spacing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-attachment"><span class="nav-number">3.5.</span> <span class="nav-text">Underline attachment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flicker-and-cursor-drift"><span class="nav-number">3.6.</span> <span class="nav-text">Flicker and cursor drift</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syncing-stream-interruption-progress-to-tts"><span class="nav-number">3.7.</span> <span class="nav-text">Syncing stream
-interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#-problem"><span class="nav-number">3.8.</span> <span class="nav-text">$...$$...$ problem</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+before the formula appears</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text-justification"><span class="nav-number">3.2.</span> <span class="nav-text">Text justification</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#incorrect-mask-bounds-at-line-breaks"><span class="nav-number">3.3.</span> <span class="nav-text">Incorrect mask bounds at
+line breaks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underline-spacing"><span class="nav-number">3.4.</span> <span class="nav-text">Underline spacing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#underlining-text-attachments"><span class="nav-number">3.5.</span> <span class="nav-text">Underlining text attachments</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flicker-and-cursor-drift"><span class="nav-number">3.6.</span> <span class="nav-text">Flicker and cursor drift</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syncing-stream-interruption-progress-to-tts"><span class="nav-number">3.7.</span> <span class="nav-text">Syncing stream
+interruption progress to TTS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ambiguous-adjacent-dollar-delimiters"><span class="nav-number">3.8.</span> <span class="nav-text">Ambiguous adjacent dollar
+delimiters</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
             
 
           </div>
