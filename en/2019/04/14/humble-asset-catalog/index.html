@@ -604,7 +604,7 @@ tapping Settings. After that first interaction, the same operation would
 no longer show the same lag.</p>
 <h2 id="first-round-of-analysis-and-fix">First Round of Analysis and
 Fix</h2>
-<img src="/2019/04/14/HumbleAssetCatalog/02.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/02.png" width="100%" alt="Humble Asset Catalog: First Round of Analysis and Fix (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <p>After measuring with Instruments, I found that most of the time was
 spent loading images through <code>[UIImage imageNamed:]</code>. At that
@@ -613,14 +613,14 @@ time.</p>
 <p>By hooking <code>[UIImage imageNamed:]</code>, I intercepted and
 printed all image resources used by the Settings panel. Surprisingly, it
 needed to load this many images:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/03.png" width="30%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/03.png" width="30%" alt="Humble Asset Catalog: First Round of Analysis and Fix (figure 2)" decoding="async" loading="lazy">
 
 <p>The first idea was to load these local image resources
 asynchronously, but that felt like a lot of work. So I used another
 approach: after entering the reading page, add an observer and
 proactively preload these images when the main thread is idle. Once all
 images are loaded, remove the observer.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/04.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/04.png" width="100%" alt="Humble Asset Catalog: First Round of Analysis and Fix (figure 3)" decoding="async" loading="lazy">
 
 <p>After this optimization, the subjective experience improved a bit. I
 also compared the numbers:</p>
@@ -672,11 +672,11 @@ Sometimes there was lag.</li>
 <code>UIImage</code> was cleared when the app entered the background. So
 after returning from background to foreground, I triggered one more
 preload pass on the reading page.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/05.png" width="50%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/05.png" width="50%" alt="Humble Asset Catalog: First Round of Analysis and Fix (figure 4)" decoding="async" loading="lazy">
 
 <p>For the third case, I suspected that the system cache inside
 <code>UIImage</code> was also cleared during rotation.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/06.png" width="50%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/06.png" width="50%" alt="Humble Asset Catalog: First Round of Analysis and Fix (figure 5)" decoding="async" loading="lazy">
 
 <p>There was another case as well: when memory pressure is high, the
 system cache inside <code>UIImage</code> may also be cleared.</p>
@@ -696,7 +696,7 @@ could solve this performance issue. Out of curiosity, I moved all images
 mentioned above, 27 images in total, into <code>image.xcassets</code>,
 wrote a test method to load them all at once, and compared the result
 with the original folder-based version.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/07.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/07.png" width="100%" alt="Humble Asset Catalog: Second Round of Analysis and Fix (figure 6)" decoding="async" loading="lazy">
 
 <p>The comparison was as follows:</p>
 <table>
@@ -847,12 +847,12 @@ according to the color characteristics of the image.</p>
 <li>It can improve compression size by 15-20%.</li>
 </ul>
 </blockquote>
-<img src="/2019/04/14/HumbleAssetCatalog/08.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/09.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/08.png" width="100%" alt="Humble Asset Catalog: Lossless Compression (figure 7)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/09.png" width="100%" alt="Humble Asset Catalog: Lossless Compression (figure 8)" decoding="async" loading="lazy">
 
 <h3 id="app-thinning">App Thinning</h3>
 <p>Each device gets only what it needs.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/10.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/10.png" width="100%" alt="Humble Asset Catalog: App Thinning (figure 9)" decoding="async" loading="lazy">
 
 <h3 id="conclusion-1">Conclusion 1</h3>
 <p>As we can see, App Assets can effectively reduce app package size
@@ -896,7 +896,7 @@ and <code>@3x</code></li>
 <li>A JPG image</li>
 <li>A color, red with 50% transparency</li>
 </ol>
-<img src="/2019/04/14/HumbleAssetCatalog/12.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/12.png" width="100%" alt="Humble Asset Catalog: An Example (figure 10)" decoding="async" loading="lazy">
 
 <p>After compilation, all resources inside the Asset Catalog are
 compiled into <code>Assets.car</code>. The suffix means Compiled Asset
@@ -918,7 +918,7 @@ image information.</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(csiHeader-&gt;pixelFormat == <span class="string">&#x27;ARGB&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA8 &#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGB5&#x27;</span> || csiHeader-&gt;pixelFormat == <span class="string">&#x27;RGBW&#x27;</span> ||</span><br><span class="line">                    csiHeader-&gt;pixelFormat == <span class="string">&#x27;GA16&#x27;</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">CUIThemePixelRendition</span> *<span class="title">themePixelRendition</span> =</span> (<span class="keyword">struct</span> CUIThemePixelRendition *)renditionBytes;</span><br><span class="line">    </span><br><span class="line">    <span class="type">uint32_t</span> compressionType = themePixelRendition-&gt;compressionType;</span><br><span class="line">    <span class="type">uint32_t</span> rawDataLength = themePixelRendition-&gt;rawDataLength;</span><br><span class="line">    <span class="type">uint8_t</span> * __unused rawDataBytes = themePixelRendition-&gt;rawData;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;\n\t\t Found ThemePixelRendition with size %u and compression %s\n&quot;</span>, rawDataLength, [GetRenditionCompressionDescription(compressionType) UTF8String]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>This is the binary stream corresponding to the image:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/11.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/11.png" width="100%" alt="Humble Asset Catalog: An Example (figure 11)" decoding="async" loading="lazy">
 
 <p>The colors mean the following:</p>
 <blockquote>
@@ -957,7 +957,7 @@ method, I confirmed the call stack of
 <code>[UIImage imageNamed:]</code>. From the stack, we can see the use
 of <code>UIAssetManager</code>, as well as <code>CUICatalog</code> from
 <code>CoreUI.framework</code>.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/13.png" width="100%" alt="Humble Asset Catalog: Call Stack (figure 12)" decoding="async" loading="lazy">
 
 <h3 id="priority">Priority</h3>
 <p>During implementation, I found an interesting behavior: if the normal
@@ -997,7 +997,7 @@ the first time that the <code>.car</code> file read was triggered. As
 mentioned earlier, regardless of whether an image is actually in assets,
 <code>UIAssetManager</code> is queried once, so the <code>.car</code>
 file open operation is triggered in the same way.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/18.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/18.png" width="100%" alt="Humble Asset Catalog: Reading an Image from Assets (figure 13)" decoding="async" loading="lazy">
 
 <p>Notice the <code>Requested Bytes</code> in the image. No matter how
 large the image being read is, this value is always 512 bytes. In the
@@ -1008,7 +1008,7 @@ mapping</strong>. More precisely:</p>
 <p>The image loading logic
 <code>[UIImage imageNamed:@"title_page_card_placeholder"];</code>
 triggers <code>VM:CoreUI image file</code>.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/16.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/16.png" width="100%" alt="Humble Asset Catalog: Reading an Image from Assets (figure 14)" decoding="async" loading="lazy">
 
 <p>The image rendering logic <code>_tempView.image = image</code>, on
 the other hand, triggers <code>VM:IOSurface</code>. Its
@@ -1020,7 +1020,7 @@ the other hand, triggers <code>VM:IOSurface</code>. Its
 earlier?</p>
 <p>Does this line up?</p>
 <p>Judging from the naming, this is basically an in-memory copy.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/17.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/17.png" width="100%" alt="Humble Asset Catalog: Reading an Image from Assets (figure 15)" decoding="async" loading="lazy">
 
 <h4 id="reading-an-image-from-a-normal-folder">Reading an Image from a
 Normal Folder</h4>
@@ -1029,14 +1029,14 @@ Normal Folder</h4>
 </ol>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)touchesBegan:(<span class="built_in">NSSet</span>&lt;<span class="built_in">UITouch</span> *&gt; *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIImage</span>* image = [<span class="built_in">UIImage</span> imageNamed:<span class="string">@&quot;header&quot;</span>];<span class="comment">// header comes from a normal folder</span></span><br><span class="line">    _tempView.image = image;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<img src="/2019/04/14/HumbleAssetCatalog/19.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/19.png" width="100%" alt="Humble Asset Catalog: Reading an Image from a Normal Folder (figure 16)" decoding="async" loading="lazy">
 
 <ol start="2" type="1">
 <li>Then the loading logic <code>[UIImage imageNamed:@"header"];</code>
 triggers <code>VM:CoreUI image file</code>, which is similar to the
 assets case above.</li>
 </ol>
-<img src="/2019/04/14/HumbleAssetCatalog/22.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/22.png" width="100%" alt="Humble Asset Catalog: Reading an Image from a Normal Folder (figure 17)" decoding="async" loading="lazy">
 
 <ol start="3" type="1">
 <li>Finally, the rendering logic <code>_tempView.image = image;</code>
@@ -1044,7 +1044,7 @@ triggers <code>VM:ImageIO_PNG_Data</code>. Its
 <code>Responsible Library</code> is <code>ImageIO</code>, and its
 <code>Responsible Caller</code> is <code>ImageIO_Malloc</code>.</li>
 </ol>
-<img src="/2019/04/14/HumbleAssetCatalog/23.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/23.png" width="100%" alt="Humble Asset Catalog: Reading an Image from a Normal Folder (figure 18)" decoding="async" loading="lazy">
 
 <h3 id="conclusion-3">Conclusion 3</h3>
 <ol type="1">
@@ -1086,8 +1086,8 @@ there does it load through the path, as mentioned earlier.</li>
 <p>There were 10 images, <code>screen0</code> through
 <code>screen9</code>, each around 1 MB. I loaded them using the
 following three methods:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/30.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/31.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/30.png" width="100%" alt="Humble Asset Catalog: Further Verification: Update (figure 19)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/31.png" width="100%" alt="Humble Asset Catalog: Further Verification: Update (figure 20)" decoding="async" loading="lazy">
 
 <table>
 <thead>
@@ -1177,7 +1177,7 @@ following three methods:</p>
 </tbody>
 </table>
 <p>Looking at the same data from another angle:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/56.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/56.png" width="100%" alt="Humble Asset Catalog: Further Verification: Update (figure 21)" decoding="async" loading="lazy">
 
 <table>
 <thead>
@@ -1227,13 +1227,13 @@ one order of magnitude respectively.</li>
 Process of <code>imageWithContentsOfFile</code></h3>
 <p>Here I loaded two images one after another, representing first load
 and non-first load:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/45.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/46.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/45.png" width="100%" alt="Humble Asset Catalog: The Loading Process of imageWithContentsOfFile (figure 22)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/46.png" width="100%" alt="Humble Asset Catalog: The Loading Process of imageWithContentsOfFile (figure 23)" decoding="async" loading="lazy">
 
 <p>The time difference was only about two times, which still differs
 somewhat from the earlier measured data. I cannot explain why for now.
 From the stack, the difference appears around this part:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/52.png" width="50%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/52.png" width="50%" alt="Humble Asset Catalog: The Loading Process of imageWithContentsOfFile (figure 24)" decoding="async" loading="lazy">
 
 <p>I suspect the longer first-load time may be related to necessary
 initialization work.</p>
@@ -1241,7 +1241,7 @@ initialization work.</p>
 id="the-process-of-imagenamed-loading-images-from-a-normal-folder">The
 Process of <code>imageNamed</code> Loading Images from a Normal
 Folder</h3>
-<img src="/2019/04/14/HumbleAssetCatalog/47.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/47.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from a Normal Folder (figure 25)" decoding="async" loading="lazy">
 
 <p>For images in a normal folder, <code>imageNamed</code> first searches
 inside assets. The search process, <code>renditionWithKey</code>, takes
@@ -1249,22 +1249,22 @@ the majority of the time. Of course, the image is not found there, so it
 eventually calls <code>UIAssetManager newAssetNamed:fromBundle:</code>
 to search in the bundle. This is consistent with the earlier reasoning.
 What surprised me was how much time the assets lookup consumed.</p>
-<img src="/2019/04/14/HumbleAssetCatalog/48.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/48.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from a Normal Folder (figure 26)" decoding="async" loading="lazy">
 
 <p>From the image, we can see the three most expensive parts of
 <code>renditionWithKey</code>:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/49.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/50.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/51.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/49.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from a Normal Folder (figure 27)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/50.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from a Normal Folder (figure 28)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/51.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from a Normal Folder (figure 29)" decoding="async" loading="lazy">
 
 <p>I wonder whether Apple will optimize this method in the future.</p>
 <h3 id="the-process-of-imagenamed-loading-images-from-assets">The
 Process of <code>imageNamed</code> Loading Images from Assets</h3>
 <p>After looking at the previous two approaches, let us return to why
 <code>imageNamed</code> is so fast when loading images from assets:</p>
-<img src="/2019/04/14/HumbleAssetCatalog/53.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/54.png" width="100%"/>
-<img src="/2019/04/14/HumbleAssetCatalog/55.png" width="100%"/>
+<img src="/2019/04/14/HumbleAssetCatalog/53.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from Assets (figure 30)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/54.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from Assets (figure 31)" decoding="async" loading="lazy">
+<img src="/2019/04/14/HumbleAssetCatalog/55.png" width="100%" alt="Humble Asset Catalog: The Process of imageNamed Loading Images from Assets (figure 32)" decoding="async" loading="lazy">
 
 <p>Reasons why first load takes longer:</p>
 <ol type="1">

@@ -618,7 +618,7 @@ mechanisms exist?</h3>
 <p>There have been <a
 href="https://www.gricad-gitlab.univ-grenoble-alpes.fr/tracing-llvm/llvm/-/tree/d2298e74235598f15594fe2c99bbac870a507c59/libunwind/docs#:~:text=libunwind%20is%20a%20production%2Dquality,%2C%20SjLj%2C%20and%20ARM%20EHABI.">several
 C++ exception implementations</a> over time.</p>
-<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: Which implementation mechanisms exist? (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <ul>
 <li>SJLJ is older and simple, but not very efficient.</li>
@@ -657,7 +657,7 @@ include libsupc++ and <strong>libc++abi</strong>.</p>
 focuses on the exception-handling part.</p>
 </blockquote>
 <h2 id="exception-overview">Exception overview</h2>
-<img src="/2026/03/07/从源码看 C++ 异常/13.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/13.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: Exception overview (figure 2)" decoding="async" loading="lazy">
 
 <p>The figure summarizes the full flow: <code>__cxa_throw</code>,
 <code>_Unwind_RaiseException</code>, <code>unwind_phase1</code>,
@@ -878,7 +878,7 @@ that describes how to restore a stack frame to its caller. It records
 how the return address and caller registers are saved, allowing the
 unwinder to walk the stack.</p>
 <p>CFI has two important structures: CIE and FDE.</p>
-<img src="/2026/03/07/从源码看 C++ 异常/09.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/09.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: CFI, CIE, and FDE (figure 3)" decoding="async" loading="lazy">
 
 <ul>
 <li>CIE stores shared entry information, including personality routine
@@ -908,8 +908,8 @@ this frame. The typeinfo match decides whether the frame’s
 <code>catch</code> can handle this exception. If both match, control can
 transfer to the landing pad.</p>
 <h4 id="lsda-structure">LSDA structure</h4>
-<img src="/2026/03/07/从源码看 C++ 异常/03.png" width="100%"/>
-<img src="/2026/03/07/从源码看 C++ 异常/05.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/03.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: LSDA structure (figure 4)" decoding="async" loading="lazy">
+<img src="/2026/03/07/从源码看 C++ 异常/05.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: LSDA structure (figure 5)" decoding="async" loading="lazy">
 
 <p>LSDA mainly contains four parts:</p>
 <ol type="1">
@@ -919,15 +919,15 @@ transfer to the landing pad.</p>
 <li><strong>Type Table</strong></li>
 </ol>
 <p>The Action Table has three kinds of <code>actionType</code>:</p>
-<img src="/2026/03/07/从源码看 C++ 异常/10.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/10.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: LSDA structure (figure 6)" decoding="async" loading="lazy">
 
 <p>The Type Table is split into two regions. Entries above the dividing
 line are exception types, stored in reverse order. Entries below it are
 exception-specification indexes, which were removed in C++17.</p>
-<img src="/2026/03/07/从源码看 C++ 异常/01.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/01.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: LSDA structure (figure 7)" decoding="async" loading="lazy">
 
 <p>Real LSDA in assembly looks like this:</p>
-<img src="/2026/03/07/从源码看 C++ 异常/06.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/06.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: LSDA structure (figure 8)" decoding="async" loading="lazy">
 
 <h4 id="lsda-parsing">LSDA parsing</h4>
 <p>The core parser is <code>scan_eh_tab</code>. Its job is to parse
@@ -1039,14 +1039,14 @@ multiple inheritance, and virtual inheritance:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">__class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__si_class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        __base_type-&gt;<span class="built_in">has_unambiguous_public_base</span>(info,</span><br><span class="line">                                                 adjustedPtr,</span><br><span class="line">                                                 path_below);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">__vmi_class_type_info::has_unambiguous_public_base</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    __dynamic_cast_info* info, <span class="type">void</span>* adjustedPtr, <span class="type">int</span> path_below)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_equal</span>(<span class="keyword">this</span>, info-&gt;static_type, <span class="literal">false</span>))</span><br><span class="line">        <span class="built_in">process_found_base_class</span>(info, adjustedPtr, path_below);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span> p = __base_info; p &lt; __base_info + __base_count; ++p) &#123;</span><br><span class="line">            p-&gt;<span class="built_in">has_unambiguous_public_base</span>(info, adjustedPtr, path_below);</span><br><span class="line">            <span class="keyword">if</span> (info-&gt;search_done) <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>This is closely tied to the C++ object model:</p>
-<img src="/2026/03/07/从源码看 C++ 异常/11.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/11.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: bullet2: __dynamic_cast_info (figure 9)" decoding="async" loading="lazy">
 
 <p>For a better intuition, the inheritance-layout diagrams from <a
 href="https://wenfh2020.com/2023/08/22/cpp-inheritance/">Deep Dive into
 C++ Polymorphism 2: Inheritance</a> are useful:</p>
-<img src="/2026/03/07/从源码看 C++ 异常/08.png" width="100%"/>
-<img src="/2026/03/07/从源码看 C++ 异常/04.png" width="100%"/>
-<img src="/2026/03/07/从源码看 C++ 异常/12.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/08.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: bullet2: __dynamic_cast_info (figure 10)" decoding="async" loading="lazy">
+<img src="/2026/03/07/从源码看 C++ 异常/04.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: bullet2: __dynamic_cast_info (figure 11)" decoding="async" loading="lazy">
+<img src="/2026/03/07/从源码看 C++ 异常/12.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: bullet2: __dynamic_cast_info (figure 12)" decoding="async" loading="lazy">
 
 <h2 id="summary">Summary</h2>
 <p>This article followed the C++ exception path from the source-code
@@ -1149,7 +1149,7 @@ models are different. C++ heavily depends on ABI-level metadata, LSDA,
 RTTI, and compiler-generated landing pads. Java exceptions are managed
 by the VM, where the runtime owns the stack metadata and exception
 tables.</p>
-<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%"/>
+<img src="/2026/03/07/从源码看 C++ 异常/02.png" width="100%" alt="Understanding C++ Exceptions from the Source: __cxa_throw, Stack Unwinding, and -fno-exceptions: Is Java exception handling similar? (figure 13)" decoding="async" loading="lazy">
 
 <h3 id="how-should-we-treat-c-exceptions">How should we treat C++
 exceptions?</h3>

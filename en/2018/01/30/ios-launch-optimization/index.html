@@ -607,7 +607,7 @@ files.</li>
 </ul>
 </blockquote>
 <h3 id="mach-o-image-file-format">Mach-O Image File Format</h3>
-<img src="/2018/01/30/iOS启动优化/01.png" />
+<img src="/2018/01/30/iOS启动优化/01.png" alt="iOS Launch Optimization: Mach-O Image File Format (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <p>A Mach-O image file mainly contains three parts:</p>
 <blockquote>
@@ -619,7 +619,7 @@ files.</li>
 </blockquote>
 <p>Look at the format of a real executable file:</p>
 <p><img src="/2018/01/30/iOS启动优化/02.png"
-alt="Mach-O image format" /></p>
+alt="Mach-O image format" decoding="async" loading="lazy"></p>
 <p>Almost all Mach-O files contain three segments: <code>__TEXT</code>,
 <code>__DATA</code>, and <code>__LINKEDIT</code>.</p>
 <blockquote>
@@ -650,7 +650,7 @@ functions, such as <code>execl</code>, <code>execv</code>, and
 <code>exect</code>, each providing different ways to pass arguments and
 environment variables to a program. On macOS, all these other exec paths
 eventually call the kernel path <code>execve</code>.</p>
-<img src="/2018/01/30/iOS启动优化/03.png" />
+<img src="/2018/01/30/iOS启动优化/03.png" alt="iOS Launch Optimization: Kernel Flow for Executables (figure 3)" decoding="async" loading="lazy">
 
 <blockquote>
 <ul>
@@ -707,23 +707,23 @@ screen and completes rendering.</td>
 </table>
 <p>Borrowing two classic diagrams:</p>
 <h4 id="pre-main">pre-main</h4>
-<img src="/2018/01/30/iOS启动优化/04.png" width="50%" />
+<img src="/2018/01/30/iOS启动优化/04.png" width="50%" alt="iOS Launch Optimization: pre-main (figure 4)" decoding="async" loading="lazy">
 
 <h4 id="main">main</h4>
-<img src="/2018/01/30/iOS启动优化/05.png" width="65%" />
+<img src="/2018/01/30/iOS启动优化/05.png" width="65%" alt="iOS Launch Optimization: main (figure 5)" decoding="async" loading="lazy">
 
 <h3 id="measuring-qqreaders-pre-main-time">Measuring QQReader’s pre-main
 Time</h3>
 <h4 id="add-the-dyld_print_statistics-option">Add the
 DYLD_PRINT_STATISTICS Option</h4>
-<img src="/2018/01/30/iOS启动优化/06.png" width="75%"/>
+<img src="/2018/01/30/iOS启动优化/06.png" width="75%" alt="iOS Launch Optimization: Add the DYLD_PRINT_STATISTICS Option (figure 6)" decoding="async" loading="lazy">
 
 <h4 id="measurement-results">Measurement Results</h4>
 <p>Cold launch time:</p>
-<img src="/2018/01/30/iOS启动优化/07.png" width="50%"/>
+<img src="/2018/01/30/iOS启动优化/07.png" width="50%" alt="iOS Launch Optimization: Measurement Results (figure 7)" decoding="async" loading="lazy">
 
 <p>Warm launch time:</p>
-<img src="/2018/01/30/iOS启动优化/08.png" width="50%"/>
+<img src="/2018/01/30/iOS启动优化/08.png" width="50%" alt="iOS Launch Optimization: Measurement Results (figure 8)" decoding="async" loading="lazy">
 
 <h2 id="the-dynamic-linker-dyld">The Dynamic Linker: dyld</h2>
 <h3 id="what-is-dyld">What Is dyld?</h3>
@@ -760,7 +760,7 @@ or a library, the dynamic linker first checks whether it exists in the
 shared cache. If it does, it can be used directly from the shared cache.
 Each process maps this shared cache into its own address space. This
 greatly optimizes program launch time on macOS and iOS.</strong></p>
-<img src="/2018/01/30/iOS启动优化/09.png" width="75%"/>
+<img src="/2018/01/30/iOS启动优化/09.png" width="75%" alt="iOS Launch Optimization: dyld Shared Cache (figure 9)" decoding="async" loading="lazy">
 
 <h3 id="dyld-loading-process">dyld Loading Process</h3>
 <p>The dyld loading process mainly includes the following steps.</p>
@@ -786,7 +786,7 @@ recursive dependency set.</p>
 </ol>
 <p>Look at the shared dynamic libraries used by QQReader.</p>
 <p>Command: <code>otool -L QQReaderUI</code></p>
-<img src="/2018/01/30/iOS启动优化/10.png" width="75%"/>
+<img src="/2018/01/30/iOS启动优化/10.png" width="75%" alt="iOS Launch Optimization: Load dylibs image (figure 10)" decoding="async" loading="lazy">
 
 <h4 id="rebasebind-image">Rebase/Bind image</h4>
 <p>Because of <code>ASLR</code>, or address space layout randomization,
@@ -854,14 +854,14 @@ binding.</li>
 <code>libsystem</code>, initializes <code>libdispatch</code>; then
 <code>libdispatch_init</code> calls <code>_os_object_int</code>, which
 eventually calls <code>_objc_init</code>.</p>
-<img src="/2018/01/30/iOS启动优化/11.png" width="100%"/> 
+<img src="/2018/01/30/iOS启动优化/11.png" width="100%" alt="iOS Launch Optimization: Objc setup (figure 11)" decoding="async" loading="lazy"> 
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _objc_init(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">bool</span> initialized = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (initialized) <span class="keyword">return</span>;</span><br><span class="line">    initialized = <span class="literal">true</span>;</span><br><span class="line">    </span><br><span class="line">    environ_init();</span><br><span class="line">    tls_init();</span><br><span class="line">    static_init();</span><br><span class="line">    lock_init();</span><br><span class="line">    exception_init();</span><br><span class="line"></span><br><span class="line">    _dyld_objc_notify_register(&amp;map_2_images, load_images, unmap_image);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>In <code>_objc_init</code>, the runtime registers three callbacks
 with dyld: <code>map_2_images</code>, <code>load_images</code>, and
 <code>unmap_image</code>.</p>
-<img src="/2018/01/30/iOS启动优化/12.png" width="100%"/>
+<img src="/2018/01/30/iOS启动优化/12.png" width="100%" alt="iOS Launch Optimization: Objc setup (figure 12)" decoding="async" loading="lazy">
 
 <blockquote>
 <ul>
@@ -975,7 +975,7 @@ as:</p>
 </ol></li>
 </ul>
 </blockquote>
-<img src="/2018/01/30/iOS启动优化/13.png" width="50%"/>
+<img src="/2018/01/30/iOS启动优化/13.png" width="50%" alt="iOS Launch Optimization: 1. Delete unused code: unused static variables, classes, and methods (figure 13)" decoding="async" loading="lazy">
 
 <h3 id="2-abstract-duplicated-code">2. Abstract duplicated code</h3>
 <blockquote>
@@ -1013,7 +1013,7 @@ Reduce unnecessary frameworks, or optimize existing frameworks</h3>
 <p>For example, QQReaderUI LinkMap analysis can show which files or
 third-party libraries occupy large amounts of space, providing direction
 for optimization.</p>
-<img src="/2018/01/30/iOS启动优化/14.png" width="100%"/>
+<img src="/2018/01/30/iOS启动优化/14.png" width="100%" alt="iOS Launch Optimization: 4. Reduce unnecessary frameworks, or optimize existing frameworks (figure 14)" decoding="async" loading="lazy">
 
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Path: /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Products/Debug-iphoneos/QQReaderUI.app/QQReaderUI</span><br><span class="line">Arch: arm64</span><br><span class="line">Object files:</span><br><span class="line">[0] linker synthesized</span><br><span class="line">[  1] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX1.o</span><br><span class="line">[  2] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX2.o</span><br><span class="line">[  3] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX3.o</span><br><span class="line">[  4] /Users/lingyun/Library/Developer/Xcode/DerivedData/QQReaderUI-ipad-akzqsuuhhnlhdigisyuqwzvuwrfy/Build/Intermediates/QQReaderUI-ipad.build/Debug-iphoneos/QQReaderUI.build/Objects-normal/arm64/XXXX4.o</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 

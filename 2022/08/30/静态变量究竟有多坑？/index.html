@@ -656,7 +656,7 @@ mjx-container[display="true"] + br {
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( obj_guard.first_byte == <span class="number">0</span> ) &#123;</span><br><span class="line">  <span class="keyword">if</span> ( __cxa_guard_acquire(&amp;obj_guard) ) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      ... initialize the object ...;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">catch</span> (...) &#123;</span><br><span class="line">      __cxa_guard_abort(&amp;obj_guard);</span><br><span class="line">      <span class="keyword">throw</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ... queue object destructor with __cxa_atexit() ...;</span><br><span class="line">    __cxa_guard_release(&amp;obj_guard);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>可以看下<code>GetLock</code>方法对应的汇编代码，可以发现逻辑基本是一致的</p>
-<p><img src="05.jpg" alt="05" /></p>
+<p><img src="05.jpg" alt="05" decoding="async" loading="eager" fetchpriority="high"></p>
 <p>更多的<code>cxxabi</code>细节可以参考这里：https://opensource.apple.com/source/libcppabi/libcppabi-14/</p>
 <h2 id="初始化类型问题">初始化类型问题</h2>
 <p>那么问题来了，下面的这些静态变量是如何初始化的呢？</p>
@@ -685,9 +685,9 @@ mjx-container[display="true"] + br {
 <ol type="1">
 <li><code>obj</code>的初始化依赖<code>[[NSObject alloc] init]</code>的返回值，这肯定无法在编译时确定；</li>
 <li><code>cpp_str</code>的初始化看起来很简单，只是要保存“123”，但是这个需要调用<code>std::string</code>的构造函数。
-<img src="01.png" alt="image.png" /></li>
+<img src="01.png" alt="静态变量究竟有多坑？：几点说明（图 2）" decoding="async" loading="lazy"></li>
 <li><code>vec</code>的初始化看起来也很简单，只是个字面量<code>{1,2,3}</code>，但是需要依赖<code>std::vector</code>的构造函数（可以看到<code>{1,2,3}</code>被初始化为<code>std::initializer_list</code>，然后<code>std::initializer_list</code>又作为<code>std::vector</code>的参数)
-<img src="04.png" alt="image.png" /></li>
+<img src="04.png" alt="静态变量究竟有多坑？：几点说明（图 3）" decoding="async" loading="lazy"></li>
 </ol>
 <h3 id="trivial-default-constructor"><strong>Trivial default
 constructor</strong></h3>

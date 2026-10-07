@@ -584,7 +584,7 @@ main API surface:</p>
 
 <p>JavaScriptCore exposes several main header files to us. First, here
 is an overall relationship diagram:</p>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/01.png" width="100%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/01.png" width="100%" alt="JavaScriptCore Deep Dive 2 - API: Preface (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <p>Next, I will explain them one by one. While reading, you may need to
 jump back and forth, because some relationships feel like the classic
@@ -658,9 +658,9 @@ reaches zero, removes the owner from <code>m_owners</code>.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)didRemoveOwner:(id)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">size_t</span> count = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">size_t</span>&gt;(<span class="built_in">NSMapGet</span>(m_owners, owner));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!count) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (count == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">NSMapRemove</span>(m_owners, owner);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">NSMapInsert</span>(m_owners, owner, <span class="built_in">reinterpret_cast</span>&lt;<span class="type">void</span>*&gt;(count - <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>Does this already feel messy? Let’s look at two diagrams first:</p>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/08.png" width="100%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/08.png" width="100%" alt="JavaScriptCore Deep Dive 2 - API: didRemoveOwner (figure 2)" decoding="async" loading="lazy">
 
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/09.png" width="100%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/09.png" width="100%" alt="JavaScriptCore Deep Dive 2 - API: didRemoveOwner (figure 3)" decoding="async" loading="lazy">
 
 <p>Even at this point, we still have not fully explained how
 <code>JSVirtualMachine</code> and <code>JSManagedValue</code> achieve
@@ -692,7 +692,7 @@ environment. In native code, we use <code>JSContext</code> to execute
 JavaScript code, access values defined or computed in JavaScript, and
 allow JavaScript to access native objects, methods, and functions. It is
 like a bridge between Objective-C and JavaScript.</p>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/02.png" width="100%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/02.png" width="100%" alt="JavaScriptCore Deep Dive 2 - API: JSContext (figure 4)" decoding="async" loading="lazy">
 
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SValue *value = [context evaluateScript:<span class="string">@&quot;var a = 1+2*3;&quot;</span>];</span><br><span class="line"></span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, [context objectForKeyedSubscript:<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, [context.globalObject objectForKeyedSubscript:<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@&quot;a = %@&quot;</span>, context[<span class="string">@&quot;a&quot;</span>]);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
@@ -781,7 +781,7 @@ and memory leak.</li>
 </blockquote>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">JSValue *value = [JSValue valueWithObject:<span class="string">@&quot;test&quot;</span> inContext:context];</span><br><span class="line">context[<span class="string">@&quot;block&quot;</span>] = ^()&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;%@&quot;</span>, value);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/05.png" width="75%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/05.png" width="75%" alt="JavaScriptCore Deep Dive 2 - API: JSManagedValue (figure 5)" decoding="async" loading="lazy">
 
 <p>Normally, we use <code>weak</code> for external references used
 inside a block to avoid retain cycles. But the memory of the JavaScript
@@ -790,7 +790,7 @@ the virtual machine. This approach cannot accurately control the
 lifetime of the referenced <code>JSValue</code> inside the block. When
 the block needs to use it, the value may already have been reclaimed by
 the virtual machine.</p>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/06.png" width="75%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/06.png" width="75%" alt="JavaScriptCore Deep Dive 2 - API: JSManagedValue (figure 6)" decoding="async" loading="lazy">
 
 <p>Because the reference count of <code>JSValue</code> is zero, it is
 released too early and does not match our expectation.</p>
@@ -817,7 +817,7 @@ condition is satisfied, <code>JSManagedValue</code> sets its
 <code>JSValue</code>.</li>
 </ul>
 </blockquote>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/07.png" width="75%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/07.png" width="75%" alt="JavaScriptCore Deep Dive 2 - API: JSManagedValue (figure 7)" decoding="async" loading="lazy">
 
 <h3 id="initialization-1">Initialization</h3>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">JSManagedValue</span> </span>&#123;</span><br><span class="line">    JSC::Weak&lt;JSC::JSGlobalObject&gt; m_globalObject;</span><br><span class="line">    RefPtr&lt;JSC::JSLock&gt; m_lock;</span><br><span class="line">    WeakValueRef m_weakValue;<span class="comment">// Notice m_weakValue here.</span></span><br><span class="line">    <span class="built_in">NSMapTable</span> *m_owners;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">+ (JSManagedValue *)managedValueWithValue:(JSValue *)value andOwner:(<span class="type">id</span>)owner</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// JSManagedValue does not strongly retain JSValue here.</span></span><br><span class="line">    JSManagedValue *managedValue = [[<span class="keyword">self</span> alloc] initWithValue:value];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The virtualMachine corresponding to context strongly retains value.</span></span><br><span class="line">    [value.context.virtualMachine addManagedReference:managedValue withOwner:owner];</span><br><span class="line">    <span class="keyword">return</span> [managedValue autorelease];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -861,7 +861,7 @@ and the prototype chain is a very important step in advanced
 JavaScript.</p>
 <p>Here is a classic diagram showing the relationship between the
 prototype chain and constructors:</p>
-<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/04.png" width="100%"/>
+<img src="/2018/07/25/JavaScriptCore引擎深度解析-2-API篇/04.png" width="100%" alt="JavaScriptCore Deep Dive 2 - API: How JSExport Works (figure 8)" decoding="async" loading="lazy">
 
 <p>This article will not dig deeply into JavaScript’s prototype chain.
 If you are interested, you can refer to:</p>

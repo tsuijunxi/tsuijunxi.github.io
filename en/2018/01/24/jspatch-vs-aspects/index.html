@@ -706,7 +706,7 @@ method and invoke it.</li>
 </blockquote>
 <p>The state after a method is hooked by JSPatch can be represented like
 this:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/10.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/10.png" width="65%" height="65%" alt="JSPatch VS Aspects: 1. JSPatch Hooking (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <h3 id="2-aspects-hooking">2. Aspects Hooking</h3>
 <p>Aspects supports not only class hooks, but also object hooks,
@@ -730,7 +730,7 @@ similar to JSPatch. The core code is:</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">void</span> __ASPECTS_ARE_BEING_CALLED__(__<span class="keyword">unsafe_unretained</span> <span class="built_in">NSObject</span> *<span class="keyword">self</span>, SEL selector, <span class="built_in">NSInvocation</span> *invocation) &#123;</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(<span class="keyword">self</span>);</span><br><span class="line">    <span class="built_in">NSCParameterAssert</span>(invocation);</span><br><span class="line">    SEL originalSelector = invocation.selector;</span><br><span class="line">    SEL aliasSelector = aspect_aliasForSelector(invocation.selector);</span><br><span class="line">    invocation.selector = aliasSelector;</span><br><span class="line">    AspectsContainer *objectContainer = objc_getAssociatedObject(<span class="keyword">self</span>, aliasSelector);</span><br><span class="line">    AspectsContainer *classContainer = aspect_getContainerForClass(object_getClass(<span class="keyword">self</span>), aliasSelector);</span><br><span class="line">    AspectInfo *info = [[AspectInfo alloc] initWithInstance:<span class="keyword">self</span> invocation:invocation];</span><br><span class="line">    <span class="built_in">NSArray</span> *aspectsToRemove = <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Before hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.beforeAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.beforeAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instead hooks.</span></span><br><span class="line">    <span class="type">BOOL</span> respondsToAlias = <span class="literal">YES</span>;</span><br><span class="line">    <span class="keyword">if</span> (objectContainer.insteadAspects.count || classContainer.insteadAspects.count) &#123;</span><br><span class="line">        aspect_invoke(classContainer.insteadAspects, info);</span><br><span class="line">        aspect_invoke(objectContainer.insteadAspects, info);</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        Class klass = object_getClass(invocation.target);</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> ((respondsToAlias = [klass instancesRespondToSelector:aliasSelector])) &#123;</span><br><span class="line">                [invocation invoke];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">while</span> (!respondsToAlias &amp;&amp; (klass = class_getSuperclass(klass)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// After hooks.</span></span><br><span class="line">    aspect_invoke(classContainer.afterAspects, info);</span><br><span class="line">    aspect_invoke(objectContainer.afterAspects, info);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If no matching hooks are found, call the original forwarding path.</span></span><br><span class="line">    <span class="keyword">if</span> (!respondsToAlias) &#123;</span><br><span class="line">        invocation.selector = originalSelector;</span><br><span class="line">        SEL originalForwardInvocationSEL = <span class="built_in">NSSelectorFromString</span>(AspectsForwardInvocationSelectorName);</span><br><span class="line">        <span class="keyword">if</span> ([<span class="keyword">self</span> respondsToSelector:originalForwardInvocationSEL]) &#123;</span><br><span class="line">            ((<span class="type">void</span>( *)(<span class="type">id</span>, SEL, <span class="built_in">NSInvocation</span> *))objc_msgSend)(<span class="keyword">self</span>, originalForwardInvocationSEL, invocation);</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            [<span class="keyword">self</span> doesNotRecognizeSelector:invocation.selector];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Remove any hooks that are queued for deregistration.</span></span><br><span class="line">    [aspectsToRemove makeObjectsPerformSelector:<span class="keyword">@selector</span>(remove)];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>After a method is hooked by Aspects, its state can be shown as:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/11.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/11.png" width="65%" height="65%" alt="JSPatch VS Aspects: 2. Aspects Hooking (figure 2)" decoding="async" loading="lazy">
 
 <h2 id="jspatch-and-aspects-fighting-each-other">JSPatch and Aspects
 Fighting Each Other</h2>
@@ -784,24 +784,24 @@ method later, then <code>[subclass superTest]</code> is called</td>
 <h3 id="original-state">Original State</h3>
 <p>Before any hook, each class’s SEL and IMP relationships look like
 this:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/02.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/02.png" width="65%" height="65%" alt="JSPatch VS Aspects: Original State (figure 3)" decoding="async" loading="lazy">
 
 <h3 id="jspatch-hook">JSPatch Hook</h3>
 <p>After JSPatch hooks, the SEL and IMP relationships look like
 this:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/03.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/03.png" width="65%" height="65%" alt="JSPatch VS Aspects: JSPatch Hook (figure 4)" decoding="async" loading="lazy">
 
 <h3 id="aspects-hook">Aspects Hook</h3>
 <p>After Aspects hooks, the SEL and IMP relationships look like
 this:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/04.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/04.png" width="65%" height="65%" alt="JSPatch VS Aspects: Aspects Hook (figure 5)" decoding="async" loading="lazy">
 
 <h3 id="jspatch-hooks-first-aspects-hooks-later">JSPatch Hooks First,
 Aspects Hooks Later</h3>
 <p>JSPatch first hooks the <code>test</code> method, and then Aspects
 hooks <code>test</code> on top of that. The SEL and IMP relationships
 become:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/05.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/05.png" width="65%" height="65%" alt="JSPatch VS Aspects: JSPatch Hooks First, Aspects Hooks Later (figure 6)" decoding="async" loading="lazy">
 
 <p>At this point, if a message is sent to <code>test</code>, forwarding
 naturally occurs according to pointer 1. Since
@@ -813,7 +813,7 @@ prints <code>aspects log</code>. The original JSPatch JavaScript block
 is overwritten and will not execute.</p>
 <h3 id="aspects-hooks-first-jspatch-hooks-later">Aspects Hooks First,
 JSPatch Hooks Later</h3>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="65%" height="65%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="65%" height="65%" alt="JSPatch VS Aspects: Aspects Hooks First, JSPatch Hooks Later (figure 7)" decoding="async" loading="lazy">
 
 <p>If a message is sent to <code>test</code>, forwarding happens
 according to pointer 1. Since <code>SEL(forwardInvocation)</code> points
@@ -828,7 +828,7 @@ Hooks First, JSPatch Hooks Later, and JSPatch Calls self.ORIGtest()</h3>
 <p>The result is a crash:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[70095:30054488] -[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30</span><br><span class="line">JPAndAspects[70095:30054488] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;</span><br><span class="line">reason: &#x27;-[MyClass ORIGtest]: unrecognized selector sent to instance 0x60400001fa30&#x27;</span><br></pre></td></tr></table></figure>
 
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="75%" height="75%" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/06.png" width="75%" height="75%" alt="JSPatch VS Aspects: Aspects Hooks First, JSPatch Hooks Later, and JSPatch Calls self.ORIGtest() (figure 8)" decoding="async" loading="lazy">
 
 <p>The JSPatch code calls <code>self.ORIGtest()</code>:</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;MyClass&#x27;</span>, &#123;</span><br><span class="line">            <span class="attr">test</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;jspatch log&quot;</span>);</span><br><span class="line">            self.<span class="title class_">ORIGtest</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
@@ -894,7 +894,7 @@ Method Later, and JSPatch Calls self.super().xxx()</h3>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[73431:30359622] JSPatch.log: MySubClass jspatch log</span><br><span class="line">JPAndAspects[73431:30359622] -[MySubClass SUPER_test]: unrecognized selector sent to instance 0x608000017220</span><br></pre></td></tr></table></figure>
 
 <p>Look at the hooked state:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/07.png" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/07.png" alt="JSPatch VS Aspects: Aspects Hooks the Superclass Method First, JSPatch Hooks the Same Subclass Method Later, and JSPatch Calls self.super().xxx() (figure 9)" decoding="async" loading="lazy">
 
 <p>Why does it crash?</p>
 <blockquote>
@@ -966,7 +966,7 @@ Later, Then [subclass superTest] Is Called</h3>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JPAndAspects[76443:30659220] -[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10</span><br><span class="line">JPAndAspects[76443:30659220] *** Terminating app due to uncaught exception &#x27;NSInvalidArgumentException&#x27;, </span><br><span class="line">reason: &#x27;-[MySubClass superTest]: unrecognized selector sent to instance 0x600000016d10&#x27;</span><br></pre></td></tr></table></figure>
 
 <p>Look at the hooked state:</p>
-<img src="/2018/01/24/iOS消息转发的正确Hook姿势/08.png" />
+<img src="/2018/01/24/iOS消息转发的正确Hook姿势/08.png" alt="JSPatch VS Aspects: JSPatch Hooks the Superclass Method First, Aspects Hooks the Subclass Method Later, Then [subclass superTest] Is Called (figure 10)" decoding="async" loading="lazy">
 
 <p>Why does it crash?</p>
 <blockquote>

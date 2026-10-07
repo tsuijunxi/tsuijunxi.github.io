@@ -606,8 +606,8 @@ practice.</p>
 </blockquote>
 <table>
 <tr>
-<td><video src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/01.mp4" type="video/mp4" controls="controls" width="100%" height="100%"></video></td>
-<td><video src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/02.mp4" type="video/mp4" controls="controls" width="100%" height="100%"></video></td>
+<td><video preload="metadata" src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/01.mp4" type="video/mp4" controls="controls" width="100%" height="100%"></video></td>
+<td><video preload="metadata" src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/02.mp4" type="video/mp4" controls="controls" width="100%" height="100%"></video></td>
 </tr>
 </table>
 
@@ -633,7 +633,7 @@ subclass needs to implement the same interface.</p>
 <h3 id="interface-implementation">Interface implementation</h3>
 <p>Take <code>\sqrt[3]{(x-y)^3}=x-y</code> as an example. Its Atom tree
 looks like this:</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/11.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/11.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Interface implementation (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <p>Five <code>Atom</code> subclasses are involved here, and each of them
 needs to implement <code>getSpeechText</code>. The examples below show
@@ -706,7 +706,7 @@ without adding a second special case to the TTS layer.</p>
 inference</h3>
 <p>Some symbols look visually simple. For example, the
 <code>\equalparallel</code> command renders like this:</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/05.png" width="10%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/05.png" width="10%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Early truncation for inference (figure 2)" decoding="async" loading="lazy">
 
 <p>Its generated <code>Atom</code> tree, however, is surprisingly
 complex:</p>
@@ -735,7 +735,7 @@ related nodes do not live in the same subtree. During LaTeX parsing, a
 “command stack” is generated. Normally, commands just pop from the stack
 in order. But here commands have semantic relationships, so special
 handling is needed.</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/04.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/04.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Parameter stealing (figure 3)" decoding="async" loading="lazy">
 
 <p>When <code>CommandRm</code> closes, it performs several checks:</p>
 <ol type="1">
@@ -854,7 +854,7 @@ needed.</p>
 <p>Consider this chemical formula:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\ce{H2SO4}</span><br></pre></td></tr></table></figure>
 
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/07.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/07.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Flattening a subtree locally (figure 4)" decoding="async" loading="lazy">
 
 <p>The generated node tree is shown above. If we still read it with tree
 traversal, it is difficult to associate it with the name “硫酸”. This
@@ -872,7 +872,7 @@ prefix superscripts with <code>^</code>, and concatenate them.</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ScriptsAtom</span> : <span class="keyword">public</span> Atom, <span class="keyword">public</span> HasTrueBase {</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; base;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; subscript;</span><br><span class="line">    std::shared_ptr&lt;Atom&gt; superscript;</span><br><span class="line">    ......</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">std::wstring <span class="title">ScriptsAtom::toString</span><span class="params">()</span> </span>{</span><br><span class="line">    std::wstring key = <span class="string">L""</span>;</span><br><span class="line">    <span class="keyword">if</span> (base != <span class="literal">nullptr</span>) key += base-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (subscript != <span class="literal">nullptr</span>) key += <span class="string">L"_"</span> + subscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">if</span> (superscript != <span class="literal">nullptr</span>) key += <span class="string">L"^"</span> + superscript-&gt;<span class="built_in">toString</span>();</span><br><span class="line">    <span class="keyword">return</span> key;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 
 <p>With this rule, the tree above is flattened into this form:</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/08.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/08.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Flattening a subtree locally (figure 5)" decoding="async" loading="lazy">
 
 <h3 id="recognizing-chemical-formulas">Recognizing chemical
 formulas</h3>
@@ -891,11 +891,11 @@ also has a name, “硫化氢”.</li>
 <p>This problem is very similar to search engines. When you type some
 characters, search engines can show a list of associated
 suggestions.</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/06.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/06.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Recognizing chemical formulas (figure 6)" decoding="async" loading="lazy">
 
 <p>This is a prefix-matching problem, so a trie is a natural fit for
 recognizing chemical formula names.</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/09.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/09.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Recognizing chemical formulas (figure 7)" decoding="async" loading="lazy">
 
 <p>The figure shows a constructed <code>Trie</code> tree of chemical
 formula names. Every node stores a name, if any, representing the
@@ -951,7 +951,7 @@ equations</h3>
 <p>Once chemical formulas can be recognized, we can further recognize
 chemical equations. Compared with chemical formulas, chemical equations
 contain the following concepts:</p>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/10.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/10.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Recognizing chemical equations (figure 8)" decoding="async" loading="lazy">
 
 <p>The following data structure is defined, and the existence of
 <code>Equation</code> is used as the fundamental criterion for
@@ -972,7 +972,7 @@ is:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2</span>个过氧化钠和<span class="number">2</span>个水在加热的条件下反应生成<span class="number">4</span>个氢氧化钠和<span class="number">1</span>个氧气气体</span><br></pre></td></tr></table></figure>
 
 <h3 id="reading-concentrations">Reading concentrations</h3>
-<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/03.png" width="100%">
+<img src="/2024/02/02/关于 LaTeX 的 TTS 朗读这件事/03.png" width="100%" alt="Teaching a TTS Engine to Read LaTeX in Chinese: Reading concentrations (figure 9)" decoding="async" loading="lazy">
 
 <p>Ion concentration is read differently from a chemical equation. The
 equals sign in the middle simply means “equals”, so we only need to

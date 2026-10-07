@@ -635,7 +635,7 @@ id="若使用assignobject为什么不会crash如何能避免调用oc的dealloc">
 <p>我们写一个类叫XXObject，来跟踪下dealloc的调用过程</p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">XXObject</span></span></span><br><span class="line">-(<span class="type">void</span>)dealloc&#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@&quot;XXObject dealloc&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="01.jpg" alt="OC dealloc" /></p>
+<p><img src="01.jpg" alt="OC dealloc" decoding="async" loading="eager" fetchpriority="high"></p>
 <figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="type">void</span>)dealloc &#123;</span><br><span class="line">    _objc_rootDealloc(<span class="keyword">self</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> _objc_rootDealloc(id obj)</span><br><span class="line">&#123;</span><br><span class="line">    assert(obj);</span><br><span class="line">    obj-&gt;rootDealloc();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -673,7 +673,7 @@ id="若使用assignobject为什么不会crash如何能避免调用oc的dealloc">
 <blockquote>
 <ul>
 <li>2、再用Instrument检查下是否有内存泄露，可以看到该对象是得到正确释放的
-<img src="02.jpg" alt="内存泄露" /></li>
+<img src="02.jpg" alt="内存泄露" decoding="async" loading="lazy"></li>
 </ul>
 </blockquote>
 <h3
@@ -683,7 +683,7 @@ id="如果同时hook父类和子类的dealloc方法会发生什么呢">如果同
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;JPBaseViewController&#x27;</span>, &#123;            </span><br><span class="line">    <span class="attr">dealloc</span>:<span class="keyword">function</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;JPBaseViewController JS dealloc&quot;</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="title function_">defineClass</span>(<span class="string">&#x27;JPViewController&#x27;</span>, &#123;            </span><br><span class="line">    <span class="attr">dealloc</span>:<span class="keyword">function</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;JPViewController JS dealloc&quot;</span>);</span><br><span class="line">    &#125;,            </span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 
 <p>结果还是发生了crash，原因是堆栈溢出…</p>
-<style>.mkelqrxxjqvj{}</style><img src="/2018/01/21/JSPatch%E7%9A%84dealloc%E5%BF%A7%E4%BC%A4/03.png" class="mkelqrxxjqvj">
+<style>.kamwzecyfifg{}</style><img src="/2018/01/21/JSPatch%E7%9A%84dealloc%E5%BF%A7%E4%BC%A4/03.png" class="kamwzecyfifg" alt="JSPatch的dealloc忧伤：如果同时hook父类和子类的dealloc方法，会发生什么呢？（图 3）" decoding="async" loading="lazy">
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">JSPatchDemo[91945:50530228] JSPatch.log: JPViewController JS dealloc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 

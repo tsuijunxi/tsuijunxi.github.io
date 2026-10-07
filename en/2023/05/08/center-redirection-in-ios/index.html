@@ -589,7 +589,7 @@ redirected through shared logic, some work is performed before or after
 the original call, and control then returns to its normal path. This
 resembles a conventional hook, but the emphasis here is on routing many
 call sites through the same trampoline.</p>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/01.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/01.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Background (figure 1)" decoding="async" loading="eager" fetchpriority="high">
 
 <h2 id="hooking-an-objective-c-block">Hooking an Objective-C block</h2>
 <p>Most Objective-C method dispatch eventually passes through one of the
@@ -623,7 +623,7 @@ and removing a block hook.</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">pre</span><span class="params">(<span class="type">void</span> *p1, <span class="type">void</span> *p2)</span> &#123;</span><br><span class="line">     <span class="built_in">printf</span>(<span class="string">&quot;before hook\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">post</span><span class="params">(<span class="type">void</span> *p1, <span class="type">void</span> *p2)</span> &#123;</span><br><span class="line">     <span class="built_in">printf</span>(<span class="string">&quot;after hook\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line">- (<span class="type">void</span>)testBlockWithAll &#123;</span><br><span class="line">    __block BOOL didRun = NO;</span><br><span class="line">    Student (^Block)(id self) = ^Student (id blockself) &#123;</span><br><span class="line">        didRun = YES;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;this is the original block\n&quot;</span>);</span><br><span class="line">        Student s = &#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>&#125;;</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    Student (^ReplacedBlock)(id self) = ^Student (id blockself) &#123;</span><br><span class="line">        didRun = YES;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;this is the replaced block\n&quot;</span>);</span><br><span class="line">        Student s = &#123;<span class="number">6</span>,<span class="number">5</span>,<span class="number">4</span>,<span class="number">3</span>,<span class="number">2</span>,<span class="number">1</span>&#125;;</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    hook_block_with_stub((__bridge <span class="type">void</span> *)(Block), (__bridge <span class="type">void</span> *)(ReplacedBlock), pre, after);</span><br><span class="line">    Student student = Block(self);</span><br><span class="line">    NSAssert(student.height == <span class="number">2</span>, @<span class="string">&quot;&quot;</span>);</span><br><span class="line"></span><br><span class="line">    unhook_block((__bridge <span class="type">void</span> *)(Block));</span><br><span class="line">    student = Block(self);</span><br><span class="line">    NSAssert(student.height == <span class="number">5</span>, @<span class="string">&quot;&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>The output is shown below:</p>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/02.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/02.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: API and usage (figure 2)" decoding="async" loading="lazy">
 
 <p>The same block can be passed as both the first and second arguments
 to <code>hook_block_with_stub</code>. In that mode, the original
@@ -651,7 +651,7 @@ imp_implementationWithBlock()</a>, we can build an executable
 <code>Trampoline Page</code> ahead of time and use <code>vm_remap</code>
 to create runtime copies such as <code>Trampoline Page Copy #1</code>
 and <code>Trampoline Page Copy #2</code>.</p>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/03.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/03.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Principle (figure 3)" decoding="async" loading="lazy">
 
 <p>That solves only half of the problem. A <code>Trampoline Page</code>
 contains multiple <code>Trampoline Entry</code> slots, one for each
@@ -665,11 +665,11 @@ below, if a <code>Trampoline Entry</code> in
 <code>Trampoline Page Copy #1</code> needs some information, it can load
 it from the corresponding position in
 <code>Trampoline Data #1</code>.</p>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/04.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/04.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Principle (figure 4)" decoding="async" loading="lazy">
 
 <h3 id="mapping-the-code-and-data-pages">Mapping the code and data
 pages</h3>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/05.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/05.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Mapping the code and data pages (figure 5)" decoding="async" loading="lazy">
 
 <p>We first allocate two contiguous virtual memory pages with
 <code>vm_allocate</code>, release the second page with
@@ -711,7 +711,7 @@ execution context.</li>
 <li>When it returns, call the <code>post</code> stub and then resume the
 caller’s control flow.</li>
 </ol>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/06.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/06.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Control-flow redirection (figure 6)" decoding="async" loading="lazy">
 
 <p>The trampoline needs the block’s <code>pre</code> and
 <code>post</code> stub addresses while redirecting control flow. We
@@ -835,8 +835,8 @@ have destroyed <code>x12</code>.</li>
 <figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">end:</span></span><br><span class="line"><span class="keyword">ldr</span> <span class="built_in">x13</span>, [<span class="built_in">sp</span>], <span class="number">#0x10</span></span><br><span class="line"><span class="keyword">br</span> <span class="built_in">x13</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="hopper-diagram">Hopper diagram</h3>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/07.png" width="100%"/>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/08.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/07.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Hopper diagram (figure 7)" decoding="async" loading="lazy">
+<img src="/2023/05/08/聊聊iOS中的中心重定向/08.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Hopper diagram (figure 8)" decoding="async" loading="lazy">
 
 <p>In the left diagram, <code>_block_tramp_dispatch</code> begins at the
 page boundary <code>0x0000000000008000</code>. In the right diagram, the
@@ -846,9 +846,9 @@ is the <code>224</code>-byte dispatch area described above.</p>
 <h2 id="x86_64-assembly-implementation">x86_64 assembly
 implementation</h2>
 <h3 id="registers-1">Registers</h3>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/09.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/09.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Registers (figure 9)" decoding="async" loading="lazy">
 <hr/>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/10.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/10.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Registers (figure 10)" decoding="async" loading="lazy">
 
 <h3 id="assembly-code-1">Assembly code</h3>
 <blockquote>
@@ -861,13 +861,13 @@ version, so I will not repeat every step.</p>
 <figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">.macro</span> save_register</span><br><span class="line"><span class="keyword">push</span> %rdi</span><br><span class="line"><span class="keyword">push</span> %rsi</span><br><span class="line"><span class="keyword">push</span> %rdx</span><br><span class="line"><span class="keyword">push</span> %rcx</span><br><span class="line"><span class="keyword">push</span> %r8</span><br><span class="line"><span class="keyword">push</span> %r9</span><br><span class="line"><span class="keyword">push</span> %r10</span><br><span class="line"><span class="keyword">push</span> %r11</span><br><span class="line"><span class="keyword">push</span> %rax</span><br><span class="line"><span class="keyword">push</span> %rax # Padding for <span class="number">16</span>-<span class="built_in">byte</span> stack alignment.</span><br><span class="line"><span class="meta">.endm</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">.macro</span> load_register</span><br><span class="line"><span class="keyword">pop</span> %rax</span><br><span class="line"><span class="keyword">pop</span> %rax</span><br><span class="line"><span class="keyword">pop</span> %r11</span><br><span class="line"><span class="keyword">pop</span> %r10</span><br><span class="line"><span class="keyword">pop</span> %r9</span><br><span class="line"><span class="keyword">pop</span> %r8</span><br><span class="line"><span class="keyword">pop</span> %rcx</span><br><span class="line"><span class="keyword">pop</span> %rdx</span><br><span class="line"><span class="keyword">pop</span> %rsi</span><br><span class="line"><span class="keyword">pop</span> %rdi</span><br><span class="line"><span class="meta">.endm</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">.text</span></span><br><span class="line"><span class="meta">.align</span> <span class="number">12</span></span><br><span class="line"><span class="meta">.globl</span> _blockimp_table_page</span><br><span class="line"><span class="symbol">_blockimp_table_page:</span></span><br><span class="line"><span class="symbol"></span></span><br><span class="line"><span class="symbol">_block_tramp_dispatch:</span></span><br><span class="line"># Save the return address <span class="keyword">in</span> <span class="built_in">r11</span>.</span><br><span class="line"><span class="keyword">movq</span> (%rsp), %r11</span><br><span class="line"></span><br><span class="line">subq <span class="number">$0</span>x20, %rsp</span><br><span class="line"></span><br><span class="line"># Calculate the block<span class="string">&#x27;s trampoline data address.</span></span><br><span class="line"><span class="string">sub $0x5,  %r11</span></span><br><span class="line"><span class="string">sub $0x1000, %r11</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Store the trampoline data address on the stack.</span></span><br><span class="line"><span class="string">movq %r11, 0x8(%rsp)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Load the pre-stub address.</span></span><br><span class="line"><span class="string">mov 0x18(%r11), %r10</span></span><br><span class="line"><span class="string">cmp $0x0, %r10</span></span><br><span class="line"><span class="string">je block</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Execute the pre stub.</span></span><br><span class="line"><span class="string">pre:</span></span><br><span class="line"><span class="string">save_register</span></span><br><span class="line"><span class="string">call *%r10</span></span><br><span class="line"><span class="string">load_register</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Execute the original block implementation.</span></span><br><span class="line"><span class="string">block:</span></span><br><span class="line"><span class="string">call *0x10(%r11)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">movq 0x8(%rsp), %r11</span></span><br><span class="line"><span class="string">movq 0x20(%r11), %r10</span></span><br><span class="line"><span class="string">cmpq $0x0, %r10</span></span><br><span class="line"><span class="string">je end</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Execute the post stub.</span></span><br><span class="line"><span class="string">after:</span></span><br><span class="line"><span class="string">save_register</span></span><br><span class="line"><span class="string">call *%r10</span></span><br><span class="line"><span class="string">load_register</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">end:</span></span><br><span class="line"><span class="string">addq $0x20, %rsp</span></span><br><span class="line"><span class="string">ret</span></span><br><span class="line"><span class="string">.align 4</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Generate the trampoline entries.</span></span><br><span class="line"><span class="string">.rept 256</span></span><br><span class="line"><span class="string">call _block_tramp_dispatch # 5 bytes</span></span><br><span class="line"><span class="string">.rept 34</span></span><br><span class="line"><span class="string">nop</span></span><br><span class="line"><span class="string">.endr</span></span><br><span class="line"><span class="string">ret</span></span><br><span class="line"><span class="string">.endr</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="hopper-diagram-1">Hopper diagram</h3>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/11.png" width="100%"/>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/12.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/11.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Hopper diagram (figure 11)" decoding="async" loading="lazy">
+<img src="/2023/05/08/聊聊iOS中的中心重定向/12.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Hopper diagram (figure 12)" decoding="async" loading="lazy">
 
 <h3 id="stack-alignment-pitfall">Stack alignment pitfall</h3>
 <p>During debugging, the x86_64 implementation repeatedly crashed on
 <code>SSE</code> instructions such as <code>movaps</code>.</p>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/13.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/13.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Stack alignment pitfall (figure 13)" decoding="async" loading="lazy">
 
 <p>The root cause was stack alignment. The <a
 href="https://jyywiki.cn/pages/OS/manuals/sysv-abi.pdf">System V AMD64
@@ -879,7 +879,7 @@ words, the value (%rsp + 8) is always a multiple of 16 (32 or 64) when
 control is transferred to the function entry point. The stack pointer,
 %rsp, always points to the end of the latest allocated stack frame.</p>
 </blockquote>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/14.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/14.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Stack alignment pitfall (figure 14)" decoding="async" loading="lazy">
 
 <p>The System V AMD64 calling convention requires 16-byte stack
 alignment at a function-call boundary. Immediately before
@@ -899,7 +899,7 @@ instruction on line 10.</p>
 
 <h3 id="why-not-save-and-restore-xmm0-xmm7">Why not save and restore
 <code>xmm0-xmm7</code>?</h3>
-<img src="/2023/05/08/聊聊iOS中的中心重定向/15.png" width="100%"/>
+<img src="/2023/05/08/聊聊iOS中的中心重定向/15.png" width="100%" alt="Hooking Objective-C Blocks with TrampolineHook on iOS: Why not save and restore xmm0-xmm7 ? (figure 15)" decoding="async" loading="lazy">
 
 <p>The x86_64 implementation does not currently preserve the
 floating-point registers. Xcode’s assembler rejected the syntax I tried,
