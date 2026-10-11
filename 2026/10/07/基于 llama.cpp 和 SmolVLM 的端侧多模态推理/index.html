@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+<html class="theme-next gemini" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#222">
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入文章密码') !== ''){
+                alert('密码错误！');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4.1" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4.1" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="SmolVLM, llama.cpp, VLM, 端侧推理, 多模态模型, SigLIP, Pixel Shuffle, GGUF, KV Cache, iOS" />
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="从 SmolVLM 的视觉编码、Pixel Shuffle 与语言模型讲起，结合 llama.cpp 的 mtmd 源码，拆解模型加载、Prompt 编排、图像预处理、Prefill、KV Cache 和自回归解码的完整端侧推理链路。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于 llama.cpp 和 SmolVLM 的端侧多模态推理">
+<meta property="og:url" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/">
+<meta property="og:site_name" content="凌云的博客">
+<meta property="og:description" content="从 SmolVLM 的视觉编码、Pixel Shuffle 与语言模型讲起，结合 llama.cpp 的 mtmd 源码，拆解模型加载、Prompt 编排、图像预处理、Prefill、KV Cache 和自回归解码的完整端侧推理链路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2010.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%204.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%203.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%208.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2011.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/SmolLM2.jpg">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%205.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2012.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%207.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%201.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%206.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%209.png">
+<meta property="og:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%202.png">
+<meta property="article:published_time" content="2026-10-07T11:05:41.000Z">
+<meta property="article:modified_time" content="2026-10-10T16:00:00.000Z">
+<meta property="article:author" content="lingyun">
+<meta property="article:tag" content="SmolVLM">
+<meta property="article:tag" content="VLM">
+<meta property="article:tag" content="llama.cpp">
+<meta property="article:tag" content="端侧推理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2010.png">
+
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/"},"headline":"基于 llama.cpp 和 SmolVLM 的端侧多模态推理","description":"从 SmolVLM 的视觉编码、Pixel Shuffle 与语言模型讲起，结合 llama.cpp 的 mtmd 源码，拆解模型加载、Prompt 编排、图像预处理、Prefill、KV Cache 和自回归解码的完整端侧推理链路。","image":["https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2012.png"],"datePublished":"2026-10-07T11:05:41.000Z","dateModified":"2026-10-11T00:00:00.000Z","inLanguage":"zh-Hans","author":{"@type":"Person","name":"Lingyun","alternateName":"凌云","url":"https://tsuijunxi.github.io/about/","sameAs":["https://github.com/tsuijunxi"]},"publisher":{"@type":"Organization","name":"凌云的博客","logo":{"@type":"ImageObject","url":"https://tsuijunxi.github.io/images/apple-touch-icon-next.png"}}}</script>
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Gemini',
+    version: '5.1.4.1',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/"/>
+
+
+
+  
+  <link rel="alternate" hreflang="zh-Hans" href="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/"/>
+  
+  <link rel="alternate" hreflang="en" href="https://tsuijunxi.github.io/en/2026/10/07/on-device-multimodal-inference-with-llama-cpp-and-smolvlm/"/>
+  
+  
+  <link rel="alternate" hreflang="x-default" href="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/"/>
+  
+
+
+
+
+
+  <title>基于 llama.cpp 和 SmolVLM 的端侧多模态推理 | 凌云的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 8.1.2"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">凌云的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+      
+<nav class="site-language-switch" aria-label="Site language">
+  
+    <span class="active">中文</span>
+  
+  <span class="separator">/</span>
+  
+    <a href="/en/2026/10/07/on-device-multimodal-inference-with-llama-cpp-and-smolvlm/">EN</a>
+  
+</nav>
+
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-apps">
+          <a href="/apps/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-mobile"></i> <br />
+            
+            作品
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    
+    <link itemprop="mainEntityOfPage" href="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/">
+    <meta itemprop="image" content="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/image%2012.png">
+    <meta itemprop="dateModified" content="2026-10-11T00:00:00.000Z">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lingyun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/favicon.ico">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="凌云的博客">
+      <span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+        <meta itemprop="url" content="https://tsuijunxi.github.io/images/apple-touch-icon-next.png">
+      </span>
+    </span>
+    
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于 llama.cpp 和 SmolVLM 的端侧多模态推理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-10-07T19:05:41+08:00">
+                2026-10-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+              <span class="post-meta-item-text">分类于</span>
+              
+              
+              
+                  <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                    <a href="/categories/AI/" itemprop="url" rel="index">
+                      <span itemprop="name">AI</span>
+                    </a>
+                  </span>
+
+                  
+                  
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4.4k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  16 mins.
+                </span>
+              
+            </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        
+        <nav class="post-language-switch" aria-label="Article languages">
+          <i class="fa fa-language"></i>
+          
+            <span class="active">中文</span>
+          
+          
+            <span class="separator">/</span>
+            
+              <a href="/en/2026/10/07/on-device-multimodal-inference-with-llama-cpp-and-smolvlm/">English</a>
+            
+          
+        </nav>
+      
+
+      
+      
+
+      
+        <h2 id="背景">背景</h2>
+<p>App 中有几类图像理解需求，例如作品检索、补充图片 Prompt
+和生成发布文案，目前主要依赖服务端大模型。为了降低调用成本、图片传输和网络延迟，我们开始探索端侧模型。</p>
+<p>此前调研了 MLX、llama.cpp 等推理框架。本文以 SmolVLM 和 llama.cpp
+为例，从模型结构入手，继续分析它在 llama.cpp
+中的完整推理过程。选择这套组合主要有两个原因：</p>
+<ul>
+<li>SmolVLM 提供了多种适合端侧运行的量化版本，llama.cpp
+较早完成了对该模型的适配。</li>
+<li>llama.cpp 本身以 C++
+实现，也便于两端复用底层推理代码，减少跨平台语言层的额外适配。</li>
+</ul>
+<h2 id="vlm-模型简介">VLM 模型简介</h2>
+<blockquote>
+<p>本节内容参考 <a href="https://arxiv.org/abs/2504.05299">SmolVLM
+论文</a>。</p>
+</blockquote>
+<p>大多数 VLM 都可以拆成三个核心模块：视觉编码器（Vision
+Encoder）、投影器（Projector）和大语言模型（LLM）。视觉编码器负责提取图像特征，投影器把这些特征映射到语言模型能够处理的嵌入空间，LLM
+再结合文本 token 完成理解与生成。</p>
+<p><img src="image%2010.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：VLM 模型简介（图 1）" decoding="async" loading="eager" fetchpriority="high"></p>
+<p>SmolVLM
+沿用了这一结构，并针对内存占用和推理效率做了调整。图像或视频帧先被编码为视觉特征，再与文本嵌入组成混合序列送入语言模型。对应到模型中有三部分：</p>
+<ol type="1">
+<li>Vision Model：SigLIP
+编码器负责处理输入图像或视频帧，提取视觉特征。</li>
+<li>Projector：先通过 Pixel Shuffle
+对视觉特征进行压缩，再统一映射到语言模型的嵌入空间，供 LLM
+理解与处理。</li>
+<li>LLM：基于 SmolLM2，处理视觉与文本组成的混合序列并生成结果。</li>
+</ol>
+<h3 id="smolvlm-的图像切分策略">SmolVLM 的图像切分策略</h3>
+<p>SmolVLM 在视觉编码前会执行 Image
+Splitting。这里容易产生误解：它不做对象级语义分割，而是根据图片尺寸和模型限制划分规则网格，同时保留一张低分辨率的全局缩略图。局部切片保留细节，全局图补充整张图片的上下文。</p>
+<ul>
+<li><p>直接编码全图：若将 1920×1080
+等高分辨率图片直接缩放到视觉编码器的固定输入尺寸（如
+512×512），小文字、图表元素等细节容易丢失。</p></li>
+<li><p>规则切片：将缩放后的图片按固定网格切成多个子图，每个子图单独编码，可以在模型输入尺寸不变的情况下保留更多局部信息。</p></li>
+</ul>
+<h3 id="视觉编码器">视觉编码器</h3>
+<p>SmolVLM 的视觉编码器基于 SigLIP（Sigmoid Loss for Language-Image
+Pretraining）。SigLIP 采用 Vision
+Transformer（ViT）架构，通过图文对预训练，把视觉信息编码为紧凑的特征表示。与
+CLIP 的全局 softmax 不同，SigLIP 对每个图文对独立计算 sigmoid
+loss，不需要对批次内所有相似度做全局归一化，因此对 batch size
+的依赖更小。</p>
+<p><img src="image%204.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：视觉编码器（图 2）" decoding="async" loading="lazy"></p>
+<p><img src="image%203.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：视觉编码器（图 3）" decoding="async" loading="lazy"></p>
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>CLIP</th>
+<th>SigLIP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>提出时间</td>
+<td>OpenAI，2021</td>
+<td>Google，2023</td>
+</tr>
+<tr>
+<td>训练目标</td>
+<td>在一个 batch 内对图文相似度进行全局 softmax 归一化</td>
+<td>对每个图文对独立计算 sigmoid loss</td>
+</tr>
+<tr>
+<td>对 batch 的依赖</td>
+<td>通常需要较大的 batch 才能获得足够多的负样本</td>
+<td>不依赖全局归一化，在较小 batch 下也能保持较好的训练效果</td>
+</tr>
+</tbody>
+</table>
+<p>SmolVLM 会根据模型规模和应用场景选用不同的 SigLIP 变体：</p>
+<ul>
+<li><p>SigLIP base patch-16/512：参数量约 93M，patch 大小为 16×16
+像素，用于 SmolVLM-256M 和 SmolVLM-500M，适合资源受限的设备。</p></li>
+<li><p>SigLIP-SO400M：参数量约 428M，patch 大小为 14×14 像素，用于
+SmolVLM-2.2B，面向更高性能需求。</p></li>
+</ul>
+<p>SmolVLM 的实验表明，增大视觉编码器并不一定能显著提升整体效果。搭配
+135M 语言模型时，428M 视觉编码器的表现反而不及 93M 版本；搭配 360M
+语言模型时，较大的编码器虽然带来了 11.6% 的性能提升，参数量也随之增加了
+66%。</p>
+<p>对紧凑型 VLM
+来说，单独增大视觉编码器未必划算。语言模型太小时，额外增加的视觉特征不一定能被充分利用。</p>
+<p><img src="image%208.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：视觉编码器（图 4）" decoding="async" loading="lazy"></p>
+<p>类似的紧凑型 VLM 也常采用“语言模型参数量高于视觉编码器”的配置。</p>
+<h3 id="大语言模型">大语言模型</h3>
+<p><img src="image%2011.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：大语言模型（图 5）" decoding="async" loading="lazy"></p>
+<p><img src="SmolLM2.jpg" alt="SmolLM2.jpg" decoding="async" loading="lazy"></p>
+<p>Hugging Face 发布的 <a href="https://huggingface.co/collections/HuggingFaceTB/smollm2-6723884218bcda64b34d7db9"><strong>SmolLM2</strong></a>
+是一组面向端侧应用的小型语言模型，包含 0.1B、0.3B 和 1.7B
+三种规模。它延续了 SmolLM1
+的轻量化方向，适合对延迟、隐私和硬件资源较为敏感的场景。</p>
+<p>其中，SmolLM2-1.7B 使用 FineWeb-Edu、DCLM 和 The Stack 等数据集中的约
+11 万亿个 token
+进行训练，内容以英语为主，并针对文本重写、摘要和函数调用等任务做了优化。从公开材料看，训练过程有几个值得注意的地方：</p>
+<ul>
+<li><p>长时间训练：模型规模较小，但训练 token
+数量远高于以往同等规模模型的常见配置。</p></li>
+<li><p>多阶段训练：先使用大规模 Web
+文本，再逐步加入高质量数学、代码和指令数据，并动态调整数据源的混合比例。</p></li>
+<li><p>数据评估与选择：分别评估
+Web、代码、数学和指令遵循数据，并根据结果决定训练数据的组成。</p></li>
+<li><p>数据集增强：补充 FineMath、Stack-Edu 和
+SmolTalk，分别加强数学推理、代码和指令遵循能力。</p></li>
+<li><p>在线重平衡：根据模型在关键基准测试上的表现，持续调整数据集比例。</p></li>
+</ul>
+<h3 id="投影层">投影层</h3>
+<p>SmolVLM 的投影层负责把 SigLIP 输出并经过 Pixel Shuffle
+处理的视觉特征映射到语言模型的嵌入空间。Pixel Shuffle 将每个视觉 token
+的特征维度扩展为原来的 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.025ex;" xmlns="http://www.w3.org/2000/svg" width="2.008ex" height="1.912ex" role="img" focusable="false" viewBox="0 -833.9 887.6 844.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="r^2"><g data-mml-node="msup" data-latex="r^2"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mn" transform="translate(484,363) scale(0.707)" data-latex="2"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></g></svg></mjx-container></span>
+倍，随后通过线性投影映射到语言模型的 hidden size，这样便能和文本 token
+一起处理。</p>
+<p>这一层的结构很轻，计算开销也不高。不过它做的主要是维度和特征空间对齐，投影时可能丢失一部分细节，也不会主动建模更复杂的跨模态关系。</p>
+<h4 id="像素重排">像素重排</h4>
+<p><a href="https://animatedai.github.io/#pixel-shuffle">Pixel
+Shuffle</a>
+最初用于图像超分辨率，通过重新排列空间维度与通道维度，在不丢弃元素的情况下改变特征图形状。SmolVLM
+使用相反方向的重排，把部分空间信息压入通道维度，减少送入语言模型的视觉
+token 数量。结果是特征向量变宽，token 序列变短。</p>
+<p><img src="image.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：像素重排（图 7）" decoding="async" loading="lazy"></p>
+<p>标准 Pixel Shuffle 的形状变化可以写成：<span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="12.077ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 5338 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(278,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1037,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(1481.7,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2241.7,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="H" transform="translate(2686.3,0)"><path data-c="1D43B" d="M881 668C881 678 875 683 863 683L736 680L609 683C593 683 586 674 586 659C586 652 589 647 594 646C604 645 612 644 617 644C648 643 665 641 670 640C675 639 678 636 678 631C677 628 676 622 674 613L615 375L321 375L379 602C384 623 393 636 406 641C413 643 430 644 458 644C485 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 683 200 674 200 659C200 652 203 647 209 646C219 645 227 644 232 644C263 643 281 641 286 640C291 639 293 636 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 39 37 39 15C39 5 45 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 323 39 302 39C262 39 242 43 242 52C242 52 243 55 245 68L312 336L605 336L538 68C535 53 523 43 503 40C498 39 481 39 452 39C433 39 424 31 424 15C424 5 430 0 442 0L568 3L631 2C642 2 683 0 696 0C712 0 720 8 720 24C720 34 709 39 688 39C647 39 627 43 627 52C627 52 628 55 630 68L764 602C769 623 778 636 791 641C797 643 814 644 843 644C869 644 881 644 881 668Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3567.3,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="W" transform="translate(4012,0)"><path data-c="1D44A" d="M956 680C937 680 872 683 853 683C838 683 830 675 830 660C830 650 836 645 848 644C885 643 903 632 903 610C903 604 899 594 891 579L629 125L594 602C590 638 614 644 659 644C680 644 690 652 690 668C690 678 684 683 671 683C649 683 572 680 550 680C531 680 465 683 446 683C431 683 423 675 423 659C423 649 432 644 451 644C482 644 498 637 499 623L505 548L261 125L225 613C222 638 264 644 296 644C313 644 321 652 321 668C321 678 315 683 303 683C281 683 203 680 181 680C162 680 96 683 77 683C62 683 55 675 55 660C55 649 65 644 84 644C126 644 130 642 132 612L177 7C178-12 185-22 197-22C210-20 215-17 223-2C224-1 224 0 224 1L509 494L545 7C546-12 553-22 565-22C575-22 584-15 592-1L918 562C945 611 964 639 1025 644C1043 646 1048 651 1048 668C1048 678 1043 683 1032 683C1018 683 970 680 956 680Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(5060,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.963ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3519.4 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(1555.8,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2314.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(2759.4,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="10.145ex" height="2.452ex" role="img" focusable="false" viewBox="0 -833.9 4484.1 1083.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="\cdot"><path data-c="22C5" d="M192 250C192 279 168 303 139 303C110 303 86 279 86 250C86 221 110 197 139 197C168 197 192 221 192 250Z"></path></g><g data-mml-node="msup" data-latex="r^2" transform="translate(500.2,0)"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mn" transform="translate(484,363) scale(0.707)" data-latex="2"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g><g data-mml-node="mo" data-latex="," transform="translate(1387.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="H" transform="translate(1832.4,0)"><path data-c="1D43B" d="M881 668C881 678 875 683 863 683L736 680L609 683C593 683 586 674 586 659C586 652 589 647 594 646C604 645 612 644 617 644C648 643 665 641 670 640C675 639 678 636 678 631C677 628 676 622 674 613L615 375L321 375L379 602C384 623 393 636 406 641C413 643 430 644 458 644C485 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 683 200 674 200 659C200 652 203 647 209 646C219 645 227 644 232 644C263 643 281 641 286 640C291 639 293 636 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 39 37 39 15C39 5 45 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 323 39 302 39C262 39 242 43 242 52C242 52 243 55 245 68L312 336L605 336L538 68C535 53 523 43 503 40C498 39 481 39 452 39C433 39 424 31 424 15C424 5 430 0 442 0L568 3L631 2C642 2 683 0 696 0C712 0 720 8 720 24C720 34 709 39 688 39C647 39 627 43 627 52C627 52 628 55 630 68L764 602C769 623 778 636 791 641C797 643 814 644 843 644C869 644 881 644 881 668Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2713.4,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="W" transform="translate(3158.1,0)"><path data-c="1D44A" d="M956 680C937 680 872 683 853 683C838 683 830 675 830 660C830 650 836 645 848 644C885 643 903 632 903 610C903 604 899 594 891 579L629 125L594 602C590 638 614 644 659 644C680 644 690 652 690 668C690 678 684 683 671 683C649 683 572 680 550 680C531 680 465 683 446 683C431 683 423 675 423 659C423 649 432 644 451 644C482 644 498 637 499 623L505 548L261 125L225 613C222 638 264 644 296 644C313 644 321 652 321 668C321 678 315 683 303 683C281 683 203 680 181 680C162 680 96 683 77 683C62 683 55 675 55 660C55 649 65 644 84 644C126 644 130 642 132 612L177 7C178-12 185-22 197-22C210-20 215-17 223-2C224-1 224 0 224 1L509 494L545 7C546-12 553-22 565-22C575-22 584-15 592-1L918 562C945 611 964 639 1025 644C1043 646 1048 651 1048 668C1048 678 1043 683 1032 683C1018 683 970 680 956 680Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(4206.1,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="10.962ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 4845.1 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(1555.8,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2314.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(2759.4,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3519.4,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="H" transform="translate(3964.1,0)"><path data-c="1D43B" d="M881 668C881 678 875 683 863 683L736 680L609 683C593 683 586 674 586 659C586 652 589 647 594 646C604 645 612 644 617 644C648 643 665 641 670 640C675 639 678 636 678 631C677 628 676 622 674 613L615 375L321 375L379 602C384 623 393 636 406 641C413 643 430 644 458 644C485 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 683 200 674 200 659C200 652 203 647 209 646C219 645 227 644 232 644C263 643 281 641 286 640C291 639 293 636 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 39 37 39 15C39 5 45 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 323 39 302 39C262 39 242 43 242 52C242 52 243 55 245 68L312 336L605 336L538 68C535 53 523 43 503 40C498 39 481 39 452 39C433 39 424 31 424 15C424 5 430 0 442 0L568 3L631 2C642 2 683 0 696 0C712 0 720 8 720 24C720 34 709 39 688 39C647 39 627 43 627 52C627 52 628 55 630 68L764 602C769 623 778 636 791 641C797 643 814 644 843 644C869 644 881 644 881 668Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="5.529ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 2443.9 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="⋅"><path data-c="22C5" d="M192 250C192 279 168 303 139 303C110 303 86 279 86 250C86 221 110 197 139 197C168 197 192 221 192 250Z"></path></g><g data-mml-node="mi" data-latex="r" transform="translate(500.2,0)"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(951.2,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="W" transform="translate(1395.9,0)"><path data-c="1D44A" d="M956 680C937 680 872 683 853 683C838 683 830 675 830 660C830 650 836 645 848 644C885 643 903 632 903 610C903 604 899 594 891 579L629 125L594 602C590 638 614 644 659 644C680 644 690 652 690 668C690 678 684 683 671 683C649 683 572 680 550 680C531 680 465 683 446 683C431 683 423 675 423 659C423 649 432 644 451 644C482 644 498 637 499 623L505 548L261 125L225 613C222 638 264 644 296 644C313 644 321 652 321 668C321 678 315 683 303 683C281 683 203 680 181 680C162 680 96 683 77 683C62 683 55 675 55 660C55 649 65 644 84 644C126 644 130 642 132 612L177 7C178-12 185-22 197-22C210-20 215-17 223-2C224-1 224 0 224 1L509 494L545 7C546-12 553-22 565-22C575-22 584-15 592-1L918 562C945 611 964 639 1025 644C1043 646 1048 651 1048 668C1048 678 1043 683 1032 683C1018 683 970 680 956 680Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="2.781ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1229.2 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→ [B, C \cdot r^2, H, W] →
+[B,C,H⋅r,W⋅r]"><g data-mml-node="mo" data-latex="⋅"><path data-c="22C5" d="M192 250C192 279 168 303 139 303C110 303 86 279 86 250C86 221 110 197 139 197C168 197 192 221 192 250Z"></path></g><g data-mml-node="mi" data-latex="r" transform="translate(500.2,0)"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(951.2,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>。</p>
+<ul>
+<li><p>B ：批次大小（batch size）。</p></li>
+<li><p><span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="1.719ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 760 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="C \cdot r^2"><g data-mml-node="mi" data-latex="C"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="3.14ex" height="2.452ex" role="img" focusable="false" viewBox="0 -833.9 1387.8 1083.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="C \cdot r^2"><g data-mml-node="mo" data-latex="\cdot"><path data-c="22C5" d="M192 250C192 279 168 303 139 303C110 303 86 279 86 250C86 221 110 197 139 197C168 197 192 221 192 250Z"></path></g><g data-mml-node="msup" data-latex="r^2" transform="translate(500.2,0)"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mn" transform="translate(484,363) scale(0.707)" data-latex="2"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></g></svg></mjx-container></span>：总通道数，包含
+<span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.025ex;" xmlns="http://www.w3.org/2000/svg" width="2.008ex" height="1.912ex" role="img" focusable="false" viewBox="0 -833.9 887.6 844.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="r^2"><g data-mml-node="msup" data-latex="r^2"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mn" transform="translate(484,363) scale(0.707)" data-latex="2"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></g></svg></mjx-container></span> 个子单位（<span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.025ex;" xmlns="http://www.w3.org/2000/svg" width="1.02ex" height="1.025ex" role="img" focusable="false" viewBox="0 -442 451 453"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="r"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g></g></g></svg></mjx-container></span> 是缩放因子）。</p></li>
+<li><p>H：图片高度。</p></li>
+<li><p>W ：图片宽度。</p></li>
+</ul>
+<p>上式对应超分辨率方向。SmolVLM 使用逆向重排，可表示为 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="12.077ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 5338 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→[B,C⋅r^2,H/r,W/r]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(278,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1037,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(1481.7,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2241.7,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="H" transform="translate(2686.3,0)"><path data-c="1D43B" d="M881 668C881 678 875 683 863 683L736 680L609 683C593 683 586 674 586 659C586 652 589 647 594 646C604 645 612 644 617 644C648 643 665 641 670 640C675 639 678 636 678 631C677 628 676 622 674 613L615 375L321 375L379 602C384 623 393 636 406 641C413 643 430 644 458 644C485 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 683 200 674 200 659C200 652 203 647 209 646C219 645 227 644 232 644C263 643 281 641 286 640C291 639 293 636 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 39 37 39 15C39 5 45 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 323 39 302 39C262 39 242 43 242 52C242 52 243 55 245 68L312 336L605 336L538 68C535 53 523 43 503 40C498 39 481 39 452 39C433 39 424 31 424 15C424 5 430 0 442 0L568 3L631 2C642 2 683 0 696 0C712 0 720 8 720 24C720 34 709 39 688 39C647 39 627 43 627 52C627 52 628 55 630 68L764 602C769 623 778 636 791 641C797 643 814 644 843 644C869 644 881 644 881 668Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3567.3,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="W" transform="translate(4012,0)"><path data-c="1D44A" d="M956 680C937 680 872 683 853 683C838 683 830 675 830 660C830 650 836 645 848 644C885 643 903 632 903 610C903 604 899 594 891 579L629 125L594 602C590 638 614 644 659 644C680 644 690 652 690 668C690 678 684 683 671 683C649 683 572 680 550 680C531 680 465 683 446 683C431 683 423 675 423 659C423 649 432 644 451 644C482 644 498 637 499 623L505 548L261 125L225 613C222 638 264 644 296 644C313 644 321 652 321 668C321 678 315 683 303 683C281 683 203 680 181 680C162 680 96 683 77 683C62 683 55 675 55 660C55 649 65 644 84 644C126 644 130 642 132 612L177 7C178-12 185-22 197-22C210-20 215-17 223-2C224-1 224 0 224 1L509 494L545 7C546-12 553-22 565-22C575-22 584-15 592-1L918 562C945 611 964 639 1025 644C1043 646 1048 651 1048 668C1048 678 1043 683 1032 683C1018 683 970 680 956 680Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(5060,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.963ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3519.4 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→[B,C⋅r^2,H/r,W/r]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(1555.8,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2314.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(2759.4,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="14.448ex" height="2.452ex" role="img" focusable="false" viewBox="0 -833.9 6386.1 1083.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,H,W]→[B,C⋅r^2,H/r,W/r]"><g data-mml-node="mo" data-latex="⋅"><path data-c="22C5" d="M192 250C192 279 168 303 139 303C110 303 86 279 86 250C86 221 110 197 139 197C168 197 192 221 192 250Z"></path></g><g data-mml-node="msup" data-latex="r^2" transform="translate(500.2,0)"><g data-mml-node="mi" data-latex="r"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mn" transform="translate(484,363) scale(0.707)" data-latex="2"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g><g data-mml-node="mo" data-latex="," transform="translate(1387.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="H" transform="translate(1832.4,0)"><path data-c="1D43B" d="M881 668C881 678 875 683 863 683L736 680L609 683C593 683 586 674 586 659C586 652 589 647 594 646C604 645 612 644 617 644C648 643 665 641 670 640C675 639 678 636 678 631C677 628 676 622 674 613L615 375L321 375L379 602C384 623 393 636 406 641C413 643 430 644 458 644C485 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 683 200 674 200 659C200 652 203 647 209 646C219 645 227 644 232 644C263 643 281 641 286 640C291 639 293 636 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 39 37 39 15C39 5 45 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 323 39 302 39C262 39 242 43 242 52C242 52 243 55 245 68L312 336L605 336L538 68C535 53 523 43 503 40C498 39 481 39 452 39C433 39 424 31 424 15C424 5 430 0 442 0L568 3L631 2C642 2 683 0 696 0C712 0 720 8 720 24C720 34 709 39 688 39C647 39 627 43 627 52C627 52 628 55 630 68L764 602C769 623 778 636 791 641C797 643 814 644 843 644C869 644 881 644 881 668Z"></path></g><g data-mml-node="mo" data-latex="/" transform="translate(2713.4,0)"><path data-c="2F" d="M444 718C445 720 445 723 445 726C445 742 437 750 421 750C410 750 403 745 399 734L57-218C56-220 56-223 56-226C56-242 64-250 80-250C91-250 98-245 102-234Z"></path></g><g data-mml-node="mi" data-latex="r" transform="translate(3213.4,0)"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3664.4,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="W" transform="translate(4109.1,0)"><path data-c="1D44A" d="M956 680C937 680 872 683 853 683C838 683 830 675 830 660C830 650 836 645 848 644C885 643 903 632 903 610C903 604 899 594 891 579L629 125L594 602C590 638 614 644 659 644C680 644 690 652 690 668C690 678 684 683 671 683C649 683 572 680 550 680C531 680 465 683 446 683C431 683 423 675 423 659C423 649 432 644 451 644C482 644 498 637 499 623L505 548L261 125L225 613C222 638 264 644 296 644C313 644 321 652 321 668C321 678 315 683 303 683C281 683 203 680 181 680C162 680 96 683 77 683C62 683 55 675 55 660C55 649 65 644 84 644C126 644 130 642 132 612L177 7C178-12 185-22 197-22C210-20 215-17 223-2C224-1 224 0 224 1L509 494L545 7C546-12 553-22 565-22C575-22 584-15 592-1L918 562C945 611 964 639 1025 644C1043 646 1048 651 1048 668C1048 678 1043 683 1032 683C1018 683 970 680 956 680Z"></path></g><g data-mml-node="mo" data-latex="/" transform="translate(5157.1,0)"><path data-c="2F" d="M444 718C445 720 445 723 445 726C445 742 437 750 421 750C410 750 403 745 399 734L57-218C56-220 56-223 56-226C56-242 64-250 80-250C91-250 98-245 102-234Z"></path></g><g data-mml-node="mi" data-latex="r" transform="translate(5657.1,0)"><path data-c="1D45F" d="M436 374C436 416 395 442 351 442C302 442 261 419 227 372C217 411 183 442 136 442C95 442 65 410 44 345C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C150 413 159 399 159 371C159 358 154 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 110-11C130-11 143-1 150 19L169 91C180 134 187 162 190 175L221 303C223 311 231 324 244 343C271 381 302 413 351 413C363 413 373 411 382 406C352 397 337 378 337 351C337 325 351 312 378 312C411 312 436 341 436 374Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(6108.1,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>。</p>
+<p>以一个典型变换为例：</p>
+<p><span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="15.588ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 6890 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mn" data-latex="1" transform="translate(278,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(778,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="3" transform="translate(1222.7,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1722.7,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="1024" transform="translate(2167.3,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="30" d="M249-22C390-22 460 92 460 320C460 473 428 575 365 625C330 652 291 666 250 666C109 666 39 551 39 320C39 136 88-22 249-22M361 524C368 489 371 425 371 332C371 240 367 172 360 128C347 48 310 8 249 8C226 8 203 17 182 34C155 57 139 104 132 176C129 201 128 253 128 332C128 419 131 480 136 513C145 568 163 603 191 618C213 630 232 636 249 636C314 636 350 583 361 524Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z" transform="translate(1500,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(4167.3,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="1024" transform="translate(4612,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="30" d="M249-22C390-22 460 92 460 320C460 473 428 575 365 625C330 652 291 666 250 666C109 666 39 551 39 320C39 136 88-22 249-22M361 524C368 489 371 425 371 332C371 240 367 172 360 128C347 48 310 8 249 8C226 8 203 17 182 34C155 57 139 104 132 176C129 201 128 253 128 332C128 419 131 480 136 513C145 568 163 603 191 618C213 630 232 636 249 636C314 636 350 583 361 524Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z" transform="translate(1500,0)"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(6612,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="8.926ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3945.1 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mn" data-latex="1" transform="translate(1555.8,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2055.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="3" transform="translate(2500.4,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3000.4,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="2" transform="translate(3445.1,0)"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.165ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3166.9 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(722.2,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2222.2,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="2" transform="translate(2666.9,0)"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="5.657ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 2500.2 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(722.2,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(2222.2,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="6.788ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3000.4 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mn" data-latex="1" transform="translate(1555.8,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2055.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="3" transform="translate(2500.4,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="2.765ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1222.2 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="2" transform="translate(722.2,0)"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="12.194ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 5389.6 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="2" transform="translate(722.2,0)"><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1222.2,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(1666.9,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3166.9,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(3611.6,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(5111.6,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="17.348ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 7667.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[1,3,1024,1024] → [1,3,2*512,2*512]→[1,
+3*2*2,512,512]→
+[1,12,512,512]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mn" data-latex="1" transform="translate(1555.8,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2055.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="12" transform="translate(2500.4,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(500,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3500.4,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(3945.1,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(5445.1,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="512" transform="translate(5889.8,0)"><path data-c="35" d="M118 315C123 315 129 319 134 326C164 371 205 393 257 393C292 393 319 373 337 332C348 305 354 264 354 209C354 146 346 102 331 76C306 35 272 14 229 14C162 14 109 62 91 114C94 113 96 114 100 114C130 114 155 137 155 167C155 198 130 219 100 219C65 219 50 200 50 163C50 63 131-22 231-22C292-22 344 0 386 44C428 88 449 141 449 202C449 260 432 310 398 353C361 400 315 423 259 423C212 423 171 408 138 378L138 556C165 548 191 544 218 544C264 544 304 555 338 578C369 597 390 616 402 634C408 642 411 648 411 651C411 661 406 666 396 666C341 645 294 634 256 634C211 634 168 643 127 662C122 664 118 665 114 665C105 665 100 656 100 637L100 345C100 324 100 315 118 315Z"></path><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(7389.8,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>。这一操作降低了空间分辨率，同时按比例扩展通道数。</p>
+<p>在 <a href="https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct">SmolVLM-256M</a>
+模型中，一张 512×512 的图像会被划分为 <strong>64
+个独立图像块</strong>，每个图像块被编码为一个视觉 token，最终仅用 64 个
+token 完成整张图像的表征。这种设计大幅减少了输入语言模型的视觉 token
+数量，既降低了内存占用，也显著加速了推理速度。</p>
+<p>SmolVLM-256M 使用 SigLIP base patch-16。对于 512×512 的输入图，patch
+大小为 16×16，因此会产生 1024 个视觉 token。接下来再通过 Pixel Shuffle
+将其压缩到 64 个。</p>
+<p><img src="image%205.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：像素重排（图 8）" decoding="async" loading="lazy"></p>
+<p>1024 个 patch 对应一个 <code>32x32</code> 的空间网格。将 token 数量从
+1024 减少到 64 时，压缩比为：</p>
+<p><span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.816ex;" xmlns="http://www.w3.org/2000/svg" width="4.195ex" height="2.79ex" role="img" focusable="false" viewBox="0 -872.7 1854.2 1233.3"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="\frac{1024}{64}=16"><g data-mml-node="mfrac" data-latex="\frac{1024}{64}"><g data-mml-node="mn" transform="translate(220,394) scale(0.707)" data-latex="1024"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="30" d="M249-22C390-22 460 92 460 320C460 473 428 575 365 625C330 652 291 666 250 666C109 666 39 551 39 320C39 136 88-22 249-22M361 524C368 489 371 425 371 332C371 240 367 172 360 128C347 48 310 8 249 8C226 8 203 17 182 34C155 57 139 104 132 176C129 201 128 253 128 332C128 419 131 480 136 513C145 568 163 603 191 618C213 630 232 636 249 636C314 636 350 583 361 524Z" transform="translate(500,0)"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(1000,0)"></path><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z" transform="translate(1500,0)"></path></g><g data-mml-node="mn" transform="translate(573.6,-345) scale(0.707)" data-latex="64"><path data-c="36" d="M383 504C416 504 432 521 432 555C432 627 378 666 304 666C221 666 155 627 106 548C63 480 42 403 42 316C42 189 65 100 112 47C152 1 198-22 251-22C312-22 362 1 401 47C438 91 457 144 457 205C457 266 439 318 403 361C365 407 316 431 257 431C205 431 165 402 138 346L138 352C138 465 166 561 226 605C252 624 279 633 306 633C342 633 368 623 385 602C351 602 334 583 334 553C334 525 355 504 383 504M344 340C355 317 361 272 361 206C361 141 356 98 345 76C325 35 294 14 251 14C222 14 200 24 184 44C171 60 162 74 158 85C146 116 140 163 140 227C140 255 144 282 151 308C164 355 201 399 256 399C295 399 325 379 344 340Z"></path><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z" transform="translate(500,0)"></path></g><rect width="1614.2" height="60" x="120" y="220"></rect></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="4.651ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 2055.8 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="\frac{1024}{64}=16"><g data-mml-node="mo" data-latex="="><path data-c="3D" d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"></path></g><g data-mml-node="mn" data-latex="16" transform="translate(1055.8,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="36" d="M383 504C416 504 432 521 432 555C432 627 378 666 304 666C221 666 155 627 106 548C63 480 42 403 42 316C42 189 65 100 112 47C152 1 198-22 251-22C312-22 362 1 401 47C438 91 457 144 457 205C457 266 439 318 403 361C365 407 316 431 257 431C205 431 165 402 138 346L138 352C138 465 166 561 226 605C252 624 279 633 306 633C342 633 368 623 385 602C351 602 334 583 334 553C334 525 355 504 383 504M344 340C355 317 361 272 361 206C361 141 356 98 345 76C325 35 294 14 251 14C222 14 200 24 184 44C171 60 162 74 158 85C146 116 140 163 140 227C140 255 144 282 151 308C164 355 201 399 256 399C295 399 325 379 344 340Z" transform="translate(500,0)"></path></g></g></g></svg></mjx-container></span>，因此空间缩放因子为
+4，对应 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="12.238ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 5409 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(278,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1037,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(1481.7,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2241.7,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="32" transform="translate(2686.3,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(500,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(3686.3,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="32" transform="translate(4131,0)"><path data-c="33" d="M303 353C369 378 431 441 431 526C431 569 410 604 369 631C333 654 292 666 246 666C201 666 162 654 127 631C88 605 68 571 68 528C68 495 90 472 122 472C154 472 176 495 176 527C176 560 157 578 119 580C145 615 186 633 242 633C302 633 332 598 332 527C332 485 324 450 309 421C282 373 245 364 183 364C171 362 165 357 165 348C165 333 172 333 192 333L235 333C310 333 348 280 348 173C348 88 317 14 241 14C176 14 128 36 99 80C134 79 160 105 160 139C160 173 135 198 101 198C62 198 42 178 42 137C42 88 64 49 108 18C147-9 193-22 244-22C301-22 350-3 393 34C436 71 457 117 457 173C457 267 383 332 303 353Z"></path><path data-c="32" d="M237 666C186 666 143 648 106 612C69 576 50 534 50 483C50 449 75 424 106 424C136 424 161 450 161 480C161 513 137 536 105 536C102 536 100 536 98 535C117 584 161 627 224 627C306 627 352 556 352 470C352 403 318 331 250 255L62 43C49 28 50 29 50 0L421 0L450 180L417 180C409 129 402 100 396 91C391 86 361 84 306 84L139 84L236 179C304 243 390 312 419 365C439 400 449 435 449 470C449 588 357 666 237 666Z" transform="translate(500,0)"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(5131,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.963ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3519.4 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(1555.8,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2314.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(2759.4,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="2.765ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 1222.2 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="4" transform="translate(722.2,0)"><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.669ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3389.6 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="4" transform="translate(722.2,0)"><path data-c="34" d="M353 677C344 677 336 672 330 663L28 199L28 163L289 163L289 81C289 63 285 51 278 46C271 41 252 39 219 39L194 39L194 0C223 2 269 3 331 3C393 3 439 2 468 0L468 39L443 39C410 39 391 41 384 46C377 51 373 63 373 81L373 163L471 163L471 202L373 202L373 660C373 670 366 677 353 677M295 553L295 202L67 202Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1222.2,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="8" transform="translate(1666.9,0)"><path data-c="38" d="M250 666C201 666 158 650 122 618C86 586 68 546 68 497C68 456 83 419 113 386C120 378 142 361 179 335C88 288 42 227 42 153C42 100 64 57 107 24C147-7 194-22 249-22C305-22 354-4 395 32C436 68 457 115 457 170C457 216 441 257 408 294C396 307 365 330 316 361C393 402 431 454 431 515C431 606 344 666 250 666M379 515C379 463 348 418 286 381L167 459C136 479 120 505 120 536C120 596 185 633 249 633C318 633 379 584 379 515M250 14C168 14 99 73 99 153C99 220 136 274 210 315L328 240C376 209 400 174 400 134C400 62 325 14 250 14Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2166.9,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="8" transform="translate(2611.6,0)"><path data-c="38" d="M250 666C201 666 158 650 122 618C86 586 68 546 68 497C68 456 83 419 113 386C120 378 142 361 179 335C88 288 42 227 42 153C42 100 64 57 107 24C147-7 194-22 249-22C305-22 354-4 395 32C436 68 457 115 457 170C457 216 441 257 408 294C396 307 365 330 316 361C393 402 431 454 431 515C431 606 344 666 250 666M379 515C379 463 348 418 286 381L167 459C136 479 120 505 120 536C120 596 185 633 249 633C318 633 379 584 379 515M250 14C168 14 99 73 99 153C99 220 136 274 210 315L328 240C376 209 400 174 400 134C400 62 325 14 250 14Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(3111.6,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg><mjx-break size="4"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="7.963ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3519.4 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="→"><path data-c="2192" d="M932 234C939 237 943 243 943 250C943 257 939 263 932 266C884 282 839 316 797 368C769 403 750 444 741 491C738 504 730 510 717 510C701 510 693 502 693 485L694 483L694 482C711 395 755 326 828 274L82 274C66 274 58 266 58 250C58 234 66 226 82 226L828 226C755 174 711 105 694 18L694 17L693 15C693-2 701-10 717-10C730-10 738-4 741 9C750 56 769 97 797 132C839 184 884 218 932 234Z"></path></g><g data-mml-node="mo" data-latex="[" transform="translate(1277.8,0)"><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="B" transform="translate(1555.8,0)"><path data-c="1D435" d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2314.8,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="C" transform="translate(2759.4,0)"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg><mjx-break size="3"> </mjx-break><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="8.8ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 3889.6 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[B,C,32,32] → [B,C*4*4,8,8] →
+[B,C*16,8,8]"><g data-mml-node="mo" data-latex="*"><path data-c="2217" d="M404 372C397 372 390 370 385 366L267 279L282 425C285 445 269 462 250 462C231 462 215 445 218 425L233 279L115 366C110 370 103 372 96 372C78 372 63 357 63 339C63 325 70 315 83 309L217 250L83 191C70 185 63 175 63 161C63 143 78 128 96 128C103 128 110 130 115 134L233 221L218 75C215 55 231 39 250 39C269 39 285 55 282 75L267 221L385 134C390 130 397 128 404 128C415 128 424 133 431 142C446 162 435 183 417 191L283 250L417 309C430 315 437 325 437 339C437 357 422 372 404 372Z"></path></g><g data-mml-node="mn" data-latex="16" transform="translate(722.2,0)"><path data-c="31" d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"></path><path data-c="36" d="M383 504C416 504 432 521 432 555C432 627 378 666 304 666C221 666 155 627 106 548C63 480 42 403 42 316C42 189 65 100 112 47C152 1 198-22 251-22C312-22 362 1 401 47C438 91 457 144 457 205C457 266 439 318 403 361C365 407 316 431 257 431C205 431 165 402 138 346L138 352C138 465 166 561 226 605C252 624 279 633 306 633C342 633 368 623 385 602C351 602 334 583 334 553C334 525 355 504 383 504M344 340C355 317 361 272 361 206C361 141 356 98 345 76C325 35 294 14 251 14C222 14 200 24 184 44C171 60 162 74 158 85C146 116 140 163 140 227C140 255 144 282 151 308C164 355 201 399 256 399C295 399 325 379 344 340Z" transform="translate(500,0)"></path></g><g data-mml-node="mo" data-latex="," transform="translate(1722.2,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="8" transform="translate(2166.9,0)"><path data-c="38" d="M250 666C201 666 158 650 122 618C86 586 68 546 68 497C68 456 83 419 113 386C120 378 142 361 179 335C88 288 42 227 42 153C42 100 64 57 107 24C147-7 194-22 249-22C305-22 354-4 395 32C436 68 457 115 457 170C457 216 441 257 408 294C396 307 365 330 316 361C393 402 431 454 431 515C431 606 344 666 250 666M379 515C379 463 348 418 286 381L167 459C136 479 120 505 120 536C120 596 185 633 249 633C318 633 379 584 379 515M250 14C168 14 99 73 99 153C99 220 136 274 210 315L328 240C376 209 400 174 400 134C400 62 325 14 250 14Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2666.9,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mn" data-latex="8" transform="translate(3111.6,0)"><path data-c="38" d="M250 666C201 666 158 650 122 618C86 586 68 546 68 497C68 456 83 419 113 386C120 378 142 361 179 335C88 288 42 227 42 153C42 100 64 57 107 24C147-7 194-22 249-22C305-22 354-4 395 32C436 68 457 115 457 170C457 216 441 257 408 294C396 307 365 330 316 361C393 402 431 454 431 515C431 606 344 666 250 666M379 515C379 463 348 418 286 381L167 459C136 479 120 505 120 536C120 596 185 633 249 633C318 633 379 584 379 515M250 14C168 14 99 73 99 153C99 220 136 274 210 315L328 240C376 209 400 174 400 134C400 62 325 14 250 14Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(3611.6,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>。其中 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.05ex;" xmlns="http://www.w3.org/2000/svg" width="1.719ex" height="1.645ex" role="img" focusable="false" viewBox="0 -705 760 727"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="C"><g data-mml-node="mi" data-latex="C"><path data-c="1D436" d="M148 218C148 346 204 476 267 548C318 607 406 666 505 666C609 666 660 587 660 479C660 470 657 438 657 429C657 420 663 415 676 415C681 415 685 416 688 417C693 424 696 431 698 438L760 691C760 700 755 705 745 705C741 705 735 701 727 692L662 619C623 676 568 705 497 705C442 705 388 692 333 667C222 615 141 533 89 421C63 366 50 310 50 253C50 173 75 108 126 56C177 4 242-22 322-22C401-22 473 7 538 64C565 87 588 115 607 146C634 191 648 222 648 241C648 250 643 255 632 255C623 255 618 251 616 242C595 177 562 125 517 88C460 41 400 17 338 17C218 17 148 98 148 218Z"></path></g></g></g></svg></mjx-container></span> 是
+token 的特征维度。这个过程把部分空间信息压入通道维度，缩短视觉 token
+序列，并降低后续注意力计算与 KV Cache 的开销：</p>
+<ul>
+<li><p>对 Transformer 而言，注意力计算通常随序列长度呈平方增长。若 token
+序列长度为 Len、特征维度为 Dim，则 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.439ex;" xmlns="http://www.w3.org/2000/svg" width="1.79ex" height="2.034ex" role="img" focusable="false" viewBox="0 -705 791 899"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="Q"><g data-mml-node="mi" data-latex="Q"><path data-c="1D444" d="M306-24C335-24 366-19 399-10C396-48 395-72 395-81C395-156 424-194 481-194C542-194 589-145 612-100C637-48 650-14 650 2C650 11 645 16 635 16C628 16 623 12 620 3C605-43 564-90 508-90C457-90 450-49 442 6C526 39 597 96 654 178C711 260 740 345 740 434C740 513 717 577 670 628C623 679 561 705 484 705C431 705 378 692 325 665C217 612 138 528 87 415C62 358 49 302 49 245C49 88 151-24 306-24M645 466C645 405 630 335 600 254C565 161 511 92 436 48C432 70 426 90 418 108C405 138 381 153 346 153C291 153 241 103 241 48C241 39 242 30 244 23C177 54 144 117 144 213C144 255 152 306 169 366C204 493 267 583 358 636C401 660 441 672 478 672C588 672 645 581 645 466M346 123C383 123 402 96 402 43C402 34 399 29 393 27C365 15 338 9 312 9C284 9 270 22 270 48C270 86 308 123 346 123Z"></path></g></g></g></svg></mjx-container></span> 和 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: 0;" xmlns="http://www.w3.org/2000/svg" width="2.011ex" height="1.548ex" role="img" focusable="false" viewBox="0 -684 889 684"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="K"><g data-mml-node="mi" data-latex="K"><path data-c="1D43E" d="M804 680C783 680 715 683 694 683C679 683 671 675 671 659C671 651 678 646 692 643C706 640 714 635 714 628C714 617 703 602 680 585L302 296L379 602C384 623 393 636 406 641C412 643 429 644 458 644C484 644 496 644 496 668C496 678 490 683 478 683L351 680L223 683C207 684 199 676 199 660C199 649 210 644 232 644C252 644 293 647 293 631C293 629 292 623 289 613L156 82C151 60 141 47 126 42C119 40 101 39 70 39C48 39 38 37 38 16C38 5 44 0 57 0L183 3L246 2C257 2 299 0 310 0C326 0 334 8 334 24C334 34 324 39 303 39C262 39 242 43 242 52C242 57 245 72 251 95L290 249L433 359L546 98C553 81 557 70 557 65C557 48 541 39 510 39C492 39 484 35 484 15C484 5 490 0 502 0C524 0 600 3 622 3C641 3 701 0 720 0C734 0 741 8 741 24C741 33 733 38 718 39C677 39 667 50 653 81L512 404C511 409 509 413 508 416L708 570C757 608 799 631 833 639C857 643 889 642 889 668C889 678 884 683 874 683C860 683 818 680 804 680Z"></path></g></g></g></svg></mjx-container></span> 的形状为 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="10.857ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 4798.7 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[Len, Dim]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="L" transform="translate(278,0)"><path data-c="1D43F" d="M520 667C520 678 513 683 500 683L354 680L223 683C208 684 200 676 200 659C200 652 203 647 209 646C218 645 226 644 231 644C262 643 279 641 284 640C289 639 292 636 292 631C292 629 291 623 288 613L156 82C150 60 140 47 125 42C119 40 101 39 70 39C49 39 39 31 39 15C39 5 49 0 70 0L527 0C552 0 554 0 561 19L639 233C642 240 643 245 643 248C643 258 638 263 627 263C617 263 612 254 607 240C588 191 570 154 555 131C518 75 455 39 363 39L270 39C259 39 252 39 249 40C242 40 239 42 239 45C239 47 241 54 244 67L377 601C383 624 396 637 415 642C421 643 442 644 478 644C506 644 520 644 520 667Z"></path></g><g data-mml-node="mi" data-latex="e" transform="translate(959,0)"><path data-c="1D452" d="M124 129C124 153 129 186 139 227L188 227C253 227 303 235 339 250C372 264 394 284 405 309C412 326 415 342 415 355C415 410 363 442 307 442C268 442 229 432 190 412C113 372 46 281 46 171C46 69 105-11 204-11C257-11 304 2 345 27C379 48 404 69 420 90C427 99 430 106 430 109C430 120 425 126 414 126C409 126 404 122 398 114C365 70 324 42 277 30C246 22 223 18 206 18C149 18 124 72 124 129M375 355C375 289 311 256 182 256L147 256C166 322 194 366 232 387C262 404 287 413 307 413C343 413 375 391 375 355Z"></path></g><g data-mml-node="mi" data-latex="n" transform="translate(1425,0)"><path data-c="1D45B" d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2025,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="D" transform="translate(2469.7,0)"><path data-c="1D437" d="M567 683L235 683C212 683 201 682 201 660C201 649 212 644 234 644C254 644 294 647 294 631C294 629 293 623 290 613L158 82C153 60 143 47 128 42C121 40 103 39 72 39C50 39 40 37 40 16C40 5 51 0 72 0L399 0C467 0 532 20 595 61C702 130 804 265 804 429C804 577 713 683 567 683M710 466C710 353 659 216 607 149C550 76 475 39 381 39L270 39C259 39 252 39 248 40C242 40 239 42 239 45C239 47 241 54 244 67L379 610C388 643 387 644 429 644L535 644C647 644 710 578 710 466Z"></path></g><g data-mml-node="mi" data-latex="i" transform="translate(3297.7,0)"><path data-c="1D456" d="M284 621C284 648 271 661 244 661C216 661 188 633 188 605C188 578 202 565 229 565C257 565 284 593 284 621M259 138C237 59 205 19 164 19C151 19 144 28 144 47C144 64 173 150 232 306C240 329 244 347 244 360C244 409 210 445 161 445C118 445 84 420 59 369C39 328 29 301 29 288C29 279 34 275 45 275C58 275 60 281 64 295C87 375 118 415 158 415C171 415 178 406 178 387C178 373 175 357 168 338C145 275 121 208 101 155C86 115 78 88 78 74C78 25 114-11 162-11C205-11 239 14 264 64C283 103 293 130 293 145C293 154 288 159 277 159C274 159 259 150 259 138Z"></path></g><g data-mml-node="mi" data-latex="m" transform="translate(3642.7,0)"><path data-c="1D45A" d="M657 442C596 442 543 412 498 353C489 412 451 442 383 442C324 442 273 416 231 363C223 407 188 442 137 442C96 442 66 409 45 344C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 66 299C84 375 107 413 134 413C152 413 161 399 161 371C161 358 156 331 145 290L88 63C84 51 79 25 79 19C79-1 90-11 111-11C131-11 145-1 152 19C153 24 160 49 171 92L192 181L222 295C233 318 250 341 272 365C301 397 337 413 380 413C413 413 429 391 429 348C429 335 424 308 414 267L387 153C380 124 364 64 356 32C355 25 354 21 354 19C354-1 365-11 387-11C398-11 406-8 413-1C428 14 429 21 435 48L494 285C497 298 511 321 535 353C565 393 605 413 654 413C687 413 703 391 703 348C703 309 683 236 642 129C633 106 629 87 629 74C629 25 666-11 714-11C759-11 793 14 818 64C838 104 848 131 848 144C848 153 843 158 832 158C825 157 818 148 813 137C791 58 759 18 716 18C703 18 696 28 696 47C696 62 702 84 714 115C755 222 775 295 775 333C775 404 728 442 657 442Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(4520.7,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>，注意力矩阵的形状为 <span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.566ex;" xmlns="http://www.w3.org/2000/svg" width="10.169ex" height="2.262ex" role="img" focusable="false" viewBox="0 -750 4494.7 1000"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="[Len, Len]"><g data-mml-node="mo" data-latex="["><path data-c="5B" d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"></path></g><g data-mml-node="mi" data-latex="L" transform="translate(278,0)"><path data-c="1D43F" d="M520 667C520 678 513 683 500 683L354 680L223 683C208 684 200 676 200 659C200 652 203 647 209 646C218 645 226 644 231 644C262 643 279 641 284 640C289 639 292 636 292 631C292 629 291 623 288 613L156 82C150 60 140 47 125 42C119 40 101 39 70 39C49 39 39 31 39 15C39 5 49 0 70 0L527 0C552 0 554 0 561 19L639 233C642 240 643 245 643 248C643 258 638 263 627 263C617 263 612 254 607 240C588 191 570 154 555 131C518 75 455 39 363 39L270 39C259 39 252 39 249 40C242 40 239 42 239 45C239 47 241 54 244 67L377 601C383 624 396 637 415 642C421 643 442 644 478 644C506 644 520 644 520 667Z"></path></g><g data-mml-node="mi" data-latex="e" transform="translate(959,0)"><path data-c="1D452" d="M124 129C124 153 129 186 139 227L188 227C253 227 303 235 339 250C372 264 394 284 405 309C412 326 415 342 415 355C415 410 363 442 307 442C268 442 229 432 190 412C113 372 46 281 46 171C46 69 105-11 204-11C257-11 304 2 345 27C379 48 404 69 420 90C427 99 430 106 430 109C430 120 425 126 414 126C409 126 404 122 398 114C365 70 324 42 277 30C246 22 223 18 206 18C149 18 124 72 124 129M375 355C375 289 311 256 182 256L147 256C166 322 194 366 232 387C262 404 287 413 307 413C343 413 375 391 375 355Z"></path></g><g data-mml-node="mi" data-latex="n" transform="translate(1425,0)"><path data-c="1D45B" d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"></path></g><g data-mml-node="mo" data-latex="," transform="translate(2025,0)"><path data-c="2C" d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"></path></g><g data-mml-node="mi" data-latex="L" transform="translate(2469.7,0)"><path data-c="1D43F" d="M520 667C520 678 513 683 500 683L354 680L223 683C208 684 200 676 200 659C200 652 203 647 209 646C218 645 226 644 231 644C262 643 279 641 284 640C289 639 292 636 292 631C292 629 291 623 288 613L156 82C150 60 140 47 125 42C119 40 101 39 70 39C49 39 39 31 39 15C39 5 49 0 70 0L527 0C552 0 554 0 561 19L639 233C642 240 643 245 643 248C643 258 638 263 627 263C617 263 612 254 607 240C588 191 570 154 555 131C518 75 455 39 363 39L270 39C259 39 252 39 249 40C242 40 239 42 239 45C239 47 241 54 244 67L377 601C383 624 396 637 415 642C421 643 442 644 478 644C506 644 520 644 520 667Z"></path></g><g data-mml-node="mi" data-latex="e" transform="translate(3150.7,0)"><path data-c="1D452" d="M124 129C124 153 129 186 139 227L188 227C253 227 303 235 339 250C372 264 394 284 405 309C412 326 415 342 415 355C415 410 363 442 307 442C268 442 229 432 190 412C113 372 46 281 46 171C46 69 105-11 204-11C257-11 304 2 345 27C379 48 404 69 420 90C427 99 430 106 430 109C430 120 425 126 414 126C409 126 404 122 398 114C365 70 324 42 277 30C246 22 223 18 206 18C149 18 124 72 124 129M375 355C375 289 311 256 182 256L147 256C166 322 194 366 232 387C262 404 287 413 307 413C343 413 375 391 375 355Z"></path></g><g data-mml-node="mi" data-latex="n" transform="translate(3616.7,0)"><path data-c="1D45B" d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"></path></g><g data-mml-node="mo" data-latex="]" transform="translate(4216.7,0)"><path data-c="5D" d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"></path></g></g></g></svg></mjx-container></span>。</p>
+<p><span class="math inline"><mjx-container class="MathJax" jax="SVG" overflow="overflow"><svg style="vertical-align: -0.452ex;" xmlns="http://www.w3.org/2000/svg" width="51.584ex" height="2.149ex" role="img" focusable="false" viewBox="0 -750 22800 950"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math" data-latex="\text{Attention}(\boldsymbol{Q},\boldsymbol{K},\boldsymbol{V})
+=
+\text{softmax}\left(\frac{\boldsymbol{Q}\boldsymbol{K}^{\top}}{\sqrt{d_k}}\right)\boldsymbol{V}"><g data-mml-node="merror" data-mjx-error="Undefined control sequence \boldsymbol"><rect data-background="true" width="22800" height="950" y="-200"></rect><g data-mml-node="mtext" style="font-family: serif;"><text data-variant="-explicitFont" transform="scale(1,-1)" font-size="884px">Undefined control sequence \boldsymbol</text></g></g></g></g></svg></mjx-container></span></p></li>
+<li><p>在推理过程中，模型会生成并缓存<strong>键 (Key)</strong>
+和<strong>值 (Value)</strong> 向量（KV Cache）。KV Cache
+的大小直接与输入序列长度和批次大小成正比。</p></li>
+</ul>
+<p>进入语言模型后，视觉 token
+仍然会被展平成一维序列。二维空间关系主要由视觉编码器及位置相关信息表达，LLM
+接收到的是按序排列的视觉特征。SmolVLM 论文对这一过程有更完整的说明。</p>
+<h2 id="推理框架">推理框架</h2>
+<p><img src="image%2012.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：推理框架（图 9）" decoding="async" loading="lazy"></p>
+<p><a href="https://github.com/ggml-org/llama.cpp?tab=readme-ov-file"><code>llama.cpp</code></a>
+是以 C/C++
+实现的本地大模型推理框架，目标是在多种硬件环境中以较少依赖完成模型部署，并提供具有竞争力的推理性能。</p>
+<p>框架特性：</p>
+<ul>
+<li><p>基于纯 C/C++ 实现，无任何外部依赖；</p></li>
+<li><p>原生支持苹果芯片（Apple silicon），并通过 ARM NEON、Accelerate
+框架及 Metal 框架进行深度优化；</p></li>
+<li><p>针对 x86 、RISC-V 架构，提供各自的指令集支持；</p></li>
+<li><p>支持 1.5 位、2 位、3 位、4 位、5 位、6 位及 8
+位整数量化，实现更快的推理速度并降低内存占用；</p></li>
+<li><p>提供定制化 CUDA 核函数，用于在 NVIDIA GPU
+上运行大语言模型（LLMs）；同时通过 HIP 支持 AMD GPU，通过 MUSA
+支持摩尔线程（Moore Threads）GPU；</p></li>
+<li><p>支持 Vulkan 及 SYCL 后端；</p></li>
+<li><p>支持 CPU+GPU
+混合推理模式，可对超出显存总容量的大型模型实现部分加速运行。</p></li>
+</ul>
+<p>在这次接入中，我们主要用到的是 llama.cpp
+的多模态推理链路：语言模型、视觉投影器和图文输入都由同一套接口组织。再加上
+iOS、Android
+两端都能运行，底层模型逻辑可以共用，客户端只需处理各自的平台接入。</p>
+<h3 id="模型文件">模型文件</h3>
+<p>GGUF 是 GGML
+生态使用的一种模型交换与存储格式，针对快速加载和推理做了优化。它是
+GGML、GGMF 和 GGJT
+的后续格式，可以在文件中保存模型结构、配置和权重，也允许在保持兼容性的前提下扩展元数据。随着
+<code>llama.cpp</code> 的发展，GGUF 已被许多本地推理工具采用。</p>
+<p><img src="image%207.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：模型文件（图 10）" decoding="async" loading="lazy"></p>
+<p>GGUF
+文件是一种二进制格式，由三个主要部分组成：文件头、元数据和张量数据。</p>
+<ol type="1">
+<li><p><strong>文件头：</strong> 包含魔数 <code>GGUF</code>
+和格式版本号，供加载器识别文件并处理版本差异。</p></li>
+<li><p><strong>元数据：</strong> 以键值形式保存模型架构、名称、embedding
+维度、词表和张量信息等配置，使加载器不必依赖额外配置文件。</p></li>
+<li><p><strong>张量数据：</strong>
+连续存放权重、偏置和归一化参数。量化模型还会保存低精度数据及反量化所需的信息，并按照
+<code>Q4_0</code>、<code>Q5_K</code>、<code>Q8_0</code>、<code>F16</code>、<code>F32</code>
+等类型进行组织。张量通常按特定字节边界对齐，以便高效地进行内存映射和加载。</p></li>
+</ol>
+<p>与 Safetensors 相比，GGUF
+更强调面向推理的自描述能力：除了权重，还可以保存模型架构、量化方式和词表等元数据；Safetensors
+虽然也支持文件级元数据，但模型配置和 tokenizer
+通常由其他文件提供。对于多模态模型，语言模型与视觉投影器仍可能分别存放在不同的
+GGUF 文件中。</p>
+<ul>
+<li><p>自描述：权重、架构和量化信息放在同一个模型组件中，加载器可以直接从文件读取所需参数。</p></li>
+<li><p>内存映射：张量按规则对齐，可以通过 <code>mmap</code>
+映射，避免启动时复制整份模型。</p></li>
+<li><p>可扩展：元数据采用键值结构，新增字段时不必重新设计整个文件格式。</p></li>
+</ul>
+<p>以 <a href="https://huggingface.co/ggml-org/SmolVLM-256M-Instruct-GGUF">SmolVLM-256M-Instruct-GGUF</a>
+为例，可以直接在 Hugging Face
+查看语言模型与视觉模型的元数据和张量描述。</p>
+<p><img src="image%201.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：模型文件（图 11）" decoding="async" loading="lazy"></p>
+<p><img src="image%206.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：模型文件（图 12）" decoding="async" loading="lazy"></p>
+<h3 id="推理过程">推理过程</h3>
+<p>接下来从 <code>mtmd-cli.cpp</code>
+的入口往下走，看看图像切分、视觉编码、Pixel Shuffle
+和语言模型推理分别落在哪段代码里。</p>
+<h4 id="加载模型">加载模型</h4>
+<p>llama.cpp 的初始化入口位于 <code>mtmd-cli.cpp</code> 的
+<code>main()</code> 方法中。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> ** argv)</span> </span>{</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">common_params_parse</span>(argc, argv, params, LLAMA_EXAMPLE_MTMD, show_additional_info)) {</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}        </span><br></pre></td></tr></table></figure>
+
+<p><code>common_params_parse()</code> 负责把环境变量与命令行参数归一化到
+<code>common_params</code>，并完成模型下载和参数约束校验。后续的模型加载、上下文创建与推理都会直接使用这个统一参数结构。</p>
+<h4 id="构建-context">构建 Context</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> ** argv)</span> </span>{</span><br><span class="line">...</span><br><span class="line">    <span class="function">mtmd_cli_context <span class="title">ctx</span><span class="params">(params)</span></span>;</span><br><span class="line">...</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+<p>构建 <code>mtmd_cli_context</code>
+时会加载语言模型与视觉模型，并初始化模型参数、Chat
+Template、词表和缓存，最终得到后续推理所需的
+<code>llama_context</code>。</p>
+<h4 id="prompt-处理">Prompt 处理</h4>
+<p>不同模型使用的 Chat Template 并不相同。SmolVLM 基于 IDEFICS3
+架构，Prompt 需要按照官方的 <a href="https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/chat_template.json">Chat
+Template</a>
+组织。该模板也会写入模型文件，可以在加载模型时直接读取。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&lt;|im_start|&gt;</span><br><span class="line">{% for message in messages %}</span><br><span class="line">{{message['role'] | capitalize}}</span><br><span class="line">{% if message['content'][0]['type'] == 'image' %}{{':'}}{% else %}{{': '}}{% endif %}</span><br><span class="line">{% for line in message['content'] %}</span><br><span class="line">{% if line['type'] == 'text' %}</span><br><span class="line">{{line['text']}}</span><br><span class="line">{% elif line['type'] == 'image' %}</span><br><span class="line">{{ '&lt;image&gt;' }}</span><br><span class="line">{% endif %}</span><br><span class="line">{% endfor %}</span><br><span class="line">&lt;end_of_utterance&gt;</span><br><span class="line">\n</span><br><span class="line">{% endfor %}</span><br><span class="line">{% if add_generation_prompt %}</span><br><span class="line">{{ 'Assistant:' }}</span><br><span class="line">{% endif %}</span><br></pre></td></tr></table></figure>
+
+<p><img src="image%209.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：Prompt 处理（图 13）" decoding="async" loading="lazy"></p>
+<p>Image Marker、User Prompt 和 System Prompt
+必须按照模板规定的顺序拼接。图片与文本位置颠倒可能导致异常输出。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;|im_start|&gt;System: You are a helpful assistant.&lt;end_of_utterance&gt;</span><br><span class="line">User:&lt;image&gt;Describe this image.&lt;end_of_utterance&gt;</span><br><span class="line">Assistant:</span><br></pre></td></tr></table></figure>
+
+<p>llama.cpp 中的 Image Marker 可以改为官方模板使用的
+<code>\&lt;image\&gt;</code>。这个标记不会被转换成普通 token
+id，而是被解析成独立的图片 chunk；进入 Transformer
+前，它会被替换为图片的 embedding 向量。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//mtmd.cpp</span></span><br><span class="line"><span class="function"><span class="type">const</span> <span class="type">char</span> * <span class="title">mtmd_default_marker</span><span class="params">()</span> </span>{</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"&lt;image&gt;"</span>;</span><br><span class="line"><span class="comment">//    return "&lt;__media__&gt;";</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">mtmd_tokenizer</span> {</span><br><span class="line">    <span class="function"><span class="type">int32_t</span> <span class="title">tokenize</span><span class="params">(mtmd_input_chunks * output)</span> </span>{</span><br><span class="line">        <span class="comment">//文本转 token id &lt;image&gt; 转成图片chunk</span></span><br><span class="line">        ...        </span><br><span class="line">        *output = std::<span class="built_in">move</span>(cur);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    }</span><br><span class="line">} </span><br></pre></td></tr></table></figure>
+
+<p>在这里使用的 llama.cpp 版本中，System Prompt 和 User Prompt
+会分别调用一次 <code>eval_message()</code>，而不是一次性完成处理。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//mtmd-cli.cpp</span></span><br><span class="line"> <span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> ** argv)</span> </span>{</span><br><span class="line"> ...</span><br><span class="line">     <span class="keyword">auto</span> eval_system_prompt_if_present = [&amp;] {</span><br><span class="line">     ...</span><br><span class="line">        msg.role = <span class="string">"system"</span>;</span><br><span class="line">        <span class="comment">//如果系统Prompt存在，做一次Prefill</span></span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">eval_message</span>(ctx, msg);</span><br><span class="line">    };</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">if</span> (is_single_turn) {</span><br><span class="line">    ...</span><br><span class="line">        <span class="comment">// userprompt存在，做一次Prefill</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">eval_message</span>(ctx, msg)) {</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        }</span><br><span class="line">...</span><br><span class="line">    }</span><br><span class="line">}  </span><br></pre></td></tr></table></figure>
+
+<p><img src="image%202.png" alt="基于 llama.cpp 和 SmolVLM 的端侧多模态推理：Prompt 处理（图 14）" decoding="async" loading="lazy"></p>
+<p>当时的实现没有为 System Prompt 添加结束标记
+<code>\&lt;end_of_utterance\&gt;</code>，因此需要补上这段逻辑。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//llama-chat.cpp</span></span><br><span class="line"><span class="function"><span class="type">int32_t</span> <span class="title">llm_chat_apply_template</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    llm_chat_template tmpl,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">const</span> std::vector&lt;<span class="type">const</span> llama_chat_message *&gt; &amp; chat,</span></span></span><br><span class="line"><span class="params"><span class="function">    std::string &amp; dest, <span class="type">bool</span> add_ass)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (tmpl == LLM_CHAT_TEMPLATE_SMOLVLM) {</span><br><span class="line">        <span class="comment">// SmolVLM</span></span><br><span class="line">        ss &lt;&lt; <span class="string">"&lt;|im_start|&gt;"</span>; <span class="comment">// uses &lt;|im_start|&gt; as BOS, but the actual content is NOT chatml</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span> message : chat) {</span><br><span class="line">            <span class="function">std::string <span class="title">role</span><span class="params">(message-&gt;role)</span></span>;</span><br><span class="line">            <span class="keyword">if</span> (role == <span class="string">"system"</span>) {</span><br><span class="line">               <span class="comment">// ss &lt;&lt; "System: " &lt;&lt; message-&gt;content &lt;&lt; "\n\n";</span></span><br><span class="line">                <span class="comment">//修改结尾标志</span></span><br><span class="line">                ss &lt;&lt; <span class="string">"System: "</span> &lt;&lt; message-&gt;content &lt;&lt; <span class="string">"&lt;end_of_utterance&gt;\n"</span>;</span><br><span class="line">            } <span class="keyword">else</span> <span class="keyword">if</span> (role == <span class="string">"user"</span>) {</span><br><span class="line">                ss &lt;&lt; <span class="string">"User: "</span> &lt;&lt; message-&gt;content &lt;&lt; <span class="string">"&lt;end_of_utterance&gt;\n"</span>;</span><br><span class="line">            } <span class="keyword">else</span> {</span><br><span class="line">                ss &lt;&lt; <span class="string">"Assistant: "</span> &lt;&lt; message-&gt;content &lt;&lt; <span class="string">"&lt;end_of_utterance&gt;\n"</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (add_ass) {</span><br><span class="line">            ss &lt;&lt; <span class="string">"Assistant:"</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ....</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+<h4 id="prefill-过程">Prefill 过程</h4>
+<p>在 LLaMA、GPT
+等自回归语言模型中，第一次把完整输入序列送入模型，计算隐藏状态、logits
+和 KV Cache 的过程通常称为 Prefill。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">int</span> <span class="title">eval_message</span><span class="params">(mtmd_cli_context &amp; ctx, common_chat_msg &amp; msg)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">int32_t</span> res = <span class="built_in">mtmd_tokenize</span>(ctx.ctx_vision.<span class="built_in">get</span>(),</span><br><span class="line">                        chunks.ptr.<span class="built_in">get</span>(), <span class="comment">// output</span></span><br><span class="line">                        &amp;text, <span class="comment">// text</span></span><br><span class="line">                        bitmaps_c_ptr.<span class="built_in">data</span>(),</span><br><span class="line">                        bitmaps_c_ptr.<span class="built_in">size</span>());</span><br><span class="line">  ...</span><br><span class="line">    llama_pos new_n_past;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">mtmd_helper_eval_chunks</span>(ctx.ctx_vision.<span class="built_in">get</span>(),</span><br><span class="line">                ctx.lctx, <span class="comment">// lctx</span></span><br><span class="line">                chunks.ptr.<span class="built_in">get</span>(), <span class="comment">// chunks</span></span><br><span class="line">                ctx.n_past, <span class="comment">// n_past</span></span><br><span class="line">                <span class="number">0</span>, <span class="comment">// seq_id</span></span><br><span class="line">                ctx.n_batch, <span class="comment">// n_batch</span></span><br><span class="line">                <span class="literal">true</span>, <span class="comment">// logits_last</span></span><br><span class="line">                &amp;new_n_past)) {</span><br><span class="line">        <span class="built_in">LOG_ERR</span>(<span class="string">"Unable to eval prompt\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    }</span><br><span class="line">    ctx.n_past = new_n_past;</span><br><span class="line">...</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+<p>一次 <code>eval_message()</code> 就对应一次 Prefill：先由
+<code>mtmd_tokenize()</code> 对 Prompt 进行 token 化并拆分 chunk，再由
+<code>mtmd_helper_eval_chunks()</code> 执行前向推理。</p>
+<h5 id="prefill-流程">Prefill 流程</h5>
+<p>System Prompt 和 User Prompt 会分别执行一次
+<code>eval_message()</code>，也就是分两段完成前向推理。从 llama.cpp
+的实现来看，只要 token 的位置连续、KV Cache
+按顺序追加，分段处理就不会改变最终序列。第一段产生的
+<code>logits_0</code> 不参与后续采样，真正用于生成的是最后一个 chunk 的
+logits。代价是中间段仍然会计算一份最终不会使用的 logits。</p>
+<p><code>mtmd_helper_eval_chunks()</code> 负责把图像与文本 chunk
+按顺序送入模型，并分别处理图像编码和文本 decode。</p>
+<p>如图所示，System Prompt 会形成文本
+<code>chunk0</code>，先进入语言模型完成一次前向推理并生成
+<code>logits_0</code>。User Prompt 则被拆成文本
+<code>chunk1</code>、图片 <code>chunk2</code> 和文本
+<code>chunk3</code>，再依次送入模型。只有最后一个文本 chunk 产生的
+<code>logits_last</code> 会用于自回归采样。</p>
+<h5 id="llamacpp-中的图像预处理">llama.cpp 中的图像预处理</h5>
+<p>SmolVLM 论文提到，图片进入 SigLIP
+编码器前会先被切成多个局部图，再分别编码为图片 embedding。llama.cpp
+的对应入口是 <code>clip_image_preprocess()</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">clip.<span class="function">h</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">clip_image_preprocess</span><span class="params">(<span class="keyword">struct</span> clip_ctx * ctx, <span class="type">const</span> clip_image_u8 * img, <span class="keyword">struct</span> clip_image_f32_batch * res_imgs)</span> </span>{</span><br><span class="line">       <span class="keyword">case</span> PROJECTOR_TYPE_IDEFICS3:{</span><br><span class="line">            ...</span><br><span class="line">            <span class="comment">//保留一张全局预览原图</span></span><br><span class="line">            instructions.overview_size = clip_image_size{params.image_size, params.image_size};</span><br><span class="line">            <span class="comment">//原图按比例缩放，最长边不超过指定值的最后宽高</span></span><br><span class="line">            instructions.refined_size = refined_size;</span><br><span class="line">           <span class="comment">//refined_size的图片要被裁成多少个子图片块</span></span><br><span class="line">            instructions.grid_size = clip_image_size{</span><br><span class="line">            <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(std::<span class="built_in">ceil</span>(<span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(refined_size.width) / params.image_size)),</span><br><span class="line">             <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(std::<span class="built_in">ceil</span>(<span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(refined_size.height) / params.image_size)),</span><br><span class="line">                };  </span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>这段逻辑会先确定全局预览图的尺寸
+<code>overview_size</code>，再计算原图按模型限制缩放后的
+<code>refined_size</code>，最后根据单张切片的目标尺寸得到网格数量
+<code>grid_size</code>。</p>
+<p>SmolVLM 的 <a href="https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/preprocessor_config.json"><code>preprocessor_config.json</code></a>
+中，<code>size.longest_edge</code> 为
+2048，表示缩放后图片的最长边限制；<code>max_image_size.longest_edge</code>
+为 512，对应视觉编码器处理单张图片的目标尺寸。例如，1024×512
+的原图会被缩放为 2048×1024，再切成 8 张 512×512
+的局部图，加上一张全局预览图，共有 9 张图片参与编码。这里使用的
+llama.cpp 与视觉 GGUF 没有单独保存
+<code>longest_edge</code>，实际运行时只处理了全局预览图；若要启用完整切片，需要在读取视觉模型超参数时补充相应的
+<code>longest_edge</code>。</p>
+<h5 id="llama-decode">Llama Decode</h5>
+<p><code>llama_context::decode()</code> 是推理过程的核心入口：它接收一批
+token，执行 Transformer 前向计算，更新 KV Cache，并得到 logits。</p>
+<p>其主要步骤有：</p>
+<ol type="1">
+<li>构建计算图</li>
+<li>运行 Transformer</li>
+<li>写入 KV Cache</li>
+<li>生成 logits</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">llama_context::decode</span><span class="params">(<span class="type">const</span> llama_batch &amp; batch_inp)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">const</span> <span class="keyword">auto</span> * res = <span class="built_in">process_ubatch</span>(ubatch, LLM_GRAPH_TYPE_DECODER, mctx.<span class="built_in">get</span>(), status);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">auto</span> *t_logits = res-&gt;<span class="built_in">get_logits</span>();</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (logits.data &amp;&amp; t_logits &amp;&amp; n_outputs &gt; <span class="number">0</span> &amp;&amp; <span class="built_in">needs_raw_logits</span>(ubatch, sampling.samplers)) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="type">float</span> * logits_out = logits.data + n_outputs_prev*n_vocab;</span><br><span class="line">        <span class="keyword">if</span> (n_outputs) {</span><br><span class="line">            <span class="built_in">ggml_backend_tensor_get_async</span>(backend_res, t_logits, logits_out, <span class="number">0</span>, n_outputs * n_vocab * <span class="built_in">sizeof</span>(<span class="type">float</span>));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+<p><code>process_ubatch()</code> 负责构建计算图、设置输入数据并调度
+Metal 后端执行，同时保存本轮生成的 KV Cache。计算完成后，logits
+会异步拷贝到 CPU 侧的 <code>llama_context::logits.data</code>
+缓存，供后续自回归采样使用。后端张量和计算图调度涉及更多细节，本文暂不展开。</p>
+<h4 id="自回归解码">自回归解码</h4>
+<p>自回归解码（Autoregressive
+Decoding）是主流大语言模型在生成阶段普遍采用的解码方式。</p>
+<p>模型每次只生成一个 token，新 token 依赖 Prompt、KV Cache
+和此前已经生成的全部 token。</p>
+<p>Prefill 得到首个采样位置的 logits 后，模型从中采样 token，将它追加到
+batch，再执行下一轮 decode。这个过程持续循环，直到命中停止条件。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">int</span> <span class="title">generate_response</span><span class="params">(mtmd_cli_context &amp; ctx, <span class="type">int</span> n_predict)</span> </span>{</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 采样最新的token id</span></span><br><span class="line">  llama_token token_id = <span class="built_in">common_sampler_sample</span>(ctx.smpl, ctx.lctx, <span class="number">-1</span>);</span><br><span class="line">        generated_tokens.<span class="built_in">push_back</span>(token_id);</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">//转换成字符串</span></span><br><span class="line">        std::string piece = <span class="built_in">common_token_to_piece</span>(ctx.lctx, token_id);</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">//继续下一次推理</span></span><br><span class="line">        <span class="built_in">common_batch_add</span>(ctx.batch, token_id, ctx.n_past++, {<span class="number">0</span>}, <span class="literal">true</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">llama_decode</span>(ctx.lctx, ctx.batch)) {</span><br><span class="line">            <span class="built_in">on_token</span>(piece, GEN_DECODE_FAIL);</span><br><span class="line">            <span class="built_in">LOG_ERR</span>(<span class="string">"failed to decode token\n"</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        }</span><br><span class="line">...</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结">总结</h2>
+<p>回头看这条链路，图像和文本其实走了两条不同的准备路径。图像经过切分和视觉编码，再由
+Pixel Shuffle 缩短视觉 token
+序列，最后通过投影层进入语言模型的嵌入空间。文本则按照 Chat Template
+被拆成 token 和 chunk。两者按 Prompt 中的位置合并，在 Prefill 阶段写入
+KV Cache，随后进入逐 token 的自回归 Decode。</p>
+<p>如果输出结果不符合预期，可以先核对 Chat Template、Image
+Marker、图像预处理参数，以及各段 Prefill 是否连续更新位置和 KV
+Cache。这几处都会直接影响输出内容、图像理解效果和内存占用。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束 感谢您的阅读-------------</div>
+    
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        
+
+
+<div class="my_post_copyright">
+  <p><span class="copyright-label">本文标题:</span><span class="copyright-value"><a href="/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/">基于 llama.cpp 和 SmolVLM 的端侧多模态推理</a></span></p>
+  <p><span class="copyright-label">文章作者:</span><span class="copyright-value"><a href="/" title="访问 lingyun 的个人博客">lingyun</a></span></p>
+  <p><span class="copyright-label">发布时间:</span><span class="copyright-value">2026年10月07日 - 19:10</span></p>
+  <p><span class="copyright-label">最后更新:</span><span class="copyright-value">2026年10月11日 - 00:10</span></p>
+  <p><span class="copyright-label">原始链接:</span><span class="copyright-value"><a href="/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/" title="基于 llama.cpp 和 SmolVLM 的端侧多模态推理">https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/</a>
+    <button type="button" class="copy-path" data-copy-text="https://tsuijunxi.github.io/2026/10/07/%E5%9F%BA%E4%BA%8E%20llama.cpp%20%E5%92%8C%20SmolVLM%20%E7%9A%84%E7%AB%AF%E4%BE%A7%E5%A4%9A%E6%A8%A1%E6%80%81%E6%8E%A8%E7%90%86/" data-copy-success="复制成功" title="点击复制文章链接" aria-label="复制文章链接"><i class="fa fa-clipboard" aria-hidden="true"></i></button></span>
+  </p>
+  <p><span class="copyright-label">许可协议:</span><span class="copyright-value"><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</span></p>  
+</div>
+<script>
+(function(script) {
+  var container = script.previousElementSibling;
+  var trigger = container && container.querySelector('.copy-path');
+  if (!trigger) return;
+
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  trigger.addEventListener('click', function() {
+    var text = trigger.getAttribute('data-copy-text');
+    var operation = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(text)
+      : fallbackCopy(text);
+
+    operation.then(function() {
+      trigger.classList.add('is-copied');
+      window.setTimeout(function() {
+        trigger.classList.remove('is-copied');
+      }, 1600);
+    }).catch(function() {});
+  });
+})(document.currentScript);
+</script>
+
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+      
+        <div class="post-tags">
+          
+            <a href="/tags/SmolVLM/" rel="tag"># SmolVLM</a>
+          
+            <a href="/tags/llama.cpp/" rel="tag"># llama.cpp</a>
+          
+            <a href="/tags/VLM/" rel="tag"># VLM</a>
+          
+            <a href="/tags/%E7%AB%AF%E4%BE%A7%E6%8E%A8%E7%90%86/" rel="tag"># 端侧推理</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+      
+      
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/06/23/%E8%BF%9E%E7%BB%AD%E5%9C%86%E8%A7%92%E7%9A%84%E8%89%BA%E6%9C%AF/" rel="next" title="连续圆角的艺术">
+                <i class="fa fa-chevron-left"></i> 连续圆角的艺术
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/favicon.ico"
+                alt="lingyun" />
+            
+              <p class="site-author-name" itemprop="name">lingyun</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+            
+            
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">39</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/">
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+<div class="sidebar-app-card motion-element">
+  <a class="sidebar-app-card-link" href="/apps/" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-bottom:1px solid #eee;">
+    <span class="sidebar-app-card-icon" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;overflow:hidden;border-radius:6px;">
+      <img src="/apps/lesori.png" alt="Lensori" width="32" height="32" style="display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:cover;border-radius:6px;">
+    </span>
+    <span class="sidebar-app-card-body">
+      <span class="sidebar-app-card-title">Lensori</span>
+      <span class="sidebar-app-card-desc">Search your photos by meaning.</span>
+    </span>
+  </a>
+</div>
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vlm-%E6%A8%A1%E5%9E%8B%E7%AE%80%E4%BB%8B"><span class="nav-number">2.</span> <span class="nav-text">VLM 模型简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#smolvlm-%E7%9A%84%E5%9B%BE%E5%83%8F%E5%88%87%E5%88%86%E7%AD%96%E7%95%A5"><span class="nav-number">2.1.</span> <span class="nav-text">SmolVLM 的图像切分策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E7%BC%96%E7%A0%81%E5%99%A8"><span class="nav-number">2.2.</span> <span class="nav-text">视觉编码器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.3.</span> <span class="nav-text">大语言模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%95%E5%BD%B1%E5%B1%82"><span class="nav-number">2.4.</span> <span class="nav-text">投影层</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%83%8F%E7%B4%A0%E9%87%8D%E6%8E%92"><span class="nav-number">2.4.1.</span> <span class="nav-text">像素重排</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E7%90%86%E6%A1%86%E6%9E%B6"><span class="nav-number">3.</span> <span class="nav-text">推理框架</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E6%96%87%E4%BB%B6"><span class="nav-number">3.1.</span> <span class="nav-text">模型文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E7%90%86%E8%BF%87%E7%A8%8B"><span class="nav-number">3.2.</span> <span class="nav-text">推理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.2.1.</span> <span class="nav-text">加载模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA-context"><span class="nav-number">3.2.2.</span> <span class="nav-text">构建 Context</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#prompt-%E5%A4%84%E7%90%86"><span class="nav-number">3.2.3.</span> <span class="nav-text">Prompt 处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#prefill-%E8%BF%87%E7%A8%8B"><span class="nav-number">3.2.4.</span> <span class="nav-text">Prefill 过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#prefill-%E6%B5%81%E7%A8%8B"><span class="nav-number">3.2.4.1.</span> <span class="nav-text">Prefill 流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#llamacpp-%E4%B8%AD%E7%9A%84%E5%9B%BE%E5%83%8F%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">3.2.4.2.</span> <span class="nav-text">llama.cpp 中的图像预处理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#llama-decode"><span class="nav-number">3.2.4.3.</span> <span class="nav-text">Llama Decode</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E5%9B%9E%E5%BD%92%E8%A7%A3%E7%A0%81"><span class="nav-number">3.2.5.</span> <span class="nav-text">自回归解码</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script defer src="https://events.vercount.one/js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lingyun</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">117k</span>
+
+  <div class="powered-by" id="site-visit-stats">
+    <i class="fa fa-user-md"></i>
+    <span>
+      本站总访问量 <span id="vercount_value_site_pv">--</span> 次
+    </span>|
+    <i class="fa fa-eye-md"></i>
+    <span>
+      本站访客数 <span id="vercount_value_site_uv">--</span> 人
+    </span>
+  </div>
+  <script>
+    (function () {
+      var stats = document.getElementById('site-visit-stats');
+      var pv = document.getElementById('vercount_value_site_pv');
+      var uv = document.getElementById('vercount_value_site_uv');
+      var attempts = 0;
+      var timer = setInterval(function () {
+        attempts += 1;
+        var ready = pv && uv && /^\d[\d,]*$/.test(pv.textContent) && /^\d[\d,]*$/.test(uv.textContent);
+        if (ready) {
+          clearInterval(timer);
+          return;
+        }
+        if (attempts >= 40) {
+          clearInterval(timer);
+          stats.textContent = '访问统计暂不可用';
+        }
+      }, 250);
+    })();
+  </script>
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
